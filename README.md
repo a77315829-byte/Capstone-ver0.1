@@ -1,161 +1,177 @@
-<div align="center">
-  <a href="https://github.com/github_username/repo_name">
-    <img src="./assets/logo.png" alt="Logo" width="80" height="80">
-  </a>
+# 📈 Stotra - 뉴스·시나리오 기반 주식 투자 판단 학습 시스템
 
-<h1 align="center">Stotra</h3>
+## 프로젝트 소개
 
-<p align="center">
-    Multiplayer stock trading simulator built with React + MERN 📈
-    <br />
-    <a href="https://stotra.spike.codes"><strong>View the demo »</strong></a>
-    <br />
-    <br />
-    <a href="https://stotra.spike.codes/api/docs/">Read API Docs</a>
-    ·
-    <a href="https://github.com/spikecodes/stotra/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/spikecodes/stotra/issues">Request Feature</a>
-  </p>
-</div>
+Stotra는 초보 투자자를 위한 AI 기반 투자 학습 플랫폼입니다.
 
-| Home                       | Stock View                        |
-| -------------------------- | --------------------------------- |
-| ![Home](./assets/home.png) | ![Stock View](./assets/stock.png) |
+기존 모의투자 서비스가 단순히 수익률 경쟁에 집중하는 것과 달리, 본 프로젝트는 사용자의 투자 의사결정 과정 자체를 학습하고 평가하는 것을 목표로 합니다.
 
-| Login                        | Signup                          | Leaderboard                              |
-| ---------------------------- | ------------------------------- | ---------------------------------------- |
-| ![Login](./assets/login.png) | ![Sign up](./assets/signup.png) | ![Leaderboard](./assets/leaderboard.png) |
+사용자는 실시간 모의투자와 과거 금융 이벤트 기반 시나리오 학습을 통해 투자 판단을 연습할 수 있으며, AI로부터 자신의 투자 근거와 판단에 대한 교육적 피드백을 받을 수 있습니다.
 
-Stotra is a multiplayer **STO**ck **TRA**ading simulator that allows users to engage in real-time virtual trading of stocks, currencies, and cryptocurrencies. With Stotra, users can practice trading without risking real money, making it an ideal platform for beginners to learn the ropes of trading. The project is powered by AWS, utilizing Amplify for the React frontend and Elastic Cloud Compute for the Express API.
+---
 
-I built Stotra in 70 hours split across 3 weeks of design, development, and deployment. I set development goals and stayed on top of them with Trello and tracked time spent on each portion with Toggl Track.
+## 주요 기능
 
-## Features ✨
+### 1. 실시간 모의투자
 
-- 🪙 Real-time virtual trading of stocks, currencies, and cryptocurrencies
-- 🌐 Multiplayer leaderboard for competitive trading with friends
-- 📊 Interactive charts and visualizations for better decision-making
-- 🗞️ Access to financial news for informed trading
-- 🎨 Beautiful design with dark mode and customizable accent color
-- 📱 Responsive design for trading on-the-go
+* 국내 주식 실시간 시세 조회
+* 종목 검색
+* 매수 / 매도 주문
+* 포트폴리오 관리
+* 수익률 확인
+* 호가창 조회
 
-## Design 🖌️
+### 2. 과거 시나리오 학습
 
-The design was inspired by [Robinhood](https://robinhood.com/) and [this Dribbble shot](https://dribbble.com/shots/19488130-GoStock-Stock-Market-Dashboard). The frontend uses Chakra UI for a consistent and minimal design, with [Manrope](https://fonts.google.com/specimen/Manrope) for the headings and [Inter](https://rsms.me/inter/) for the body text.
+과거 실제 금융 이벤트를 기반으로 투자 판단을 연습할 수 있습니다.
 
-The accent color defaults to Chakra's "Cyan 500" (`#00B5D8`), which can be changed in the app to any of [Chakra's sleek colors](https://chakra-ui.com/docs/styled-system/theme#colors). Using the toggle in the top right, one can switch between light and dark mode, as shown in the "Sign up" screenshot above.
+예시
 
-## Security 🛡️
+* 코로나19 팬데믹
+* 러시아-우크라이나 전쟁
+* 금리 인상 사이클
+* 반도체 업황 변화
+* 금융위기 사례
 
-Stotra utilizes a robust and custom-built authentication system designed to ensure the security of user data and access to its services. Developed using TypeScript, the system incorporates features for user sign-up, login, and verification. To authenticate users, Stotra employs JSON Web Tokens (JWT), issuing a JWT to users upon successful login, which is then used for identity and permission verification in subsequent requests. As an added layer of security, Stotra integrates [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/), a gatekeeping service that prevents unauthorized access to the platform.
+사용자는 당시 뉴스와 시장 상황을 보고
 
-### Known Limitations
+* 매수
+* 매도
+* 관망
 
-- Users were authenticated with access tokens but not refresh tokens. Adding this additional check may verify users further and could allow storing the login in React's state. Currently, JWT tokens are stored in localStorage to allow access by React, something not possible with `httpOnly` Cookies. This is vulnerable to DOM-based XSS attacks just as state-stored tokens would be, albeit state-stored tokens are not as simple to access as localStorage ones.
-- The system does not offer a password reset feature. This would most likely require an email sending service and for the sake of simplicity, I left it out in this project. For a production-level deployment, this is definitely something to add.
-- Two-factor authentication is not included in the current security model. This is relatively minor for a stock trading _simulator_ but would be possible to implement with [otpauth](https://www.npmjs.com/package/otpauth).
+중 하나를 선택하고 투자 근거를 작성합니다.
 
-## Architecture 🏗️
+---
 
-Stotra uses a microservices architecture, with separate services for the frontend and backend. The two services are stored in separate directories within this monorepo and are meant to be run simultaneously on different ports of the host. The frontend is built with React which interfaces with the Node.js/Express backend over a Restful API. The backend sends to and reads from the MongoDB database (run on MongoDB Atlas for the demo version). The project is hosted on AWS, with Amplify for the frontend and Elastic Cloud Compute for the backend.
+### 3. AI 투자 판단 피드백
 
-![Architecture Diagram](./assets/architecture.png)
+사용자의 투자 판단을 분석하여
 
-## Get Started 🚀
+* 시장 이해도
+* 리스크 판단
+* 투자 근거 적절성
+* 전략 적합성
 
-### Prerequisites
+항목별 피드백을 제공합니다.
 
-- Node.js (v14.18+)
-- MongoDB
-  - I used [MongoDB Atlas](https://www.mongodb.com/basics/get-started) for the demo version
-- Cloudflare Turnstile (for authentication)
-  - [Create a free account](https://www.cloudflare.com/products/turnstile/) to get an API key
+---
 
-### Installation
+### 4. 투자 성과 분석
 
-1. Clone the repo
+* 거래 기록 관리
+* 포트폴리오 평가
+* 투자 학습 이력 저장
+* 사용자별 학습 결과 분석
 
-```sh
-$ git clone https://github.com/spikecodes/stotra.git
-$ cd stotra
+---
+
+## 시스템 구조
+
+Frontend
+
+* React
+* TypeScript
+* Chakra UI
+* Axios
+* Highcharts
+
+Backend
+
+* Node.js
+* Express
+* TypeScript
+* MongoDB
+* Mongoose
+
+AI
+
+* Ollama
+* Qwen 2.5
+* 금융 시나리오 해설 생성
+
+데이터
+
+* 한국투자증권 KIS Open API
+* 뉴스 데이터
+* 과거 시장 데이터
+
+---
+
+## 프로젝트 구조
+
+```text
+app/
+ ├─ components/
+ ├─ pages/
+ └─ services/
+
+server/
+ ├─ controller/
+ ├─ models/
+ ├─ services/
+ └─ utils/
+
+simulator/
+ ├─ data/
+ ├─ scripts/
+ └─ training/
 ```
 
-2. Install NPM packages for both the frontend and backend
+---
 
-```sh
-$ cd app
-$ npm install
-$ cd ../server
-$ npm install
-```
+## 실행 방법
 
-3. Create a `.env` file in the `server` directory and add the following environment variables:
-
-```py
-STOTRA_MONGODB_USERNAME=<username>
-STOTRA_MONGODB_PASSWORD=<pass>
-STOTRA_MONGODB_CLUSTER=<example: cluster0.example.mongodb.net>
-STOTRA_JWT_SECRET=<random string of characters>
-STOTRA_TURNSTILE_SECRET=<api key for turnstile>
-# Optional: (for real-time news and stock data)
-STOTRA_NEWSFILTER_API=<api key for news descriptions>
-STOTRA_KIS_APP_KEY=<KIS Developers app key>
-STOTRA_KIS_APP_SECRET=<KIS Developers app secret>
-STOTRA_KIS_ENV=real # real or demo
-# Optional: KRX default. Use NX for NXT or UN for integrated market if needed.
-STOTRA_KIS_MARKET_DIV_CODE=J
-```
-
-4. Run the frontend and backend in separate terminals
+### Frontend
 
 ```bash
-$ cd app
-$ npm run dev
-
-> stotra-frontend@0.0.0 dev
-> vite
-
-  VITE v4.4.9  ready in 503 ms
-
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: http://192.168.1.242:5173/
-  ➜  press h to show help
+cd app
+npm install
+npm run dev
 ```
 
-```sh
-$ cd server
-$ npm run dev
+### Backend
 
-> stotra-backend@0.0.0 dev
-> ts-node-dev --respawn --pretty --transpile-only ./src/index.ts
-
-[INFO] 17:21:04 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.1, typescript ver. 5.1.6)
-Example app listening at http://0.0.0.0:3010
-Swagger-autogen:  Success ✔
-Swagger docs available at http://0.0.0.0:3010/api/docs
-Connected to Database
+```bash
+cd server
+npm install
+npm run dev
 ```
 
-## Technologies Used 💻
+### Environment Variables
 
-- **Frontend:** React, TypeScript Chakra UI, Axios, Highcharts
-- **Backend:** Node.js, Express, MongoDB, Mongoose, JWT
+```env
+MONGODB_URI=
 
-## Author
+JWT_SECRET=
 
-👤 **Spike**
+KIS_APP_KEY=
+KIS_APP_SECRET=
 
-- Website: [spike.codes](https://spike.codes)
-- Twitter: [@spikecodes](https://twitter.com/spikecodes)
-- Github: [@spikecodes](https://github.com/spikecodes)
+OLLAMA_URL=http://localhost:11434
+```
 
-## Show your support
+---
 
-Give a ⭐️ if this project helped you!
+## 차별점
 
-## 📝 License
+기존 모의투자 서비스
 
-Copyright © 2023 [Spike](https://github.com/spikecodes).
+* 수익률 중심
+* 투자 결과만 평가
 
-This project is [MIT License](https://github.com/spikecodes/stotra/blob/main/LICENSE) licensed.
+Stotra
+
+* 투자 판단 과정 평가
+* 뉴스 해석 능력 학습
+* 리스크 분석 훈련
+* AI 기반 교육 피드백 제공
+
+---
+
+## Capstone Project
+
+2026 Capstone Design Project
+
+뉴스·시나리오 기반 주식 투자 판단 학습 시스템
+
+Developed by Team Stotra
