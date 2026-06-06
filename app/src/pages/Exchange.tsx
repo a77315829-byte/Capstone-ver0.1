@@ -1456,6 +1456,12 @@ setSearchPrices(Object.fromEntries(priceEntries));
 		fetchStockWithChartOption(selectedSymbol, period, interval);
 	};
 
+	useEffect(() => {
+		fetchStock(selectedSymbol);
+		loadTradingData();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
 	
 
 	
