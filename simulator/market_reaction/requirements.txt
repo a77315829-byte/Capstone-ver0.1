@@ -1,0 +1,22 @@
+# 시장 반응 시뮬레이션 (market_reaction) — Python 의존성
+# 버전 핀은 docs/SETUP.md 명세를 따른다.
+
+# Web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Data validation / settings
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# HTTP client (Ollama 비동기 호출용)
+httpx==0.28.1
+
+# 저장소 없음(stateless). 결과 저장은 후속 Node backend + MongoDB 단계에서 처리한다.
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.25.0
+
+# Utilities
+python-dotenv==1.0.1
