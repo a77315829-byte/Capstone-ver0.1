@@ -1,0 +1,19 @@
+# 시장 반응 시뮬레이션 (market_reaction) — Python 의존성
+# 현재 서비스는 DB를 직접 사용하지 않는 stateless 분석 API.
+# 저장은 후속 Node backend + MongoDB 단계에서 처리한다.
+
+# Web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Data validation / settings
+pydantic==2.10.4
+pydantic-settings==2.7.1
+python-dotenv==1.0.1
+
+# HTTP client (Ollama 비동기 호출용)
+httpx==0.28.1
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.25.0

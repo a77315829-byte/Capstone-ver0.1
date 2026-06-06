@@ -1,0 +1,712 @@
+{
+  "_description": "시장 반응 시뮬레이션 테스트 픽스처. Claude Code는 이 데이터로 단위 테스트 및 E2E 테스트를 작성한다.",
+
+  "pressure_calculation_tests": [
+    {
+      "_name": "기획서 기본 예시 - 삼성전자 HBM 긍정 시나리오",
+      "_description": "대표 에이전트 반응 기준 매수69/매도0/관망31이 나와야 한다. 매도 에이전트가 없으므로 매도 압력은 반드시 0이다.",
+      "agents": [
+        {
+          "agent_type": "individual_investor",
+          "reaction_direction": "buy",
+          "reaction_strength": "high",
+          "base_weight": 0.20,
+          "input_relevance": 1.2
+        },
+        {
+          "agent_type": "institutional_investor",
+          "reaction_direction": "hold",
+          "reaction_strength": "medium",
+          "base_weight": 0.25,
+          "input_relevance": 1.0
+        },
+        {
+          "agent_type": "foreign_investor",
+          "reaction_direction": "buy",
+          "reaction_strength": "medium",
+          "base_weight": 0.25,
+          "input_relevance": 1.0
+        },
+        {
+          "agent_type": "short_term_investor",
+          "reaction_direction": "buy",
+          "reaction_strength": "high",
+          "base_weight": 0.15,
+          "input_relevance": 1.2
+        },
+        {
+          "agent_type": "long_term_investor",
+          "reaction_direction": "hold",
+          "reaction_strength": "medium",
+          "base_weight": 0.15,
+          "input_relevance": 1.0
+        }
+      ],
+      "expected_pressure": {
+        "buy": 69,
+        "sell": 0,
+        "hold": 31,
+        "sum_equals_100": true,
+        "_note": "매수: 개인(3*0.20*1.2=0.72) + 외국인(2*0.25*1.0=0.50) + 단기(3*0.15*1.2=0.54) = 1.76. 관망: 기관(2*0.25*1.0=0.50) + 장기(2*0.15*1.0=0.30) = 0.80. 매도: 0. 전체: 2.56. 정수 반올림 보정 후 buy=69, sell=0, hold=31."
+      }
+    },
+    {
+      "_name": "매도 포함 케이스",
+      "_description": "일부 에이전트가 매도 반응을 보이는 경우",
+      "agents": [
+        {
+          "agent_type": "individual_investor",
+          "reaction_direction": "sell",
+          "reaction_strength": "high",
+          "base_weight": 0.20,
+          "input_relevance": 1.2
+        },
+        {
+          "agent_type": "institutional_investor",
+          "reaction_direction": "sell",
+          "reaction_strength": "medium",
+          "base_weight": 0.25,
+          "input_relevance": 1.2
+        },
+        {
+          "agent_type": "foreign_investor",
+          "reaction_direction": "sell",
+          "reaction_strength": "medium",
+          "base_weight": 0.25,
+          "input_relevance": 1.0
+        },
+        {
+          "agent_type": "short_term_investor",
+          "reaction_direction": "sell",
+          "reaction_strength": "high",
+          "base_weight": 0.15,
+          "input_relevance": 1.2
+        },
+        {
+          "agent_type": "long_term_investor",
+          "reaction_direction": "hold",
+          "reaction_strength": "low",
+          "base_weight": 0.15,
+          "input_relevance": 0.8
+        }
+      ],
+      "expected_pressure": {
+        "buy": 0,
+        "sell_is_dominant": true,
+        "hold_is_present": true,
+        "_note": "매도 압력이 확실히 우세해야 함. 정확한 % 대신 우세 방향을 검증."
+      }
+    },
+    {
+      "_name": "total 0 방어",
+      "_description": "에이전트가 없거나 총점이 0이면 관망 100으로 방어 처리한다.",
+      "agents": [],
+      "expected_pressure": {
+        "buy": 0,
+        "sell": 0,
+        "hold": 100,
+        "dominant": "hold"
+      }
+    },
+    {
+      "_name": "반올림 잔여값 보정",
+      "_description": "정수 반올림 합계가 99가 되는 경우 가장 큰 항목에 잔여값을 더한다.",
+      "agents": [
+        {"agent_type": "individual_investor", "reaction_direction": "hold", "reaction_strength": "low", "base_weight": 0.20, "input_relevance": 1.0},
+        {"agent_type": "institutional_investor", "reaction_direction": "sell", "reaction_strength": "low", "base_weight": 0.25, "input_relevance": 1.0},
+        {"agent_type": "foreign_investor", "reaction_direction": "buy", "reaction_strength": "low", "base_weight": 0.25, "input_relevance": 0.8},
+        {"agent_type": "short_term_investor", "reaction_direction": "buy", "reaction_strength": "low", "base_weight": 0.15, "input_relevance": 0.8},
+        {"agent_type": "long_term_investor", "reaction_direction": "buy", "reaction_strength": "low", "base_weight": 0.15, "input_relevance": 0.8}
+      ],
+      "expected_pressure": {
+        "buy": 50,
+        "sell": 28,
+        "hold": 22,
+        "dominant": "buy",
+        "sum_equals_100": true,
+        "_note": "원 반올림값은 49/28/22로 합계 99. 잔여 1을 최댓값 buy에 가산."
+      }
+    },
+    {
+      "_name": "dominant 동률 처리",
+      "_description": "최댓값 동률이면 hold → buy → sell 우선순위로 dominant를 결정한다.",
+      "agents": [
+        {"agent_type": "tie_buy", "reaction_direction": "buy", "reaction_strength": "low", "base_weight": 0.50, "input_relevance": 1.0},
+        {"agent_type": "tie_hold", "reaction_direction": "hold", "reaction_strength": "low", "base_weight": 0.50, "input_relevance": 1.0}
+      ],
+      "expected_pressure": {
+        "buy": 50,
+        "sell": 0,
+        "hold": 50,
+        "dominant": "hold"
+      }
+    },
+    {
+      "_name": "완전 균등 - 중립",
+      "_description": "모든 에이전트가 관망, 동일 강도",
+      "agents": [
+        {"agent_type": "individual_investor", "reaction_direction": "hold", "reaction_strength": "medium", "base_weight": 0.20, "input_relevance": 1.0},
+        {"agent_type": "institutional_investor", "reaction_direction": "hold", "reaction_strength": "medium", "base_weight": 0.25, "input_relevance": 1.0},
+        {"agent_type": "foreign_investor", "reaction_direction": "hold", "reaction_strength": "medium", "base_weight": 0.25, "input_relevance": 1.0},
+        {"agent_type": "short_term_investor", "reaction_direction": "hold", "reaction_strength": "medium", "base_weight": 0.15, "input_relevance": 1.0},
+        {"agent_type": "long_term_investor", "reaction_direction": "hold", "reaction_strength": "medium", "base_weight": 0.15, "input_relevance": 1.0}
+      ],
+      "expected_pressure": {
+        "buy": 0,
+        "sell": 0,
+        "hold": 100
+      }
+    },
+    {
+      "_name": "혼합 반응 - 3방향 분산",
+      "_description": "매수, 매도, 관망이 골고루 섞인 경우",
+      "agents": [
+        {"agent_type": "individual_investor", "reaction_direction": "buy", "reaction_strength": "high", "base_weight": 0.20, "input_relevance": 1.0},
+        {"agent_type": "institutional_investor", "reaction_direction": "hold", "reaction_strength": "medium", "base_weight": 0.25, "input_relevance": 1.0},
+        {"agent_type": "foreign_investor", "reaction_direction": "sell", "reaction_strength": "medium", "base_weight": 0.25, "input_relevance": 1.0},
+        {"agent_type": "short_term_investor", "reaction_direction": "buy", "reaction_strength": "low", "base_weight": 0.15, "input_relevance": 1.0},
+        {"agent_type": "long_term_investor", "reaction_direction": "hold", "reaction_strength": "high", "base_weight": 0.15, "input_relevance": 1.0}
+      ],
+      "expected_pressure": {
+        "buy_gt": 20,
+        "sell_gt": 15,
+        "hold_gt": 25,
+        "sum_equals_100": true,
+        "_note": "세 방향 모두 존재. 합이 정확히 100인지 검증."
+      }
+    }
+  ],
+
+  "sentiment_tests": [
+    {
+      "_name": "매우 긍정적",
+      "pressure": {"buy": 85, "sell": 5, "hold": 10},
+      "expected_sentiment": "very_positive"
+    },
+    {
+      "_name": "긍정적",
+      "pressure": {"buy": 55, "sell": 15, "hold": 30},
+      "expected_sentiment": "positive"
+    },
+    {
+      "_name": "중립적",
+      "pressure": {"buy": 35, "sell": 32, "hold": 33},
+      "expected_sentiment": "neutral"
+    },
+    {
+      "_name": "부정적",
+      "pressure": {"buy": 15, "sell": 55, "hold": 30},
+      "expected_sentiment": "negative"
+    },
+    {
+      "_name": "매우 부정적",
+      "pressure": {"buy": 5, "sell": 85, "hold": 10},
+      "expected_sentiment": "very_negative"
+    },
+    {
+      "_name": "불확실성 확대",
+      "pressure": {"buy": 20, "sell": 15, "hold": 65},
+      "expected_sentiment": "uncertain"
+    },
+    {
+      "_name": "관망 근접이지만 매수 우세 - positive로 분류",
+      "pressure": {"buy": 38, "sell": 25, "hold": 37},
+      "expected_sentiment": "positive",
+      "_note": "hold가 40 미만이고 buy가 max이므로 positive."
+    },
+    {
+      "_name": "관망 우세지만 40 미만 - fallback uncertain",
+      "pressure": {"buy": 37, "sell": 25, "hold": 38},
+      "expected_sentiment": "uncertain",
+      "_note": "hold가 max이나 40 미만이라 첫 uncertain 조건은 아니며, positive/negative가 아니므로 마지막 fallback uncertain."
+    },
+    {
+      "_name": "매수 매도 공동 최댓값 - neutral",
+      "pressure": {"buy": 45, "sell": 45, "hold": 10},
+      "expected_sentiment": "neutral",
+      "_note": "buy와 sell이 공동 최댓값이면 방향성 상쇄로 neutral."
+    }
+  ],
+
+  "confidence_tests": [
+    {
+      "_name": "높은 신뢰도",
+      "input": {
+        "input_specificity": 1.0,
+        "stock_relevance": 1.0,
+        "data_completeness": 1.0,
+        "analysis_consistency": 1.0,
+        "uncertainty_score": 1.0,
+        "fallback_modules_count": 0,
+        "uses_stub_stock_data": false
+      },
+      "expected_grade": "high",
+      "expected_score": 1.0,
+      "_formula": "1.0*0.20 + 1.0*0.20 + 1.0*0.20 + 1.0*0.25 + 1.0*0.15 = 1.00"
+    },
+    {
+      "_name": "보통 신뢰도 - 대표 Stub 시나리오",
+      "input": {
+        "input_specificity": 1.0,
+        "stock_relevance": 1.0,
+        "data_completeness": 0.3,
+        "analysis_consistency": 1.0,
+        "uncertainty_score": 0.7,
+        "fallback_modules_count": 0,
+        "uses_stub_stock_data": true
+      },
+      "expected_grade": "medium",
+      "expected_score": 0.715,
+      "_formula": "1.0*0.20 + 1.0*0.20 + 0.3*0.20 + 1.0*0.25 + 0.7*0.15 - 0.10 = 0.715"
+    },
+    {
+      "_name": "낮은 신뢰도",
+      "input": {
+        "input_specificity": 0.4,
+        "stock_relevance": 0.4,
+        "data_completeness": 0.3,
+        "analysis_consistency": 0.3,
+        "uncertainty_score": 0.4,
+        "fallback_modules_count": 2,
+        "uses_stub_stock_data": true
+      },
+      "expected_grade": "low",
+      "expected_score": 0.155,
+      "_formula": "0.4*0.20 + 0.4*0.20 + 0.3*0.20 + 0.3*0.25 + 0.4*0.15 - 0.10 - 0.10 = 0.155"
+    },
+    {
+      "_name": "등급 경계값 - high",
+      "input": {
+        "input_specificity": 1.0,
+        "stock_relevance": 1.0,
+        "data_completeness": 1.0,
+        "analysis_consistency": 0.6,
+        "uncertainty_score": 0.0,
+        "fallback_modules_count": 0,
+        "uses_stub_stock_data": false
+      },
+      "expected_grade": "high",
+      "expected_score": 0.75,
+      "_formula": "1.0*0.20 + 1.0*0.20 + 1.0*0.20 + 0.6*0.25 + 0.0*0.15 = 0.75"
+    },
+    {
+      "_name": "등급 경계값 - medium",
+      "input": {
+        "input_specificity": 0.7,
+        "stock_relevance": 0.7,
+        "data_completeness": 0.6,
+        "analysis_consistency": 0.4,
+        "uncertainty_score": 0.0,
+        "fallback_modules_count": 0,
+        "uses_stub_stock_data": false
+      },
+      "expected_grade": "medium",
+      "expected_score": 0.5,
+      "_formula": "0.7*0.20 + 0.7*0.20 + 0.6*0.20 + 0.4*0.25 + 0.0*0.15 = 0.50"
+    }
+  ],
+
+  "validator_tests": [
+    {
+      "_name": "정상 산업 정보 입력",
+      "input": {
+        "stock_name": "삼성전자",
+        "input_text": "AI 반도체 수요 증가로 삼성전자의 HBM 관련 실적 개선 가능성이 높아질 것으로 예상된다."
+      },
+      "expected": {
+        "classification": "valid"
+      }
+    },
+    {
+      "_name": "직접 투자 추천 요청",
+      "input": {
+        "stock_name": "삼성전자",
+        "input_text": "삼성전자 지금 사야 하나요?"
+      },
+      "expected": {
+        "classification": "direct_advice"
+      }
+    },
+    {
+      "_name": "관련성 낮은 입력",
+      "input": {
+        "stock_name": "삼성전자",
+        "input_text": "오늘 점심 뭐 먹을까"
+      },
+      "expected": {
+        "classification": "low_relevance"
+      }
+    },
+    {
+      "_name": "너무 짧은 입력",
+      "input": {
+        "stock_name": "삼성전자",
+        "input_text": "좋아"
+      },
+      "expected": {
+        "classification": "vague",
+        "_note": "룰 기반 필터에서 TOO_SHORT_OR_VAGUE로 처리 (10자 미만)"
+      }
+    },
+    {
+      "_name": "반복 문자열",
+      "input": {
+        "stock_name": "삼성전자",
+        "input_text": "ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ"
+      },
+      "expected": {
+        "classification": "unanalyzable",
+        "_note": "룰 기반 필터에서 UNANALYZABLE로 처리 (반복 문자 감지)"
+      }
+    },
+    {
+      "_name": "가정 시나리오",
+      "input": {
+        "stock_name": "삼성전자",
+        "input_text": "삼성전자가 엔비디아에 HBM 공급을 확대한다면 시장은 어떻게 반응할까?"
+      },
+      "expected": {
+        "classification": "valid",
+        "input_type": "hypothetical_scenario"
+      }
+    },
+    {
+      "_name": "시장 반응 질문 허용",
+      "input": {
+        "stock_name": "삼성전자",
+        "input_text": "삼성전자 HBM 공급 확대 소식이 나오면 주가는 오를까, 시장은 어떻게 반응할까?"
+      },
+      "expected": {
+        "classification": "valid"
+      }
+    },
+    {
+      "_name": "시장 하락 반응 질문 허용",
+      "input": {
+        "stock_name": "삼성전자",
+        "input_text": "삼성전자 납품 지연 소식이 나오면 시장은 내릴까, 어떤 영향이 있을까?"
+      },
+      "expected": {
+        "classification": "valid"
+      }
+    },
+    {
+      "_name": "직접 매도 행동 요청",
+      "input": {
+        "stock_name": "삼성전자",
+        "input_text": "삼성전자 지금 팔아야 하나요?"
+      },
+      "expected": {
+        "classification": "direct_advice"
+      }
+    },
+    {
+      "_name": "경제 이벤트",
+      "input": {
+        "stock_name": "삼성전자",
+        "input_text": "원·달러 환율 상승으로 수출 기업의 실적 개선 가능성이 높아졌다."
+      },
+      "expected": {
+        "classification": "valid",
+        "input_type": "economic_market_event"
+      }
+    }
+  ],
+
+  "e2e_tests": [
+    {
+      "_name": "기획서 대표 시나리오 E2E",
+      "_description": "기획서 섹션 5의 사용자 시나리오를 완전 재현. POST /simulate 호출 후 응답 구조 검증.",
+      "request": {
+        "user_id": "test_user_001",
+        "selected_stock": {
+          "code": "005930",
+          "name": "삼성전자"
+        },
+        "input_text": "AI 반도체 수요 증가로 삼성전자의 HBM 관련 실적 개선 가능성이 높아질 것으로 예상된다.",
+        "input_type_hint": "industry_information"
+      },
+      "expected_response_structure": {
+        "status": "ok",
+        "meta.llm_model": "string, not empty",
+        "meta.llm_status": "one_of: ok, partial_failure, fallback",
+        "meta.fallback_used": "boolean",
+        "meta.fallback_modules": "array",
+        "meta.stock_data_source": "one_of: stub, external_api",
+        "meta.db_save_status": "one_of: saved, failed",
+        "simulation_id": "string, not empty",
+        "selected_stock.code": "005930",
+        "selected_stock.name": "삼성전자",
+        "input_text": "contains '삼성전자'",
+
+        "current_stock_context.current_price": "integer",
+        "current_stock_context.daily_change_rate": "float",
+        "current_stock_context.volume_trend": "one_of: increasing, stable, decreasing",
+        "current_stock_context.data_source": "one_of: stub, external_api",
+        "current_stock_context.is_realtime": "boolean",
+        "current_stock_context.observed_at": "nullable ISO 8601 datetime string",
+        "current_stock_context.price_reflection_level": "one_of: low, medium, high",
+        "current_stock_context.short_term_momentum": "one_of: weak, moderate, strong",
+        "current_stock_context.volatility_level": "one_of: low, medium, high",
+
+        "impact_analysis.impact_direction": "one_of: positive, negative, neutral",
+        "impact_analysis.impact_direction_ko": "string, not empty",
+        "impact_analysis.impact_strength": "one_of: low, medium, high",
+        "impact_analysis.impact_strength_ko": "string, not empty",
+        "impact_analysis.related_industries": "array, length >= 1",
+        "impact_analysis.time_horizon": "one_of: short_term, mid_term, long_term",
+        "impact_analysis.time_horizon_ko": "string, not empty",
+        "impact_analysis.key_keywords": "array, length >= 1",
+
+        "market_pressure.buy": "integer, 0-100",
+        "market_pressure.sell": "integer, 0-100",
+        "market_pressure.hold": "integer, 0-100",
+        "market_pressure.buy + sell + hold": "equals 100",
+        "market_pressure.dominant": "one_of: buy, sell, hold",
+        "market_pressure.headline": "string, not empty, Korean",
+
+        "market_sentiment.code": "one_of: very_positive, positive, neutral, negative, very_negative, uncertain",
+        "market_sentiment.label_ko": "string, not empty",
+        "market_sentiment.one_liner": "string, not empty, Korean",
+
+        "analysis_confidence.score": "float, 0.0-1.0",
+        "analysis_confidence.grade": "one_of: high, medium, low",
+        "analysis_confidence.grade_ko": "string, not empty",
+        "analysis_confidence.explanation": "string, not empty, Korean",
+
+        "uncertainty_factors": "array, length >= 1",
+
+        "agent_reactions": "array, length == 5",
+        "agent_reactions[*].agent_type": "one_of: individual_investor, institutional_investor, foreign_investor, short_term_investor, long_term_investor",
+        "agent_reactions[*].agent_name_ko": "string, not empty",
+        "agent_reactions[*].reaction_direction": "one_of: buy, sell, hold",
+        "agent_reactions[*].reaction_direction_ko": "string, not empty",
+        "agent_reactions[*].reaction_strength": "one_of: low, medium, high",
+        "agent_reactions[*].reaction_strength_ko": "string, not empty",
+        "agent_reactions[*].comment": "string, not empty, Korean",
+        "agent_reactions[*].key_reasons": "array, length >= 1",
+        "agent_reactions[*].risk_factors": "array, length >= 1",
+
+        "overall_explanation": "string, length >= 20, Korean",
+
+        "created_at": "ISO 8601 datetime string"
+      },
+      "expected_semantic": {
+        "_note": "이 시나리오에서 LLM이 정상 작동하면 대체로 다음과 같아야 한다 (strict 아님, 방향성 검증)",
+        "impact_direction_expected": "positive",
+        "buy_pressure_should_be_dominant": true,
+        "sentiment_should_not_be": ["negative", "very_negative"]
+      }
+    },
+    {
+      "_name": "부정 시나리오 E2E",
+      "request": {
+        "user_id": "test_user_002",
+        "selected_stock": {
+          "code": "005930",
+          "name": "삼성전자"
+        },
+        "input_text": "삼성전자 반도체 부문에서 대규모 공정 결함이 발생하여 주요 고객사 납품이 지연되고 있다."
+      },
+      "expected_semantic": {
+        "impact_direction_expected": "negative",
+        "sell_pressure_should_be_significant": true,
+        "sentiment_should_not_be": ["positive", "very_positive"]
+      }
+    },
+    {
+      "_name": "가정 시나리오 E2E",
+      "request": {
+        "user_id": "test_user_003",
+        "selected_stock": {
+          "code": "005930",
+          "name": "삼성전자"
+        },
+        "input_text": "삼성전자가 엔비디아에 HBM 공급을 확대한다면 시장은 어떻게 반응할까?"
+      },
+      "expected_semantic": {
+        "impact_direction_expected": "positive",
+        "input_type_expected": "hypothetical_scenario"
+      }
+    },
+    {
+      "_name": "Offline fallback E2E - Ollama 꺼진 상태",
+      "_description": "Ollama 서버가 꺼진 상태에서도 fallback만으로 파이프라인이 완료되어야 한다.",
+      "ollama_required": false,
+      "request": {
+        "user_id": "test_user_offline_001",
+        "selected_stock": {
+          "code": "005930",
+          "name": "삼성전자"
+        },
+        "input_text": "AI 반도체 수요 증가로 삼성전자의 HBM 관련 실적 개선 가능성이 높아질 것으로 예상된다.",
+        "input_type_hint": "industry_information"
+      },
+      "expected_status_code": 200,
+      "expected_response_structure": {
+        "status": "ok",
+        "meta.fallback_used": true,
+        "meta.llm_status": "fallback",
+        "meta.stock_data_source": "stub",
+        "meta.db_save_status": "one_of: saved, failed",
+        "agent_reactions": "array, length == 5",
+        "market_pressure.buy + sell + hold": "equals 100",
+        "schema": "SimulationResponse"
+      }
+    },
+    {
+      "_name": "422 에러 - 직접 추천 요청",
+      "request": {
+        "user_id": "test_user_004",
+        "selected_stock": {
+          "code": "005930",
+          "name": "삼성전자"
+        },
+        "input_text": "삼성전자 지금 사야 하나요?"
+      },
+      "expected_status_code": 422,
+      "expected_error": {
+        "status": "rejected",
+        "reason_code": "DIRECT_ADVICE_REQUEST"
+      }
+    },
+    {
+      "_name": "422 에러 - 무의미 입력",
+      "request": {
+        "user_id": "test_user_005",
+        "selected_stock": {
+          "code": "005930",
+          "name": "삼성전자"
+        },
+        "input_text": "ㅋㅋㅋㅋㅋㅋㅋㅋ"
+      },
+      "expected_status_code": 422,
+      "expected_error": {
+        "status": "rejected",
+        "reason_code": "UNANALYZABLE"
+      }
+    }
+  ],
+
+  "stock_stub_data": {
+    "_description": "stock_data.py stub이 반환할 고정 데이터. 종목코드별로 정의.",
+    "005930": {
+      "code": "005930",
+      "name": "삼성전자",
+      "industry": "반도체",
+      "current_price": 78600,
+      "daily_change_rate": -1.5,
+      "volume_trend": "increasing",
+      "market_cap_trillion": 470,
+      "data_source": "stub",
+      "is_realtime": false,
+      "observed_at": null
+    },
+    "000660": {
+      "code": "000660",
+      "name": "SK하이닉스",
+      "industry": "반도체",
+      "current_price": 178000,
+      "daily_change_rate": 2.3,
+      "volume_trend": "increasing",
+      "market_cap_trillion": 130,
+      "data_source": "stub",
+      "is_realtime": false,
+      "observed_at": null
+    },
+    "default": {
+      "code": "000000",
+      "name": "기본종목",
+      "industry": "기타",
+      "current_price": 50000,
+      "daily_change_rate": 0.0,
+      "volume_trend": "stable",
+      "market_cap_trillion": 10,
+      "data_source": "stub",
+      "is_realtime": false,
+      "observed_at": null
+    }
+  },
+
+  "user_holding_stub_data": {
+    "_description": "사용자 보유 상태 stub 데이터.",
+    "test_user_001": {
+      "005930": {
+        "holding_status": true,
+        "average_purchase_price": 74200,
+        "quantity": 100
+      }
+    },
+    "test_user_002": {
+      "005930": {
+        "holding_status": false,
+        "average_purchase_price": null,
+        "quantity": 0
+      }
+    },
+    "default": {
+      "holding_status": false,
+      "average_purchase_price": null,
+      "quantity": 0
+    }
+  },
+
+  "enum_mappings": {
+    "_description": "백엔드에서 사용할 enum↔한글 매핑 상수. 코드에 그대로 복사.",
+    "impact_direction": {
+      "positive": "긍정",
+      "negative": "부정",
+      "neutral": "중립"
+    },
+    "impact_strength": {
+      "low": "낮음",
+      "medium": "중간",
+      "high": "높음"
+    },
+    "time_horizon": {
+      "short_term": "단기",
+      "mid_term": "중기",
+      "long_term": "장기"
+    },
+    "reaction_direction": {
+      "buy": "매수",
+      "sell": "매도",
+      "hold": "관망"
+    },
+    "reaction_strength": {
+      "low": "낮음",
+      "medium": "중간",
+      "high": "높음"
+    },
+    "sentiment": {
+      "very_positive": "매우 긍정적",
+      "positive": "긍정적",
+      "neutral": "중립적",
+      "negative": "부정적",
+      "very_negative": "매우 부정적",
+      "uncertain": "불확실성 확대"
+    },
+    "confidence_grade": {
+      "high": "높음",
+      "medium": "보통",
+      "low": "낮음"
+    },
+    "agent_type": {
+      "individual_investor": "개인 투자자",
+      "institutional_investor": "기관 투자자",
+      "foreign_investor": "외국인 투자자",
+      "short_term_investor": "단기 투자자",
+      "long_term_investor": "장기 투자자"
+    },
+    "input_relevance": {
+      "low": 0.8,
+      "normal": 1.0,
+      "high": 1.2
+    },
+    "reaction_strength_score": {
+      "low": 1,
+      "medium": 2,
+      "high": 3
+    }
+  }
+}

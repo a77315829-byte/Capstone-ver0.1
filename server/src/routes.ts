@@ -10,6 +10,7 @@ import aiController from "./controller/ai.controller";
 import simulatorController from "./controller/simulator.controller";
 import tradingController from "./controller/trading.controller";
 import scenarioController from "./controller/scenario.controller";
+import marketReactionController from "./controller/marketReaction.controller";
 
 // Auth routes
 router.post(
@@ -90,6 +91,11 @@ router.post(
 router.post(
 	"/api/simulator/run-visual",
 	simulatorController.runVisualSimulation,
+);
+
+router.post(
+	"/api/market-reaction/simulate",
+	marketReactionController.simulate,
 );
 
 router.post(

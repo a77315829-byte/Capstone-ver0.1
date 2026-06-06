@@ -6,7 +6,8 @@
 		"start": "node ./dist/index.js",
 		"tsc": "tsc",
 		"postinstall": "npm run tsc",
-		"dev": "ts-node-dev --respawn --pretty --transpile-only ./src/index.ts"
+		"dev": "ts-node-dev --respawn --pretty --transpile-only --ignore-watch swagger-output.json ./src/index.ts",
+		"seed:scenarios": "ts-node --transpile-only src/scripts/seedScenarios.ts"
 	},
 	"dependencies": {
 		"axios": "^1.4.0",

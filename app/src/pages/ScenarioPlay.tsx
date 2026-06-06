@@ -61,6 +61,7 @@ type ScenarioStep = {
 		volume: string;
 	};
 	stockInfo: ScenarioStock;
+	marketStocks?: ScenarioStock[];
 	newsCards: {
 		title: string;
 		summary: string;
@@ -640,6 +641,10 @@ export default function ScenarioPlay() {
 
 	const scenarioStocks = useMemo(() => {
 		if (!scenario || !currentStep) return [];
+		if (currentStep.marketStocks && currentStep.marketStocks.length > 0) {
+			return currentStep.marketStocks;
+		}
+
 		return buildScenarioStocks(scenario, currentStep);
 	}, [scenario, currentStep]);
 

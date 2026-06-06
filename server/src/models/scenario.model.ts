@@ -2,6 +2,16 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export type ScenarioDecisionAction = "BUY" | "SELL" | "HOLD";
 
+export interface ScenarioStock {
+	symbol: string;
+	name: string;
+	price: number;
+	changeRate: number;
+	volume: number;
+	sector?: string;
+	reason?: string;
+}
+
 export interface ScenarioStep {
 	stepNumber: number;
 	title: string;
@@ -19,6 +29,7 @@ export interface ScenarioStep {
 		changeRate: number;
 		volume: number;
 	};
+	marketStocks?: ScenarioStock[];
 	newsCards: {
 		title: string;
 		summary: string;
@@ -72,6 +83,19 @@ const NewsCardSchema = new Schema(
 	{ _id: false },
 );
 
+const ScenarioStockSchema = new Schema(
+	{
+		symbol: { type: String, required: true },
+		name: { type: String, required: true },
+		price: { type: Number, required: true },
+		changeRate: { type: Number, required: true },
+		volume: { type: Number, required: true },
+		sector: { type: String, default: "" },
+		reason: { type: String, default: "" },
+	},
+	{ _id: false },
+);
+
 const ScenarioStepSchema = new Schema(
 	{
 		stepNumber: { type: Number, required: true },
@@ -89,6 +113,10 @@ const ScenarioStepSchema = new Schema(
 			price: { type: Number, default: 0 },
 			changeRate: { type: Number, default: 0 },
 			volume: { type: Number, default: 0 },
+		},
+		marketStocks: {
+			type: [ScenarioStockSchema],
+			default: [],
 		},
 		newsCards: {
 			type: [NewsCardSchema],
