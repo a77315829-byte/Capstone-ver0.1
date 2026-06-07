@@ -9,7 +9,7 @@ import NotFound from "./pages/NotFound";
 import React from "react";
 import ScenarioChapter from "./pages/ScenarioChapter";
 import ScenarioPlay from "./pages/ScenarioPlay";
-
+import MyPage from "./pages/MyPage";
 function App() {
 	return (
 		<>
@@ -29,6 +29,7 @@ function App() {
 				<Route path="/signup" element={<Signup />} />
 
 				<Route path="*" element={<NotFound />} />
+				<Route path="/mypage" element={<MyPage />} />
 			</Routes>
 		</>
 	);

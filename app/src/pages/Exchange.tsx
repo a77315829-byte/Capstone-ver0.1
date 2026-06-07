@@ -43,8 +43,9 @@ import {
 	IChartApi,
 } from "lightweight-charts";
 import api from "../services/api.service";
-import AiAssistantPanel from "../components/AiAssistantPanel";
 import MarketSimulatorPanel from "../components/MarketSimulatorPanel";
+import AiRamenPanel from "../components/AiRamenPanel";
+
 
 type ChartPeriod = "1d" | "5d" | "1m" | "6m" | "YTD" | "1y" | "all";
 type ChartInterval = "1m" | "5m" | "15m" | "1h" | "4h" | "1d";
@@ -238,33 +239,33 @@ function normalizeStockInfo(symbol: string, raw: any): StockSummary {
 
 	const price = Number(
 		data?.price ??
-			data?.regularMarketPrice ??
-			data?.stck_prpr ??
-			data?.output?.stck_prpr ??
-			0,
+		data?.regularMarketPrice ??
+		data?.stck_prpr ??
+		data?.output?.stck_prpr ??
+		0,
 	);
 
 	const previousClose = Number(
 		data?.regularMarketPreviousClose ??
-			data?.stck_sdpr ??
-			data?.output?.stck_sdpr ??
-			0,
+		data?.stck_sdpr ??
+		data?.output?.stck_sdpr ??
+		0,
 	);
 
 	const changePrice = Number(
 		data?.changePrice ??
-			data?.regularMarketChange ??
-			data?.prdy_vrss ??
-			data?.output?.prdy_vrss ??
-			(price && previousClose ? price - previousClose : 0),
+		data?.regularMarketChange ??
+		data?.prdy_vrss ??
+		data?.output?.prdy_vrss ??
+		(price && previousClose ? price - previousClose : 0),
 	);
 
 	const changeRate = Number(
 		data?.changeRate ??
-			data?.regularMarketChangePercent ??
-			data?.prdy_ctrt ??
-			data?.output?.prdy_ctrt ??
-			0,
+		data?.regularMarketChangePercent ??
+		data?.prdy_ctrt ??
+		data?.output?.prdy_ctrt ??
+		0,
 	);
 
 	const name =
@@ -288,31 +289,31 @@ function normalizeStockInfo(symbol: string, raw: any): StockSummary {
 		changeRate,
 		volume: Number(
 			data?.volume ??
-				data?.regularMarketVolume ??
-				data?.acml_vol ??
-				data?.output?.acml_vol ??
-				0,
+			data?.regularMarketVolume ??
+			data?.acml_vol ??
+			data?.output?.acml_vol ??
+			0,
 		),
 		high: Number(
 			data?.high ??
-				data?.regularMarketDayHigh ??
-				data?.stck_hgpr ??
-				data?.output?.stck_hgpr ??
-				0,
+			data?.regularMarketDayHigh ??
+			data?.stck_hgpr ??
+			data?.output?.stck_hgpr ??
+			0,
 		),
 		low: Number(
 			data?.low ??
-				data?.regularMarketDayLow ??
-				data?.stck_lwpr ??
-				data?.output?.stck_lwpr ??
-				0,
+			data?.regularMarketDayLow ??
+			data?.stck_lwpr ??
+			data?.output?.stck_lwpr ??
+			0,
 		),
 		open: Number(
 			data?.open ??
-				data?.regularMarketOpen ??
-				data?.stck_oprc ??
-				data?.output?.stck_oprc ??
-				0,
+			data?.regularMarketOpen ??
+			data?.stck_oprc ??
+			data?.output?.stck_oprc ??
+			0,
 		),
 		fetchedAt: data?.fetchedAt,
 	};
@@ -350,7 +351,7 @@ function normalizeSearchResults(raw: any): SearchResult[] {
 					: undefined,
 			changeRate:
 				item?.changeRate !== undefined ||
-				item?.regularMarketChangePercent !== undefined
+					item?.regularMarketChangePercent !== undefined
 					? Number(item?.changeRate ?? item?.regularMarketChangePercent)
 					: undefined,
 		}))
@@ -378,11 +379,11 @@ function normalizeHistorical(raw: any): ChartPoint[] {
 
 			const close = Number(
 				item?.close ??
-					item?.stck_clpr ??
-					item?.stck_prpr ??
-					item?.regularMarketPrice ??
-					item?.price ??
-					0,
+				item?.stck_clpr ??
+				item?.stck_prpr ??
+				item?.regularMarketPrice ??
+				item?.price ??
+				0,
 			);
 
 			return {
@@ -1039,35 +1040,36 @@ export default function Exchange() {
 
 	const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("1d");
 	const [chartInterval, setChartInterval] = useState<ChartInterval>("1m");
+	const [isAiRamenOpen, setIsAiRamenOpen] = useState(false);
 
 	const [quantity, setQuantity] = useState(1);
 	const [orderType, setOrderType] =
-	useState<TradingOrderType>("MARKET");
+		useState<TradingOrderType>("MARKET");
 
 	const [limitPrice, setLimitPrice] =
-	useState<number>(0);
+		useState<number>(0);
 
 	const [portfolio, setPortfolio] =
-	useState<PortfolioData | null>(null);
+		useState<PortfolioData | null>(null);
 
 	const [tradeOrders, setTradeOrders] =
-	useState<TradeOrderData[]>([]);
+		useState<TradeOrderData[]>([]);
 
 	const [isLoadingTrading, setIsLoadingTrading] =
-	useState(false);
+		useState(false);
 
 	const [isSubmittingOrder, setIsSubmittingOrder] =
-	useState(false);
+		useState(false);
 
 	const selectedHolding = useMemo(() => {
-	if (!stock || !portfolio?.holdings) return null;
+		if (!stock || !portfolio?.holdings) return null;
 
-	return (
-		portfolio.holdings.find(
-			(holding) => holding.symbol === stock.symbol,
-		) ?? null
-	);
-}, [stock, portfolio]);
+		return (
+			portfolio.holdings.find(
+				(holding) => holding.symbol === stock.symbol,
+			) ?? null
+		);
+	}, [stock, portfolio]);
 
 	const isUp = (stock?.changeRate ?? 0) >= 0;
 
@@ -1092,7 +1094,7 @@ export default function Exchange() {
 			setStock(normalizeStockInfo(symbol, infoRes.data));
 			fetchStockDetail(symbol);
 			fetchOrderBook(symbol);
-			
+
 
 			await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -1130,244 +1132,243 @@ export default function Exchange() {
 		}
 	};
 	const fetchOrderBook = async (symbol: string) => {
-	try {
-		setIsLoadingOrderBook(true);
+		try {
+			setIsLoadingOrderBook(true);
 
-		const res = await api.get(`/stocks/${symbol}/orderbook`);
-		setOrderBook(unwrapApiData(res.data));
-	} catch (error) {
-		console.error(error);
-		setOrderBook(null);
-	} finally {
-		setIsLoadingOrderBook(false);
-	}
-};
-	
+			const res = await api.get(`/stocks/${symbol}/orderbook`);
+			setOrderBook(unwrapApiData(res.data));
+		} catch (error) {
+			console.error(error);
+			setOrderBook(null);
+		} finally {
+			setIsLoadingOrderBook(false);
+		}
+	};
+
 	const fetchStockDetail = async (symbol: string) => {
-	try {
-		setIsLoadingDetail(true);
+		try {
+			setIsLoadingDetail(true);
 
-		const res = await api.get(`/stocks/${symbol}/detail`);
-		setStockDetail(normalizeStockDetail(res.data));
-	} catch (error) {
-		console.error(error);
-		setStockDetail(null);
+			const res = await api.get(`/stocks/${symbol}/detail`);
+			setStockDetail(normalizeStockDetail(res.data));
+		} catch (error) {
+			console.error(error);
+			setStockDetail(null);
 
-		toast({
-			title: "종목 상세정보를 불러오지 못했습니다.",
-			status: "warning",
-			isClosable: true,
-		});
-	} finally {
-		setIsLoadingDetail(false);
-	}
-};
+			toast({
+				title: "종목 상세정보를 불러오지 못했습니다.",
+				status: "warning",
+				isClosable: true,
+			});
+		} finally {
+			setIsLoadingDetail(false);
+		}
+	};
 
 	const fetchStock = async (symbol: string) => {
 		await fetchStockWithChartOption(symbol, chartPeriod, chartInterval);
 	};
 	const loadTradingData = async () => {
-	try {
-		setIsLoadingTrading(true);
+		try {
+			setIsLoadingTrading(true);
 
-		const [portfolioRes, ordersRes] = await Promise.all([
-			api.get("/trading/portfolio?evaluate=false"),
-			api.get("/trading/orders?limit=50"),
-		]);
+			const [portfolioRes, ordersRes] = await Promise.all([
+				api.get("/trading/portfolio?evaluate=false"),
+				api.get("/trading/orders?limit=50"),
+			]);
 
-		setPortfolio(unwrapApiData(portfolioRes.data));
-		setTradeOrders(unwrapApiData(ordersRes.data));
-	} catch (error) {
-		console.error(error);
+			setPortfolio(unwrapApiData(portfolioRes.data));
+			setTradeOrders(unwrapApiData(ordersRes.data));
+		} catch (error) {
+			console.error(error);
 
-		toast({
-			title: "모의투자 정보를 불러오지 못했습니다.",
-			status: "warning",
-			isClosable: true,
-		});
-	} finally {
-		setIsLoadingTrading(false);
-	}
-};
-const refreshPortfolioEvaluation = async () => {
-	try {
-		setIsLoadingTrading(true);
+			toast({
+				title: "모의투자 정보를 불러오지 못했습니다.",
+				status: "warning",
+				isClosable: true,
+			});
+		} finally {
+			setIsLoadingTrading(false);
+		}
+	};
+	const refreshPortfolioEvaluation = async () => {
+		try {
+			setIsLoadingTrading(true);
 
-		const res = await api.get("/trading/portfolio?evaluate=true");
-		setPortfolio(unwrapApiData(res.data));
+			const res = await api.get("/trading/portfolio?evaluate=true");
+			setPortfolio(unwrapApiData(res.data));
 
-		toast({
-			title: "포트폴리오 평가금액을 갱신했습니다.",
-			status: "success",
-			isClosable: true,
-		});
-	} catch (error) {
-		console.error(error);
+			toast({
+				title: "포트폴리오 평가금액을 갱신했습니다.",
+				status: "success",
+				isClosable: true,
+			});
+		} catch (error) {
+			console.error(error);
 
-		toast({
-			title: "평가금액 갱신 실패",
-			status: "warning",
-			isClosable: true,
-		});
-	} finally {
-		setIsLoadingTrading(false);
-	}
-};
+			toast({
+				title: "평가금액 갱신 실패",
+				status: "warning",
+				isClosable: true,
+			});
+		} finally {
+			setIsLoadingTrading(false);
+		}
+	};
 
-const submitTradeOrder = async (side: TradingOrderSide) => {
-	if (!stock) {
-		toast({
-			title: "종목을 먼저 선택하세요.",
-			status: "warning",
-			isClosable: true,
-		});
-		return;
-	}
+	const submitTradeOrder = async (side: TradingOrderSide) => {
+		if (!stock) {
+			toast({
+				title: "종목을 먼저 선택하세요.",
+				status: "warning",
+				isClosable: true,
+			});
+			return;
+		}
 
-	if (!quantity || quantity <= 0) {
-		toast({
-			title: "수량은 1 이상이어야 합니다.",
-			status: "warning",
-			isClosable: true,
-		});
-		return;
-	}
+		if (!quantity || quantity <= 0) {
+			toast({
+				title: "수량은 1 이상이어야 합니다.",
+				status: "warning",
+				isClosable: true,
+			});
+			return;
+		}
 
-	if (orderType === "LIMIT" && (!limitPrice || limitPrice <= 0)) {
-		toast({
-			title: "지정가를 입력하세요.",
-			status: "warning",
-			isClosable: true,
-		});
-		return;
-	}
+		if (orderType === "LIMIT" && (!limitPrice || limitPrice <= 0)) {
+			toast({
+				title: "지정가를 입력하세요.",
+				status: "warning",
+				isClosable: true,
+			});
+			return;
+		}
 
-	try {
-		setIsSubmittingOrder(true);
+		try {
+			setIsSubmittingOrder(true);
 
-		const body = {
-			symbol: stock.symbol,
-			name: stock.name,
-			side,
-			orderType,
-			quantity,
-			limitPrice: orderType === "LIMIT" ? limitPrice : undefined,
-		};
+			const body = {
+				symbol: stock.symbol,
+				name: stock.name,
+				side,
+				orderType,
+				quantity,
+				limitPrice: orderType === "LIMIT" ? limitPrice : undefined,
+			};
 
-		const res = await api.post("/trading/orders", body);
-		const order = unwrapApiData(res.data) as TradeOrderData;
+			const res = await api.post("/trading/orders", body);
+			const order = unwrapApiData(res.data) as TradeOrderData;
 
-		const statusText =
-			order.status === "FILLED"
-				? "체결"
-				: order.status === "PENDING"
-					? "미체결 주문 등록"
-					: order.status;
+			const statusText =
+				order.status === "FILLED"
+					? "체결"
+					: order.status === "PENDING"
+						? "미체결 주문 등록"
+						: order.status;
 
-		toast({
-			title:
-				side === "BUY"
-					? `매수 주문 ${statusText}`
-					: `매도 주문 ${statusText}`,
-			description:
-				order.orderType === "MARKET"
-					? "시장가 주문이 처리되었습니다."
-					: "지정가 주문이 처리되었습니다.",
-			status: "success",
-			isClosable: true,
-		});
+			toast({
+				title:
+					side === "BUY"
+						? `매수 주문 ${statusText}`
+						: `매도 주문 ${statusText}`,
+				description:
+					order.orderType === "MARKET"
+						? "시장가 주문이 처리되었습니다."
+						: "지정가 주문이 처리되었습니다.",
+				status: "success",
+				isClosable: true,
+			});
 
-		await loadTradingData();
-	} catch (error: any) {
-		console.error(error);
+			await loadTradingData();
+		} catch (error: any) {
+			console.error(error);
 
-		toast({
-			title: "주문 처리 실패",
-			description:
-				error?.response?.data?.message ||
-				error?.response?.data?.error ||
-				"주문 처리 중 오류가 발생했습니다.",
-			status: "error",
-			isClosable: true,
-		});
-	} finally {
-		setIsSubmittingOrder(false);
-	}
-};
+			toast({
+				title: "주문 처리 실패",
+				description:
+					error?.response?.data?.message ||
+					error?.response?.data?.error ||
+					"주문 처리 중 오류가 발생했습니다.",
+				status: "error",
+				isClosable: true,
+			});
+		} finally {
+			setIsSubmittingOrder(false);
+		}
+	};
 
-const cancelPendingOrder = async (orderId: string) => {
-	try {
-		await api.post(`/trading/orders/${orderId}/cancel`);
+	const cancelPendingOrder = async (orderId: string) => {
+		try {
+			await api.post(`/trading/orders/${orderId}/cancel`);
 
-		toast({
-			title: "미체결 주문이 취소되었습니다.",
-			status: "success",
-			isClosable: true,
-		});
+			toast({
+				title: "미체결 주문이 취소되었습니다.",
+				status: "success",
+				isClosable: true,
+			});
 
-		await loadTradingData();
-	} catch (error: any) {
-		console.error(error);
+			await loadTradingData();
+		} catch (error: any) {
+			console.error(error);
 
-		toast({
-			title: "주문 취소 실패",
-			description:
-				error?.response?.data?.message ||
-				error?.response?.data?.error ||
-				"주문 취소 중 오류가 발생했습니다.",
-			status: "error",
-			isClosable: true,
-		});
-	}
-};
+			toast({
+				title: "주문 취소 실패",
+				description:
+					error?.response?.data?.message ||
+					error?.response?.data?.error ||
+					"주문 취소 중 오류가 발생했습니다.",
+				status: "error",
+				isClosable: true,
+			});
+		}
+	};
 
-const checkPendingTradeOrders = async () => {
-	try {
-		const res = await api.post("/trading/orders/check-pending");
-		const result = unwrapApiData(res.data);
+	const checkPendingTradeOrders = async () => {
+		try {
+			const res = await api.post("/trading/orders/check-pending");
+			const result = unwrapApiData(res.data);
 
-		toast({
-			title: "미체결 주문 확인 완료",
-			description: `체결 ${result.filledCount ?? 0}건 / 확인 ${
-				result.checkedCount ?? 0
-			}건`,
-			status: "info",
-			isClosable: true,
-		});
+			toast({
+				title: "미체결 주문 확인 완료",
+				description: `체결 ${result.filledCount ?? 0}건 / 확인 ${result.checkedCount ?? 0
+					}건`,
+				status: "info",
+				isClosable: true,
+			});
 
-		await loadTradingData();
-	} catch (error) {
-		console.error(error);
+			await loadTradingData();
+		} catch (error) {
+			console.error(error);
 
-		toast({
-			title: "미체결 주문 확인 실패",
-			status: "warning",
-			isClosable: true,
-		});
-	}
-};
+			toast({
+				title: "미체결 주문 확인 실패",
+				status: "warning",
+				isClosable: true,
+			});
+		}
+	};
 
-const resetTradingAccount = async () => {
-	try {
-		await api.post("/trading/reset");
+	const resetTradingAccount = async () => {
+		try {
+			await api.post("/trading/reset");
 
-		toast({
-			title: "모의투자 계좌가 초기화되었습니다.",
-			status: "success",
-			isClosable: true,
-		});
+			toast({
+				title: "모의투자 계좌가 초기화되었습니다.",
+				status: "success",
+				isClosable: true,
+			});
 
-		await loadTradingData();
-	} catch (error) {
-		console.error(error);
+			await loadTradingData();
+		} catch (error) {
+			console.error(error);
 
-		toast({
-			title: "계좌 초기화 실패",
-			status: "error",
-			isClosable: true,
-		});
-	}
-};
+			toast({
+				title: "계좌 초기화 실패",
+				status: "error",
+				isClosable: true,
+			});
+		}
+	};
 
 	const searchStocks = async () => {
 		if (!searchKeyword.trim()) return;
@@ -1382,38 +1383,38 @@ const resetTradingAccount = async () => {
 			setSearchResults(results);
 			const topResults = results.slice(0, 10);
 
-const priceEntries = await Promise.all(
-	topResults.map(async (item: any) => {
-		try {
-			const infoRes = await api.get(`/stocks/${item.symbol}/info`);
-			const info = unwrapApiData(infoRes.data);
+			const priceEntries = await Promise.all(
+				topResults.map(async (item: any) => {
+					try {
+						const infoRes = await api.get(`/stocks/${item.symbol}/info`);
+						const info = unwrapApiData(infoRes.data);
 
-			return [
-				item.symbol,
-				{
-					price: Number(info.price ?? info.regularMarketPrice ?? 0),
-					changeRate: Number(
-						info.changeRate ?? info.regularMarketChangePercent ?? 0,
-					),
-					changePrice: Number(
-						info.changePrice ?? info.regularMarketChange ?? 0,
-					),
-				},
-			] as const;
-		} catch {
-			return [
-				item.symbol,
-				{
-					price: 0,
-					changeRate: 0,
-					changePrice: 0,
-				},
-			] as const;
-		}
-	}),
-);
+						return [
+							item.symbol,
+							{
+								price: Number(info.price ?? info.regularMarketPrice ?? 0),
+								changeRate: Number(
+									info.changeRate ?? info.regularMarketChangePercent ?? 0,
+								),
+								changePrice: Number(
+									info.changePrice ?? info.regularMarketChange ?? 0,
+								),
+							},
+						] as const;
+					} catch {
+						return [
+							item.symbol,
+							{
+								price: 0,
+								changeRate: 0,
+								changePrice: 0,
+							},
+						] as const;
+					}
+				}),
+			);
 
-setSearchPrices(Object.fromEntries(priceEntries));
+			setSearchPrices(Object.fromEntries(priceEntries));
 
 			if (results.length === 0) {
 				toast({
@@ -1462,9 +1463,9 @@ setSearchPrices(Object.fromEntries(priceEntries));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	
 
-	
+
+
 
 	return (
 		<Box className="Exchange" px={{ base: 4, md: 8 }} py="6" bg="gray.50">
@@ -1540,331 +1541,365 @@ setSearchPrices(Object.fromEntries(priceEntries));
 					</Card>
 
 					<Card mb="5">
-	<CardBody>
-		<Tabs variant="enclosed" colorScheme="blue">
-			<TabList>
-				<Tab>차트</Tab>
-				<Tab>정보</Tab>
-			</TabList>
+						<CardBody>
+							<Tabs variant="enclosed" colorScheme="blue">
+								<TabList>
+									<Tab>차트</Tab>
+									<Tab>정보</Tab>
+								</TabList>
 
-			<TabPanels>
-				<TabPanel px="0" pb="0">
-					<Flex align="center" gap="3" wrap="wrap" mb="4">
-						<Box>
-							<Heading size="md">가격 차트</Heading>
-							<Text fontSize="sm" color="gray.500" mt="1">
-								현재 선택: {selectedChartLabel}
-							</Text>
-						</Box>
-						<Spacer />
-						<HStack spacing="2" wrap="wrap">
-							{chartOptions.map((option) => (
-								<Button
-									key={option.label}
-									size="xs"
-									variant={
-										chartPeriod === option.period &&
-										chartInterval === option.interval
-											? "solid"
-											: "outline"
-									}
-									colorScheme={
-										chartPeriod === option.period &&
-										chartInterval === option.interval
-											? "blue"
-											: "gray"
-									}
-									onClick={() =>
-										changeChartOption(option.period, option.interval)
-									}
-									isDisabled={isLoadingStock}
-								>
-									{option.label}
-								</Button>
-							))}
-						</HStack>
-					</Flex>
+								<TabPanels>
+									<TabPanel px="0" pb="0">
+										<Flex align="center" gap="3" wrap="wrap" mb="4">
+											<Box>
+												<Heading size="md">가격 차트</Heading>
+												<Text fontSize="sm" color="gray.500" mt="1">
+													현재 선택: {selectedChartLabel}
+												</Text>
+											</Box>
+											<Spacer />
+											<HStack spacing="2" wrap="wrap">
+												{chartOptions.map((option) => (
+													<Button
+														key={option.label}
+														size="sm"
+														h="30px"
+														px="4"
+														fontSize="12px"
+														fontWeight="900"
+														borderRadius="8px"
+														variant={
+															chartPeriod === option.period &&
+																chartInterval === option.interval
+																? "solid"
+																: "outline"
+														}
+														colorScheme={
+															chartPeriod === option.period &&
+																chartInterval === option.interval
+																? "blue"
+																: "gray"
+														}
+														onClick={() =>
+															changeChartOption(option.period, option.interval)
+														}
+														isDisabled={isLoadingStock}
+													>
+														{option.label}
+													</Button>
+												))}
+												<Button
+													size="sm"
+													h="40px"
+													px="10"
+													fontSize="15px"
+													fontWeight="900"
+													borderRadius="8px"
+													bg={isAiRamenOpen ? "#212529" : "#f1f3f5"}
+													color={isAiRamenOpen ? "white" : "#495057"}
+													_hover={{
+														bg: isAiRamenOpen ? "#212529" : "#e9ecef",
+													}}
+													onClick={() => setIsAiRamenOpen((prev) => !prev)}
+												>
+													{isAiRamenOpen ? "AI 판단 닫기" : "AI라면 보기"}
+												</Button>
+											</HStack>
+										</Flex>
 
-					{isLoadingStock ? (
-						<Flex h="390px" align="center" justify="center">
-							<Spinner />
-						</Flex>
-					) : (
-						<InteractiveStockChart data={chartPoints} height={390} />
-					)}
-				</TabPanel>
+										<Flex gap="4" align="stretch">
+											<Box flex="1" minW="0">
+												{isLoadingStock ? (
+													<Flex h="390px" align="center" justify="center">
+														<Spinner />
+													</Flex>
+												) : (
+													<InteractiveStockChart data={chartPoints} height={390} />
+												)}
+											</Box>
 
-				<TabPanel px="0" pb="0">
-					<StockDetailPanel
-						detail={stockDetail}
-						isLoading={isLoadingDetail}
-					/>
-				</TabPanel>
-			</TabPanels>
-		</Tabs>
-	</CardBody>
-</Card>
+											<AiRamenPanel
+												isOpen={isAiRamenOpen}
+												onClose={() => setIsAiRamenOpen(false)}
+												stock={stock}
+												chartPoints={chartPoints}
+												chartPeriod={chartPeriod}
+												chartInterval={chartInterval}
+											/>
+										</Flex>
+									</TabPanel>
+
+									<TabPanel px="0" pb="0">
+										<StockDetailPanel
+											detail={stockDetail}
+											isLoading={isLoadingDetail}
+										/>
+									</TabPanel>
+								</TabPanels>
+							</Tabs>
+						</CardBody>
+					</Card>
 
 					<Grid templateColumns={{ base: "1fr", xl: "1fr 1fr" }} gap="5" mb="5">
-	<Card>
-		<CardBody>
-			<OrderBookPanel
-				orderBook={orderBook}
-				isLoading={isLoadingOrderBook}
-				currentPrice={stock?.price ?? 0}
-			/>
-		</CardBody>
-	</Card>
+						<Card>
+							<CardBody>
+								<OrderBookPanel
+									orderBook={orderBook}
+									isLoading={isLoadingOrderBook}
+									currentPrice={stock?.price ?? 0}
+								/>
+							</CardBody>
+						</Card>
 
-	<Card>
-		<CardBody>
-			<PriceHistoryTable chartPoints={chartPoints} />
-		</CardBody>
-	</Card>
-</Grid>
-
-					<Card mt="5">
-	<CardHeader pb="0">
-		<Flex align="center">
-			<Box>
-				<Heading size="md">모의투자 주문</Heading>
-				<Text mt="1" fontSize="sm" color="gray.500">
-					시장가/지정가 매수·매도 주문을 실행합니다.
-				</Text>
-			</Box>
-			<Spacer />
-			<Button size="sm" variant="outline" onClick={checkPendingTradeOrders}>
-				미체결 확인
-			</Button>
-		</Flex>
-	</CardHeader>
-
-	<CardBody>
-		<SimpleGrid columns={{ base: 1, md: 4 }} spacing="4" mb="5">
-			<Stat>
-				<StatLabel>보유 현금</StatLabel>
-				<StatNumber fontSize="lg">
-					{won.format(portfolio?.account?.cash ?? 0)}
-				</StatNumber>
-			</Stat>
-
-			<Stat>
-				<StatLabel>주문 가능 금액</StatLabel>
-				<StatNumber fontSize="lg">
-					{won.format(portfolio?.account?.availableCash ?? 0)}
-				</StatNumber>
-			</Stat>
-
-			<Stat>
-				<StatLabel>예약 금액</StatLabel>
-				<StatNumber fontSize="lg">
-					{won.format(portfolio?.account?.reservedCash ?? 0)}
-				</StatNumber>
-			</Stat>
-
-			<Stat>
-				<StatLabel>선택 종목 보유수량</StatLabel>
-				<StatNumber fontSize="lg">
-					{formatNumber.format(selectedHolding?.quantity ?? 0)}주
-				</StatNumber>
-			</Stat>
-		</SimpleGrid>
-
-		<Flex gap="3" wrap="wrap" align="center">
-			<HStack>
-				<Button
-					size="sm"
-					colorScheme={orderType === "MARKET" ? "blue" : "gray"}
-					variant={orderType === "MARKET" ? "solid" : "outline"}
-					onClick={() => setOrderType("MARKET")}
-				>
-					시장가
-				</Button>
-				<Button
-					size="sm"
-					colorScheme={orderType === "LIMIT" ? "blue" : "gray"}
-					variant={orderType === "LIMIT" ? "solid" : "outline"}
-					onClick={() => setOrderType("LIMIT")}
-				>
-					지정가
-				</Button>
-			</HStack>
-
-			<NumberInput
-				value={quantity}
-				min={1}
-				maxW="140px"
-				onChange={(_, value) =>
-					setQuantity(Number.isNaN(value) ? 1 : value)
-				}
-			>
-				<NumberInputField placeholder="수량" />
-			</NumberInput>
-
-			{orderType === "LIMIT" && (
-				<NumberInput
-					value={limitPrice || ""}
-					min={1}
-					maxW="180px"
-					onChange={(_, value) =>
-						setLimitPrice(Number.isNaN(value) ? 0 : value)
-					}
-				>
-					<NumberInputField placeholder="지정가" />
-				</NumberInput>
-			)}
-
-			<Button
-				colorScheme="red"
-				onClick={() => submitTradeOrder("BUY")}
-				isLoading={isSubmittingOrder}
-				isDisabled={!stock}
-			>
-				매수
-			</Button>
-
-			<Button
-				colorScheme="blue"
-				onClick={() => submitTradeOrder("SELL")}
-				isLoading={isSubmittingOrder}
-				isDisabled={!stock}
-			>
-				매도
-			</Button>
-
-			<Button
-				variant="ghost"
-				size="sm"
-				onClick={resetTradingAccount}
-				isDisabled={isLoadingTrading}
-			>
-				계좌 초기화
-			</Button>
-		</Flex>
-
-		<Text mt="3" fontSize="sm" color="gray.500">
-			※ 관망 판단은 AI라면 기능에서만 제공합니다. 실제 모의투자 주문은 매수와 매도만 지원합니다.
-		</Text>
-	</CardBody>
-</Card>
+						<Card>
+							<CardBody>
+								<PriceHistoryTable chartPoints={chartPoints} />
+							</CardBody>
+						</Card>
+					</Grid>
 
 					<Card mt="5">
-	<CardHeader pb="0">
-		<Heading size="md">주문 / 체결 내역</Heading>
-	</CardHeader>
-
-	<CardBody overflowX="auto">
-		<Table size="sm">
-			<Thead>
-				<Tr>
-					<Th>시간</Th>
-					<Th>구분</Th>
-					<Th>주문유형</Th>
-					<Th>상태</Th>
-					<Th>종목</Th>
-					<Th isNumeric>수량</Th>
-					<Th isNumeric>주문가</Th>
-					<Th isNumeric>체결가</Th>
-					<Th isNumeric>실현손익</Th>
-					<Th>관리</Th>
-				</Tr>
-			</Thead>
-
-			<Tbody>
-				{tradeOrders.map((order) => (
-					<Tr key={order._id}>
-						<Td>{new Date(order.createdAt).toLocaleString("ko-KR")}</Td>
-
-						<Td>
-							<Badge colorScheme={order.side === "BUY" ? "red" : "blue"}>
-								{order.side === "BUY" ? "매수" : "매도"}
-							</Badge>
-						</Td>
-
-						<Td>
-							{order.orderType === "MARKET" ? "시장가" : "지정가"}
-						</Td>
-
-						<Td>
-							<Badge
-								colorScheme={
-									order.status === "FILLED"
-										? "green"
-										: order.status === "PENDING"
-											? "yellow"
-											: order.status === "CANCELED"
-												? "gray"
-												: "red"
-								}
-							>
-								{order.status === "FILLED"
-									? "체결"
-									: order.status === "PENDING"
-										? "미체결"
-										: order.status === "CANCELED"
-											? "취소"
-											: "거절"}
-							</Badge>
-						</Td>
-
-						<Td>
-							{order.name}({order.symbol})
-						</Td>
-
-						<Td isNumeric>{formatNumber.format(order.quantity)}</Td>
-
-						<Td isNumeric>
-							{order.limitPrice
-								? won.format(order.limitPrice)
-								: won.format(order.orderPrice || 0)}
-						</Td>
-
-						<Td isNumeric>
-							{order.executedPrice ? won.format(order.executedPrice) : "-"}
-						</Td>
-
-						<Td
-							isNumeric
-							color={
-								order.realizedProfit > 0
-									? "red.500"
-									: order.realizedProfit < 0
-										? "blue.500"
-										: "gray.700"
-							}
-						>
-							{order.realizedProfit
-								? won.format(order.realizedProfit)
-								: "-"}
-						</Td>
-
-						<Td>
-							{order.status === "PENDING" ? (
-								<Button
-									size="xs"
-									variant="outline"
-									onClick={() => cancelPendingOrder(order._id)}
-								>
-									취소
+						<CardHeader pb="0">
+							<Flex align="center">
+								<Box>
+									<Heading size="md">모의투자 주문</Heading>
+									<Text mt="1" fontSize="sm" color="gray.500">
+										시장가/지정가 매수·매도 주문을 실행합니다.
+									</Text>
+								</Box>
+								<Spacer />
+								<Button size="sm" variant="outline" onClick={checkPendingTradeOrders}>
+									미체결 확인
 								</Button>
-							) : (
-								"-"
-							)}
-						</Td>
-					</Tr>
-				))}
+							</Flex>
+						</CardHeader>
 
-				{tradeOrders.length === 0 && (
-					<Tr>
-						<Td colSpan={10}>
-							<Text color="gray.500">아직 주문 내역이 없습니다.</Text>
-						</Td>
-					</Tr>
-				)}
-			</Tbody>
-		</Table>
-	</CardBody>
-</Card>
+						<CardBody>
+							<SimpleGrid columns={{ base: 1, md: 4 }} spacing="4" mb="5">
+								<Stat>
+									<StatLabel>보유 현금</StatLabel>
+									<StatNumber fontSize="lg">
+										{won.format(portfolio?.account?.cash ?? 0)}
+									</StatNumber>
+								</Stat>
+
+								<Stat>
+									<StatLabel>주문 가능 금액</StatLabel>
+									<StatNumber fontSize="lg">
+										{won.format(portfolio?.account?.availableCash ?? 0)}
+									</StatNumber>
+								</Stat>
+
+								<Stat>
+									<StatLabel>예약 금액</StatLabel>
+									<StatNumber fontSize="lg">
+										{won.format(portfolio?.account?.reservedCash ?? 0)}
+									</StatNumber>
+								</Stat>
+
+								<Stat>
+									<StatLabel>선택 종목 보유수량</StatLabel>
+									<StatNumber fontSize="lg">
+										{formatNumber.format(selectedHolding?.quantity ?? 0)}주
+									</StatNumber>
+								</Stat>
+							</SimpleGrid>
+
+							<Flex gap="3" wrap="wrap" align="center">
+								<HStack>
+									<Button
+										size="sm"
+										colorScheme={orderType === "MARKET" ? "blue" : "gray"}
+										variant={orderType === "MARKET" ? "solid" : "outline"}
+										onClick={() => setOrderType("MARKET")}
+									>
+										시장가
+									</Button>
+									<Button
+										size="sm"
+										colorScheme={orderType === "LIMIT" ? "blue" : "gray"}
+										variant={orderType === "LIMIT" ? "solid" : "outline"}
+										onClick={() => setOrderType("LIMIT")}
+									>
+										지정가
+									</Button>
+								</HStack>
+
+								<NumberInput
+									value={quantity}
+									min={1}
+									maxW="140px"
+									onChange={(_, value) =>
+										setQuantity(Number.isNaN(value) ? 1 : value)
+									}
+								>
+									<NumberInputField placeholder="수량" />
+								</NumberInput>
+
+								{orderType === "LIMIT" && (
+									<NumberInput
+										value={limitPrice || ""}
+										min={1}
+										maxW="180px"
+										onChange={(_, value) =>
+											setLimitPrice(Number.isNaN(value) ? 0 : value)
+										}
+									>
+										<NumberInputField placeholder="지정가" />
+									</NumberInput>
+								)}
+
+								<Button
+									colorScheme="red"
+									onClick={() => submitTradeOrder("BUY")}
+									isLoading={isSubmittingOrder}
+									isDisabled={!stock}
+								>
+									매수
+								</Button>
+
+								<Button
+									colorScheme="blue"
+									onClick={() => submitTradeOrder("SELL")}
+									isLoading={isSubmittingOrder}
+									isDisabled={!stock}
+								>
+									매도
+								</Button>
+
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={resetTradingAccount}
+									isDisabled={isLoadingTrading}
+								>
+									계좌 초기화
+								</Button>
+							</Flex>
+
+							<Text mt="3" fontSize="sm" color="gray.500">
+								※ 관망 판단은 AI라면 기능에서만 제공합니다. 실제 모의투자 주문은 매수와 매도만 지원합니다.
+							</Text>
+						</CardBody>
+					</Card>
+
+					<Card mt="5">
+						<CardHeader pb="0">
+							<Heading size="md">주문 / 체결 내역</Heading>
+						</CardHeader>
+
+						<CardBody overflowX="auto">
+							<Table size="sm">
+								<Thead>
+									<Tr>
+										<Th>시간</Th>
+										<Th>구분</Th>
+										<Th>주문유형</Th>
+										<Th>상태</Th>
+										<Th>종목</Th>
+										<Th isNumeric>수량</Th>
+										<Th isNumeric>주문가</Th>
+										<Th isNumeric>체결가</Th>
+										<Th isNumeric>실현손익</Th>
+										<Th>관리</Th>
+									</Tr>
+								</Thead>
+
+								<Tbody>
+									{tradeOrders.map((order) => (
+										<Tr key={order._id}>
+											<Td>{new Date(order.createdAt).toLocaleString("ko-KR")}</Td>
+
+											<Td>
+												<Badge colorScheme={order.side === "BUY" ? "red" : "blue"}>
+													{order.side === "BUY" ? "매수" : "매도"}
+												</Badge>
+											</Td>
+
+											<Td>
+												{order.orderType === "MARKET" ? "시장가" : "지정가"}
+											</Td>
+
+											<Td>
+												<Badge
+													colorScheme={
+														order.status === "FILLED"
+															? "green"
+															: order.status === "PENDING"
+																? "yellow"
+																: order.status === "CANCELED"
+																	? "gray"
+																	: "red"
+													}
+												>
+													{order.status === "FILLED"
+														? "체결"
+														: order.status === "PENDING"
+															? "미체결"
+															: order.status === "CANCELED"
+																? "취소"
+																: "거절"}
+												</Badge>
+											</Td>
+
+											<Td>
+												{order.name}({order.symbol})
+											</Td>
+
+											<Td isNumeric>{formatNumber.format(order.quantity)}</Td>
+
+											<Td isNumeric>
+												{order.limitPrice
+													? won.format(order.limitPrice)
+													: won.format(order.orderPrice || 0)}
+											</Td>
+
+											<Td isNumeric>
+												{order.executedPrice ? won.format(order.executedPrice) : "-"}
+											</Td>
+
+											<Td
+												isNumeric
+												color={
+													order.realizedProfit > 0
+														? "red.500"
+														: order.realizedProfit < 0
+															? "blue.500"
+															: "gray.700"
+												}
+											>
+												{order.realizedProfit
+													? won.format(order.realizedProfit)
+													: "-"}
+											</Td>
+
+											<Td>
+												{order.status === "PENDING" ? (
+													<Button
+														size="xs"
+														variant="outline"
+														onClick={() => cancelPendingOrder(order._id)}
+													>
+														취소
+													</Button>
+												) : (
+													"-"
+												)}
+											</Td>
+										</Tr>
+									))}
+
+									{tradeOrders.length === 0 && (
+										<Tr>
+											<Td colSpan={10}>
+												<Text color="gray.500">아직 주문 내역이 없습니다.</Text>
+											</Td>
+										</Tr>
+									)}
+								</Tbody>
+							</Table>
+						</CardBody>
+					</Card>
 				</GridItem>
 
 				<GridItem>
@@ -1890,133 +1925,127 @@ setSearchPrices(Object.fromEntries(priceEntries));
 
 								<Stack spacing="2">
 									{searchResults.map((item) => {
-	const priceInfo = searchPrices[item.symbol];
+										const priceInfo = searchPrices[item.symbol];
 
-	return (
-		<Box
-			key={item.symbol}
-			p="3"
-			borderWidth="1px"
-			borderRadius="lg"
-			cursor="pointer"
-			_hover={{ bg: "gray.50" }}
-			onClick={() =>
-				fetchStockWithChartOption(item.symbol, chartPeriod, chartInterval)
-			}
-		>
-			<Flex align="center">
-				<Box>
-					<Text fontWeight="800">{item.name}</Text>
-					<Text fontSize="sm" color="gray.500">
-						{item.symbol} · {item.market}
-					</Text>
-				</Box>
+										return (
+											<Box
+												key={item.symbol}
+												p="3"
+												borderWidth="1px"
+												borderRadius="lg"
+												cursor="pointer"
+												_hover={{ bg: "gray.50" }}
+												onClick={() =>
+													fetchStockWithChartOption(item.symbol, chartPeriod, chartInterval)
+												}
+											>
+												<Flex align="center">
+													<Box>
+														<Text fontWeight="800">{item.name}</Text>
+														<Text fontSize="sm" color="gray.500">
+															{item.symbol} · {item.market}
+														</Text>
+													</Box>
 
-				<Spacer />
+													<Spacer />
 
-				<Box textAlign="right">
-					<Text fontWeight="800">
-						{priceInfo?.price ? won.format(priceInfo.price) : "조회 전"}
-					</Text>
-					<Text
-						fontSize="sm"
-						color={
-							(priceInfo?.changeRate ?? 0) > 0
-								? "red.500"
-								: (priceInfo?.changeRate ?? 0) < 0
-									? "blue.500"
-									: "gray.500"
-						}
-					>
-						{priceInfo
-							? `${priceInfo.changeRate > 0 ? "+" : ""}${priceInfo.changeRate.toFixed(2)}%`
-							: ""}
-					</Text>
-				</Box>
-			</Flex>
-		</Box>
-	);
-})}
+													<Box textAlign="right">
+														<Text fontWeight="800">
+															{priceInfo?.price ? won.format(priceInfo.price) : "조회 전"}
+														</Text>
+														<Text
+															fontSize="sm"
+															color={
+																(priceInfo?.changeRate ?? 0) > 0
+																	? "red.500"
+																	: (priceInfo?.changeRate ?? 0) < 0
+																		? "blue.500"
+																		: "gray.500"
+															}
+														>
+															{priceInfo
+																? `${priceInfo.changeRate > 0 ? "+" : ""}${priceInfo.changeRate.toFixed(2)}%`
+																: ""}
+														</Text>
+													</Box>
+												</Flex>
+											</Box>
+										);
+									})}
 								</Stack>
 							</Stack>
 						</CardBody>
 					</Card>
 
 					<Card mb="5">
-	<CardHeader pb="0">
-		<Flex align="center">
-			<Heading size="md">보유 종목</Heading>
+						<CardHeader pb="0">
+							<Flex align="center">
+								<Heading size="md">보유 종목</Heading>
 
-			<Spacer />
+								<Spacer />
 
-			<Button
-				size="sm"
-				variant="outline"
-				onClick={refreshPortfolioEvaluation}
-				isLoading={isLoadingTrading}
-			>
-				평가금액 갱신
-			</Button>
-		</Flex>
-	</CardHeader>
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={refreshPortfolioEvaluation}
+									isLoading={isLoadingTrading}
+								>
+									평가금액 갱신
+								</Button>
+							</Flex>
+						</CardHeader>
 
-	<CardBody>
-		<Stack spacing="3">
-			{portfolio?.holdings?.map((holding) => (
-				<Box
-					key={holding.symbol}
-					p="3"
-					borderWidth="1px"
-					borderRadius="lg"
-					cursor="pointer"
-					_hover={{ bg: "gray.50" }}
-					onClick={() =>
-						fetchStockWithChartOption(
-							holding.symbol,
-							chartPeriod,
-							chartInterval,
-						)
-					}
-				>
-					<Flex align="center">
-						<Box>
-							<Text fontWeight="800">{holding.name}</Text>
-							<Text fontSize="sm" color="gray.500">
-								{holding.symbol} · {formatNumber.format(holding.quantity)}주
-							</Text>
-						</Box>
-						<Spacer />
-						<Text
-							fontWeight="800"
-							color={holding.profitLoss >= 0 ? "red.500" : "blue.500"}
-						>
-							{holding.profitLossRate.toFixed(2)}%
-						</Text>
-					</Flex>
+						<CardBody>
+							<Stack spacing="3">
+								{portfolio?.holdings?.map((holding) => (
+									<Box
+										key={holding.symbol}
+										p="3"
+										borderWidth="1px"
+										borderRadius="lg"
+										cursor="pointer"
+										_hover={{ bg: "gray.50" }}
+										onClick={() =>
+											fetchStockWithChartOption(
+												holding.symbol,
+												chartPeriod,
+												chartInterval,
+											)
+										}
+									>
+										<Flex align="center">
+											<Box>
+												<Text fontWeight="800">{holding.name}</Text>
+												<Text fontSize="sm" color="gray.500">
+													{holding.symbol} · {formatNumber.format(holding.quantity)}주
+												</Text>
+											</Box>
+											<Spacer />
+											<Text
+												fontWeight="800"
+												color={holding.profitLoss >= 0 ? "red.500" : "blue.500"}
+											>
+												{holding.profitLossRate.toFixed(2)}%
+											</Text>
+										</Flex>
 
-					<Text mt="2" fontSize="sm" color="gray.600">
-						평균 {won.format(holding.avgPrice)} · 현재{" "}
-						{won.format(holding.currentPrice)}
-					</Text>
-				</Box>
-			))}
+										<Text mt="2" fontSize="sm" color="gray.600">
+											평균 {won.format(holding.avgPrice)} · 현재{" "}
+											{won.format(holding.currentPrice)}
+										</Text>
+									</Box>
+								))}
 
-			{(!portfolio?.holdings || portfolio.holdings.length === 0) && (
-				<Text color="gray.500">아직 보유 종목이 없습니다.</Text>
-			)}
-		</Stack>
-	</CardBody>
-</Card>
+								{(!portfolio?.holdings || portfolio.holdings.length === 0) && (
+									<Text color="gray.500">아직 보유 종목이 없습니다.</Text>
+								)}
+							</Stack>
+						</CardBody>
+					</Card>
 				</GridItem>
 			</Grid>
-			<AiAssistantPanel
-			stock={stock}
-			chartPoints={chartPoints}
-			chartPeriod={chartPeriod}
-			chartInterval={chartInterval}
-			
-		/>
-		<MarketSimulatorPanel stock={stock} />
+
+			<MarketSimulatorPanel stock={stock} />
 		</Box>
 	);
 }

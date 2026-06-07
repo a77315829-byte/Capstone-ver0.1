@@ -195,9 +195,9 @@ function AntitudeMenu() {
 
 <MenuCircle
 	label="마이페이지"
-	to="/login"
+	to="/mypage"
 	left={154}
-	active={isActive("/mypage") || isActive("/login")}
+	active={isActive("/Mypage")}
 />
 		</Box>
 	);

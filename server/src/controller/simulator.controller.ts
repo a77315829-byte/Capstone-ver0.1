@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import axios from "axios";
 
 const PYTHON_SIMULATOR_URL =
-	process.env.STOTRA_SIMULATOR_URL || "http://127.0.0.1:8001";
+	process.env.STOTRA_SIMULATOR_URL || "http://127.0.0.1:8000";
 
 const runVisualSimulation = async (req: Request, res: Response) => {
 	try {
