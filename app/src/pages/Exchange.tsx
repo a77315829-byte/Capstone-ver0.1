@@ -45,6 +45,7 @@ import {
 import api from "../services/api.service";
 import MarketSimulatorPanel from "../components/MarketSimulatorPanel";
 import AiRamenPanel from "../components/AiRamenPanel";
+import FloatingNewsDrawer from "../components/FloatingNewsDrawer";
 
 
 type ChartPeriod = "1d" | "5d" | "1m" | "6m" | "YTD" | "1y" | "all";
@@ -1656,7 +1657,9 @@ export default function Exchange() {
 								<PriceHistoryTable chartPoints={chartPoints} />
 							</CardBody>
 						</Card>
+						
 					</Grid>
+					
 
 					<Card mt="5">
 						<CardHeader pb="0">
@@ -2044,6 +2047,12 @@ export default function Exchange() {
 					</Card>
 				</GridItem>
 			</Grid>
+			<FloatingNewsDrawer
+				symbol={stock?.symbol}
+				name={stock?.name}
+				market={stock?.market}
+			/>
+
 
 			<MarketSimulatorPanel stock={stock} />
 		</Box>
