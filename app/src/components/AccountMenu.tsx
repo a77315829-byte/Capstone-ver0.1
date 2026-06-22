@@ -1,59 +1,88 @@
-import React, { useState, useEffect } from "react";
+import React, {
+	useEffect,
+	useState,
+} from "react";
+import {
+	ChevronDownIcon,
+	UnlockIcon,
+} from "@chakra-ui/icons";
+import {
+	Button,
+	Menu,
+	MenuButton,
+	MenuItem,
+	MenuList,
+} from "@chakra-ui/react";
+import {
+	Link as RouterLink,
+	useLocation,
+	useNavigate,
+} from "react-router-dom";
+
 import tokens from "../services/tokens.service";
-import { ChevronDownIcon, UnlockIcon } from "@chakra-ui/icons";
-import { Button, Menu, MenuButton, MenuList, MenuItem } from "@chakra-ui/react";
-import { Link, useLocation } from "react-router-dom";
 
-function AccountMenu() {
+export default function AccountMenu() {
 	const location = useLocation();
+	const navigate = useNavigate();
 
-	const [username, setUsername] = useState(tokens.getUsername());
+	const [username, setUsername] =
+		useState<string | null>(
+			tokens.getUsername(),
+		);
 
+	/*
+	 * 로그인 성공 후 다른 페이지로 이동하면
+	 * localStorage의 username을 다시 읽습니다.
+	 */
 	useEffect(() => {
-		// Update username when auth.username changes
 		setUsername(tokens.getUsername());
 	}, [location.pathname]);
 
+	const handleLogout = () => {
+		/*
+		 * 먼저 저장된 JWT와 username을 삭제한 뒤
+		 * 로그인 화면으로 이동합니다.
+		 */
+		tokens.clearToken();
+		setUsername(null);
+
+		navigate("/login", {
+			replace: true,
+		});
+	};
+
+	if (!username) {
+		return (
+			<Button
+				as={RouterLink}
+				to="/login"
+				size="sm"
+				variant="outline"
+			>
+				로그인
+			</Button>
+		);
+	}
+
 	return (
-		<>
-			{username ? (
-				<Menu>
-					<MenuButton
-						as={Button}
-						width={{ base: "100%", md: "auto" }}
-						rightIcon={<ChevronDownIcon />}
-					>
-						{username}
-					</MenuButton>
-					<MenuList minWidth="fit-content">
-						<MenuItem
-							as={Button}
-							leftIcon={<UnlockIcon />}
-							variant="ghost"
-							mx="2"
-							width="auto"
-							onClick={() => {
-								window.location.reload();
-								tokens.clearToken();
-								setUsername("");
-							}}
-						>
-							Logout
-						</MenuItem>
-					</MenuList>
-				</Menu>
-			) : (
-				<Button
-					as={Link}
-					to="/login"
-					variant="outline"
-					width={{ base: "100%", md: "auto" }}
+		<Menu>
+			<MenuButton
+				as={Button}
+				size="sm"
+				variant="outline"
+				rightIcon={<ChevronDownIcon />}
+			>
+				{username}
+			</MenuButton>
+
+			<MenuList minW="150px">
+				<MenuItem
+					icon={<UnlockIcon />}
+					onClick={handleLogout}
 				>
-					Login
-				</Button>
-			)}
-		</>
+					로그아웃
+				</MenuItem>
+			</MenuList>
+		</Menu>
 	);
 }
-
-export default AccountMenu;

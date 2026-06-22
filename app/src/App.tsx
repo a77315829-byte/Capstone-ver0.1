@@ -10,6 +10,11 @@ import React from "react";
 import ScenarioChapter from "./pages/ScenarioChapter";
 import ScenarioPlay from "./pages/ScenarioPlay";
 import MyPage from "./pages/MyPage";
+import SalaryCalculator from "./pages/SalaryCalculator";
+import FinanceLearning from "./pages/FinanceLearning";
+import Community from "./pages/Community";
+import CommunityWrite from "./pages/CommunityWrite";
+import CommunityPostDetail from "./pages/CommunityPostDetail";
 function App() {
 	return (
 		<>
@@ -19,17 +24,27 @@ function App() {
 				<Route path="/" element={<Navigate to="/exchange" replace />} />
 
 				<Route path="/exchange" element={<Exchange />} />
+				{/* 해커톤 버전에서는 사용하지 않음
 				<Route path="/scenario" element={<Scenario />} />
 				<Route path="/scenario/chapter/:chapterId" element={<ScenarioChapter />} />
 				<Route path="/scenario/play/:scenarioId" element={<ScenarioPlay />} />
+				*/}
 
 				<Route path="/stocks/:symbol" element={<StockView />} />
 
 				<Route path="/login" element={<Login />} />
 				<Route path="/signup" element={<Signup />} />
+				<Route path="/community" element={<Community />} />
+				<Route path="/community/write" element={<CommunityWrite />} />
+				<Route
+					path="/community/:postId"
+					element={<CommunityPostDetail />}
+				/>
 
 				<Route path="*" element={<NotFound />} />
 				<Route path="/mypage" element={<MyPage />} />
+				<Route path="/salary" element={<SalaryCalculator />} />
+				<Route path="/learn" element={<FinanceLearning />} />
 			</Routes>
 		</>
 	);

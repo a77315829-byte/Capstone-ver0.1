@@ -30,11 +30,9 @@ export default function Login() {
 
 	useEffect(() => {
 		if (tokens.isAuthenticated()) {
-			// Redirect to home if already authenticated
 			navigate("/");
 		}
-	});
-
+	}, [navigate]);
 	useLayoutEffect(() => {
 		return () => {
 			turnstileRef.current?.remove();
@@ -96,7 +94,7 @@ export default function Login() {
 					</HStack>
 				</Stack>
 				<Box rounded={"lg"} boxShadow={"lg"} p={8} pt={{ base: 4, md: 8 }}>
-					<form>
+					<form onSubmit={handleSubmit}>
 						<Stack spacing={4}>
 							<FormControl id="username" isRequired>
 								<FormLabel>Username</FormLabel>
@@ -153,10 +151,10 @@ export default function Login() {
                 </Stack> */}
 								<Turnstile
 									ref={turnstileRef}
-									siteKey="0x4AAAAAAAI6ckchuGZipSqE"
+									siteKey="1x00000000000000000000AA"
 								/>
 
-								<Button type="submit" onClick={handleSubmit}>
+								<Button type="submit">
 									Sign in
 								</Button>
 							</Stack>

@@ -7,8 +7,8 @@ import TradeOrder, {
 } from "../models/tradeOrder.model";
 
 import { fetchStockData, normalizeStockSymbol } from "../utils/requests";
+import { getKrxMarketStatus } from "./marketSession.service";
 
-const DEFAULT_USER_ID = "demo-user";
 const DEFAULT_INITIAL_CASH = 10_000_000;
 
 type CreateOrderInput = {
@@ -22,7 +22,17 @@ type CreateOrderInput = {
 };
 
 const getUserId = (userId?: string) => {
-	return userId?.trim() || DEFAULT_USER_ID;
+	const normalizedUserId =
+		userId?.trim();
+
+	if (!normalizedUserId) {
+		throw createServiceError(
+			401,
+			"로그인 사용자 정보를 확인할 수 없습니다.",
+		);
+	}
+
+	return normalizedUserId;
 };
 
 const toPositiveInteger = (value: any, fieldName: string): number => {
@@ -360,28 +370,82 @@ const createPendingLimitOrder = async (params: {
 	});
 };
 
-export const createTradeOrder = async (input: CreateOrderInput) => {
-	const userId = getUserId(input.userId);
-	const symbol = normalizeStockSymbol(input.symbol || "");
-	const quantity = toPositiveInteger(input.quantity, "수량");
+export const createTradeOrder = async (
+	input: CreateOrderInput,
+) => {
+	const userId =
+		getUserId(input.userId);
+
+	const symbol =
+		normalizeStockSymbol(
+			input.symbol || "",
+		);
+
+	const quantity =
+		toPositiveInteger(
+			input.quantity,
+			"수량",
+		);
 
 	if (!symbol) {
-		throw createServiceError(400, "종목 코드가 필요합니다.");
+		throw createServiceError(
+			400,
+			"종목 코드가 필요합니다.",
+		);
 	}
 
-	if (!["BUY", "SELL"].includes(input.side)) {
-		throw createServiceError(400, "side는 BUY 또는 SELL이어야 합니다.");
+	if (
+		!["BUY", "SELL"].includes(
+			input.side,
+		)
+	) {
+		throw createServiceError(
+			400,
+			"side는 BUY 또는 SELL이어야 합니다.",
+		);
 	}
 
-	if (!["MARKET", "LIMIT"].includes(input.orderType)) {
-		throw createServiceError(400, "orderType은 MARKET 또는 LIMIT이어야 합니다.");
+	if (
+		!["MARKET", "LIMIT"].includes(
+			input.orderType,
+		)
+	) {
+		throw createServiceError(
+			400,
+			"orderType은 MARKET 또는 LIMIT이어야 합니다.",
+		);
 	}
 
-	const quote = await getCurrentQuote(symbol);
-	const name = input.name || quote.name;
-	const market = quote.market;
+	const marketStatus =
+		getKrxMarketStatus();
 
-	if (input.orderType === "MARKET") {
+	const marketExecutionAllowed =
+		marketStatus.isOpen ||
+		marketStatus
+			.orderAllowedByOverride;
+
+	if (
+		input.orderType === "MARKET" &&
+		!marketExecutionAllowed
+	) {
+		throw createServiceError(
+			409,
+			"시장가 주문은 국내 정규장 운영시간에만 가능합니다.",
+		);
+	}
+
+	const quote =
+		await getCurrentQuote(symbol);
+
+	const name =
+		input.name || quote.name;
+
+	const market =
+		quote.market || "KRX";
+
+	if (
+		input.orderType === "MARKET"
+	) {
 		if (input.side === "BUY") {
 			return fillMarketBuy({
 				userId,
@@ -403,16 +467,50 @@ export const createTradeOrder = async (input: CreateOrderInput) => {
 		});
 	}
 
-	const limitPrice = toPositiveNumber(input.limitPrice, "지정가");
+	const limitPrice =
+		toPositiveNumber(
+			input.limitPrice,
+			"지정가",
+		);
 
-	const shouldFillNow =
+	const priceConditionMet =
 		input.side === "BUY"
 			? quote.price <= limitPrice
 			: quote.price >= limitPrice;
 
+	/*
+	 * 지정가 주문은 장이 닫혀 있으면 현재가가 조건을
+	 * 만족해도 즉시 체결하지 않고 PENDING으로 예약합니다.
+	 */
+	const shouldFillNow =
+		marketExecutionAllowed &&
+		priceConditionMet;
+
 	if (shouldFillNow) {
 		if (input.side === "BUY") {
-			const order = await fillMarketBuy({
+			const order =
+				await fillMarketBuy({
+					userId,
+					symbol,
+					name,
+					market,
+					quantity,
+					price: quote.price,
+				});
+
+			order.orderType = "LIMIT";
+			order.limitPrice =
+				limitPrice;
+			order.orderPrice =
+				limitPrice;
+
+			await order.save();
+
+			return order;
+		}
+
+		const order =
+			await fillMarketSell({
 				userId,
 				symbol,
 				name,
@@ -421,26 +519,12 @@ export const createTradeOrder = async (input: CreateOrderInput) => {
 				price: quote.price,
 			});
 
-			order.orderType = "LIMIT";
-			order.limitPrice = limitPrice;
-			order.orderPrice = limitPrice;
-			await order.save();
-
-			return order;
-		}
-
-		const order = await fillMarketSell({
-			userId,
-			symbol,
-			name,
-			market,
-			quantity,
-			price: quote.price,
-		});
-
 		order.orderType = "LIMIT";
-		order.limitPrice = limitPrice;
-		order.orderPrice = limitPrice;
+		order.limitPrice =
+			limitPrice;
+		order.orderPrice =
+			limitPrice;
+
 		await order.save();
 
 		return order;
@@ -501,115 +585,326 @@ export const cancelTradeOrder = async (params: {
 	return order;
 };
 
-export const checkPendingOrders = async (userIdInput?: string) => {
-	const userId = getUserId(userIdInput);
+export const checkPendingOrders = async (
+	userIdInput?: string,
+) => {
+	const userId =
+		getUserId(userIdInput);
 
-	const pendingOrders = await TradeOrder.find({
-		userId,
-		status: "PENDING",
-	}).sort({ createdAt: 1 });
+	const marketStatus =
+		getKrxMarketStatus();
 
-	const filledOrders: TradeOrderDocument[] = [];
+	const marketExecutionAllowed =
+		marketStatus.isOpen ||
+		marketStatus
+			.orderAllowedByOverride;
 
-	for (const order of pendingOrders) {
+	if (!marketExecutionAllowed) {
+		const pendingCount =
+			await TradeOrder.countDocuments({
+				userId,
+				status: "PENDING",
+				orderType: "LIMIT",
+			});
+
+		return {
+			marketOpen: false,
+			marketStatus,
+			checkedCount: 0,
+			pendingCount,
+			filledCount: 0,
+			filledOrders: [],
+		};
+	}
+
+	const pendingOrders =
+		await TradeOrder.find({
+			userId,
+			status: "PENDING",
+			orderType: "LIMIT",
+		}).sort({
+			createdAt: 1,
+		});
+
+	const filledOrders:
+		TradeOrderDocument[] = [];
+
+	for (
+		const order of pendingOrders
+	) {
 		try {
-			const quote = await getCurrentQuote(order.symbol);
-			const limitPrice = Number(order.limitPrice || 0);
+			const quote =
+				await getCurrentQuote(
+					order.symbol,
+				);
+
+			const limitPrice =
+				Number(
+					order.limitPrice || 0,
+				);
 
 			const shouldFill =
 				order.side === "BUY"
-					? quote.price <= limitPrice
-					: quote.price >= limitPrice;
+					? quote.price <=
+						limitPrice
+					: quote.price >=
+						limitPrice;
 
 			if (!shouldFill) {
 				continue;
 			}
 
-			if (order.side === "BUY") {
-				const account = await getOrCreateAccount(userId);
+			if (
+				order.side === "BUY"
+			) {
+				const account =
+					await getOrCreateAccount(
+						userId,
+					);
 
-				account.reservedCash = Math.max(
-					Number(account.reservedCash || 0) -
-						Number(order.reservedAmount || 0),
-					0,
-				);
+				const reservedAmount =
+					Number(
+						order.reservedAmount ||
+							0,
+					);
 
-				const actualAmount = quote.price * order.quantity;
+				const actualAmount =
+					quote.price *
+					order.quantity;
 
-				if (Number(account.cash || 0) < actualAmount) {
-					order.status = "REJECTED";
-					order.rejectReason = "체결 시점의 현금이 부족합니다.";
-					await order.save();
-					await account.save();
+				account.reservedCash =
+					Math.max(
+						Number(
+							account.reservedCash ||
+								0,
+						) -
+							reservedAmount,
+						0,
+					);
+
+				if (
+					Number(
+						account.cash || 0,
+					) < actualAmount
+				) {
+					order.status =
+						"REJECTED";
+					order.rejectReason =
+						"체결 시점의 현금이 부족합니다.";
+					order.reservedAmount =
+						0;
+
+					await Promise.all([
+						order.save(),
+						account.save(),
+					]);
+
 					continue;
 				}
 
-				account.cash -= actualAmount;
+				account.cash -=
+					actualAmount;
+
 				await account.save();
 
 				await upsertBuyHolding({
 					userId,
-					symbol: order.symbol,
+					symbol:
+						order.symbol,
 					name: order.name,
-					market: order.market,
-					quantity: order.quantity,
+					market:
+						order.market,
+					quantity:
+						order.quantity,
 					price: quote.price,
 				});
 
-				order.status = "FILLED";
-				order.filledQuantity = order.quantity;
-				order.executedPrice = quote.price;
-				order.executedAt = new Date();
+				order.status =
+					"FILLED";
+				order.filledQuantity =
+					order.quantity;
+				order.executedPrice =
+					quote.price;
+				order.executedAt =
+					new Date();
+				order.reservedAmount =
+					0;
+
 				await order.save();
 
-				filledOrders.push(order);
-			} else {
-				const holding = await Holding.findOne({
+				filledOrders.push(
+					order,
+				);
+
+				continue;
+			}
+
+			const holding =
+				await Holding.findOne({
 					userId,
-					symbol: order.symbol,
+					symbol:
+						order.symbol,
 				});
 
-				if (!holding) {
-					order.status = "REJECTED";
-					order.rejectReason = "보유 종목이 없습니다.";
-					await order.save();
-					continue;
-				}
+			if (!holding) {
+				order.status =
+					"REJECTED";
+				order.rejectReason =
+					"보유 종목이 없습니다.";
+				order.reservedQuantity =
+					0;
 
-				holding.reservedQuantity = Math.max(
-					Number(holding.reservedQuantity || 0) -
-						Number(order.reservedQuantity || 0),
+				await order.save();
+
+				continue;
+			}
+
+			const reservedQuantity =
+				Number(
+					order.reservedQuantity ||
+						0,
+				);
+
+			holding.reservedQuantity =
+				Math.max(
+					Number(
+						holding.reservedQuantity ||
+							0,
+					) -
+						reservedQuantity,
 					0,
 				);
 
-				await holding.save();
+			await holding.save();
 
-				const filled = await fillMarketSell({
-					userId,
-					symbol: order.symbol,
-					name: order.name,
-					market: order.market,
-					quantity: order.quantity,
-					price: quote.price,
-					order,
-				});
+			try {
+				const filled =
+					await fillMarketSell({
+						userId,
+						symbol:
+							order.symbol,
+						name:
+							order.name,
+						market:
+							order.market,
+						quantity:
+							order.quantity,
+						price:
+							quote.price,
+						order,
+					});
 
-				filledOrders.push(filled);
+				filled.reservedQuantity =
+					0;
+
+				await filled.save();
+
+				filledOrders.push(
+					filled,
+				);
+			} catch (sellError) {
+				const latestHolding =
+					await Holding.findOne({
+						userId,
+						symbol:
+							order.symbol,
+					});
+
+				if (latestHolding) {
+					latestHolding.reservedQuantity +=
+						reservedQuantity;
+
+					await latestHolding.save();
+				}
+
+				throw sellError;
 			}
 		} catch (error: any) {
 			console.error(
 				`checkPendingOrders failed: ${order.symbol}`,
-				error.message || error,
+				error?.message ||
+					error,
 			);
 		}
 	}
 
 	return {
-		checkedCount: pendingOrders.length,
-		filledCount: filledOrders.length,
+		marketOpen: true,
+		marketStatus,
+		checkedCount:
+			pendingOrders.length,
+		pendingCount:
+			pendingOrders.length -
+			filledOrders.length,
+		filledCount:
+			filledOrders.length,
 		filledOrders,
 	};
 };
+
+export const checkAllPendingOrders =
+	async () => {
+		const marketStatus =
+			getKrxMarketStatus();
+
+		const marketExecutionAllowed =
+			marketStatus.isOpen ||
+			marketStatus
+				.orderAllowedByOverride;
+
+		if (!marketExecutionAllowed) {
+			return {
+				marketOpen: false,
+				marketStatus,
+				userCount: 0,
+				checkedCount: 0,
+				filledCount: 0,
+			};
+		}
+
+		const userIds =
+			await TradeOrder.distinct(
+				"userId",
+				{
+					status: "PENDING",
+					orderType: "LIMIT",
+				},
+			);
+
+		let checkedCount = 0;
+		let filledCount = 0;
+
+		for (const rawUserId of userIds) {
+			const userId =
+				String(rawUserId);
+
+			const result =
+				await checkPendingOrders(
+					userId,
+				);
+
+			checkedCount +=
+				Number(
+					result.checkedCount ||
+						0,
+				);
+
+			filledCount +=
+				Number(
+					result.filledCount ||
+						0,
+				);
+		}
+
+		return {
+			marketOpen: true,
+			marketStatus,
+			userCount:
+				userIds.length,
+			checkedCount,
+			filledCount,
+		};
+	};
 
 export const getTradingAccountSummary = async (userIdInput?: string) => {
 	const userId = getUserId(userIdInput);

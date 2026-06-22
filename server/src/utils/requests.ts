@@ -6,6 +6,13 @@ import { TextDecoder } from "util";
 import * as fs from "fs";
 import * as path from "path";
 
+import {
+	US_EXCHANGE_NAME,
+	US_PRODUCT_TYPE_CODE,
+	US_STOCK_CATALOG,
+	UsExchangeCode,
+} from "../data/usStocks";
+
 dotenv.config();
 
 type KisEnv = "real" | "demo";
@@ -1328,3 +1335,830 @@ export const searchStocks = async (query: string): Promise<any> => {
 		return [];
 	}
 };
+
+export type UsChartPeriod =
+	| "1m"
+	| "6m"
+	| "1y";
+
+export const normalizeUsStockSymbol = (
+	symbol: string,
+): string => {
+	return String(symbol || "")
+		.trim()
+		.toUpperCase()
+		.replace(/[^A-Z0-9.-]/g, "")
+		.slice(0, 15);
+};
+
+const assertUsExchange = (
+	exchange: string,
+): UsExchangeCode => {
+	const normalized =
+		String(exchange || "")
+			.trim()
+			.toUpperCase();
+
+	if (
+		normalized !== "NAS" &&
+		normalized !== "NYS" &&
+		normalized !== "AMS"
+	) {
+		throw createHttpError(
+			400,
+			`지원하지 않는 미국 거래소 코드입니다: ${exchange}`,
+		);
+	}
+
+	return normalized;
+};
+
+const getUsCatalogItem = (
+	symbol: string,
+	exchange?: UsExchangeCode,
+) => {
+	return (
+		US_STOCK_CATALOG.find(
+			(item) =>
+				item.symbol === symbol &&
+				(!exchange ||
+					item.exchange === exchange),
+		) ?? null
+	);
+};
+
+const fetchUsExactStockInfo = async (
+	symbol: string,
+	exchange: UsExchangeCode,
+): Promise<any | null> => {
+	const normalizedSymbol =
+		normalizeUsStockSymbol(symbol);
+
+	if (!normalizedSymbol) {
+		return null;
+	}
+
+	const cacheKey =
+		`us-stock-info-${exchange}-${normalizedSymbol}`;
+
+	if (stockCache.has(cacheKey)) {
+		return stockCache.get(cacheKey);
+	}
+
+	try {
+		const response =
+			await kisGet<any>(
+				"/uapi/overseas-price/v1/quotations/search-info",
+				"CTPF1702R",
+				{
+					PRDT_TYPE_CD:
+						US_PRODUCT_TYPE_CODE[
+							exchange
+						],
+					PDNO: normalizedSymbol,
+				},
+			);
+
+		const output =
+			Array.isArray(
+				response.output,
+			)
+				? response.output[0]
+				: response.output;
+
+		if (!output) {
+			return null;
+		}
+
+		stockCache.set(
+			cacheKey,
+			output,
+			60 * 60 * 24,
+		);
+
+		return output;
+	} catch (error) {
+		console.error(
+			`fetchUsExactStockInfo failed: ${exchange}:${normalizedSymbol}`,
+			getKisErrorMessage(error),
+		);
+
+		return null;
+	}
+};
+
+export const searchUsStocks = async (
+	query: string,
+): Promise<any[]> => {
+	const normalizedQuery =
+		String(query || "")
+			.trim()
+			.toUpperCase();
+
+	if (!normalizedQuery) {
+		return [];
+	}
+
+	const localResults =
+		US_STOCK_CATALOG.filter(
+			(item) => {
+				const searchable = [
+					item.symbol,
+					item.name,
+					item.nameKo,
+					...item.keywords,
+				]
+					.join(" ")
+					.toUpperCase();
+
+				return searchable.includes(
+					normalizedQuery,
+				);
+			},
+		)
+			.sort((a, b) => {
+				const aExact =
+					a.symbol ===
+					normalizedQuery;
+				const bExact =
+					b.symbol ===
+					normalizedQuery;
+
+				if (aExact !== bExact) {
+					return aExact ? -1 : 1;
+				}
+
+				const aStarts =
+					a.symbol.startsWith(
+						normalizedQuery,
+					);
+				const bStarts =
+					b.symbol.startsWith(
+						normalizedQuery,
+					);
+
+				if (aStarts !== bStarts) {
+					return aStarts ? -1 : 1;
+				}
+
+				return a.symbol.localeCompare(
+					b.symbol,
+				);
+			})
+			.slice(0, 20)
+			.map((item) => ({
+				symbol: item.symbol,
+				shortname:
+					item.nameKo ||
+					item.name,
+				longname: item.name,
+				name: item.nameKo
+					? `${item.nameKo} (${item.name})`
+					: item.name,
+				exchange: item.exchange,
+				exchDisp: item.market,
+				market: item.market,
+				currency: "USD",
+				assetType:
+					item.assetType ??
+					"STOCK",
+				quoteType:
+					item.assetType ===
+					"ETF"
+						? "ETF"
+						: "EQUITY",
+				category:
+					item.category ??
+					null,
+				summary:
+					item.summary ??
+					null,
+				benchmark:
+					item.benchmark ??
+					null,
+				issuer:
+					item.issuer ??
+					null,
+				tradable: true,
+			}));
+
+	if (localResults.length > 0) {
+		return localResults;
+	}
+
+	/*
+	 * 목록에 없는 종목도 정확한 영문 티커를 입력하면
+	 * KIS 종목정보 API로 거래소를 순차 확인합니다.
+	 */
+	if (
+		!/^[A-Z][A-Z0-9.-]{0,14}$/.test(
+			normalizedQuery,
+		)
+	) {
+		return [];
+	}
+
+	for (const exchange of [
+		"NAS",
+		"NYS",
+		"AMS",
+	] as UsExchangeCode[]) {
+		const info =
+			await fetchUsExactStockInfo(
+				normalizedQuery,
+				exchange,
+			);
+
+		const productName =
+			info?.prdt_name ||
+			info?.prdt_abrv_name ||
+			info?.ovrs_item_name ||
+			info?.item_name;
+
+		if (productName) {
+			return [
+				{
+					symbol:
+						normalizedQuery,
+					shortname:
+						productName,
+					longname:
+						productName,
+					name: productName,
+					exchange,
+					exchDisp:
+						US_EXCHANGE_NAME[
+							exchange
+						],
+					market:
+						US_EXCHANGE_NAME[
+							exchange
+						],
+					currency: "USD",
+					assetType:
+						"STOCK",
+					quoteType:
+						"EQUITY",
+					tradable: true,
+				},
+			];
+		}
+	}
+
+	return [];
+};
+
+const fetchUsPriceDetail =
+	async (
+		symbol: string,
+		exchange: UsExchangeCode,
+	): Promise<any | null> => {
+		const cacheKey =
+			`us-price-detail-${exchange}-${symbol}`;
+
+		if (stockCache.has(cacheKey)) {
+			return stockCache.get(
+				cacheKey,
+			);
+		}
+
+		try {
+			const response =
+				await kisGet<any>(
+					"/uapi/overseas-price/v1/quotations/price-detail",
+					"HHDFS76200200",
+					{
+						AUTH: "",
+						EXCD:
+							exchange,
+						SYMB:
+							symbol,
+					},
+				);
+
+			const output =
+				Array.isArray(
+					response.output,
+				)
+					? response.output[0]
+					: response.output;
+
+			if (!output) {
+				return null;
+			}
+
+			stockCache.set(
+				cacheKey,
+				output,
+				60,
+			);
+
+			return output;
+		} catch (error) {
+			/*
+			 * 현재가상세 API는 KIS 모의 환경에서
+			 * 지원되지 않을 수 있습니다.
+			 * 기본 현재가는 정상 표시하고
+			 * 재무지표만 빈 값으로 유지합니다.
+			 */
+			console.warn(
+				`fetchUsPriceDetail skipped: ${exchange}:${symbol}`,
+				getKisErrorMessage(error),
+			);
+
+			return null;
+		}
+	};
+
+export const fetchUsStockData = async (
+	symbol: string,
+	exchangeInput: string,
+): Promise<any> => {
+	const normalizedSymbol =
+		normalizeUsStockSymbol(symbol);
+
+	const requestedExchange =
+		assertUsExchange(exchangeInput);
+
+	if (!normalizedSymbol) {
+		throw createHttpError(
+			400,
+			"미국 종목 티커가 필요합니다.",
+		);
+	}
+
+	const cacheKey =
+		`us-quote-${requestedExchange}-${normalizedSymbol}`;
+
+	if (stockCache.has(cacheKey)) {
+		return stockCache.get(cacheKey);
+	}
+
+	const exchangeCandidates = [
+		requestedExchange,
+		...(
+			[
+				"NAS",
+				"NYS",
+				"AMS",
+			] as UsExchangeCode[]
+		).filter(
+			(candidate) =>
+				candidate !==
+				requestedExchange,
+		),
+	];
+
+	let quote: any | null = null;
+	let actualExchange =
+		requestedExchange;
+	let lastError: unknown = null;
+
+	for (
+		const candidate of
+		exchangeCandidates
+	) {
+		try {
+			const response =
+				await kisGet<any>(
+					"/uapi/overseas-price/v1/quotations/price",
+					"HHDFS00000300",
+					{
+						AUTH: "",
+						EXCD:
+							candidate,
+						SYMB:
+							normalizedSymbol,
+					},
+				);
+
+			const output =
+				Array.isArray(
+					response.output,
+				)
+					? response.output[0]
+					: response.output;
+
+			const candidatePrice =
+				parseNumber(
+					output?.last ??
+						output?.clos ??
+						output?.price,
+				);
+
+			if (
+				output &&
+				candidatePrice > 0
+			) {
+				quote = output;
+				actualExchange =
+					candidate;
+				break;
+			}
+		} catch (error) {
+			lastError = error;
+		}
+	}
+
+	const price =
+		parseNumber(
+			quote?.last ??
+				quote?.clos ??
+				quote?.price,
+		);
+
+	if (!quote || price <= 0) {
+		console.error(
+			`fetchUsStockData failed: ${requestedExchange}:${normalizedSymbol}`,
+			lastError,
+		);
+
+		throw createHttpError(
+			404,
+			`${normalizedSymbol} 미국 주식·ETF 시세를 찾지 못했습니다.`,
+		);
+	}
+
+	const priceDetail =
+		await fetchUsPriceDetail(
+			normalizedSymbol,
+			actualExchange,
+		);
+
+	const catalogItem =
+		getUsCatalogItem(
+			normalizedSymbol,
+			actualExchange,
+		) ??
+		getUsCatalogItem(
+			normalizedSymbol,
+		);
+
+	let info: any | null = null;
+
+	if (!catalogItem) {
+		info =
+			await fetchUsExactStockInfo(
+				normalizedSymbol,
+				actualExchange,
+			);
+	}
+
+	const name =
+		catalogItem?.nameKo ||
+		info?.prdt_name ||
+		info?.prdt_abrv_name ||
+		info?.ovrs_item_name ||
+		normalizedSymbol;
+
+	const longName =
+		catalogItem?.name ||
+		info?.prdt_name ||
+		info?.ovrs_item_name ||
+		name;
+
+	const previousClose =
+		parseNumber(
+			quote?.base ??
+				quote?.pymd ??
+				quote?.prev_close,
+		);
+
+	const changePrice =
+		parseNumber(
+			quote?.diff ??
+				quote?.change,
+		);
+
+	const changeRate =
+		parseNumber(
+			quote?.rate ??
+				quote?.change_rate,
+		);
+
+	const assetType =
+		catalogItem?.assetType ??
+		(
+			String(
+				priceDetail?.etyp_nm ??
+					"",
+			).trim()
+				? "ETF"
+				: "STOCK"
+		);
+
+	const result = {
+		symbol: normalizedSymbol,
+		name,
+		shortName: name,
+		longName,
+
+		exchange:
+			actualExchange,
+		market:
+			US_EXCHANGE_NAME[
+				actualExchange
+			],
+		currency: "USD",
+		assetType,
+		category:
+			catalogItem?.category ??
+			null,
+		summary:
+			catalogItem?.summary ??
+			null,
+		benchmark:
+			catalogItem?.benchmark ??
+			null,
+		issuer:
+			catalogItem?.issuer ??
+			null,
+		tradable: true,
+
+		price,
+		changePrice,
+		changeRate,
+		previousClose,
+
+		open:
+			parseNumber(
+				priceDetail?.open ??
+					quote?.open,
+			),
+		high:
+			parseNumber(
+				priceDetail?.high ??
+					quote?.high,
+			),
+		low:
+			parseNumber(
+				priceDetail?.low ??
+					quote?.low,
+			),
+		volume:
+			parseNumber(
+				priceDetail?.tvol ??
+					quote?.tvol ??
+					quote?.volume,
+			),
+		tradingValue:
+			parseNumber(
+				priceDetail?.tamt ??
+					quote?.tamt,
+			),
+
+		marketCap:
+			parseNumber(
+				priceDetail?.tomv,
+			),
+		per:
+			parseNumber(
+				priceDetail?.perx,
+			),
+		pbr:
+			parseNumber(
+				priceDetail?.pbrx,
+			),
+		eps:
+			parseNumber(
+				priceDetail?.epsx,
+			),
+		bps:
+			parseNumber(
+				priceDetail?.bpsx,
+			),
+		sharesOutstanding:
+			parseNumber(
+				priceDetail?.shar,
+			),
+		fiftyTwoWeekHigh:
+			parseNumber(
+				priceDetail?.h52p,
+			),
+		fiftyTwoWeekHighDate:
+			priceDetail?.h52d ??
+			null,
+		fiftyTwoWeekLow:
+			parseNumber(
+				priceDetail?.l52p,
+			),
+		fiftyTwoWeekLowDate:
+			priceDetail?.l52d ??
+			null,
+		sectorCode:
+			priceDetail?.e_icod ??
+			null,
+		etpTypeName:
+			priceDetail?.etyp_nm ??
+			null,
+
+		fetchedAt:
+			new Date().toISOString(),
+
+		regularMarketPrice:
+			price,
+		regularMarketPreviousClose:
+			previousClose,
+		regularMarketChange:
+			changePrice,
+		regularMarketChangePercent:
+			changeRate,
+		regularMarketVolume:
+			parseNumber(
+				quote?.tvol,
+			),
+		regularMarketOpen:
+			parseNumber(
+				quote?.open,
+			),
+		regularMarketDayHigh:
+			parseNumber(
+				quote?.high,
+			),
+		regularMarketDayLow:
+			parseNumber(
+				quote?.low,
+			),
+	};
+
+	stockCache.set(
+		cacheKey,
+		result,
+		10,
+	);
+
+	stockCache.set(
+		`us-quote-${actualExchange}-${normalizedSymbol}`,
+		result,
+		10,
+	);
+
+	return result;
+};
+
+const getUsHistoricalStartDate = (
+	period: UsChartPeriod,
+): Date => {
+	const date = new Date();
+
+	if (period === "1m") {
+		date.setDate(
+			date.getDate() - 45,
+		);
+	} else if (period === "6m") {
+		date.setDate(
+			date.getDate() - 210,
+		);
+	} else {
+		date.setDate(
+			date.getDate() - 430,
+		);
+	}
+
+	return date;
+};
+
+export const fetchUsHistoricalStockData =
+	async (
+		symbol: string,
+		exchangeInput: string,
+		period: UsChartPeriod = "1m",
+	): Promise<OhlcvPoint[]> => {
+		const normalizedSymbol =
+			normalizeUsStockSymbol(
+				symbol,
+			);
+
+		const exchange =
+			assertUsExchange(
+				exchangeInput,
+			);
+
+		const safePeriod:
+			UsChartPeriod = [
+				"1m",
+				"6m",
+				"1y",
+			].includes(period)
+				? period
+				: "1m";
+
+		if (!normalizedSymbol) {
+			throw createHttpError(
+				400,
+				"미국 종목 티커가 필요합니다.",
+			);
+		}
+
+		const cacheKey =
+			`us-history-${exchange}-${normalizedSymbol}-${safePeriod}`;
+
+		if (stockCache.has(cacheKey)) {
+			return (
+				stockCache.get(
+					cacheKey,
+				) as OhlcvPoint[]
+			);
+		}
+
+		const response =
+			await kisGet<any>(
+				"/uapi/overseas-price/v1/quotations/dailyprice",
+				"HHDFS76240000",
+				{
+					AUTH: "",
+					EXCD: exchange,
+					SYMB:
+						normalizedSymbol,
+					GUBN:
+						safePeriod ===
+						"1y"
+							? "1"
+							: "0",
+					BYMD: "",
+					MODP: "1",
+				},
+			);
+
+		const startDate =
+			getUsHistoricalStartDate(
+				safePeriod,
+			);
+
+		const startTimestamp =
+			Math.floor(
+				Date.UTC(
+					startDate.getUTCFullYear(),
+					startDate.getUTCMonth(),
+					startDate.getUTCDate(),
+				) / 1000,
+			);
+
+		const points:
+			OhlcvPoint[] = (
+				response.output2 || []
+			)
+				.map((item: any) => {
+					const date =
+						String(
+							item.xymd ||
+								item.date ||
+								"",
+						);
+
+					const close =
+						parseNumber(
+							item.clos ??
+								item.close,
+						);
+
+					return {
+						time:
+							Math.floor(
+								parseKisDate(
+									date,
+								) /
+									1000,
+							),
+						open:
+							parseNumber(
+								item.open,
+							) ||
+							close,
+						high:
+							parseNumber(
+								item.high,
+							) ||
+							close,
+						low:
+							parseNumber(
+								item.low,
+							) ||
+							close,
+						close,
+						volume:
+							parseNumber(
+								item.tvol ??
+									item.volume,
+							),
+					};
+				})
+				.filter(
+					(point: OhlcvPoint) =>
+						point.close > 0 &&
+						point.time >=
+							startTimestamp,
+				)
+				.sort(
+					(a: OhlcvPoint, b: OhlcvPoint) =>
+						a.time - b.time,
+				);
+
+		stockCache.set(
+			cacheKey,
+			points,
+			60 * 30,
+		);
+
+		return points;
+	};

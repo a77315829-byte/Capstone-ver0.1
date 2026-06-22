@@ -11,7 +11,12 @@ import simulatorController from "./controller/simulator.controller";
 import tradingController from "./controller/trading.controller";
 import scenarioController from "./controller/scenario.controller";
 import marketReactionController from "./controller/marketReaction.controller";
-
+import assetAdviceController from "./controller/assetAdvice.controller";
+import communityController from "./controller/community.controller";
+import militaryProfileController from "./controller/militaryProfile.controller";
+import marketSessionController from "./controller/marketSession.controller";
+import usStocksController from "./controller/usStocks.controller";
+import usTradingController from "./controller/usTrading.controller";
 // Auth routes
 router.post(
 	"/api/auth/signup",
@@ -34,6 +39,17 @@ router.get(
 	userController.getPortfolio,
 );
 router.get("/api/user/leaderboard", leaderboardController.getLeaderboard);
+router.get(
+	"/api/user/military-profile",
+	[authJwt.verifyToken],
+	militaryProfileController.getMilitaryProfile,
+);
+
+router.put(
+	"/api/user/military-profile",
+	[authJwt.verifyToken],
+	militaryProfileController.saveMilitaryProfile,
+);
 
 // User watchlist routes
 router.get(
@@ -52,7 +68,10 @@ router.post(
 	userController.removeFromWatchlist,
 );
 
-
+router.get(
+	"/api/markets/KRX/status",
+	marketSessionController.getKrxStatus,
+);
 // Stocks routes
 router.get("/api/stocks/search/:query", stocksController.search);
 router.get("/api/stocks/:symbol/info", stocksController.getInfo);
@@ -71,9 +90,51 @@ router.post(
 	scenarioController.postDecision,
 );
 
-router.get("/api/trading/account", tradingController.getAccount);
-router.get("/api/trading/portfolio", tradingController.getUserPortfolio);
-router.get("/api/trading/orders", tradingController.getOrders);
+// 로그인 사용자별 모의투자 계좌
+router.get(
+	"/api/trading/account",
+	[authJwt.verifyToken],
+	tradingController.getAccount,
+);
+
+router.get(
+	"/api/trading/portfolio",
+	[authJwt.verifyToken],
+	tradingController.getUserPortfolio,
+);
+
+router.get(
+	"/api/trading/orders",
+	[authJwt.verifyToken],
+	tradingController.getOrders,
+);
+
+router.post(
+	"/api/trading/orders",
+	[
+		authJwt.verifyToken,
+		marketSessionController.validateKrxOrderSession,
+	],
+	tradingController.postOrder,
+);
+
+router.post(
+	"/api/trading/orders/:orderId/cancel",
+	[authJwt.verifyToken],
+	tradingController.cancelOrder,
+);
+
+router.post(
+	"/api/trading/orders/check-pending",
+	[authJwt.verifyToken],
+	tradingController.checkPending,
+);
+
+router.post(
+	"/api/trading/reset",
+	[authJwt.verifyToken],
+	tradingController.resetDemo,
+);
 
 router.post("/api/trading/orders", tradingController.postOrder);
 router.post("/api/trading/orders/:orderId/cancel", tradingController.cancelOrder);
@@ -81,6 +142,10 @@ router.post("/api/trading/orders/check-pending", tradingController.checkPending)
 router.post("/api/trading/reset", tradingController.resetDemo);
 
 router.post("/api/ai/stock-assistant", aiController.stockAssistant);
+router.post(
+	"/api/ai/asset-advice",
+	assetAdviceController.generateAdvice,
+);
 
 
 router.post(
@@ -103,6 +168,148 @@ router.post(
 	[authJwt.verifyToken],
 	stocksController.sellStock,
 );
+router.get(
+	"/api/community/profile",
+	[authJwt.verifyToken],
+	communityController.getProfile,
+);
+
+router.patch(
+	"/api/community/profile",
+	[authJwt.verifyToken],
+	communityController.updateProfile,
+);
+
+// 게시글
+router.get(
+	"/api/community/posts",
+	communityController.listPosts,
+);
+
+router.post(
+	"/api/community/posts",
+	[authJwt.verifyToken],
+	communityController.createPost,
+);
+
+router.get(
+	"/api/community/posts/:postId",
+	communityController.getPost,
+);
+
+router.delete(
+	"/api/community/posts/:postId",
+	[authJwt.verifyToken],
+	communityController.deletePost,
+);
+
+router.post(
+	"/api/community/posts/:postId/like",
+	[authJwt.verifyToken],
+	communityController.togglePostLike,
+);
+
+// 댓글
+router.get(
+	"/api/community/posts/:postId/comments",
+	communityController.listComments,
+);
+
+router.post(
+	"/api/community/posts/:postId/comments",
+	[authJwt.verifyToken],
+	communityController.createComment,
+);
+
+// 사단별 월간 모의투자 순위
+router.get(
+	"/api/community/leaderboard",
+	communityController.getLeaderboard,
+);
+// 미국 주식관련 
+// ================================
+// 미국 종목 검색·시세·차트
+// ================================
+
+router.get(
+	"/api/us-stocks/search/:query",
+	usStocksController.search,
+);
+
+router.get(
+	"/api/us-stocks/:exchange/:symbol/info",
+	usStocksController.getInfo,
+);
+
+router.get(
+	"/api/us-stocks/:exchange/:symbol/historical",
+	usStocksController.getHistorical,
+);
+
+// ================================
+// 미국 시장 운영 상태
+// ================================
+
+router.get(
+	"/api/markets/US/status",
+	usStocksController.getMarketStatus,
+);
+
+// ================================
+// 미국 모의투자 계좌
+// ================================
+
+router.get(
+	"/api/us-trading/account",
+	[authJwt.verifyToken],
+	usTradingController.getAccount,
+);
+
+router.get(
+	"/api/us-trading/portfolio",
+	[authJwt.verifyToken],
+	usTradingController.getPortfolio,
+);
+
+// ================================
+// 미국 주식 주문
+// ================================
+
+router.get(
+	"/api/us-trading/orders",
+	[authJwt.verifyToken],
+	usTradingController.getOrders,
+);
+
+router.post(
+	"/api/us-trading/orders",
+	[authJwt.verifyToken],
+	usTradingController.postOrder,
+);
+
+router.post(
+	"/api/us-trading/orders/check-pending",
+	[authJwt.verifyToken],
+	usTradingController.checkPending,
+);
+
+router.post(
+	"/api/us-trading/orders/:orderId/cancel",
+	[authJwt.verifyToken],
+	usTradingController.cancelOrder,
+);
+
+// ================================
+// 미국 모의계좌 초기화
+// ================================
+
+router.post(
+	"/api/us-trading/reset",
+	[authJwt.verifyToken],
+	usTradingController.reset,
+);
+
+
 
 // News routes
 router.get("/api/news", newsController.getNews);

@@ -1,0 +1,5762 @@
+[
+  {
+    "id": "quiz_001",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“은행에 돈을 맡기고 약정된 이자를 받는 금융상품”",
+    "options": [
+      "예금",
+      "자산운용사",
+      "환매",
+      "다단계 금융사기"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 예금입니다. 목돈을 한 번에 맡기고 만기 때 원금과 이자를 받는 저축 상품입니다.",
+    "relatedTermId": "deposit"
+  },
+  {
+    "id": "quiz_002",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘예금’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "주가가 주당순자산의 몇 배인지 나타내는 지표",
+      "최초 원금에 대해서만 이자를 계산하는 방식",
+      "기업 순이익을 주식 수로 나눈 주당순이익",
+      "은행에 돈을 맡기고 약정된 이자를 받는 금융상품"
+    ],
+    "answerIndex": 3,
+    "explanation": "예금은(는) 은행에 돈을 맡기고 약정된 이자를 받는 금융상품입니다.",
+    "relatedTermId": "deposit"
+  },
+  {
+    "id": "quiz_003",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘예금’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "발행자가 이자와 원금을 지급하지 못할 신용위험이 있습니다.",
+      "중도 해지 시 약정 이자가 줄어들 수 있습니다.",
+      "추종 지수가 하락하면 펀드 가치도 하락할 수 있습니다.",
+      "국가와 기관별 산출방식과 기준선을 확인해야 합니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "예금 관련 주의사항: 중도 해지 시 약정 이자가 줄어들 수 있습니다.",
+    "relatedTermId": "deposit"
+  },
+  {
+    "id": "quiz_004",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“정기적으로 돈을 납입해 목돈을 만드는 금융상품”",
+    "options": [
+      "거래대금",
+      "표면금리",
+      "적금",
+      "불완전판매"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 적금입니다. 매달 일정 금액을 납입하고 만기 때 원금과 이자를 받는 상품입니다.",
+    "relatedTermId": "savings"
+  },
+  {
+    "id": "quiz_005",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘적금’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "투자 후 처음 넣은 돈보다 적은 금액이 남는 상황",
+      "나스닥시장 상장기업의 흐름을 나타내며 기술주 비중이 높은 지수",
+      "미국의 대표 우량기업 30개 주가를 바탕으로 계산하는 지수",
+      "정기적으로 돈을 납입해 목돈을 만드는 금융상품"
+    ],
+    "answerIndex": 3,
+    "explanation": "적금은(는) 정기적으로 돈을 납입해 목돈을 만드는 금융상품입니다.",
+    "relatedTermId": "savings"
+  },
+  {
+    "id": "quiz_006",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘적금’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "주주라고 해서 기업의 채무에 개인재산으로 무한책임을 지는 것은 아닙니다.",
+      "높은 배당률만 보고 투자하면 주가 하락 위험을 놓칠 수 있습니다.",
+      "필수지출과 선택지출을 구분하지 않고 무조건 줄이면 생활의 질이 악화될 수 있습니다.",
+      "광고 금리의 우대조건을 확인해야 합니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "적금 관련 주의사항: 광고 금리의 우대조건을 확인해야 합니다.",
+    "relatedTermId": "savings"
+  },
+  {
+    "id": "quiz_007",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“최초 원금에 대해서만 이자를 계산하는 방식”",
+    "options": [
+      "명의도용",
+      "주가",
+      "총보수",
+      "단리"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 단리입니다. 이미 발생한 이자에는 다시 이자가 붙지 않는 계산 방식입니다.",
+    "relatedTermId": "simple_interest"
+  },
+  {
+    "id": "quiz_008",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘단리’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "개인이 보유한 여러 금융자산의 구성",
+      "최초 원금에 대해서만 이자를 계산하는 방식",
+      "매수 주문과 매도 주문의 조건이 맞아 실제 거래가 성립하는 것",
+      "기업이 새 주식을 발행해 투자자로부터 자금을 받는 것"
+    ],
+    "answerIndex": 1,
+    "explanation": "단리은(는) 최초 원금에 대해서만 이자를 계산하는 방식입니다.",
+    "relatedTermId": "simple_interest"
+  },
+  {
+    "id": "quiz_009",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘단리’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "상한가 종목은 다음 거래일 큰 변동과 급락 가능성도 있습니다.",
+      "시가총액이 크다고 수익성과 안정성이 항상 높은 것은 아닙니다.",
+      "주가 급락으로 배당수익률이 높아 보이는 경우 기업상태를 함께 확인해야 합니다.",
+      "상품의 이자 계산 방식이 단리인지 확인해야 합니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "단리 관련 주의사항: 상품의 이자 계산 방식이 단리인지 확인해야 합니다.",
+    "relatedTermId": "simple_interest"
+  },
+  {
+    "id": "quiz_010",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“원금과 이미 발생한 이자에 다시 이자가 붙는 방식”",
+    "options": [
+      "배당수익률",
+      "주주",
+      "우선주",
+      "복리"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 복리입니다. 기간이 길수록 이자가 이자를 만드는 효과가 커질 수 있습니다.",
+    "relatedTermId": "compound_interest"
+  },
+  {
+    "id": "quiz_011",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘복리’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "만기 전까지 정기적으로 이자를 지급하는 채권",
+      "원금과 이미 발생한 이자에 다시 이자가 붙는 방식",
+      "기업이 자기자본으로 얼마나 이익을 냈는지 나타내는 지표",
+      "정기적으로 돈을 납입해 목돈을 만드는 금융상품"
+    ],
+    "answerIndex": 1,
+    "explanation": "복리은(는) 원금과 이미 발생한 이자에 다시 이자가 붙는 방식입니다.",
+    "relatedTermId": "compound_interest"
+  },
+  {
+    "id": "quiz_012",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘복리’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "해외주가 상승에도 환율 하락으로 원화수익이 줄 수 있습니다.",
+      "구직을 포기한 사람은 통계상 경제활동인구에서 제외될 수 있습니다.",
+      "최종 자금계획에는 세후이자를 기준으로 계산하는 것이 안전합니다.",
+      "대출 이자에도 복리가 적용될 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "복리 관련 주의사항: 대출 이자에도 복리가 적용될 수 있습니다.",
+    "relatedTermId": "compound_interest"
+  },
+  {
+    "id": "quiz_013",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“이자나 수익이 붙기 전 처음 넣은 돈”",
+    "options": [
+      "자산배분",
+      "원금",
+      "실질수익률",
+      "달러인덱스"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 원금입니다. 예금이나 투자에 최초로 투입한 기본 금액입니다.",
+    "relatedTermId": "principal"
+  },
+  {
+    "id": "quiz_014",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘원금’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "주식시장에서 한 주가 거래되는 가격",
+      "이자나 수익이 붙기 전 처음 넣은 돈",
+      "펀드나 ETF 운용 대가로 지속적으로 부담하는 비용",
+      "일정 기간 한 나라에서 생산된 최종 재화와 서비스의 시장가치"
+    ],
+    "answerIndex": 1,
+    "explanation": "원금은(는) 이자나 수익이 붙기 전 처음 넣은 돈입니다.",
+    "relatedTermId": "principal"
+  },
+  {
+    "id": "quiz_015",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘원금’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "선행지수가 실제 경기를 완벽히 예측하는 것은 아닙니다.",
+      "운용자의 판단이 시장보다 좋지 않으면 지수보다 낮은 성과가 날 수 있습니다.",
+      "과거 수익률은 미래 수익을 보장하지 않습니다.",
+      "투자상품은 원금이 보장되지 않을 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "원금 관련 주의사항: 투자상품은 원금이 보장되지 않을 수 있습니다.",
+    "relatedTermId": "principal"
+  },
+  {
+    "id": "quiz_016",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업의 소유권을 일정 단위로 나눈 증권”",
+    "options": [
+      "스미싱",
+      "리밸런싱",
+      "원금",
+      "주식"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 주식입니다. 기업의 일부 소유권을 나타내며 주가 상승이나 배당을 기대할 수 있습니다.",
+    "relatedTermId": "stock"
+  },
+  {
+    "id": "quiz_017",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘주식’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "빌린 돈이나 파생구조로 투자 손익을 확대하는 방식",
+      "정부가 재정자금을 마련하기 위해 발행하는 채권",
+      "기업의 소유권을 일정 단위로 나눈 증권",
+      "경제활동인구 중 일자리가 없지만 구직 중인 사람의 비율"
+    ],
+    "answerIndex": 2,
+    "explanation": "주식은(는) 기업의 소유권을 일정 단위로 나눈 증권입니다.",
+    "relatedTermId": "stock"
+  },
+  {
+    "id": "quiz_018",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘주식’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "자금이 필요한 시점과 채권 만기가 맞는지 확인해야 합니다.",
+      "기업 실적과 시장 상황에 따라 손실이 발생할 수 있습니다.",
+      "종목 수가 적어 미국시장 전체 흐름과 차이가 날 수 있습니다.",
+      "부채가 많으면 ROE가 높아 보일 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "주식 관련 주의사항: 기업 실적과 시장 상황에 따라 손실이 발생할 수 있습니다.",
+    "relatedTermId": "stock"
+  },
+  {
+    "id": "quiz_019",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“주식시장에서 한 주가 거래되는 가격”",
+    "options": [
+      "원금",
+      "할인채",
+      "투자사기",
+      "주가"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 주가입니다. 매수와 매도 주문이 만나 형성되며 실적, 금리, 뉴스에 따라 변합니다.",
+    "relatedTermId": "stock_price"
+  },
+  {
+    "id": "quiz_020",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘주가’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "매수 주문과 매도 주문의 조건이 맞아 실제 거래가 성립하는 것",
+      "중앙은행이 통화정책의 기준으로 정하는 금리",
+      "정기적으로 돈을 납입해 목돈을 만드는 금융상품",
+      "주식시장에서 한 주가 거래되는 가격"
+    ],
+    "answerIndex": 3,
+    "explanation": "주가은(는) 주식시장에서 한 주가 거래되는 가격입니다.",
+    "relatedTermId": "stock_price"
+  },
+  {
+    "id": "quiz_021",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘주가’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "세금과 수수료까지 반영하면 실제 체감수익은 더 낮을 수 있습니다.",
+      "VIX가 높다고 반드시 주가가 즉시 더 하락하는 것은 아닙니다.",
+      "모든 금융상품이 보호되는 것은 아니므로 상품설명서에서 보호 여부를 확인해야 합니다.",
+      "가격이 낮다고 반드시 저평가된 것은 아닙니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "주가 관련 주의사항: 가격이 낮다고 반드시 저평가된 것은 아닙니다.",
+    "relatedTermId": "stock_price"
+  },
+  {
+    "id": "quiz_022",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업이 이익의 일부를 주주에게 나누어 주는 것”",
+    "options": [
+      "하한가",
+      "배당",
+      "회사채",
+      "인덱스펀드"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 배당입니다. 기업이 주주에게 현금이나 주식으로 이익 일부를 지급하는 제도입니다.",
+    "relatedTermId": "dividend"
+  },
+  {
+    "id": "quiz_023",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘배당’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "일정 기간 한 나라에서 생산된 최종 재화와 서비스의 시장가치",
+      "가격이 일정 기간 동안 얼마나 크게 움직이는지 나타내는 정도",
+      "기업이 이익의 일부를 주주에게 나누어 주는 것",
+      "하루 동안 주가가 내릴 수 있는 법정 최저가격"
+    ],
+    "answerIndex": 2,
+    "explanation": "배당은(는) 기업이 이익의 일부를 주주에게 나누어 주는 것입니다.",
+    "relatedTermId": "dividend"
+  },
+  {
+    "id": "quiz_024",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘배당’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "높은 배당률만 보고 투자하면 주가 하락 위험을 놓칠 수 있습니다.",
+      "중도 해지 시 약정 이자가 줄어들 수 있습니다.",
+      "괴리율이 큰 상태에서 매수하면 정상화 과정에서 손실을 볼 수 있습니다.",
+      "액면가가 낮다고 주식이 저평가된 것은 아닙니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "배당 관련 주의사항: 높은 배당률만 보고 투자하면 주가 하락 위험을 놓칠 수 있습니다.",
+    "relatedTermId": "dividend"
+  },
+  {
+    "id": "quiz_025",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“현재 주가에 발행주식 수를 곱한 기업의 시장가치”",
+    "options": [
+      "시가총액",
+      "ETF",
+      "총보수",
+      "우선주"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 시가총액입니다. 주식시장에서 평가되는 기업 전체의 가치입니다.",
+    "relatedTermId": "market_cap"
+  },
+  {
+    "id": "quiz_026",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘시가총액’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "소비자가 경제상황과 향후 소비여건을 어떻게 느끼는지 나타내는 지수",
+      "현재 주가에 발행주식 수를 곱한 기업의 시장가치",
+      "투자 후 처음 넣은 돈보다 적은 금액이 남는 상황",
+      "주식이나 금융상품을 사는 거래"
+    ],
+    "answerIndex": 1,
+    "explanation": "시가총액은(는) 현재 주가에 발행주식 수를 곱한 기업의 시장가치입니다.",
+    "relatedTermId": "market_cap"
+  },
+  {
+    "id": "quiz_027",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘시가총액’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "만기 후 자동연장 또는 낮은 대기금리가 적용되는지 확인해야 합니다.",
+      "장중 시장가격은 수급에 따라 NAV와 차이가 날 수 있습니다.",
+      "시가총액이 크다고 수익성과 안정성이 항상 높은 것은 아닙니다.",
+      "국채도 만기 전 매도하면 시장금리 변화로 손실이 발생할 수 있습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "시가총액 관련 주의사항: 시가총액이 크다고 수익성과 안정성이 항상 높은 것은 아닙니다.",
+    "relatedTermId": "market_cap"
+  },
+  {
+    "id": "quiz_028",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“주가가 주당순이익의 몇 배인지 나타내는 지표”",
+    "options": [
+      "거래량",
+      "PER",
+      "주식 액면가",
+      "국채"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 PER입니다. 주가를 주당순이익으로 나누어 이익 대비 주가 수준을 비교합니다.",
+    "relatedTermId": "per"
+  },
+  {
+    "id": "quiz_029",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘PER’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "소비자가 경제상황과 향후 소비여건을 어떻게 느끼는지 나타내는 지수",
+      "주가가 주당순이익의 몇 배인지 나타내는 지표",
+      "이자소득에 대한 세금을 공제한 뒤 실제로 받는 이자",
+      "약정 한도 안에서 납입 시기와 금액을 비교적 자유롭게 정할 수 있는 적금"
+    ],
+    "answerIndex": 1,
+    "explanation": "PER은(는) 주가가 주당순이익의 몇 배인지 나타내는 지표입니다.",
+    "relatedTermId": "per"
+  },
+  {
+    "id": "quiz_030",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘PER’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "목표기간이 짧으면 변동성 높은 투자보다 안정적 자산이 적합할 수 있습니다.",
+      "유동성이 낮으면 불리한 가격에 체결될 수 있습니다.",
+      "변동성이 큰 자산에 두면 필요할 때 손실일 수 있습니다.",
+      "적자 기업은 PER 해석이 어렵습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "PER 관련 주의사항: 적자 기업은 PER 해석이 어렵습니다.",
+    "relatedTermId": "per"
+  },
+  {
+    "id": "quiz_031",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“주가가 주당순자산의 몇 배인지 나타내는 지표”",
+    "options": [
+      "원금 손실",
+      "PBR",
+      "다단계 금융사기",
+      "파밍"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 PBR입니다. 기업의 장부상 자산가치 대비 주가 수준을 나타냅니다.",
+    "relatedTermId": "pbr"
+  },
+  {
+    "id": "quiz_032",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘PBR’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "주가가 주당순자산의 몇 배인지 나타내는 지표",
+      "한 주를 여러 주로 나누어 주식 수를 늘리고 주당 가격을 낮추는 것",
+      "원하는 매수 또는 매도 가격을 지정하는 주문",
+      "채권 발행자가 원금을 상환하기로 약속한 날짜"
+    ],
+    "answerIndex": 0,
+    "explanation": "PBR은(는) 주가가 주당순자산의 몇 배인지 나타내는 지표입니다.",
+    "relatedTermId": "pbr"
+  },
+  {
+    "id": "quiz_033",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘PBR’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "추종 지수가 하락하면 펀드 가치도 하락할 수 있습니다.",
+      "장중 시장가격은 수급에 따라 NAV와 차이가 날 수 있습니다.",
+      "감정적인 공포매도보다 사전에 정한 기준에 따라 판단하는 것이 좋습니다.",
+      "낮은 PBR이 곧바로 저평가를 의미하지는 않습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "PBR 관련 주의사항: 낮은 PBR이 곧바로 저평가를 의미하지는 않습니다.",
+    "relatedTermId": "pbr"
+  },
+  {
+    "id": "quiz_034",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업이 자기자본으로 얼마나 이익을 냈는지 나타내는 지표”",
+    "options": [
+      "PMI",
+      "이표채",
+      "ROE",
+      "기업공개(IPO)"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 ROE입니다. 순이익을 자기자본으로 나누어 자본 효율성을 평가합니다.",
+    "relatedTermId": "roe"
+  },
+  {
+    "id": "quiz_035",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘ROE’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "기업이 자기자본으로 얼마나 이익을 냈는지 나타내는 지표",
+      "가격을 지정하지 않고 가능한 가격으로 즉시 거래하는 주문",
+      "자산을 가격 손실을 크게 내지 않고 빠르게 현금화할 수 있는 정도",
+      "채권 발행자가 원금을 상환하기로 약속한 날짜"
+    ],
+    "answerIndex": 0,
+    "explanation": "ROE은(는) 기업이 자기자본으로 얼마나 이익을 냈는지 나타내는 지표입니다.",
+    "relatedTermId": "roe"
+  },
+  {
+    "id": "quiz_036",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘ROE’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "광고 금리의 우대조건을 확인해야 합니다.",
+      "비과세나 세제지원 여부에 따라 세후금액이 달라질 수 있습니다.",
+      "주식 수가 늘어도 이론적으로 전체 지분가치가 즉시 증가하는 것은 아닙니다.",
+      "부채가 많으면 ROE가 높아 보일 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "ROE 관련 주의사항: 부채가 많으면 ROE가 높아 보일 수 있습니다.",
+    "relatedTermId": "roe"
+  },
+  {
+    "id": "quiz_037",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“여러 자산을 묶어 주식처럼 거래할 수 있게 만든 상품”",
+    "options": [
+      "신용스프레드",
+      "보이스피싱",
+      "유상증자",
+      "ETF"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 ETF입니다. 특정 지수나 자산을 추종하는 상장지수펀드입니다.",
+    "relatedTermId": "etf"
+  },
+  {
+    "id": "quiz_038",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘ETF’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "채무자가 원금과 이자를 갚을 능력을 등급으로 평가한 것",
+      "배당이나 잔여재산 분배에서 보통주보다 우선권을 갖도록 설계된 주식",
+      "신용위험이 있는 채권과 안전자산 금리의 차이",
+      "여러 자산을 묶어 주식처럼 거래할 수 있게 만든 상품"
+    ],
+    "answerIndex": 3,
+    "explanation": "ETF은(는) 여러 자산을 묶어 주식처럼 거래할 수 있게 만든 상품입니다.",
+    "relatedTermId": "etf"
+  },
+  {
+    "id": "quiz_039",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘ETF’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "등록 여부와 공시를 확인하고 확정수익 약속을 경계해야 합니다.",
+      "ETF도 가격 하락과 원금 손실이 가능합니다.",
+      "급전이 필요할 가능성이 있다면 비상금을 별도로 확보하는 것이 좋습니다.",
+      "투자상품은 원금이 보장되지 않을 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "ETF 관련 주의사항: ETF도 가격 하락과 원금 손실이 가능합니다.",
+    "relatedTermId": "etf"
+  },
+  {
+    "id": "quiz_040",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“특정 시장지수의 움직임을 따라가도록 운용하는 펀드”",
+    "options": [
+      "인덱스펀드",
+      "자산배분",
+      "배당수익률",
+      "주식분할"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 인덱스펀드입니다. 개별 종목보다 시장지수 추종을 목표로 하는 펀드입니다.",
+    "relatedTermId": "index_fund"
+  },
+  {
+    "id": "quiz_041",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘인덱스펀드’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "특정 시장지수의 움직임을 따라가도록 운용하는 펀드",
+      "신용위험이 있는 채권과 안전자산 금리의 차이",
+      "보유한 주식이나 금융상품을 파는 거래",
+      "여러 투자자의 돈을 모아 전문가가 운용하는 금융상품"
+    ],
+    "answerIndex": 0,
+    "explanation": "인덱스펀드은(는) 특정 시장지수의 움직임을 따라가도록 운용하는 펀드입니다.",
+    "relatedTermId": "index_fund"
+  },
+  {
+    "id": "quiz_042",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘인덱스펀드’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "시장 전체가 하락하면 패시브펀드도 함께 하락할 수 있습니다.",
+      "추종 지수가 하락하면 펀드 가치도 하락할 수 있습니다.",
+      "일회성 지출과 비정기 수입도 함께 기록해야 정확합니다.",
+      "자사주 매입 목적과 향후 처분 또는 소각계획을 확인해야 합니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "인덱스펀드 관련 주의사항: 추종 지수가 하락하면 펀드 가치도 하락할 수 있습니다.",
+    "relatedTermId": "index_fund"
+  },
+  {
+    "id": "quiz_043",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“여러 투자자의 돈을 모아 전문가가 운용하는 금융상품”",
+    "options": [
+      "소비자심리지수",
+      "변동성",
+      "저축률",
+      "펀드"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 펀드입니다. 모인 자금을 주식, 채권 등 여러 자산에 투자합니다.",
+    "relatedTermId": "fund"
+  },
+  {
+    "id": "quiz_044",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘펀드’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "여러 투자자의 돈을 모아 전문가가 운용하는 금융상품",
+      "기초지수가 하락할 때 수익이 나도록 반대 방향을 추종하는 ETF",
+      "펀드가 보유한 순자산을 좌수나 주식 수로 나눈 기준가격",
+      "채권을 현재가격에 매수해 만기까지 보유할 때 예상되는 연환산 수익률"
+    ],
+    "answerIndex": 0,
+    "explanation": "펀드은(는) 여러 투자자의 돈을 모아 전문가가 운용하는 금융상품입니다.",
+    "relatedTermId": "fund"
+  },
+  {
+    "id": "quiz_045",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘펀드’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "투자상품은 원금이 보장되지 않을 수 있습니다.",
+      "목표기간이 짧으면 변동성 높은 투자보다 안정적 자산이 적합할 수 있습니다.",
+      "수수료와 환매조건을 확인해야 합니다.",
+      "최종 자금계획에는 세후이자를 기준으로 계산하는 것이 안전합니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "펀드 관련 주의사항: 수수료와 환매조건을 확인해야 합니다.",
+    "relatedTermId": "fund"
+  },
+  {
+    "id": "quiz_046",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“펀드나 ETF 운용 대가로 지속적으로 부담하는 비용”",
+    "options": [
+      "투자사기",
+      "환매",
+      "운용보수",
+      "복리"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 운용보수입니다. 상품 자산에서 차감되며 장기 성과에 영향을 줄 수 있습니다.",
+    "relatedTermId": "expense_ratio"
+  },
+  {
+    "id": "quiz_047",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘운용보수’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "정부나 기업이 돈을 빌리고 원금과 이자를 지급하기로 한 증권",
+      "소득 중 생활비와 소비에 사용하는 금액의 비율",
+      "기초지수가 하락할 때 수익이 나도록 반대 방향을 추종하는 ETF",
+      "펀드나 ETF 운용 대가로 지속적으로 부담하는 비용"
+    ],
+    "answerIndex": 3,
+    "explanation": "운용보수은(는) 펀드나 ETF 운용 대가로 지속적으로 부담하는 비용입니다.",
+    "relatedTermId": "expense_ratio"
+  },
+  {
+    "id": "quiz_048",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘운용보수’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "자금이 필요한 시점과 채권 만기가 맞는지 확인해야 합니다.",
+      "발행자가 이자와 원금을 지급하지 못할 신용위험이 있습니다.",
+      "매매수수료와 운용보수는 다른 비용입니다.",
+      "장부가치가 기업의 실제 시장가치와 항상 같지는 않습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "운용보수 관련 주의사항: 매매수수료와 운용보수는 다른 비용입니다.",
+    "relatedTermId": "expense_ratio"
+  },
+  {
+    "id": "quiz_049",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“상품 수익률이 추종 지수와 차이 나는 정도”",
+    "options": [
+      "표면금리",
+      "레버리지",
+      "다우존스 산업평균지수",
+      "추적오차"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 추적오차입니다. ETF가 목표 지수를 얼마나 정확하게 따라가는지 보여줍니다.",
+    "relatedTermId": "tracking_error"
+  },
+  {
+    "id": "quiz_050",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘추적오차’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "상품 수익률이 추종 지수와 차이 나는 정도",
+      "채무자가 원금과 이자를 갚을 능력을 등급으로 평가한 것",
+      "자산을 가격 손실을 크게 내지 않고 빠르게 현금화할 수 있는 정도",
+      "특정 시장지수의 움직임을 따라가도록 운용하는 펀드"
+    ],
+    "answerIndex": 0,
+    "explanation": "추적오차은(는) 상품 수익률이 추종 지수와 차이 나는 정도입니다.",
+    "relatedTermId": "tracking_error"
+  },
+  {
+    "id": "quiz_051",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘추적오차’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "감정적인 공포매도보다 사전에 정한 기준에 따라 판단하는 것이 좋습니다.",
+      "짧은 기간의 차이만으로 상품을 판단하면 안 됩니다.",
+      "지수 상승이 모든 기술기업의 실적개선을 뜻하지는 않습니다.",
+      "가격이 낮다고 반드시 저평가된 것은 아닙니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "추적오차 관련 주의사항: 짧은 기간의 차이만으로 상품을 판단하면 안 됩니다.",
+    "relatedTermId": "tracking_error"
+  },
+  {
+    "id": "quiz_052",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“정부나 기업이 돈을 빌리고 원금과 이자를 지급하기로 한 증권”",
+    "options": [
+      "EPS",
+      "자산운용사",
+      "배당수익률",
+      "채권"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 채권입니다. 발행자에게 돈을 빌려주고 이자와 만기 원금을 받는 구조입니다.",
+    "relatedTermId": "bond"
+  },
+  {
+    "id": "quiz_053",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘채권’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "채권 발행자가 원금을 상환하기로 약속한 날짜",
+      "매수 주문과 매도 주문의 조건이 맞아 실제 거래가 성립하는 것",
+      "중앙은행이 통화정책의 기준으로 정하는 금리",
+      "정부나 기업이 돈을 빌리고 원금과 이자를 지급하기로 한 증권"
+    ],
+    "answerIndex": 3,
+    "explanation": "채권은(는) 정부나 기업이 돈을 빌리고 원금과 이자를 지급하기로 한 증권입니다.",
+    "relatedTermId": "bond"
+  },
+  {
+    "id": "quiz_054",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘채권’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "가입 대상, 월 납입한도, 지원금 지급조건과 중도해지 조건을 확인해야 합니다.",
+      "투자상품은 원금이 보장되지 않을 수 있습니다.",
+      "발행자 부도와 시장금리 상승으로 손실이 날 수 있습니다.",
+      "등록 여부와 공시를 확인하고 확정수익 약속을 경계해야 합니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "채권 관련 주의사항: 발행자 부도와 시장금리 상승으로 손실이 날 수 있습니다.",
+    "relatedTermId": "bond"
+  },
+  {
+    "id": "quiz_055",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“채권 액면가를 기준으로 약정된 연간 이자율”",
+    "options": [
+      "표면금리",
+      "주가",
+      "리밸런싱",
+      "PER"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 표면금리입니다. 채권 발행 시 정해진 이자율입니다.",
+    "relatedTermId": "coupon_rate"
+  },
+  {
+    "id": "quiz_056",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘표면금리’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "향후 경기 방향을 미리 파악하기 위해 여러 지표를 종합한 지수",
+      "채권 액면가를 기준으로 약정된 연간 이자율",
+      "소득 중 저축에 사용하는 금액의 비율",
+      "기초지수가 하락할 때 수익이 나도록 반대 방향을 추종하는 ETF"
+    ],
+    "answerIndex": 1,
+    "explanation": "표면금리은(는) 채권 액면가를 기준으로 약정된 연간 이자율입니다.",
+    "relatedTermId": "coupon_rate"
+  },
+  {
+    "id": "quiz_057",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘표면금리’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "비과세나 세제지원 여부에 따라 세후금액이 달라질 수 있습니다.",
+      "높은 금리가 적용되는 잔액 한도와 우대조건을 확인해야 합니다.",
+      "실제 투자수익률은 매입가격에 따라 달라질 수 있습니다.",
+      "급전이 필요할 가능성이 있다면 비상금을 별도로 확보하는 것이 좋습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "표면금리 관련 주의사항: 실제 투자수익률은 매입가격에 따라 달라질 수 있습니다.",
+    "relatedTermId": "coupon_rate"
+  },
+  {
+    "id": "quiz_058",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“중앙은행이 통화정책의 기준으로 정하는 금리”",
+    "options": [
+      "우선주",
+      "유상증자",
+      "기준금리",
+      "소비율"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 기준금리입니다. 예금·대출금리와 채권, 환율, 주식시장에 영향을 줍니다.",
+    "relatedTermId": "base_rate"
+  },
+  {
+    "id": "quiz_059",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘기준금리’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "중앙은행이 통화정책의 기준으로 정하는 금리",
+      "중소·벤처기업 비중이 높은 코스닥시장 대표 지수",
+      "미국 달러의 가치를 주요 통화 묶음과 비교한 지수",
+      "특정 지수의 구성과 수익률을 따라가도록 운용하는 펀드"
+    ],
+    "answerIndex": 0,
+    "explanation": "기준금리은(는) 중앙은행이 통화정책의 기준으로 정하는 금리입니다.",
+    "relatedTermId": "base_rate"
+  },
+  {
+    "id": "quiz_060",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘기준금리’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "환매 기준가격 결정일과 실제 입금일을 확인해야 합니다.",
+      "투자상품은 원금이 보장되지 않을 수 있습니다.",
+      "모든 금융상품 금리에 즉시 같은 폭으로 반영되지는 않습니다.",
+      "유동성이 낮으면 큰 주문이 가격을 크게 움직일 수 있습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "기준금리 관련 주의사항: 모든 금융상품 금리에 즉시 같은 폭으로 반영되지는 않습니다.",
+    "relatedTermId": "base_rate"
+  },
+  {
+    "id": "quiz_061",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“금융시장에서 자금 수요와 공급에 따라 형성되는 금리”",
+    "options": [
+      "주식",
+      "시장금리",
+      "지정가 주문",
+      "변동성"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 시장금리입니다. 경기, 물가, 신용위험 등의 영향을 받아 시장에서 결정됩니다.",
+    "relatedTermId": "market_rate"
+  },
+  {
+    "id": "quiz_062",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘시장금리’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "현재 주가에 발행주식 수를 곱한 기업의 시장가치",
+      "펀드 운용과 관리에 지속적으로 들어가는 여러 보수의 합계",
+      "일정 기간 동안 거래된 주식의 금액 합계",
+      "금융시장에서 자금 수요와 공급에 따라 형성되는 금리"
+    ],
+    "answerIndex": 3,
+    "explanation": "시장금리은(는) 금융시장에서 자금 수요와 공급에 따라 형성되는 금리입니다.",
+    "relatedTermId": "market_rate"
+  },
+  {
+    "id": "quiz_063",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘시장금리’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "국채도 만기 전 매도하면 시장금리 변화로 손실이 발생할 수 있습니다.",
+      "기준금리와 항상 같은 폭으로 움직이지는 않습니다.",
+      "종목 수가 적어 미국시장 전체 흐름과 차이가 날 수 있습니다.",
+      "중도 해지 시 약정 이자가 줄어들 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "시장금리 관련 주의사항: 기준금리와 항상 같은 폭으로 움직이지는 않습니다.",
+    "relatedTermId": "market_rate"
+  },
+  {
+    "id": "quiz_064",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“투입한 금액 대비 얻은 수익이나 손실의 비율”",
+    "options": [
+      "신용스프레드",
+      "수익률",
+      "시가총액",
+      "만기"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 수익률입니다. 투자 성과를 비율로 나타낸 값입니다.",
+    "relatedTermId": "yield"
+  },
+  {
+    "id": "quiz_065",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘수익률’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "주식시장에서 한 주가 거래되는 가격",
+      "투자자가 제시한 매수 또는 매도 희망가격",
+      "주식이나 금융상품을 사는 거래",
+      "투입한 금액 대비 얻은 수익이나 손실의 비율"
+    ],
+    "answerIndex": 3,
+    "explanation": "수익률은(는) 투입한 금액 대비 얻은 수익이나 손실의 비율입니다.",
+    "relatedTermId": "yield"
+  },
+  {
+    "id": "quiz_066",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘수익률’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "유동성이 낮으면 불리한 가격에 체결될 수 있습니다.",
+      "과거 수익률은 미래 수익을 보장하지 않습니다.",
+      "중도해지하면 약정금리보다 낮은 이율이 적용될 수 있습니다.",
+      "GDP만으로 국민의 삶의 질과 소득분배를 모두 설명할 수는 없습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "수익률 관련 주의사항: 과거 수익률은 미래 수익을 보장하지 않습니다.",
+    "relatedTermId": "yield"
+  },
+  {
+    "id": "quiz_067",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“가격을 지정하지 않고 가능한 가격으로 즉시 거래하는 주문”",
+    "options": [
+      "ETF",
+      "패시브펀드",
+      "시장가 주문",
+      "위험과 수익"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 시장가 주문입니다. 체결 가능성은 높지만 실제 체결가격이 예상과 다를 수 있습니다.",
+    "relatedTermId": "market_order"
+  },
+  {
+    "id": "quiz_068",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘시장가 주문’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "예금, 주식, 채권 등 자산 종류별 투자비중을 정하는 것",
+      "가격을 지정하지 않고 가능한 가격으로 즉시 거래하는 주문",
+      "투자자가 제시한 매수 또는 매도 희망가격",
+      "금융상품의 위험과 조건을 충분히 설명하지 않거나 부적합하게 판매하는 행위"
+    ],
+    "answerIndex": 1,
+    "explanation": "시장가 주문은(는) 가격을 지정하지 않고 가능한 가격으로 즉시 거래하는 주문입니다.",
+    "relatedTermId": "market_order"
+  },
+  {
+    "id": "quiz_069",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘시장가 주문’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "단기간 여러 금융회사에 대출을 반복 신청하면 신용평가에 불리할 수 있습니다.",
+      "유동성이 낮으면 불리한 가격에 체결될 수 있습니다.",
+      "선행지수가 실제 경기를 완벽히 예측하는 것은 아닙니다.",
+      "공모가가 적정한지와 상장 후 변동성을 확인해야 합니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "시장가 주문 관련 주의사항: 유동성이 낮으면 불리한 가격에 체결될 수 있습니다.",
+    "relatedTermId": "market_order"
+  },
+  {
+    "id": "quiz_070",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“원하는 매수 또는 매도 가격을 지정하는 주문”",
+    "options": [
+      "주식분할",
+      "신용등급",
+      "지정가 주문",
+      "유상증자"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 지정가 주문입니다. 가격을 통제할 수 있지만 조건에 도달하지 않으면 체결되지 않습니다.",
+    "relatedTermId": "limit_order"
+  },
+  {
+    "id": "quiz_071",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘지정가 주문’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "원하는 매수 또는 매도 가격을 지정하는 주문",
+      "가짜 메시지나 사이트로 금융정보를 탈취하는 사기",
+      "기초지수가 하락할 때 수익이 나도록 반대 방향을 추종하는 ETF",
+      "투자자가 제시한 매수 또는 매도 희망가격"
+    ],
+    "answerIndex": 0,
+    "explanation": "지정가 주문은(는) 원하는 매수 또는 매도 가격을 지정하는 주문입니다.",
+    "relatedTermId": "limit_order"
+  },
+  {
+    "id": "quiz_072",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘지정가 주문’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "하한가에서는 매도주문이 많아 원하는 시점에 팔지 못할 수 있습니다.",
+      "미체결 주문의 유효기간을 확인해야 합니다.",
+      "원·달러 환율과 항상 같은 폭과 방향으로 움직이지는 않습니다.",
+      "액면가가 낮다고 주식이 저평가된 것은 아닙니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "지정가 주문 관련 주의사항: 미체결 주문의 유효기간을 확인해야 합니다.",
+    "relatedTermId": "limit_order"
+  },
+  {
+    "id": "quiz_073",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“일정 기간 동안 실제로 거래된 주식 수”",
+    "options": [
+      "거래량",
+      "채권",
+      "만기수익률",
+      "NAV"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 거래량입니다. 시장 참여와 관심이 얼마나 활발한지 보여줍니다.",
+    "relatedTermId": "volume"
+  },
+  {
+    "id": "quiz_074",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘거래량’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "일정 기간 동안 거래된 주식의 금액 합계",
+      "기업 순자산을 주식 수로 나눈 주당순자산",
+      "기업이 자금을 조달하기 위해 발행하는 채권",
+      "일정 기간 동안 실제로 거래된 주식 수"
+    ],
+    "answerIndex": 3,
+    "explanation": "거래량은(는) 일정 기간 동안 실제로 거래된 주식 수입니다.",
+    "relatedTermId": "volume"
+  },
+  {
+    "id": "quiz_075",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘거래량’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "만기 후 자동연장 또는 낮은 대기금리가 적용되는지 확인해야 합니다.",
+      "스프레드가 높다는 것은 높은 수익 가능성과 함께 부도위험도 크다는 뜻일 수 있습니다.",
+      "시장 전체가 하락하면 패시브펀드도 함께 하락할 수 있습니다.",
+      "거래량 증가만으로 주가 상승을 단정할 수 없습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "거래량 관련 주의사항: 거래량 증가만으로 주가 상승을 단정할 수 없습니다.",
+    "relatedTermId": "volume"
+  },
+  {
+    "id": "quiz_076",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“가격이 일정 기간 동안 얼마나 크게 움직이는지 나타내는 정도”",
+    "options": [
+      "파킹통장",
+      "주식 액면가",
+      "할인채",
+      "변동성"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 변동성입니다. 변동성이 클수록 수익 기회와 손실 위험이 모두 커집니다.",
+    "relatedTermId": "volatility"
+  },
+  {
+    "id": "quiz_077",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘변동성’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "가격이 일정 기간 동안 얼마나 크게 움직이는지 나타내는 정도",
+      "신규 투자자의 돈으로 기존 투자자에게 수익을 지급하며 확장하는 사기",
+      "미국 주식시장의 향후 단기 변동성 기대를 나타내는 지수",
+      "가격을 지정하지 않고 가능한 가격으로 즉시 거래하는 주문"
+    ],
+    "answerIndex": 0,
+    "explanation": "변동성은(는) 가격이 일정 기간 동안 얼마나 크게 움직이는지 나타내는 정도입니다.",
+    "relatedTermId": "volatility"
+  },
+  {
+    "id": "quiz_078",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘변동성’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "초보자는 고변동성 자산 비중을 제한하는 것이 좋습니다.",
+      "주식과 부동산 등은 시장가격 변화로 순자산이 달라질 수 있습니다.",
+      "중도 해지 시 약정 이자가 줄어들 수 있습니다.",
+      "일회성 이익과 주식수 변동이 EPS를 왜곡할 수 있습니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "변동성 관련 주의사항: 초보자는 고변동성 자산 비중을 제한하는 것이 좋습니다.",
+    "relatedTermId": "volatility"
+  },
+  {
+    "id": "quiz_079",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“투자자가 제시한 매수 또는 매도 희망가격”",
+    "options": [
+      "금리차",
+      "우선주",
+      "위험과 수익",
+      "호가"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 호가입니다. 매수호가와 매도호가를 통해 주문 대기 상황을 확인합니다.",
+    "relatedTermId": "quote"
+  },
+  {
+    "id": "quiz_080",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘호가’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "투자자가 제시한 매수 또는 매도 희망가격",
+      "펀드가 보유한 순자산을 좌수나 주식 수로 나눈 기준가격",
+      "기업이 주주에게 대가 없이 신주를 배정하는 것",
+      "개인이 보유한 여러 금융자산의 구성"
+    ],
+    "answerIndex": 0,
+    "explanation": "호가은(는) 투자자가 제시한 매수 또는 매도 희망가격입니다.",
+    "relatedTermId": "quote"
+  },
+  {
+    "id": "quiz_081",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘호가’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "수수료와 환매조건을 확인해야 합니다.",
+      "호가 잔량은 주문 취소로 빠르게 변할 수 있습니다.",
+      "상품의 이자 계산 방식이 단리인지 확인해야 합니다.",
+      "세금과 수수료까지 반영하면 실제 체감수익은 더 낮을 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "호가 관련 주의사항: 호가 잔량은 주문 취소로 빠르게 변할 수 있습니다.",
+    "relatedTermId": "quote"
+  },
+  {
+    "id": "quiz_082",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“한국 유가증권시장 대표 기업들의 흐름을 보여주는 지수”",
+    "options": [
+      "단리",
+      "KOSPI",
+      "파킹통장",
+      "기준금리"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 KOSPI입니다. 대형주 비중이 높은 한국 대표 주가지수입니다.",
+    "relatedTermId": "kospi"
+  },
+  {
+    "id": "quiz_083",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘KOSPI’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "여러 투자자의 돈을 모아 전문가가 운용하는 금융상품",
+      "한국 유가증권시장 대표 기업들의 흐름을 보여주는 지수",
+      "미국 달러의 가치를 주요 통화 묶음과 비교한 지수",
+      "높은 기대수익에는 일반적으로 더 큰 손실 가능성이 따르는 관계"
+    ],
+    "answerIndex": 1,
+    "explanation": "KOSPI은(는) 한국 유가증권시장 대표 기업들의 흐름을 보여주는 지수입니다.",
+    "relatedTermId": "kospi"
+  },
+  {
+    "id": "quiz_084",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘KOSPI’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "지수가 올라도 모든 종목이 오르는 것은 아닙니다.",
+      "수수료와 환매조건을 확인해야 합니다.",
+      "장기보유 시 복리효과로 기대한 반대수익률과 차이가 날 수 있습니다.",
+      "만기 전 시장가격은 금리와 신용상태에 따라 변할 수 있습니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "KOSPI 관련 주의사항: 지수가 올라도 모든 종목이 오르는 것은 아닙니다.",
+    "relatedTermId": "kospi"
+  },
+  {
+    "id": "quiz_085",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“중소·벤처기업 비중이 높은 코스닥시장 대표 지수”",
+    "options": [
+      "KOSDAQ",
+      "정기예금",
+      "기업공개(IPO)",
+      "보통주"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 KOSDAQ입니다. 성장기업과 중소형 기술기업의 비중이 높은 시장지수입니다.",
+    "relatedTermId": "kosdaq"
+  },
+  {
+    "id": "quiz_086",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘KOSDAQ’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "중소·벤처기업 비중이 높은 코스닥시장 대표 지수",
+      "원하는 매수 또는 매도 가격을 지정하는 주문",
+      "투자자가 주식을 팔고 싶다고 제시한 가격",
+      "한 주를 여러 주로 나누어 주식 수를 늘리고 주당 가격을 낮추는 것"
+    ],
+    "answerIndex": 0,
+    "explanation": "KOSDAQ은(는) 중소·벤처기업 비중이 높은 코스닥시장 대표 지수입니다.",
+    "relatedTermId": "kosdaq"
+  },
+  {
+    "id": "quiz_087",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘KOSDAQ’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "저축률을 무리하게 높여 필수생활비와 비상금을 부족하게 만들면 안 됩니다.",
+      "상품의 이자 계산 방식이 단리인지 확인해야 합니다.",
+      "높은 금리가 적용되는 잔액 한도와 우대조건을 확인해야 합니다.",
+      "종목별 변동성이 클 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "KOSDAQ 관련 주의사항: 종목별 변동성이 클 수 있습니다.",
+    "relatedTermId": "kosdaq"
+  },
+  {
+    "id": "quiz_088",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“서로 다른 두 나라 통화의 교환 비율”",
+    "options": [
+      "액티브펀드",
+      "환율",
+      "단리",
+      "배당"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 환율입니다. 해외주식 수익률과 수입물가 등에 영향을 줍니다.",
+    "relatedTermId": "exchange_rate"
+  },
+  {
+    "id": "quiz_089",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘환율’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "상품과 서비스의 전반적인 가격수준 상승률",
+      "주가가 주당순이익의 몇 배인지 나타내는 지표",
+      "서로 다른 두 나라 통화의 교환 비율",
+      "기업 순자산을 주식 수로 나눈 주당순자산"
+    ],
+    "answerIndex": 2,
+    "explanation": "환율은(는) 서로 다른 두 나라 통화의 교환 비율입니다.",
+    "relatedTermId": "exchange_rate"
+  },
+  {
+    "id": "quiz_090",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘환율’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "지수 상승이 모든 기술기업의 실적개선을 뜻하지는 않습니다.",
+      "주주라고 해서 기업의 채무에 개인재산으로 무한책임을 지는 것은 아닙니다.",
+      "해외주가 상승에도 환율 하락으로 원화수익이 줄 수 있습니다.",
+      "괴리율이 큰 상태에서 매수하면 정상화 과정에서 손실을 볼 수 있습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "환율 관련 주의사항: 해외주가 상승에도 환율 하락으로 원화수익이 줄 수 있습니다.",
+    "relatedTermId": "exchange_rate"
+  },
+  {
+    "id": "quiz_091",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“상품과 서비스의 전반적인 가격수준 상승률”",
+    "options": [
+      "PBR",
+      "환매",
+      "물가상승률",
+      "ETF"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 물가상승률입니다. 물가가 오르면 같은 돈의 실질 구매력이 낮아집니다.",
+    "relatedTermId": "cpi"
+  },
+  {
+    "id": "quiz_092",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘물가상승률’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "금융시장에서 자금 수요와 공급에 따라 형성되는 금리",
+      "일정 시간 주문을 모아 하나의 가격으로 동시에 체결하는 방식",
+      "주식시장에서 한 주가 거래되는 가격",
+      "상품과 서비스의 전반적인 가격수준 상승률"
+    ],
+    "answerIndex": 3,
+    "explanation": "물가상승률은(는) 상품과 서비스의 전반적인 가격수준 상승률입니다.",
+    "relatedTermId": "cpi"
+  },
+  {
+    "id": "quiz_093",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘물가상승률’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "지수 상승이 모든 기술기업의 실적개선을 뜻하지는 않습니다.",
+      "최종 자금계획에는 세후이자를 기준으로 계산하는 것이 안전합니다.",
+      "개인 체감물가와 공식 통계는 다를 수 있습니다.",
+      "과거 수익률은 미래 수익을 보장하지 않습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "물가상승률 관련 주의사항: 개인 체감물가와 공식 통계는 다를 수 있습니다.",
+    "relatedTermId": "cpi"
+  },
+  {
+    "id": "quiz_094",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“여러 자산에 나누어 투자해 특정 자산 위험을 줄이는 전략”",
+    "options": [
+      "예금자보호",
+      "PMI",
+      "분산투자",
+      "표면금리"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 분산투자입니다. 종목, 업종, 국가, 자산 종류를 나누어 집중위험을 낮춥니다.",
+    "relatedTermId": "diversification"
+  },
+  {
+    "id": "quiz_095",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘분산투자’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "여러 자산을 묶어 주식처럼 거래할 수 있게 만든 상품",
+      "문자메시지의 악성 링크를 이용해 개인정보나 금융정보를 탈취하는 사기",
+      "여러 자산에 나누어 투자해 특정 자산 위험을 줄이는 전략",
+      "금융상품의 약정 만기 전에 계약을 종료하는 것"
+    ],
+    "answerIndex": 2,
+    "explanation": "분산투자은(는) 여러 자산에 나누어 투자해 특정 자산 위험을 줄이는 전략입니다.",
+    "relatedTermId": "diversification"
+  },
+  {
+    "id": "quiz_096",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘분산투자’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "비슷하게 움직이는 자산만 보유하면 효과가 작습니다.",
+      "가입 대상, 월 납입한도, 지원금 지급조건과 중도해지 조건을 확인해야 합니다.",
+      "높은 수익만 강조하는 권유를 경계해야 합니다.",
+      "표면금리만 보지 말고 발행기업의 신용등급을 확인해야 합니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "분산투자 관련 주의사항: 비슷하게 움직이는 자산만 보유하면 효과가 작습니다.",
+    "relatedTermId": "diversification"
+  },
+  {
+    "id": "quiz_097",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“개인이 보유한 여러 금융자산의 구성”",
+    "options": [
+      "자유적금",
+      "포트폴리오",
+      "보통주",
+      "레버리지"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 포트폴리오입니다. 예금, 주식, ETF, 채권 등 보유자산 전체 조합입니다.",
+    "relatedTermId": "portfolio"
+  },
+  {
+    "id": "quiz_098",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘포트폴리오’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "채권을 현재가격에 매수해 만기까지 보유할 때 예상되는 연환산 수익률",
+      "개인이 보유한 여러 금융자산의 구성",
+      "투입한 금액 대비 얻은 수익이나 손실의 비율",
+      "기업이 발행해 시장과 주주가 보유하고 있는 주식의 총수"
+    ],
+    "answerIndex": 1,
+    "explanation": "포트폴리오은(는) 개인이 보유한 여러 금융자산의 구성입니다.",
+    "relatedTermId": "portfolio"
+  },
+  {
+    "id": "quiz_099",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘포트폴리오’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "높은 배당률만 보고 투자하면 주가 하락 위험을 놓칠 수 있습니다.",
+      "목표와 위험성향에 맞게 정기적으로 점검해야 합니다.",
+      "GDP만으로 국민의 삶의 질과 소득분배를 모두 설명할 수는 없습니다.",
+      "괴리율이 큰 상태에서 매수하면 정상화 과정에서 손실을 볼 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "포트폴리오 관련 주의사항: 목표와 위험성향에 맞게 정기적으로 점검해야 합니다.",
+    "relatedTermId": "portfolio"
+  },
+  {
+    "id": "quiz_100",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“예상하지 못한 지출에 대비해 쉽게 꺼내 쓰는 돈”",
+    "options": [
+      "개인 부채비율",
+      "비상금",
+      "명의도용",
+      "ETF"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 비상금입니다. 갑작스러운 의료비나 전역 준비비 등에 대응하는 자금입니다.",
+    "relatedTermId": "emergency_fund"
+  },
+  {
+    "id": "quiz_101",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘비상금’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "타인의 개인정보를 이용해 계좌, 대출, 휴대전화 등을 개설하거나 사용하는 행위",
+      "한 주를 여러 주로 나누어 주식 수를 늘리고 주당 가격을 낮추는 것",
+      "두 국가나 두 금융상품 사이의 금리 차이",
+      "예상하지 못한 지출에 대비해 쉽게 꺼내 쓰는 돈"
+    ],
+    "answerIndex": 3,
+    "explanation": "비상금은(는) 예상하지 못한 지출에 대비해 쉽게 꺼내 쓰는 돈입니다.",
+    "relatedTermId": "emergency_fund"
+  },
+  {
+    "id": "quiz_102",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘비상금’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "부채가 많으면 ROE가 높아 보일 수 있습니다.",
+      "발행자가 이자와 원금을 지급하지 못할 신용위험이 있습니다.",
+      "필수지출과 선택지출을 구분하지 않고 무조건 줄이면 생활의 질이 악화될 수 있습니다.",
+      "변동성이 큰 자산에 두면 필요할 때 손실일 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "비상금 관련 주의사항: 변동성이 큰 자산에 두면 필요할 때 손실일 수 있습니다.",
+    "relatedTermId": "emergency_fund"
+  },
+  {
+    "id": "quiz_103",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“높은 기대수익에는 일반적으로 더 큰 손실 가능성이 따르는 관계”",
+    "options": [
+      "위험과 수익",
+      "정기예금",
+      "무상증자",
+      "PER"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 위험과 수익입니다. 수익과 함께 감당 가능한 손실 범위를 고려해야 합니다.",
+    "relatedTermId": "risk_return"
+  },
+  {
+    "id": "quiz_104",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘위험과 수익’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "높은 기대수익에는 일반적으로 더 큰 손실 가능성이 따르는 관계",
+      "향후 경기 방향을 미리 파악하기 위해 여러 지표를 종합한 지수",
+      "일정 기간 한 나라에서 생산된 최종 재화와 서비스의 시장가치",
+      "일정 기간 동안 거래된 주식의 금액 합계"
+    ],
+    "answerIndex": 0,
+    "explanation": "위험과 수익은(는) 높은 기대수익에는 일반적으로 더 큰 손실 가능성이 따르는 관계입니다.",
+    "relatedTermId": "risk_return"
+  },
+  {
+    "id": "quiz_105",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘위험과 수익’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "적자 기업은 PER 해석이 어렵습니다.",
+      "높은 수익만 강조하는 권유를 경계해야 합니다.",
+      "일회성 이익과 주식수 변동이 EPS를 왜곡할 수 있습니다.",
+      "개인 체감물가와 공식 통계는 다를 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "위험과 수익 관련 주의사항: 높은 수익만 강조하는 권유를 경계해야 합니다.",
+    "relatedTermId": "risk_return"
+  },
+  {
+    "id": "quiz_106",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“일정한 금액을 정기적으로 나누어 투자하는 방식”",
+    "options": [
+      "불완전판매",
+      "배당",
+      "적립식 투자",
+      "유동성"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 적립식 투자입니다. 매수 시점을 분산해 장기 투자 습관을 만드는 방법입니다.",
+    "relatedTermId": "dca"
+  },
+  {
+    "id": "quiz_107",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘적립식 투자’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "중소·벤처기업 비중이 높은 코스닥시장 대표 지수",
+      "일정한 금액을 정기적으로 나누어 투자하는 방식",
+      "보유한 주식이나 금융상품을 파는 거래",
+      "기초지수가 하락할 때 수익이 나도록 반대 방향을 추종하는 ETF"
+    ],
+    "answerIndex": 1,
+    "explanation": "적립식 투자은(는) 일정한 금액을 정기적으로 나누어 투자하는 방식입니다.",
+    "relatedTermId": "dca"
+  },
+  {
+    "id": "quiz_108",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘적립식 투자’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "구직을 포기한 사람은 통계상 경제활동인구에서 제외될 수 있습니다.",
+      "원금 보장 표현이 실제 계약과 일치하는지 확인해야 합니다.",
+      "가입 대상, 월 납입한도, 지원금 지급조건과 중도해지 조건을 확인해야 합니다.",
+      "적립식도 손실 가능성이 있으며 수익을 보장하지 않습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "적립식 투자 관련 주의사항: 적립식도 손실 가능성이 있으며 수익을 보장하지 않습니다.",
+    "relatedTermId": "dca"
+  },
+  {
+    "id": "quiz_109",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“빌린 돈이나 파생구조로 투자 손익을 확대하는 방식”",
+    "options": [
+      "배당수익률",
+      "레버리지",
+      "ETF",
+      "거래대금"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 레버리지입니다. 이익뿐 아니라 손실도 확대되는 고위험 방식입니다.",
+    "relatedTermId": "leverage"
+  },
+  {
+    "id": "quiz_110",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘레버리지’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "일정 기간 한 나라에서 생산된 최종 재화와 서비스의 시장가치",
+      "상품과 서비스의 전반적인 가격수준 상승률",
+      "빌린 돈이나 파생구조로 투자 손익을 확대하는 방식",
+      "채권 발행자가 원금을 상환하기로 약속한 날짜"
+    ],
+    "answerIndex": 2,
+    "explanation": "레버리지은(는) 빌린 돈이나 파생구조로 투자 손익을 확대하는 방식입니다.",
+    "relatedTermId": "leverage"
+  },
+  {
+    "id": "quiz_111",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘레버리지’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "구조와 최대 손실을 이해하지 못하면 사용하면 안 됩니다.",
+      "유동성이 낮으면 큰 주문이 가격을 크게 움직일 수 있습니다.",
+      "세금과 수수료까지 반영하면 실제 체감수익은 더 낮을 수 있습니다.",
+      "높은 배당률만 보고 투자하면 주가 하락 위험을 놓칠 수 있습니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "레버리지 관련 주의사항: 구조와 최대 손실을 이해하지 못하면 사용하면 안 됩니다.",
+    "relatedTermId": "leverage"
+  },
+  {
+    "id": "quiz_112",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“투자 후 처음 넣은 돈보다 적은 금액이 남는 상황”",
+    "options": [
+      "다단계 금융사기",
+      "만기수익률",
+      "현금흐름",
+      "원금 손실"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 원금 손실입니다. 가격 하락이나 부도로 최초 투자금 일부 또는 전부를 잃는 것입니다.",
+    "relatedTermId": "principal_loss"
+  },
+  {
+    "id": "quiz_113",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘원금 손실’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "기업이 주주에게 대가 없이 신주를 배정하는 것",
+      "채권 발행자가 원금을 상환하기로 약속한 날짜",
+      "기업 구매담당자 설문으로 경기 확장과 위축을 판단하는 지수",
+      "투자 후 처음 넣은 돈보다 적은 금액이 남는 상황"
+    ],
+    "answerIndex": 3,
+    "explanation": "원금 손실은(는) 투자 후 처음 넣은 돈보다 적은 금액이 남는 상황입니다.",
+    "relatedTermId": "principal_loss"
+  },
+  {
+    "id": "quiz_114",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘원금 손실’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "분배금 지급 후 상품가격이 그만큼 조정될 수 있습니다.",
+      "원금 보장 표현이 실제 계약과 일치하는지 확인해야 합니다.",
+      "장중 시장가격은 수급에 따라 NAV와 차이가 날 수 있습니다.",
+      "투자상품은 원금이 보장되지 않을 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "원금 손실 관련 주의사항: 원금 보장 표현이 실제 계약과 일치하는지 확인해야 합니다.",
+    "relatedTermId": "principal_loss"
+  },
+  {
+    "id": "quiz_115",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“가짜 메시지나 사이트로 금융정보를 탈취하는 사기”",
+    "options": [
+      "PMI",
+      "상한가",
+      "비상금",
+      "피싱"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 피싱입니다. 기관이나 지인을 사칭해 비밀번호와 인증번호를 빼냅니다.",
+    "relatedTermId": "phishing"
+  },
+  {
+    "id": "quiz_116",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘피싱’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "가짜 메시지나 사이트로 금융정보를 탈취하는 사기",
+      "기업이 자기 회사의 발행주식을 직접 보유한 것",
+      "보유한 전체 자산에서 전체 부채를 뺀 금액",
+      "채권을 현재가격에 매수해 만기까지 보유할 때 예상되는 연환산 수익률"
+    ],
+    "answerIndex": 0,
+    "explanation": "피싱은(는) 가짜 메시지나 사이트로 금융정보를 탈취하는 사기입니다.",
+    "relatedTermId": "phishing"
+  },
+  {
+    "id": "quiz_117",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘피싱’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "유동성이 낮으면 큰 주문이 가격을 크게 움직일 수 있습니다.",
+      "문자 링크 대신 공식 앱이나 대표번호로 확인해야 합니다.",
+      "적립식도 손실 가능성이 있으며 수익을 보장하지 않습니다.",
+      "장기간 보유 시 누적수익률이 단순히 지수 수익률의 배수가 되지 않을 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "피싱 관련 주의사항: 문자 링크 대신 공식 앱이나 대표번호로 확인해야 합니다.",
+    "relatedTermId": "phishing"
+  },
+  {
+    "id": "quiz_118",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“거짓 정보나 고수익 보장 약속으로 투자금을 가로채는 행위”",
+    "options": [
+      "기준금리",
+      "물가상승률",
+      "투자사기",
+      "예금자보호"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 투자사기입니다. 원금 보장, 확정 수익, 내부정보를 내세워 송금을 유도합니다.",
+    "relatedTermId": "investment_fraud"
+  },
+  {
+    "id": "quiz_119",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘투자사기’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "ETF나 펀드가 발생한 이자와 배당 등을 투자자에게 지급하는 금액",
+      "이자소득에 대한 세금을 공제한 뒤 실제로 받는 이자",
+      "거짓 정보나 고수익 보장 약속으로 투자금을 가로채는 행위",
+      "보유한 주식이나 금융상품을 파는 거래"
+    ],
+    "answerIndex": 2,
+    "explanation": "투자사기은(는) 거짓 정보나 고수익 보장 약속으로 투자금을 가로채는 행위입니다.",
+    "relatedTermId": "investment_fraud"
+  },
+  {
+    "id": "quiz_120",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘투자사기’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "중도해지하면 약정금리보다 낮은 이율이 적용될 수 있습니다.",
+      "하한가에서는 매도주문이 많아 원하는 시점에 팔지 못할 수 있습니다.",
+      "등록 여부와 공시를 확인하고 확정수익 약속을 경계해야 합니다.",
+      "유동성이 낮으면 큰 주문이 가격을 크게 움직일 수 있습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "투자사기 관련 주의사항: 등록 여부와 공시를 확인하고 확정수익 약속을 경계해야 합니다.",
+    "relatedTermId": "investment_fraud"
+  },
+  {
+    "id": "quiz_121",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“현역병 등 병역의무 이행자의 목돈 마련을 지원하는 정책성 적금”",
+    "options": [
+      "주가",
+      "장병내일준비적금",
+      "신용스프레드",
+      "원금 손실"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 장병내일준비적금입니다. 장병내일준비적금은 복무 중 일정 금액을 저축하고 전역 시 원금과 이자, 관련 지원금을 받을 수 있도록 설계된 장병 대상 적금입니다.",
+    "relatedTermId": "military_savings"
+  },
+  {
+    "id": "quiz_122",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘장병내일준비적금’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "미국의 대표 우량기업 30개 주가를 바탕으로 계산하는 지수",
+      "주가가 주당순자산의 몇 배인지 나타내는 지표",
+      "향후 경기 방향을 미리 파악하기 위해 여러 지표를 종합한 지수",
+      "현역병 등 병역의무 이행자의 목돈 마련을 지원하는 정책성 적금"
+    ],
+    "answerIndex": 3,
+    "explanation": "장병내일준비적금은(는) 현역병 등 병역의무 이행자의 목돈 마련을 지원하는 정책성 적금입니다.",
+    "relatedTermId": "military_savings"
+  },
+  {
+    "id": "quiz_123",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘장병내일준비적금’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "목표와 위험성향에 맞게 정기적으로 점검해야 합니다.",
+      "가입 대상, 월 납입한도, 지원금 지급조건과 중도해지 조건을 확인해야 합니다.",
+      "모든 금융상품이 보호되는 것은 아니므로 상품설명서에서 보호 여부를 확인해야 합니다.",
+      "보통주와 가격, 거래량, 권리조건이 다르므로 종목 설명을 확인해야 합니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "장병내일준비적금 관련 주의사항: 가입 대상, 월 납입한도, 지원금 지급조건과 중도해지 조건을 확인해야 합니다.",
+    "relatedTermId": "military_savings"
+  },
+  {
+    "id": "quiz_124",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“약정 한도 안에서 납입 시기와 금액을 비교적 자유롭게 정할 수 있는 적금”",
+    "options": [
+      "목표자금",
+      "하한가",
+      "자유적금",
+      "매수호가"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 자유적금입니다. 자유적금은 정액적립식보다 납입 방식이 유연해 소득이나 지출이 일정하지 않은 사람에게 적합할 수 있습니다.",
+    "relatedTermId": "flexible_savings"
+  },
+  {
+    "id": "quiz_125",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘자유적금’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "약정 한도 안에서 납입 시기와 금액을 비교적 자유롭게 정할 수 있는 적금",
+      "금융상품의 약정 만기 전에 계약을 종료하는 것",
+      "기업이 주식을 일반 투자자에게 공개하고 증권시장에 상장하는 절차",
+      "기업 순자산을 주식 수로 나눈 주당순자산"
+    ],
+    "answerIndex": 0,
+    "explanation": "자유적금은(는) 약정 한도 안에서 납입 시기와 금액을 비교적 자유롭게 정할 수 있는 적금입니다.",
+    "relatedTermId": "flexible_savings"
+  },
+  {
+    "id": "quiz_126",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘자유적금’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "적자 기업은 PER 해석이 어렵습니다.",
+      "광고된 최고금리가 본인에게 실제 적용되는지 조건을 확인해야 합니다.",
+      "납입액이 적으면 만기 수령액과 이자도 줄어들 수 있습니다.",
+      "비슷하게 움직이는 자산만 보유하면 효과가 작습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "자유적금 관련 주의사항: 납입액이 적으면 만기 수령액과 이자도 줄어들 수 있습니다.",
+    "relatedTermId": "flexible_savings"
+  },
+  {
+    "id": "quiz_127",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“목돈을 정해진 기간 동안 맡기고 약정 이자를 받는 예금”",
+    "options": [
+      "정기예금",
+      "금리차",
+      "BPS",
+      "NAV"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 정기예금입니다. 정기예금은 이미 마련된 목돈을 일정 기간 금융기관에 예치할 때 주로 이용합니다.",
+    "relatedTermId": "time_deposit"
+  },
+  {
+    "id": "quiz_128",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘정기예금’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "목돈을 정해진 기간 동안 맡기고 약정 이자를 받는 예금",
+      "채권 발행자가 원금을 상환하기로 약속한 날짜",
+      "주식시장에서 한 주가 거래되는 가격",
+      "이자를 별도로 지급하지 않고 액면가보다 싸게 발행되는 채권"
+    ],
+    "answerIndex": 0,
+    "explanation": "정기예금은(는) 목돈을 정해진 기간 동안 맡기고 약정 이자를 받는 예금입니다.",
+    "relatedTermId": "time_deposit"
+  },
+  {
+    "id": "quiz_129",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘정기예금’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "중도해지하면 약정금리보다 낮은 이율이 적용될 수 있습니다.",
+      "유동성이 낮으면 큰 주문이 가격을 크게 움직일 수 있습니다.",
+      "저축률을 무리하게 높여 필수생활비와 비상금을 부족하게 만들면 안 됩니다.",
+      "적립식도 손실 가능성이 있으며 수익을 보장하지 않습니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "정기예금 관련 주의사항: 중도해지하면 약정금리보다 낮은 이율이 적용될 수 있습니다.",
+    "relatedTermId": "time_deposit"
+  },
+  {
+    "id": "quiz_130",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“금융상품의 약정 기간이 끝나는 시점”",
+    "options": [
+      "운용보수",
+      "만기",
+      "매도",
+      "VIX"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 만기입니다. 만기는 예금, 적금, 채권 등의 계약기간이 종료되어 원금과 이자를 정산하는 시점을 뜻합니다.",
+    "relatedTermId": "maturity"
+  },
+  {
+    "id": "quiz_131",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘만기’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "한 주를 여러 주로 나누어 주식 수를 늘리고 주당 가격을 낮추는 것",
+      "금융상품의 약정 기간이 끝나는 시점",
+      "채권가격이 금리변화에 얼마나 민감한지 나타내는 지표",
+      "타인의 개인정보를 이용해 계좌, 대출, 휴대전화 등을 개설하거나 사용하는 행위"
+    ],
+    "answerIndex": 1,
+    "explanation": "만기은(는) 금융상품의 약정 기간이 끝나는 시점입니다.",
+    "relatedTermId": "maturity"
+  },
+  {
+    "id": "quiz_132",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘만기’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "최종 자금계획에는 세후이자를 기준으로 계산하는 것이 안전합니다.",
+      "만기 전 시장가격은 금리와 신용상태에 따라 변할 수 있습니다.",
+      "사업모델보다 추천인 수당과 확정수익을 강조하면 투자하지 말아야 합니다.",
+      "만기 후 자동연장 또는 낮은 대기금리가 적용되는지 확인해야 합니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "만기 관련 주의사항: 만기 후 자동연장 또는 낮은 대기금리가 적용되는지 확인해야 합니다.",
+    "relatedTermId": "maturity"
+  },
+  {
+    "id": "quiz_133",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“금융상품의 약정 만기 전에 계약을 종료하는 것”",
+    "options": [
+      "S&P 500",
+      "중도해지",
+      "자산운용사",
+      "변동성"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 중도해지입니다. 예금이나 적금을 중도해지하면 원금은 돌려받더라도 약정이자나 우대혜택이 줄어들 수 있습니다.",
+    "relatedTermId": "early_termination"
+  },
+  {
+    "id": "quiz_134",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘중도해지’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "금융상품의 약정 만기 전에 계약을 종료하는 것",
+      "현재 주가에 발행주식 수를 곱한 기업의 시장가치",
+      "금융상품의 위험과 조건을 충분히 설명하지 않거나 부적합하게 판매하는 행위",
+      "하루 동안 주가가 오를 수 있는 법정 최대가격"
+    ],
+    "answerIndex": 0,
+    "explanation": "중도해지은(는) 금융상품의 약정 만기 전에 계약을 종료하는 것입니다.",
+    "relatedTermId": "early_termination"
+  },
+  {
+    "id": "quiz_135",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘중도해지’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "중도 해지 시 약정 이자가 줄어들 수 있습니다.",
+      "급전이 필요할 가능성이 있다면 비상금을 별도로 확보하는 것이 좋습니다.",
+      "유동성이 낮으면 큰 주문이 가격을 크게 움직일 수 있습니다.",
+      "국가와 기관별 산출방식과 기준선을 확인해야 합니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "중도해지 관련 주의사항: 급전이 필요할 가능성이 있다면 비상금을 별도로 확보하는 것이 좋습니다.",
+    "relatedTermId": "early_termination"
+  },
+  {
+    "id": "quiz_136",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“특정 조건을 충족할 때 기본금리에 추가로 적용되는 금리”",
+    "options": [
+      "우대금리",
+      "주주",
+      "배당수익률",
+      "적립식 투자"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 우대금리입니다. 급여이체, 자동이체, 카드 사용, 특정 자격 등의 조건을 충족하면 우대금리가 적용될 수 있습니다.",
+    "relatedTermId": "preferential_rate"
+  },
+  {
+    "id": "quiz_137",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘우대금리’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "특정 조건을 충족할 때 기본금리에 추가로 적용되는 금리",
+      "정부가 재정자금을 마련하기 위해 발행하는 채권",
+      "빌린 돈이나 파생구조로 투자 손익을 확대하는 방식",
+      "채권 발행자가 원금을 상환하기로 약속한 날짜"
+    ],
+    "answerIndex": 0,
+    "explanation": "우대금리은(는) 특정 조건을 충족할 때 기본금리에 추가로 적용되는 금리입니다.",
+    "relatedTermId": "preferential_rate"
+  },
+  {
+    "id": "quiz_138",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘우대금리’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "광고된 최고금리가 본인에게 실제 적용되는지 조건을 확인해야 합니다.",
+      "낮은 PBR이 곧바로 저평가를 의미하지는 않습니다.",
+      "충동적으로 전액 매수하지 말고 투자목표와 손실가능성을 확인해야 합니다.",
+      "듀레이션은 실제 가격변화를 완벽히 예측하는 값이 아니라 근사치입니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "우대금리 관련 주의사항: 광고된 최고금리가 본인에게 실제 적용되는지 조건을 확인해야 합니다.",
+    "relatedTermId": "preferential_rate"
+  },
+  {
+    "id": "quiz_139",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“이자소득세가 공제되기 전 계산된 이자”",
+    "options": [
+      "체결",
+      "이표채",
+      "세전이자",
+      "단리"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 세전이자입니다. 금융상품 안내에서 표시되는 예상이자는 세전 기준인 경우가 많으며 실제 수령액은 세금 공제 후 달라질 수 있습니다.",
+    "relatedTermId": "gross_interest"
+  },
+  {
+    "id": "quiz_140",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘세전이자’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "이자소득세가 공제되기 전 계산된 이자",
+      "기업의 소유권을 일정 단위로 나눈 증권",
+      "수시입출금이 가능하면서 일반 입출금통장보다 높은 금리를 제공하는 계좌",
+      "기업의 주식을 보유해 소유권 일부를 가진 사람이나 기관"
+    ],
+    "answerIndex": 0,
+    "explanation": "세전이자은(는) 이자소득세가 공제되기 전 계산된 이자입니다.",
+    "relatedTermId": "gross_interest"
+  },
+  {
+    "id": "quiz_141",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘세전이자’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "만기 전 시장가격은 금리와 신용상태에 따라 변할 수 있습니다.",
+      "최종 자금계획에는 세후이자를 기준으로 계산하는 것이 안전합니다.",
+      "모든 금융상품 금리에 즉시 같은 폭으로 반영되지는 않습니다.",
+      "초보자는 고변동성 자산 비중을 제한하는 것이 좋습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "세전이자 관련 주의사항: 최종 자금계획에는 세후이자를 기준으로 계산하는 것이 안전합니다.",
+    "relatedTermId": "gross_interest"
+  },
+  {
+    "id": "quiz_142",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“이자소득에 대한 세금을 공제한 뒤 실제로 받는 이자”",
+    "options": [
+      "세후이자",
+      "국채",
+      "환매",
+      "펀드"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 세후이자입니다. 세후이자는 금융소득 관련 세금이 차감된 실제 수령 이자입니다.",
+    "relatedTermId": "net_interest"
+  },
+  {
+    "id": "quiz_143",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘세후이자’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "보유한 전체 자산에서 전체 부채를 뺀 금액",
+      "기업이 발행해 시장과 주주가 보유하고 있는 주식의 총수",
+      "이자소득에 대한 세금을 공제한 뒤 실제로 받는 이자",
+      "소비자가 경제상황과 향후 소비여건을 어떻게 느끼는지 나타내는 지수"
+    ],
+    "answerIndex": 2,
+    "explanation": "세후이자은(는) 이자소득에 대한 세금을 공제한 뒤 실제로 받는 이자입니다.",
+    "relatedTermId": "net_interest"
+  },
+  {
+    "id": "quiz_144",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘세후이자’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "납입액이 적으면 만기 수령액과 이자도 줄어들 수 있습니다.",
+      "표면금리만 보지 말고 발행기업의 신용등급을 확인해야 합니다.",
+      "보통주와 가격, 거래량, 권리조건이 다르므로 종목 설명을 확인해야 합니다.",
+      "비과세나 세제지원 여부에 따라 세후금액이 달라질 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "세후이자 관련 주의사항: 비과세나 세제지원 여부에 따라 세후금액이 달라질 수 있습니다.",
+    "relatedTermId": "net_interest"
+  },
+  {
+    "id": "quiz_145",
+    "category": "저축·예금",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“금융회사가 지급불능 상태가 될 때 법정 한도 내 예금을 보호하는 제도”",
+    "options": [
+      "환매",
+      "예금자보호",
+      "예금",
+      "NAV"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 예금자보호입니다. 예금자보호제도는 보호 대상 금융상품에 대해 금융회사별·예금자별 법정 한도까지 원금과 소정의 이자를 보호합니다.",
+    "relatedTermId": "deposit_protection"
+  },
+  {
+    "id": "quiz_146",
+    "category": "저축·예금",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘예금자보호’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "투자자가 주식을 사고 싶다고 제시한 가격",
+      "전화로 기관이나 지인을 사칭해 송금과 개인정보 제공을 유도하는 사기",
+      "금융회사가 지급불능 상태가 될 때 법정 한도 내 예금을 보호하는 제도",
+      "수시입출금이 가능하면서 일반 입출금통장보다 높은 금리를 제공하는 계좌"
+    ],
+    "answerIndex": 2,
+    "explanation": "예금자보호은(는) 금융회사가 지급불능 상태가 될 때 법정 한도 내 예금을 보호하는 제도입니다.",
+    "relatedTermId": "deposit_protection"
+  },
+  {
+    "id": "quiz_147",
+    "category": "저축·예금",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘예금자보호’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "만기 후 자동연장 또는 낮은 대기금리가 적용되는지 확인해야 합니다.",
+      "적자 기업은 PER 해석이 어렵습니다.",
+      "모든 금융상품이 보호되는 것은 아니므로 상품설명서에서 보호 여부를 확인해야 합니다.",
+      "만기 전 매도하면 액면가보다 낮은 가격으로 손실을 볼 수 있습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "예금자보호 관련 주의사항: 모든 금융상품이 보호되는 것은 아니므로 상품설명서에서 보호 여부를 확인해야 합니다.",
+    "relatedTermId": "deposit_protection"
+  },
+  {
+    "id": "quiz_148",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“수시입출금이 가능하면서 일반 입출금통장보다 높은 금리를 제공하는 계좌”",
+    "options": [
+      "불완전판매",
+      "예금자보호",
+      "파킹통장",
+      "포트폴리오"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 파킹통장입니다. 파킹통장은 단기간 사용할 자금이나 비상금을 보관하면서 유동성과 이자를 함께 확보할 때 활용됩니다.",
+    "relatedTermId": "parking_account"
+  },
+  {
+    "id": "quiz_149",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘파킹통장’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "운용자가 종목과 비중을 적극적으로 선택해 시장 초과수익을 추구하는 펀드",
+      "개인의 자산이나 소득 대비 부채 부담 수준을 나타내는 비율",
+      "주식이나 금융상품을 사는 거래",
+      "수시입출금이 가능하면서 일반 입출금통장보다 높은 금리를 제공하는 계좌"
+    ],
+    "answerIndex": 3,
+    "explanation": "파킹통장은(는) 수시입출금이 가능하면서 일반 입출금통장보다 높은 금리를 제공하는 계좌입니다.",
+    "relatedTermId": "parking_account"
+  },
+  {
+    "id": "quiz_150",
+    "category": "저축·예금",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘파킹통장’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "스프레드가 높다는 것은 높은 수익 가능성과 함께 부도위험도 크다는 뜻일 수 있습니다.",
+      "높은 금리가 적용되는 잔액 한도와 우대조건을 확인해야 합니다.",
+      "과거 수익률만 보고 위험자산 비중을 높이면 안 됩니다.",
+      "주식 수가 늘어도 이론적으로 전체 지분가치가 즉시 증가하는 것은 아닙니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "파킹통장 관련 주의사항: 높은 금리가 적용되는 잔액 한도와 우대조건을 확인해야 합니다.",
+    "relatedTermId": "parking_account"
+  },
+  {
+    "id": "quiz_151",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업의 주식을 보유해 소유권 일부를 가진 사람이나 기관”",
+    "options": [
+      "EPS",
+      "주주",
+      "달러인덱스",
+      "저축률"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 주주입니다. 주주는 보유 주식의 종류와 수량에 따라 의결권, 배당청구권 등의 권리를 가질 수 있습니다.",
+    "relatedTermId": "shareholder"
+  },
+  {
+    "id": "quiz_152",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘주주’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "펀드가 보유한 순자산을 좌수나 주식 수로 나눈 기준가격",
+      "기업이 자기자본으로 얼마나 이익을 냈는지 나타내는 지표",
+      "기업의 주식을 보유해 소유권 일부를 가진 사람이나 기관",
+      "기초지수의 일간 수익률을 일정 배수로 추종하도록 설계된 ETF"
+    ],
+    "answerIndex": 2,
+    "explanation": "주주은(는) 기업의 주식을 보유해 소유권 일부를 가진 사람이나 기관입니다.",
+    "relatedTermId": "shareholder"
+  },
+  {
+    "id": "quiz_153",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘주주’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "매도호가가 많다고 반드시 주가가 하락하는 것은 아닙니다.",
+      "주주라고 해서 기업의 채무에 개인재산으로 무한책임을 지는 것은 아닙니다.",
+      "시가총액이 크다고 수익성과 안정성이 항상 높은 것은 아닙니다.",
+      "추종 지수가 하락하면 펀드 가치도 하락할 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "주주 관련 주의사항: 주주라고 해서 기업의 채무에 개인재산으로 무한책임을 지는 것은 아닙니다.",
+    "relatedTermId": "shareholder"
+  },
+  {
+    "id": "quiz_154",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업이 발행해 시장과 주주가 보유하고 있는 주식의 총수”",
+    "options": [
+      "거래대금",
+      "배당",
+      "단리",
+      "발행주식수"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 발행주식수입니다. 발행주식수는 시가총액, 주당순이익 등 여러 주식지표 계산에 사용됩니다.",
+    "relatedTermId": "shares_outstanding"
+  },
+  {
+    "id": "quiz_155",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘발행주식수’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "기업이 발행해 시장과 주주가 보유하고 있는 주식의 총수",
+      "정상 주소를 입력해도 가짜 금융사이트로 연결해 정보를 빼내는 사기",
+      "명목수익률에서 물가상승의 영향을 반영한 실제 구매력 기준 수익률",
+      "만기 전까지 정기적으로 이자를 지급하는 채권"
+    ],
+    "answerIndex": 0,
+    "explanation": "발행주식수은(는) 기업이 발행해 시장과 주주가 보유하고 있는 주식의 총수입니다.",
+    "relatedTermId": "shares_outstanding"
+  },
+  {
+    "id": "quiz_156",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘발행주식수’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "신주 발행으로 주식수가 늘면 기존 주주의 지분가치가 희석될 수 있습니다.",
+      "해외주가 상승에도 환율 하락으로 원화수익이 줄 수 있습니다.",
+      "과거 수익률만 보고 위험자산 비중을 높이면 안 됩니다.",
+      "ETF도 가격 하락과 원금 손실이 가능합니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "발행주식수 관련 주의사항: 신주 발행으로 주식수가 늘면 기존 주주의 지분가치가 희석될 수 있습니다.",
+    "relatedTermId": "shares_outstanding"
+  },
+  {
+    "id": "quiz_157",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“일반적으로 의결권과 배당권을 가지는 대표적인 주식”",
+    "options": [
+      "국채",
+      "보통주",
+      "거래대금",
+      "우대금리"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 보통주입니다. 보통주는 주주총회 의결권을 갖는 경우가 많으며 기업 성과에 따라 배당이 달라질 수 있습니다.",
+    "relatedTermId": "common_stock"
+  },
+  {
+    "id": "quiz_158",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘보통주’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "일반적으로 의결권과 배당권을 가지는 대표적인 주식",
+      "신용위험이 있는 채권과 안전자산 금리의 차이",
+      "소비자가 경제상황과 향후 소비여건을 어떻게 느끼는지 나타내는 지수",
+      "기업이 자기자본으로 얼마나 이익을 냈는지 나타내는 지표"
+    ],
+    "answerIndex": 0,
+    "explanation": "보통주은(는) 일반적으로 의결권과 배당권을 가지는 대표적인 주식입니다.",
+    "relatedTermId": "common_stock"
+  },
+  {
+    "id": "quiz_159",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘보통주’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "매매수수료와 운용보수는 다른 비용입니다.",
+      "환율은 금리차 외에도 무역, 경기, 심리의 영향을 받습니다.",
+      "환매 기준가격 결정일과 실제 입금일을 확인해야 합니다.",
+      "기업 청산 시 채권자와 우선주보다 변제순위가 뒤일 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "보통주 관련 주의사항: 기업 청산 시 채권자와 우선주보다 변제순위가 뒤일 수 있습니다.",
+    "relatedTermId": "common_stock"
+  },
+  {
+    "id": "quiz_160",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“배당이나 잔여재산 분배에서 보통주보다 우선권을 갖도록 설계된 주식”",
+    "options": [
+      "EPS",
+      "GDP",
+      "우선주",
+      "실질수익률"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 우선주입니다. 우선주는 의결권이 제한되는 대신 배당 등 경제적 권리를 우선적으로 제공하는 경우가 있습니다.",
+    "relatedTermId": "preferred_stock"
+  },
+  {
+    "id": "quiz_161",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘우선주’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "자산을 가격 손실을 크게 내지 않고 빠르게 현금화할 수 있는 정도",
+      "배당이나 잔여재산 분배에서 보통주보다 우선권을 갖도록 설계된 주식",
+      "ETF나 펀드가 발생한 이자와 배당 등을 투자자에게 지급하는 금액",
+      "가격이 일정 기간 동안 얼마나 크게 움직이는지 나타내는 정도"
+    ],
+    "answerIndex": 1,
+    "explanation": "우선주은(는) 배당이나 잔여재산 분배에서 보통주보다 우선권을 갖도록 설계된 주식입니다.",
+    "relatedTermId": "preferred_stock"
+  },
+  {
+    "id": "quiz_162",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘우선주’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "지정가 주문은 원하는 가격에 도달하지 않으면 체결되지 않을 수 있습니다.",
+      "국채도 만기 전 매도하면 시장금리 변화로 손실이 발생할 수 있습니다.",
+      "중간 이자를 같은 수익률로 재투자한다는 가정이 포함될 수 있습니다.",
+      "보통주와 가격, 거래량, 권리조건이 다르므로 종목 설명을 확인해야 합니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "우선주 관련 주의사항: 보통주와 가격, 거래량, 권리조건이 다르므로 종목 설명을 확인해야 합니다.",
+    "relatedTermId": "preferred_stock"
+  },
+  {
+    "id": "quiz_163",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업 순이익을 주식 수로 나눈 주당순이익”",
+    "options": [
+      "EPS",
+      "패시브펀드",
+      "채권가격",
+      "물가상승률"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 EPS입니다. EPS는 한 주당 기업이 얼마의 이익을 냈는지 보여주며 PER 계산에도 사용됩니다.",
+    "relatedTermId": "eps"
+  },
+  {
+    "id": "quiz_164",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘EPS’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "기업 순이익을 주식 수로 나눈 주당순이익",
+      "채권가격이 금리변화에 얼마나 민감한지 나타내는 지표",
+      "기초지수의 일간 수익률을 일정 배수로 추종하도록 설계된 ETF",
+      "소득 중 생활비와 소비에 사용하는 금액의 비율"
+    ],
+    "answerIndex": 0,
+    "explanation": "EPS은(는) 기업 순이익을 주식 수로 나눈 주당순이익입니다.",
+    "relatedTermId": "eps"
+  },
+  {
+    "id": "quiz_165",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘EPS’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "미체결 주문의 유효기간을 확인해야 합니다.",
+      "종목 수가 적어 미국시장 전체 흐름과 차이가 날 수 있습니다.",
+      "발행자가 이자와 원금을 지급하지 못할 신용위험이 있습니다.",
+      "일회성 이익과 주식수 변동이 EPS를 왜곡할 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "EPS 관련 주의사항: 일회성 이익과 주식수 변동이 EPS를 왜곡할 수 있습니다.",
+    "relatedTermId": "eps"
+  },
+  {
+    "id": "quiz_166",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업 순자산을 주식 수로 나눈 주당순자산”",
+    "options": [
+      "우대금리",
+      "BPS",
+      "VIX",
+      "KOSDAQ"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 BPS입니다. BPS는 장부상 순자산이 한 주당 얼마나 배분되는지를 나타내며 PBR 계산에 사용됩니다.",
+    "relatedTermId": "bps"
+  },
+  {
+    "id": "quiz_167",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘BPS’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "기업이 이익의 일부를 주주에게 나누어 주는 것",
+      "기업 순자산을 주식 수로 나눈 주당순자산",
+      "일정 기간 동안 거래된 주식의 금액 합계",
+      "거짓 정보나 고수익 보장 약속으로 투자금을 가로채는 행위"
+    ],
+    "answerIndex": 1,
+    "explanation": "BPS은(는) 기업 순자산을 주식 수로 나눈 주당순자산입니다.",
+    "relatedTermId": "bps"
+  },
+  {
+    "id": "quiz_168",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘BPS’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "중도해지하면 약정금리보다 낮은 이율이 적용될 수 있습니다.",
+      "미국 전체 기업이나 모든 산업을 완벽히 대표하는 것은 아닙니다.",
+      "환율은 금리차 외에도 무역, 경기, 심리의 영향을 받습니다.",
+      "장부가치가 기업의 실제 시장가치와 항상 같지는 않습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "BPS 관련 주의사항: 장부가치가 기업의 실제 시장가치와 항상 같지는 않습니다.",
+    "relatedTermId": "bps"
+  },
+  {
+    "id": "quiz_169",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“주당 배당금을 현재 주가로 나눈 비율”",
+    "options": [
+      "우선주",
+      "파킹통장",
+      "배당수익률",
+      "총보수"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 배당수익률입니다. 배당수익률은 현재 주가 대비 예상 또는 과거 배당수준을 비교할 때 활용합니다.",
+    "relatedTermId": "dividend_yield"
+  },
+  {
+    "id": "quiz_170",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘배당수익률’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "금융상품의 약정 기간이 끝나는 시점",
+      "주권에 표시되는 회계상 기준금액",
+      "주당 배당금을 현재 주가로 나눈 비율",
+      "배당이나 잔여재산 분배에서 보통주보다 우선권을 갖도록 설계된 주식"
+    ],
+    "answerIndex": 2,
+    "explanation": "배당수익률은(는) 주당 배당금을 현재 주가로 나눈 비율입니다.",
+    "relatedTermId": "dividend_yield"
+  },
+  {
+    "id": "quiz_171",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘배당수익률’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "표면금리만 보지 말고 발행기업의 신용등급을 확인해야 합니다.",
+      "과거 수익률만 보고 위험자산 비중을 높이면 안 됩니다.",
+      "주가 급락으로 배당수익률이 높아 보이는 경우 기업상태를 함께 확인해야 합니다.",
+      "짧은 기간의 차이만으로 상품을 판단하면 안 됩니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "배당수익률 관련 주의사항: 주가 급락으로 배당수익률이 높아 보이는 경우 기업상태를 함께 확인해야 합니다.",
+    "relatedTermId": "dividend_yield"
+  },
+  {
+    "id": "quiz_172",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“주권에 표시되는 회계상 기준금액”",
+    "options": [
+      "주식 액면가",
+      "적금",
+      "보통주",
+      "비상금"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 주식 액면가입니다. 액면가는 주식 발행의 기준이 되는 명목금액으로 실제 시장에서 거래되는 주가와는 다릅니다.",
+    "relatedTermId": "par_value_stock"
+  },
+  {
+    "id": "quiz_173",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘주식 액면가’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "은행에 돈을 맡기고 약정된 이자를 받는 금융상품",
+      "주권에 표시되는 회계상 기준금액",
+      "매수 주문과 매도 주문의 조건이 맞아 실제 거래가 성립하는 것",
+      "금융상품의 약정 기간이 끝나는 시점"
+    ],
+    "answerIndex": 1,
+    "explanation": "주식 액면가은(는) 주권에 표시되는 회계상 기준금액입니다.",
+    "relatedTermId": "par_value_stock"
+  },
+  {
+    "id": "quiz_174",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘주식 액면가’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "중도해지하면 약정금리보다 낮은 이율이 적용될 수 있습니다.",
+      "원·달러 환율과 항상 같은 폭과 방향으로 움직이지는 않습니다.",
+      "액면가가 낮다고 주식이 저평가된 것은 아닙니다.",
+      "광고 금리의 우대조건을 확인해야 합니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "주식 액면가 관련 주의사항: 액면가가 낮다고 주식이 저평가된 것은 아닙니다.",
+    "relatedTermId": "par_value_stock"
+  },
+  {
+    "id": "quiz_175",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업이 새 주식을 발행해 투자자로부터 자금을 받는 것”",
+    "options": [
+      "보이스피싱",
+      "매수호가",
+      "파밍",
+      "유상증자"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 유상증자입니다. 유상증자는 사업자금이나 부채상환 자금을 조달할 수 있지만 기존 주주의 지분이 희석될 수 있습니다.",
+    "relatedTermId": "rights_offering"
+  },
+  {
+    "id": "quiz_176",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘유상증자’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "주권에 표시되는 회계상 기준금액",
+      "기업이 새 주식을 발행해 투자자로부터 자금을 받는 것",
+      "금융상품의 약정 만기 전에 계약을 종료하는 것",
+      "타인의 개인정보를 이용해 계좌, 대출, 휴대전화 등을 개설하거나 사용하는 행위"
+    ],
+    "answerIndex": 1,
+    "explanation": "유상증자은(는) 기업이 새 주식을 발행해 투자자로부터 자금을 받는 것입니다.",
+    "relatedTermId": "rights_offering"
+  },
+  {
+    "id": "quiz_177",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘유상증자’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "저축률을 무리하게 높여 필수생활비와 비상금을 부족하게 만들면 안 됩니다.",
+      "투자상품은 원금이 보장되지 않을 수 있습니다.",
+      "중도해지하면 약정금리보다 낮은 이율이 적용될 수 있습니다.",
+      "증자 목적, 발행가격, 신주 규모를 확인해야 합니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "유상증자 관련 주의사항: 증자 목적, 발행가격, 신주 규모를 확인해야 합니다.",
+    "relatedTermId": "rights_offering"
+  },
+  {
+    "id": "quiz_178",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업이 주주에게 대가 없이 신주를 배정하는 것”",
+    "options": [
+      "무상증자",
+      "우대금리",
+      "변동성",
+      "배당"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 무상증자입니다. 무상증자는 자본잉여금 등을 자본금으로 옮기며 주식수를 늘리는 방식입니다.",
+    "relatedTermId": "bonus_issue"
+  },
+  {
+    "id": "quiz_179",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘무상증자’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "기업이 주주에게 대가 없이 신주를 배정하는 것",
+      "일반적으로 의결권과 배당권을 가지는 대표적인 주식",
+      "정상 주소를 입력해도 가짜 금융사이트로 연결해 정보를 빼내는 사기",
+      "일정 기간 동안 거래된 주식의 금액 합계"
+    ],
+    "answerIndex": 0,
+    "explanation": "무상증자은(는) 기업이 주주에게 대가 없이 신주를 배정하는 것입니다.",
+    "relatedTermId": "bonus_issue"
+  },
+  {
+    "id": "quiz_180",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘무상증자’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "매도호가가 많다고 반드시 주가가 하락하는 것은 아닙니다.",
+      "국채도 만기 전 매도하면 시장금리 변화로 손실이 발생할 수 있습니다.",
+      "감정적인 공포매도보다 사전에 정한 기준에 따라 판단하는 것이 좋습니다.",
+      "주식 수가 늘어도 이론적으로 전체 지분가치가 즉시 증가하는 것은 아닙니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "무상증자 관련 주의사항: 주식 수가 늘어도 이론적으로 전체 지분가치가 즉시 증가하는 것은 아닙니다.",
+    "relatedTermId": "bonus_issue"
+  },
+  {
+    "id": "quiz_181",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“한 주를 여러 주로 나누어 주식 수를 늘리고 주당 가격을 낮추는 것”",
+    "options": [
+      "표면금리",
+      "VIX",
+      "투자사기",
+      "주식분할"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 주식분할입니다. 주식분할은 기업 전체가치 변화 없이 거래단위를 낮춰 접근성과 유동성을 높이는 데 활용됩니다.",
+    "relatedTermId": "stock_split"
+  },
+  {
+    "id": "quiz_182",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘주식분할’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "일정 시간 주문을 모아 하나의 가격으로 동시에 체결하는 방식",
+      "기업이 자기자본으로 얼마나 이익을 냈는지 나타내는 지표",
+      "하루 동안 주가가 내릴 수 있는 법정 최저가격",
+      "한 주를 여러 주로 나누어 주식 수를 늘리고 주당 가격을 낮추는 것"
+    ],
+    "answerIndex": 3,
+    "explanation": "주식분할은(는) 한 주를 여러 주로 나누어 주식 수를 늘리고 주당 가격을 낮추는 것입니다.",
+    "relatedTermId": "stock_split"
+  },
+  {
+    "id": "quiz_183",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘주식분할’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "분할 자체가 기업 실적 개선이나 수익을 보장하지 않습니다.",
+      "광고 금리의 우대조건을 확인해야 합니다.",
+      "원금 보장 표현이 실제 계약과 일치하는지 확인해야 합니다.",
+      "운용자의 판단이 시장보다 좋지 않으면 지수보다 낮은 성과가 날 수 있습니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "주식분할 관련 주의사항: 분할 자체가 기업 실적 개선이나 수익을 보장하지 않습니다.",
+    "relatedTermId": "stock_split"
+  },
+  {
+    "id": "quiz_184",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업이 자기 회사의 발행주식을 직접 보유한 것”",
+    "options": [
+      "체결",
+      "저축률",
+      "자사주",
+      "호가"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 자사주입니다. 기업은 주가 안정, 주주환원, 임직원 보상 등을 위해 자사주를 매입할 수 있습니다.",
+    "relatedTermId": "treasury_stock"
+  },
+  {
+    "id": "quiz_185",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘자사주’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "중소·벤처기업 비중이 높은 코스닥시장 대표 지수",
+      "약정 한도 안에서 납입 시기와 금액을 비교적 자유롭게 정할 수 있는 적금",
+      "문자메시지의 악성 링크를 이용해 개인정보나 금융정보를 탈취하는 사기",
+      "기업이 자기 회사의 발행주식을 직접 보유한 것"
+    ],
+    "answerIndex": 3,
+    "explanation": "자사주은(는) 기업이 자기 회사의 발행주식을 직접 보유한 것입니다.",
+    "relatedTermId": "treasury_stock"
+  },
+  {
+    "id": "quiz_186",
+    "category": "주식 기초",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘자사주’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "증자 목적, 발행가격, 신주 규모를 확인해야 합니다.",
+      "인증서 경고와 주소창을 확인하고 의심되면 다른 기기와 공식 앱을 이용해야 합니다.",
+      "자사주 매입 목적과 향후 처분 또는 소각계획을 확인해야 합니다.",
+      "가입 대상, 월 납입한도, 지원금 지급조건과 중도해지 조건을 확인해야 합니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "자사주 관련 주의사항: 자사주 매입 목적과 향후 처분 또는 소각계획을 확인해야 합니다.",
+    "relatedTermId": "treasury_stock"
+  },
+  {
+    "id": "quiz_187",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업이 주식을 일반 투자자에게 공개하고 증권시장에 상장하는 절차”",
+    "options": [
+      "기업공개(IPO)",
+      "기준금리",
+      "개인 부채비율",
+      "KOSPI"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 기업공개(IPO)입니다. IPO를 통해 기업은 자금을 조달하고 기존 주주는 보유지분을 시장에서 거래할 수 있게 됩니다.",
+    "relatedTermId": "ipo"
+  },
+  {
+    "id": "quiz_188",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘기업공개(IPO)’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "하루 동안 주가가 내릴 수 있는 법정 최저가격",
+      "기업이 새 주식을 발행해 투자자로부터 자금을 받는 것",
+      "기업이 주식을 일반 투자자에게 공개하고 증권시장에 상장하는 절차",
+      "투자자가 주식을 팔고 싶다고 제시한 가격"
+    ],
+    "answerIndex": 2,
+    "explanation": "기업공개(IPO)은(는) 기업이 주식을 일반 투자자에게 공개하고 증권시장에 상장하는 절차입니다.",
+    "relatedTermId": "ipo"
+  },
+  {
+    "id": "quiz_189",
+    "category": "주식 기초",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘기업공개(IPO)’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "가격이 낮다고 반드시 저평가된 것은 아닙니다.",
+      "주가 급락으로 배당수익률이 높아 보이는 경우 기업상태를 함께 확인해야 합니다.",
+      "보통주와 가격, 거래량, 권리조건이 다르므로 종목 설명을 확인해야 합니다.",
+      "공모가가 적정한지와 상장 후 변동성을 확인해야 합니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "기업공개(IPO) 관련 주의사항: 공모가가 적정한지와 상장 후 변동성을 확인해야 합니다.",
+    "relatedTermId": "ipo"
+  },
+  {
+    "id": "quiz_190",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“운용자가 종목과 비중을 적극적으로 선택해 시장 초과수익을 추구하는 펀드”",
+    "options": [
+      "배당수익률",
+      "배당",
+      "액티브펀드",
+      "다단계 금융사기"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 액티브펀드입니다. 액티브펀드는 시장지수를 그대로 추종하지 않고 분석과 판단을 통해 투자대상을 조정합니다.",
+    "relatedTermId": "active_fund"
+  },
+  {
+    "id": "quiz_191",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘액티브펀드’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "운용자가 종목과 비중을 적극적으로 선택해 시장 초과수익을 추구하는 펀드",
+      "중앙은행이 통화정책의 기준으로 정하는 금리",
+      "이자소득에 대한 세금을 공제한 뒤 실제로 받는 이자",
+      "ETF나 펀드가 발생한 이자와 배당 등을 투자자에게 지급하는 금액"
+    ],
+    "answerIndex": 0,
+    "explanation": "액티브펀드은(는) 운용자가 종목과 비중을 적극적으로 선택해 시장 초과수익을 추구하는 펀드입니다.",
+    "relatedTermId": "active_fund"
+  },
+  {
+    "id": "quiz_192",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘액티브펀드’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "낮은 PBR이 곧바로 저평가를 의미하지는 않습니다.",
+      "운용자의 판단이 시장보다 좋지 않으면 지수보다 낮은 성과가 날 수 있습니다.",
+      "중간 이자를 같은 수익률로 재투자한다는 가정이 포함될 수 있습니다.",
+      "지수 상승이 모든 기술기업의 실적개선을 뜻하지는 않습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "액티브펀드 관련 주의사항: 운용자의 판단이 시장보다 좋지 않으면 지수보다 낮은 성과가 날 수 있습니다.",
+    "relatedTermId": "active_fund"
+  },
+  {
+    "id": "quiz_193",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“특정 지수의 구성과 수익률을 따라가도록 운용하는 펀드”",
+    "options": [
+      "단리",
+      "채권 만기",
+      "패시브펀드",
+      "배당수익률"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 패시브펀드입니다. 패시브펀드는 적극적인 종목선정보다 낮은 비용으로 시장수익률을 추종하는 데 중점을 둡니다.",
+    "relatedTermId": "passive_fund"
+  },
+  {
+    "id": "quiz_194",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘패시브펀드’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "주식이나 금융상품을 사는 거래",
+      "기업 순이익을 주식 수로 나눈 주당순이익",
+      "특정 지수의 구성과 수익률을 따라가도록 운용하는 펀드",
+      "금융회사가 지급불능 상태가 될 때 법정 한도 내 예금을 보호하는 제도"
+    ],
+    "answerIndex": 2,
+    "explanation": "패시브펀드은(는) 특정 지수의 구성과 수익률을 따라가도록 운용하는 펀드입니다.",
+    "relatedTermId": "passive_fund"
+  },
+  {
+    "id": "quiz_195",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘패시브펀드’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "시장 전체가 하락하면 패시브펀드도 함께 하락할 수 있습니다.",
+      "괴리율이 큰 상태에서 매수하면 정상화 과정에서 손실을 볼 수 있습니다.",
+      "상한가 종목은 다음 거래일 큰 변동과 급락 가능성도 있습니다.",
+      "등록 여부와 공시를 확인하고 확정수익 약속을 경계해야 합니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "패시브펀드 관련 주의사항: 시장 전체가 하락하면 패시브펀드도 함께 하락할 수 있습니다.",
+    "relatedTermId": "passive_fund"
+  },
+  {
+    "id": "quiz_196",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“펀드가 보유한 순자산을 좌수나 주식 수로 나눈 기준가격”",
+    "options": [
+      "매수호가",
+      "NAV",
+      "신용등급",
+      "원금"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 NAV입니다. NAV는 펀드 또는 ETF가 보유한 자산에서 부채를 뺀 순자산가치를 단위당으로 계산한 값입니다.",
+    "relatedTermId": "nav"
+  },
+  {
+    "id": "quiz_197",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘NAV’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "펀드가 보유한 순자산을 좌수나 주식 수로 나눈 기준가격",
+      "정부가 재정자금을 마련하기 위해 발행하는 채권",
+      "가짜 메시지나 사이트로 금융정보를 탈취하는 사기",
+      "문자메시지의 악성 링크를 이용해 개인정보나 금융정보를 탈취하는 사기"
+    ],
+    "answerIndex": 0,
+    "explanation": "NAV은(는) 펀드가 보유한 순자산을 좌수나 주식 수로 나눈 기준가격입니다.",
+    "relatedTermId": "nav"
+  },
+  {
+    "id": "quiz_198",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘NAV’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "장기보유 시 복리효과로 기대한 반대수익률과 차이가 날 수 있습니다.",
+      "구조와 최대 손실을 이해하지 못하면 사용하면 안 됩니다.",
+      "종목별 변동성이 클 수 있습니다.",
+      "장중 시장가격은 수급에 따라 NAV와 차이가 날 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "NAV 관련 주의사항: 장중 시장가격은 수급에 따라 NAV와 차이가 날 수 있습니다.",
+    "relatedTermId": "nav"
+  },
+  {
+    "id": "quiz_199",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“ETF 시장가격이 순자산가치와 얼마나 차이 나는지를 나타내는 비율”",
+    "options": [
+      "순자산",
+      "괴리율",
+      "피싱",
+      "주식 액면가"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 괴리율입니다. 괴리율이 크면 실제 보유자산 가치보다 ETF가 비싸거나 싸게 거래되고 있다는 의미일 수 있습니다.",
+    "relatedTermId": "premium_discount"
+  },
+  {
+    "id": "quiz_200",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘괴리율’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "ETF 시장가격이 순자산가치와 얼마나 차이 나는지를 나타내는 비율",
+      "거짓 정보나 고수익 보장 약속으로 투자금을 가로채는 행위",
+      "펀드가 보유한 순자산을 좌수나 주식 수로 나눈 기준가격",
+      "금융회사가 지급불능 상태가 될 때 법정 한도 내 예금을 보호하는 제도"
+    ],
+    "answerIndex": 0,
+    "explanation": "괴리율은(는) ETF 시장가격이 순자산가치와 얼마나 차이 나는지를 나타내는 비율입니다.",
+    "relatedTermId": "premium_discount"
+  },
+  {
+    "id": "quiz_201",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘괴리율’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "유동성이 낮으면 큰 주문이 가격을 크게 움직일 수 있습니다.",
+      "주식 수가 늘어도 이론적으로 전체 지분가치가 즉시 증가하는 것은 아닙니다.",
+      "괴리율이 큰 상태에서 매수하면 정상화 과정에서 손실을 볼 수 있습니다.",
+      "목표와 위험성향에 맞게 정기적으로 점검해야 합니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "괴리율 관련 주의사항: 괴리율이 큰 상태에서 매수하면 정상화 과정에서 손실을 볼 수 있습니다.",
+    "relatedTermId": "premium_discount"
+  },
+  {
+    "id": "quiz_202",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“펀드 운용과 관리에 지속적으로 들어가는 여러 보수의 합계”",
+    "options": [
+      "리밸런싱",
+      "세후이자",
+      "총보수",
+      "PER"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 총보수입니다. 총보수에는 운용, 판매, 수탁, 사무관리 등에 대한 비용이 포함될 수 있습니다.",
+    "relatedTermId": "total_expense_ratio"
+  },
+  {
+    "id": "quiz_203",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘총보수’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "주식시장에서 한 주가 거래되는 가격",
+      "펀드 운용과 관리에 지속적으로 들어가는 여러 보수의 합계",
+      "펀드와 ETF 등 투자상품을 설계하고 운용하는 금융회사",
+      "전화로 기관이나 지인을 사칭해 송금과 개인정보 제공을 유도하는 사기"
+    ],
+    "answerIndex": 1,
+    "explanation": "총보수은(는) 펀드 운용과 관리에 지속적으로 들어가는 여러 보수의 합계입니다.",
+    "relatedTermId": "total_expense_ratio"
+  },
+  {
+    "id": "quiz_204",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘총보수’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "분할 자체가 기업 실적 개선이나 수익을 보장하지 않습니다.",
+      "급전이 필요할 가능성이 있다면 비상금을 별도로 확보하는 것이 좋습니다.",
+      "보통주와 가격, 거래량, 권리조건이 다르므로 종목 설명을 확인해야 합니다.",
+      "총보수 외에 매매비용과 기타비용이 추가될 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "총보수 관련 주의사항: 총보수 외에 매매비용과 기타비용이 추가될 수 있습니다.",
+    "relatedTermId": "total_expense_ratio"
+  },
+  {
+    "id": "quiz_205",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“투자자가 펀드 지분을 돌려주고 현금으로 회수하는 것”",
+    "options": [
+      "적금",
+      "중도해지",
+      "추적오차",
+      "환매"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 환매입니다. 일반 펀드는 매도 대신 환매를 신청하며 실제 지급일까지 시간이 걸릴 수 있습니다.",
+    "relatedTermId": "redemption"
+  },
+  {
+    "id": "quiz_206",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘환매’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "보유한 전체 자산에서 전체 부채를 뺀 금액",
+      "신규 투자자의 돈으로 기존 투자자에게 수익을 지급하며 확장하는 사기",
+      "투자자가 펀드 지분을 돌려주고 현금으로 회수하는 것",
+      "채권가격이 금리변화에 얼마나 민감한지 나타내는 지표"
+    ],
+    "answerIndex": 2,
+    "explanation": "환매은(는) 투자자가 펀드 지분을 돌려주고 현금으로 회수하는 것입니다.",
+    "relatedTermId": "redemption"
+  },
+  {
+    "id": "quiz_207",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘환매’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "자금이 필요한 시점과 채권 만기가 맞는지 확인해야 합니다.",
+      "환매 기준가격 결정일과 실제 입금일을 확인해야 합니다.",
+      "괴리율이 큰 상태에서 매수하면 정상화 과정에서 손실을 볼 수 있습니다.",
+      "호가 잔량은 주문 취소로 빠르게 변할 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "환매 관련 주의사항: 환매 기준가격 결정일과 실제 입금일을 확인해야 합니다.",
+    "relatedTermId": "redemption"
+  },
+  {
+    "id": "quiz_208",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“ETF나 펀드가 발생한 이자와 배당 등을 투자자에게 지급하는 금액”",
+    "options": [
+      "다우존스 산업평균지수",
+      "분배금",
+      "중도해지",
+      "만기수익률"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 분배금입니다. 분배금은 상품이 보유한 자산에서 발생한 수익 일부를 투자자에게 나누는 방식입니다.",
+    "relatedTermId": "distribution"
+  },
+  {
+    "id": "quiz_209",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘분배금’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "기업이 새 주식을 발행해 투자자로부터 자금을 받는 것",
+      "ETF나 펀드가 발생한 이자와 배당 등을 투자자에게 지급하는 금액",
+      "주당 배당금을 현재 주가로 나눈 비율",
+      "투자자가 제시한 매수 또는 매도 희망가격"
+    ],
+    "answerIndex": 1,
+    "explanation": "분배금은(는) ETF나 펀드가 발생한 이자와 배당 등을 투자자에게 지급하는 금액입니다.",
+    "relatedTermId": "distribution"
+  },
+  {
+    "id": "quiz_210",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘분배금’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "기업 청산 시 채권자와 우선주보다 변제순위가 뒤일 수 있습니다.",
+      "급전이 필요할 가능성이 있다면 비상금을 별도로 확보하는 것이 좋습니다.",
+      "분배금 지급 후 상품가격이 그만큼 조정될 수 있습니다.",
+      "실제 투자수익률은 매입가격에 따라 달라질 수 있습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "분배금 관련 주의사항: 분배금 지급 후 상품가격이 그만큼 조정될 수 있습니다.",
+    "relatedTermId": "distribution"
+  },
+  {
+    "id": "quiz_211",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기초지수의 일간 수익률을 일정 배수로 추종하도록 설계된 ETF”",
+    "options": [
+      "리밸런싱",
+      "레버리지 ETF",
+      "보이스피싱",
+      "세후이자"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 레버리지 ETF입니다. 레버리지 ETF는 파생상품 등을 활용해 일간 수익률을 확대하지만 손실도 확대됩니다.",
+    "relatedTermId": "leveraged_etf"
+  },
+  {
+    "id": "quiz_212",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘레버리지 ETF’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "배당이나 잔여재산 분배에서 보통주보다 우선권을 갖도록 설계된 주식",
+      "문자메시지의 악성 링크를 이용해 개인정보나 금융정보를 탈취하는 사기",
+      "개인의 자산이나 소득 대비 부채 부담 수준을 나타내는 비율",
+      "기초지수의 일간 수익률을 일정 배수로 추종하도록 설계된 ETF"
+    ],
+    "answerIndex": 3,
+    "explanation": "레버리지 ETF은(는) 기초지수의 일간 수익률을 일정 배수로 추종하도록 설계된 ETF입니다.",
+    "relatedTermId": "leveraged_etf"
+  },
+  {
+    "id": "quiz_213",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘레버리지 ETF’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "만기 후 자동연장 또는 낮은 대기금리가 적용되는지 확인해야 합니다.",
+      "초보자는 고변동성 자산 비중을 제한하는 것이 좋습니다.",
+      "장기간 보유 시 누적수익률이 단순히 지수 수익률의 배수가 되지 않을 수 있습니다.",
+      "GDP만으로 국민의 삶의 질과 소득분배를 모두 설명할 수는 없습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "레버리지 ETF 관련 주의사항: 장기간 보유 시 누적수익률이 단순히 지수 수익률의 배수가 되지 않을 수 있습니다.",
+    "relatedTermId": "leveraged_etf"
+  },
+  {
+    "id": "quiz_214",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기초지수가 하락할 때 수익이 나도록 반대 방향을 추종하는 ETF”",
+    "options": [
+      "총보수",
+      "세전이자",
+      "ETF",
+      "인버스 ETF"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 인버스 ETF입니다. 인버스 ETF는 일간 기준으로 지수와 반대 방향의 수익률을 목표로 합니다.",
+    "relatedTermId": "inverse_etf"
+  },
+  {
+    "id": "quiz_215",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘인버스 ETF’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "기업이 발행해 시장과 주주가 보유하고 있는 주식의 총수",
+      "최초 원금에 대해서만 이자를 계산하는 방식",
+      "상품 수익률이 추종 지수와 차이 나는 정도",
+      "기초지수가 하락할 때 수익이 나도록 반대 방향을 추종하는 ETF"
+    ],
+    "answerIndex": 3,
+    "explanation": "인버스 ETF은(는) 기초지수가 하락할 때 수익이 나도록 반대 방향을 추종하는 ETF입니다.",
+    "relatedTermId": "inverse_etf"
+  },
+  {
+    "id": "quiz_216",
+    "category": "ETF·펀드",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘인버스 ETF’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "총보수 외에 매매비용과 기타비용이 추가될 수 있습니다.",
+      "초보자는 고변동성 자산 비중을 제한하는 것이 좋습니다.",
+      "저축률을 무리하게 높여 필수생활비와 비상금을 부족하게 만들면 안 됩니다.",
+      "장기보유 시 복리효과로 기대한 반대수익률과 차이가 날 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "인버스 ETF 관련 주의사항: 장기보유 시 복리효과로 기대한 반대수익률과 차이가 날 수 있습니다.",
+    "relatedTermId": "inverse_etf"
+  },
+  {
+    "id": "quiz_217",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“펀드와 ETF 등 투자상품을 설계하고 운용하는 금융회사”",
+    "options": [
+      "현금흐름",
+      "세후이자",
+      "자산운용사",
+      "배당수익률"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 자산운용사입니다. 자산운용사는 투자전략을 수립하고 자산을 매매하며 상품의 운용성과를 관리합니다.",
+    "relatedTermId": "asset_manager"
+  },
+  {
+    "id": "quiz_218",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘자산운용사’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "자산가격 변화로 달라진 포트폴리오 비중을 목표비중으로 되돌리는 작업",
+      "기업이 새 주식을 발행해 투자자로부터 자금을 받는 것",
+      "펀드와 ETF 등 투자상품을 설계하고 운용하는 금융회사",
+      "미국 달러의 가치를 주요 통화 묶음과 비교한 지수"
+    ],
+    "answerIndex": 2,
+    "explanation": "자산운용사은(는) 펀드와 ETF 등 투자상품을 설계하고 운용하는 금융회사입니다.",
+    "relatedTermId": "asset_manager"
+  },
+  {
+    "id": "quiz_219",
+    "category": "ETF·펀드",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘자산운용사’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "중도해지하면 약정금리보다 낮은 이율이 적용될 수 있습니다.",
+      "국가와 기관별 산출방식과 기준선을 확인해야 합니다.",
+      "운용사의 규모뿐 아니라 상품별 성과와 비용을 함께 비교해야 합니다.",
+      "지수가 올라도 모든 종목이 오르는 것은 아닙니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "자산운용사 관련 주의사항: 운용사의 규모뿐 아니라 상품별 성과와 비용을 함께 비교해야 합니다.",
+    "relatedTermId": "asset_manager"
+  },
+  {
+    "id": "quiz_220",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“정부가 재정자금을 마련하기 위해 발행하는 채권”",
+    "options": [
+      "PBR",
+      "만기",
+      "국채",
+      "적립식 투자"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 국채입니다. 국채는 국가가 원금과 이자 지급을 약속하는 채권으로 해당 국가의 신용위험과 금리변화의 영향을 받습니다.",
+    "relatedTermId": "government_bond"
+  },
+  {
+    "id": "quiz_221",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘국채’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "정부가 재정자금을 마련하기 위해 발행하는 채권",
+      "미국 달러의 가치를 주요 통화 묶음과 비교한 지수",
+      "배당이나 잔여재산 분배에서 보통주보다 우선권을 갖도록 설계된 주식",
+      "소비자가 경제상황과 향후 소비여건을 어떻게 느끼는지 나타내는 지수"
+    ],
+    "answerIndex": 0,
+    "explanation": "국채은(는) 정부가 재정자금을 마련하기 위해 발행하는 채권입니다.",
+    "relatedTermId": "government_bond"
+  },
+  {
+    "id": "quiz_222",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘국채’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "실제 투자수익률은 매입가격에 따라 달라질 수 있습니다.",
+      "GDP만으로 국민의 삶의 질과 소득분배를 모두 설명할 수는 없습니다.",
+      "국채도 만기 전 매도하면 시장금리 변화로 손실이 발생할 수 있습니다.",
+      "광고된 최고금리가 본인에게 실제 적용되는지 조건을 확인해야 합니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "국채 관련 주의사항: 국채도 만기 전 매도하면 시장금리 변화로 손실이 발생할 수 있습니다.",
+    "relatedTermId": "government_bond"
+  },
+  {
+    "id": "quiz_223",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업이 자금을 조달하기 위해 발행하는 채권”",
+    "options": [
+      "GDP",
+      "회사채",
+      "예금자보호",
+      "중도해지"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 회사채입니다. 회사채 투자자는 기업에 돈을 빌려주고 이자를 받지만 기업의 신용상태에 따라 부도위험을 부담합니다.",
+    "relatedTermId": "corporate_bond"
+  },
+  {
+    "id": "quiz_224",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘회사채’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "나스닥시장 상장기업의 흐름을 나타내며 기술주 비중이 높은 지수",
+      "정상 주소를 입력해도 가짜 금융사이트로 연결해 정보를 빼내는 사기",
+      "기업이 자금을 조달하기 위해 발행하는 채권",
+      "주가가 주당순자산의 몇 배인지 나타내는 지표"
+    ],
+    "answerIndex": 2,
+    "explanation": "회사채은(는) 기업이 자금을 조달하기 위해 발행하는 채권입니다.",
+    "relatedTermId": "corporate_bond"
+  },
+  {
+    "id": "quiz_225",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘회사채’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "비율 계산방식이 목적마다 다르므로 기준을 명확히 해야 합니다.",
+      "표면금리만 보지 말고 발행기업의 신용등급을 확인해야 합니다.",
+      "거래량 증가만으로 주가 상승을 단정할 수 없습니다.",
+      "저축률을 무리하게 높여 필수생활비와 비상금을 부족하게 만들면 안 됩니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "회사채 관련 주의사항: 표면금리만 보지 말고 발행기업의 신용등급을 확인해야 합니다.",
+    "relatedTermId": "corporate_bond"
+  },
+  {
+    "id": "quiz_226",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“채무자가 원금과 이자를 갚을 능력을 등급으로 평가한 것”",
+    "options": [
+      "스미싱",
+      "이표채",
+      "신용등급",
+      "ETF"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 신용등급입니다. 신용등급은 채권 발행자의 상환능력과 부도가능성을 비교하는 참고지표입니다.",
+    "relatedTermId": "credit_rating"
+  },
+  {
+    "id": "quiz_227",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘신용등급’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "채권이 시장에서 매매되는 현재 가격",
+      "일정 기간 한 나라에서 생산된 최종 재화와 서비스의 시장가치",
+      "금융상품의 약정 기간이 끝나는 시점",
+      "채무자가 원금과 이자를 갚을 능력을 등급으로 평가한 것"
+    ],
+    "answerIndex": 3,
+    "explanation": "신용등급은(는) 채무자가 원금과 이자를 갚을 능력을 등급으로 평가한 것입니다.",
+    "relatedTermId": "credit_rating"
+  },
+  {
+    "id": "quiz_228",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘신용등급’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "지수 상승이 모든 기술기업의 실적개선을 뜻하지는 않습니다.",
+      "중도 해지 시 약정 이자가 줄어들 수 있습니다.",
+      "광고 금리의 우대조건을 확인해야 합니다.",
+      "신용등급은 미래 상환을 보장하지 않으며 상황에 따라 변경될 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "신용등급 관련 주의사항: 신용등급은 미래 상환을 보장하지 않으며 상황에 따라 변경될 수 있습니다.",
+    "relatedTermId": "credit_rating"
+  },
+  {
+    "id": "quiz_229",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“채권을 현재가격에 매수해 만기까지 보유할 때 예상되는 연환산 수익률”",
+    "options": [
+      "저축률",
+      "호가",
+      "만기수익률",
+      "적금"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 만기수익률입니다. 만기수익률은 이자와 만기 상환금, 매입가격을 모두 반영한 채권 수익률 지표입니다.",
+    "relatedTermId": "ytm"
+  },
+  {
+    "id": "quiz_230",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘만기수익률’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "한 주를 여러 주로 나누어 주식 수를 늘리고 주당 가격을 낮추는 것",
+      "채권을 현재가격에 매수해 만기까지 보유할 때 예상되는 연환산 수익률",
+      "투자자가 펀드 지분을 돌려주고 현금으로 회수하는 것",
+      "은행에 돈을 맡기고 약정된 이자를 받는 금융상품"
+    ],
+    "answerIndex": 1,
+    "explanation": "만기수익률은(는) 채권을 현재가격에 매수해 만기까지 보유할 때 예상되는 연환산 수익률입니다.",
+    "relatedTermId": "ytm"
+  },
+  {
+    "id": "quiz_231",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘만기수익률’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "환율은 금리차 외에도 무역, 경기, 심리의 영향을 받습니다.",
+      "예상 체결가격이 계속 변할 수 있어 주문가격과 수량을 확인해야 합니다.",
+      "중간 이자를 같은 수익률로 재투자한다는 가정이 포함될 수 있습니다.",
+      "분할 자체가 기업 실적 개선이나 수익을 보장하지 않습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "만기수익률 관련 주의사항: 중간 이자를 같은 수익률로 재투자한다는 가정이 포함될 수 있습니다.",
+    "relatedTermId": "ytm"
+  },
+  {
+    "id": "quiz_232",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“채권이 시장에서 매매되는 현재 가격”",
+    "options": [
+      "배당",
+      "채권가격",
+      "원금 손실",
+      "레버리지 ETF"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 채권가격입니다. 기존 채권의 가격은 시장금리, 신용위험, 남은 만기 등에 따라 변합니다.",
+    "relatedTermId": "bond_price"
+  },
+  {
+    "id": "quiz_233",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘채권가격’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "채권이 시장에서 매매되는 현재 가격",
+      "미국 대형 상장기업 500개의 주가 흐름을 나타내는 대표 지수",
+      "미국 달러의 가치를 주요 통화 묶음과 비교한 지수",
+      "주가가 주당순이익의 몇 배인지 나타내는 지표"
+    ],
+    "answerIndex": 0,
+    "explanation": "채권가격은(는) 채권이 시장에서 매매되는 현재 가격입니다.",
+    "relatedTermId": "bond_price"
+  },
+  {
+    "id": "quiz_234",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘채권가격’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "만기 전 매도하면 액면가보다 낮은 가격으로 손실을 볼 수 있습니다.",
+      "분할 자체가 기업 실적 개선이나 수익을 보장하지 않습니다.",
+      "미체결 주문의 유효기간을 확인해야 합니다.",
+      "심리지표는 실제 소비지출과 차이가 날 수 있습니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "채권가격 관련 주의사항: 만기 전 매도하면 액면가보다 낮은 가격으로 손실을 볼 수 있습니다.",
+    "relatedTermId": "bond_price"
+  },
+  {
+    "id": "quiz_235",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“채권가격이 금리변화에 얼마나 민감한지 나타내는 지표”",
+    "options": [
+      "듀레이션",
+      "인덱스펀드",
+      "동시호가",
+      "보통주"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 듀레이션입니다. 듀레이션이 길수록 같은 금리변화에 채권가격이 더 크게 움직이는 경향이 있습니다.",
+    "relatedTermId": "duration"
+  },
+  {
+    "id": "quiz_236",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘듀레이션’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "특정 시장지수의 움직임을 따라가도록 운용하는 펀드",
+      "채권가격이 금리변화에 얼마나 민감한지 나타내는 지표",
+      "펀드 운용과 관리에 지속적으로 들어가는 여러 보수의 합계",
+      "거짓 정보나 고수익 보장 약속으로 투자금을 가로채는 행위"
+    ],
+    "answerIndex": 1,
+    "explanation": "듀레이션은(는) 채권가격이 금리변화에 얼마나 민감한지 나타내는 지표입니다.",
+    "relatedTermId": "duration"
+  },
+  {
+    "id": "quiz_237",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘듀레이션’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "듀레이션은 실제 가격변화를 완벽히 예측하는 값이 아니라 근사치입니다.",
+      "매매수수료와 운용보수는 다른 비용입니다.",
+      "모든 금융상품이 보호되는 것은 아니므로 상품설명서에서 보호 여부를 확인해야 합니다.",
+      "미체결 주문의 유효기간을 확인해야 합니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "듀레이션 관련 주의사항: 듀레이션은 실제 가격변화를 완벽히 예측하는 값이 아니라 근사치입니다.",
+    "relatedTermId": "duration"
+  },
+  {
+    "id": "quiz_238",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“만기 전까지 정기적으로 이자를 지급하는 채권”",
+    "options": [
+      "이표채",
+      "자산운용사",
+      "배당수익률",
+      "체결"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 이표채입니다. 이표채는 약정된 시점마다 이자를 지급하고 만기에는 원금을 상환합니다.",
+    "relatedTermId": "coupon_bond"
+  },
+  {
+    "id": "quiz_239",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘이표채’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "미국 대형 상장기업 500개의 주가 흐름을 나타내는 대표 지수",
+      "투자자가 주식을 사고 싶다고 제시한 가격",
+      "만기 전까지 정기적으로 이자를 지급하는 채권",
+      "일반적으로 의결권과 배당권을 가지는 대표적인 주식"
+    ],
+    "answerIndex": 2,
+    "explanation": "이표채은(는) 만기 전까지 정기적으로 이자를 지급하는 채권입니다.",
+    "relatedTermId": "coupon_bond"
+  },
+  {
+    "id": "quiz_240",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘이표채’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "추종 지수가 하락하면 펀드 가치도 하락할 수 있습니다.",
+      "등록 여부와 공시를 확인하고 확정수익 약속을 경계해야 합니다.",
+      "가격이 낮다고 반드시 저평가된 것은 아닙니다.",
+      "발행자가 이자와 원금을 지급하지 못할 신용위험이 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "이표채 관련 주의사항: 발행자가 이자와 원금을 지급하지 못할 신용위험이 있습니다.",
+    "relatedTermId": "coupon_bond"
+  },
+  {
+    "id": "quiz_241",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“이자를 별도로 지급하지 않고 액면가보다 싸게 발행되는 채권”",
+    "options": [
+      "할인채",
+      "포트폴리오",
+      "매수",
+      "자산운용사"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 할인채입니다. 할인채 투자자는 낮은 가격에 채권을 사고 만기에 액면가를 받아 차익을 얻습니다.",
+    "relatedTermId": "discount_bond"
+  },
+  {
+    "id": "quiz_242",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘할인채’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "명목수익률에서 물가상승의 영향을 반영한 실제 구매력 기준 수익률",
+      "투자자가 제시한 매수 또는 매도 희망가격",
+      "기업이 자기 회사의 발행주식을 직접 보유한 것",
+      "이자를 별도로 지급하지 않고 액면가보다 싸게 발행되는 채권"
+    ],
+    "answerIndex": 3,
+    "explanation": "할인채은(는) 이자를 별도로 지급하지 않고 액면가보다 싸게 발행되는 채권입니다.",
+    "relatedTermId": "discount_bond"
+  },
+  {
+    "id": "quiz_243",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘할인채’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "급전이 필요할 가능성이 있다면 비상금을 별도로 확보하는 것이 좋습니다.",
+      "만기 전 시장가격은 금리와 신용상태에 따라 변할 수 있습니다.",
+      "단기간 여러 금융회사에 대출을 반복 신청하면 신용평가에 불리할 수 있습니다.",
+      "장기보유 시 복리효과로 기대한 반대수익률과 차이가 날 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "할인채 관련 주의사항: 만기 전 시장가격은 금리와 신용상태에 따라 변할 수 있습니다.",
+    "relatedTermId": "discount_bond"
+  },
+  {
+    "id": "quiz_244",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“신용위험이 있는 채권과 안전자산 금리의 차이”",
+    "options": [
+      "신용등급",
+      "소비율",
+      "신용스프레드",
+      "유상증자"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 신용스프레드입니다. 신용스프레드는 기업이나 발행자의 위험에 대해 투자자가 요구하는 추가 보상 수준을 나타냅니다.",
+    "relatedTermId": "credit_spread"
+  },
+  {
+    "id": "quiz_245",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘신용스프레드’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "신용위험이 있는 채권과 안전자산 금리의 차이",
+      "향후 경기 방향을 미리 파악하기 위해 여러 지표를 종합한 지수",
+      "ETF 시장가격이 순자산가치와 얼마나 차이 나는지를 나타내는 비율",
+      "운용자가 종목과 비중을 적극적으로 선택해 시장 초과수익을 추구하는 펀드"
+    ],
+    "answerIndex": 0,
+    "explanation": "신용스프레드은(는) 신용위험이 있는 채권과 안전자산 금리의 차이입니다.",
+    "relatedTermId": "credit_spread"
+  },
+  {
+    "id": "quiz_246",
+    "category": "채권·금리",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘신용스프레드’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "주주라고 해서 기업의 채무에 개인재산으로 무한책임을 지는 것은 아닙니다.",
+      "장기보유 시 복리효과로 기대한 반대수익률과 차이가 날 수 있습니다.",
+      "스프레드가 높다는 것은 높은 수익 가능성과 함께 부도위험도 크다는 뜻일 수 있습니다.",
+      "지수 상승이 모든 기술기업의 실적개선을 뜻하지는 않습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "신용스프레드 관련 주의사항: 스프레드가 높다는 것은 높은 수익 가능성과 함께 부도위험도 크다는 뜻일 수 있습니다.",
+    "relatedTermId": "credit_spread"
+  },
+  {
+    "id": "quiz_247",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“채권 발행자가 원금을 상환하기로 약속한 날짜”",
+    "options": [
+      "채권 만기",
+      "자유적금",
+      "스미싱",
+      "추적오차"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 채권 만기입니다. 채권 만기는 투자기간과 금리위험을 결정하는 중요한 조건입니다.",
+    "relatedTermId": "bond_maturity"
+  },
+  {
+    "id": "quiz_248",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘채권 만기’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "채권이 시장에서 매매되는 현재 가격",
+      "채무자가 원금과 이자를 갚을 능력을 등급으로 평가한 것",
+      "투자자가 제시한 매수 또는 매도 희망가격",
+      "채권 발행자가 원금을 상환하기로 약속한 날짜"
+    ],
+    "answerIndex": 3,
+    "explanation": "채권 만기은(는) 채권 발행자가 원금을 상환하기로 약속한 날짜입니다.",
+    "relatedTermId": "bond_maturity"
+  },
+  {
+    "id": "quiz_249",
+    "category": "채권·금리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘채권 만기’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "가격이 낮다고 반드시 저평가된 것은 아닙니다.",
+      "추종 지수가 하락하면 펀드 가치도 하락할 수 있습니다.",
+      "발행자 부도와 시장금리 상승으로 손실이 날 수 있습니다.",
+      "자금이 필요한 시점과 채권 만기가 맞는지 확인해야 합니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "채권 만기 관련 주의사항: 자금이 필요한 시점과 채권 만기가 맞는지 확인해야 합니다.",
+    "relatedTermId": "bond_maturity"
+  },
+  {
+    "id": "quiz_250",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“매수 주문과 매도 주문의 조건이 맞아 실제 거래가 성립하는 것”",
+    "options": [
+      "위험과 수익",
+      "주가",
+      "듀레이션",
+      "체결"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 체결입니다. 주문을 제출했다고 거래가 끝난 것은 아니며 상대 주문과 가격이 맞아야 체결됩니다.",
+    "relatedTermId": "execution"
+  },
+  {
+    "id": "quiz_251",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘체결’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "전화로 기관이나 지인을 사칭해 송금과 개인정보 제공을 유도하는 사기",
+      "가짜 메시지나 사이트로 금융정보를 탈취하는 사기",
+      "투자자가 주식을 사고 싶다고 제시한 가격",
+      "매수 주문과 매도 주문의 조건이 맞아 실제 거래가 성립하는 것"
+    ],
+    "answerIndex": 3,
+    "explanation": "체결은(는) 매수 주문과 매도 주문의 조건이 맞아 실제 거래가 성립하는 것입니다.",
+    "relatedTermId": "execution"
+  },
+  {
+    "id": "quiz_252",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘체결’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "기업 청산 시 채권자와 우선주보다 변제순위가 뒤일 수 있습니다.",
+      "선행지수가 실제 경기를 완벽히 예측하는 것은 아닙니다.",
+      "최종 자금계획에는 세후이자를 기준으로 계산하는 것이 안전합니다.",
+      "지정가 주문은 원하는 가격에 도달하지 않으면 체결되지 않을 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "체결 관련 주의사항: 지정가 주문은 원하는 가격에 도달하지 않으면 체결되지 않을 수 있습니다.",
+    "relatedTermId": "execution"
+  },
+  {
+    "id": "quiz_253",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“주식이나 금융상품을 사는 거래”",
+    "options": [
+      "적립식 투자",
+      "매수",
+      "EPS",
+      "복리"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 매수입니다. 매수는 자산의 향후 가치 상승이나 배당 등을 기대하고 소유권을 취득하는 행위입니다.",
+    "relatedTermId": "buy"
+  },
+  {
+    "id": "quiz_254",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘매수’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "주식이나 금융상품을 사는 거래",
+      "펀드 운용과 관리에 지속적으로 들어가는 여러 보수의 합계",
+      "여러 자산에 나누어 투자해 특정 자산 위험을 줄이는 전략",
+      "예금, 주식, 채권 등 자산 종류별 투자비중을 정하는 것"
+    ],
+    "answerIndex": 0,
+    "explanation": "매수은(는) 주식이나 금융상품을 사는 거래입니다.",
+    "relatedTermId": "buy"
+  },
+  {
+    "id": "quiz_255",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘매수’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "모든 금융상품이 보호되는 것은 아니므로 상품설명서에서 보호 여부를 확인해야 합니다.",
+      "기업 실적과 시장 상황에 따라 손실이 발생할 수 있습니다.",
+      "운용자의 판단이 시장보다 좋지 않으면 지수보다 낮은 성과가 날 수 있습니다.",
+      "충동적으로 전액 매수하지 말고 투자목표와 손실가능성을 확인해야 합니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "매수 관련 주의사항: 충동적으로 전액 매수하지 말고 투자목표와 손실가능성을 확인해야 합니다.",
+    "relatedTermId": "buy"
+  },
+  {
+    "id": "quiz_256",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“보유한 주식이나 금융상품을 파는 거래”",
+    "options": [
+      "환율",
+      "신용점수",
+      "리밸런싱",
+      "매도"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 매도입니다. 매도는 수익실현, 손실관리, 자산재배분 등의 목적으로 보유자산을 처분하는 행위입니다.",
+    "relatedTermId": "sell"
+  },
+  {
+    "id": "quiz_257",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘매도’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "금융상품의 위험과 조건을 충분히 설명하지 않거나 부적합하게 판매하는 행위",
+      "현역병 등 병역의무 이행자의 목돈 마련을 지원하는 정책성 적금",
+      "보유한 주식이나 금융상품을 파는 거래",
+      "일정한 금액을 정기적으로 나누어 투자하는 방식"
+    ],
+    "answerIndex": 2,
+    "explanation": "매도은(는) 보유한 주식이나 금융상품을 파는 거래입니다.",
+    "relatedTermId": "sell"
+  },
+  {
+    "id": "quiz_258",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘매도’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "전화를 끊고 해당 기관의 공식 대표번호로 직접 확인해야 합니다.",
+      "신주 발행으로 주식수가 늘면 기존 주주의 지분가치가 희석될 수 있습니다.",
+      "감정적인 공포매도보다 사전에 정한 기준에 따라 판단하는 것이 좋습니다.",
+      "상품의 이자 계산 방식이 단리인지 확인해야 합니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "매도 관련 주의사항: 감정적인 공포매도보다 사전에 정한 기준에 따라 판단하는 것이 좋습니다.",
+    "relatedTermId": "sell"
+  },
+  {
+    "id": "quiz_259",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“투자자가 주식을 사고 싶다고 제시한 가격”",
+    "options": [
+      "단리",
+      "만기수익률",
+      "호가",
+      "매수호가"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 매수호가입니다. 매수호가는 현재 시장에서 대기 중인 매수 주문의 희망가격입니다.",
+    "relatedTermId": "bid_price"
+  },
+  {
+    "id": "quiz_260",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘매수호가’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "투자자가 주식을 사고 싶다고 제시한 가격",
+      "높은 기대수익에는 일반적으로 더 큰 손실 가능성이 따르는 관계",
+      "채권을 현재가격에 매수해 만기까지 보유할 때 예상되는 연환산 수익률",
+      "미국의 대표 우량기업 30개 주가를 바탕으로 계산하는 지수"
+    ],
+    "answerIndex": 0,
+    "explanation": "매수호가은(는) 투자자가 주식을 사고 싶다고 제시한 가격입니다.",
+    "relatedTermId": "bid_price"
+  },
+  {
+    "id": "quiz_261",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘매수호가’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "호가잔량은 언제든 취소될 수 있어 확정 수요로 보면 안 됩니다.",
+      "선행지수가 실제 경기를 완벽히 예측하는 것은 아닙니다.",
+      "인증서 경고와 주소창을 확인하고 의심되면 다른 기기와 공식 앱을 이용해야 합니다.",
+      "필수지출과 선택지출을 구분하지 않고 무조건 줄이면 생활의 질이 악화될 수 있습니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "매수호가 관련 주의사항: 호가잔량은 언제든 취소될 수 있어 확정 수요로 보면 안 됩니다.",
+    "relatedTermId": "bid_price"
+  },
+  {
+    "id": "quiz_262",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“투자자가 주식을 팔고 싶다고 제시한 가격”",
+    "options": [
+      "매도호가",
+      "자산배분",
+      "개인 부채비율",
+      "자유적금"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 매도호가입니다. 매도호가는 시장에서 대기 중인 매도 주문의 희망가격입니다.",
+    "relatedTermId": "ask_price"
+  },
+  {
+    "id": "quiz_263",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘매도호가’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "매수 주문과 매도 주문의 조건이 맞아 실제 거래가 성립하는 것",
+      "보유한 전체 자산에서 전체 부채를 뺀 금액",
+      "투자자가 주식을 팔고 싶다고 제시한 가격",
+      "현재 주가에 발행주식 수를 곱한 기업의 시장가치"
+    ],
+    "answerIndex": 2,
+    "explanation": "매도호가은(는) 투자자가 주식을 팔고 싶다고 제시한 가격입니다.",
+    "relatedTermId": "ask_price"
+  },
+  {
+    "id": "quiz_264",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘매도호가’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "매도호가가 많다고 반드시 주가가 하락하는 것은 아닙니다.",
+      "일회성 지출과 비정기 수입도 함께 기록해야 정확합니다.",
+      "모든 금융상품 금리에 즉시 같은 폭으로 반영되지는 않습니다.",
+      "중간 이자를 같은 수익률로 재투자한다는 가정이 포함될 수 있습니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "매도호가 관련 주의사항: 매도호가가 많다고 반드시 주가가 하락하는 것은 아닙니다.",
+    "relatedTermId": "ask_price"
+  },
+  {
+    "id": "quiz_265",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“하루 동안 주가가 오를 수 있는 법정 최대가격”",
+    "options": [
+      "채권가격",
+      "자산배분",
+      "정기예금",
+      "상한가"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 상한가입니다. 가격제한폭 제도에서 기준가격 대비 허용되는 최대 상승가격을 상한가라고 합니다.",
+    "relatedTermId": "upper_limit"
+  },
+  {
+    "id": "quiz_266",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘상한가’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "특정 시장지수의 움직임을 따라가도록 운용하는 펀드",
+      "한 주를 여러 주로 나누어 주식 수를 늘리고 주당 가격을 낮추는 것",
+      "하루 동안 주가가 오를 수 있는 법정 최대가격",
+      "신용위험이 있는 채권과 안전자산 금리의 차이"
+    ],
+    "answerIndex": 2,
+    "explanation": "상한가은(는) 하루 동안 주가가 오를 수 있는 법정 최대가격입니다.",
+    "relatedTermId": "upper_limit"
+  },
+  {
+    "id": "quiz_267",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘상한가’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "상한가 종목은 다음 거래일 큰 변동과 급락 가능성도 있습니다.",
+      "사업모델보다 추천인 수당과 확정수익을 강조하면 투자하지 말아야 합니다.",
+      "만기 전 시장가격은 금리와 신용상태에 따라 변할 수 있습니다.",
+      "유동성이 낮으면 불리한 가격에 체결될 수 있습니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "상한가 관련 주의사항: 상한가 종목은 다음 거래일 큰 변동과 급락 가능성도 있습니다.",
+    "relatedTermId": "upper_limit"
+  },
+  {
+    "id": "quiz_268",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“하루 동안 주가가 내릴 수 있는 법정 최저가격”",
+    "options": [
+      "KOSPI",
+      "분배금",
+      "신용스프레드",
+      "하한가"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 하한가입니다. 가격제한폭 제도에서 기준가격 대비 허용되는 최대 하락가격을 하한가라고 합니다.",
+    "relatedTermId": "lower_limit"
+  },
+  {
+    "id": "quiz_269",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘하한가’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "미국의 대표 우량기업 30개 주가를 바탕으로 계산하는 지수",
+      "채권 발행자가 원금을 상환하기로 약속한 날짜",
+      "하루 동안 주가가 내릴 수 있는 법정 최저가격",
+      "ETF나 펀드가 발생한 이자와 배당 등을 투자자에게 지급하는 금액"
+    ],
+    "answerIndex": 2,
+    "explanation": "하한가은(는) 하루 동안 주가가 내릴 수 있는 법정 최저가격입니다.",
+    "relatedTermId": "lower_limit"
+  },
+  {
+    "id": "quiz_270",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘하한가’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "짧은 기간의 차이만으로 상품을 판단하면 안 됩니다.",
+      "하한가에서는 매도주문이 많아 원하는 시점에 팔지 못할 수 있습니다.",
+      "모든 금융상품이 보호되는 것은 아니므로 상품설명서에서 보호 여부를 확인해야 합니다.",
+      "부채가 많으면 ROE가 높아 보일 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "하한가 관련 주의사항: 하한가에서는 매도주문이 많아 원하는 시점에 팔지 못할 수 있습니다.",
+    "relatedTermId": "lower_limit"
+  },
+  {
+    "id": "quiz_271",
+    "category": "주식 거래",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“일정 시간 주문을 모아 하나의 가격으로 동시에 체결하는 방식”",
+    "options": [
+      "환매",
+      "하한가",
+      "실업률",
+      "동시호가"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 동시호가입니다. 장 시작과 종료 전 등에 주문을 모은 뒤 가장 많은 거래가 성립되는 가격을 결정합니다.",
+    "relatedTermId": "call_auction"
+  },
+  {
+    "id": "quiz_272",
+    "category": "주식 거래",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘동시호가’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "일정 시간 주문을 모아 하나의 가격으로 동시에 체결하는 방식",
+      "펀드나 ETF 운용 대가로 지속적으로 부담하는 비용",
+      "ETF나 펀드가 발생한 이자와 배당 등을 투자자에게 지급하는 금액",
+      "주가가 주당순자산의 몇 배인지 나타내는 지표"
+    ],
+    "answerIndex": 0,
+    "explanation": "동시호가은(는) 일정 시간 주문을 모아 하나의 가격으로 동시에 체결하는 방식입니다.",
+    "relatedTermId": "call_auction"
+  },
+  {
+    "id": "quiz_273",
+    "category": "주식 거래",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘동시호가’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "장기보유 시 복리효과로 기대한 반대수익률과 차이가 날 수 있습니다.",
+      "국채도 만기 전 매도하면 시장금리 변화로 손실이 발생할 수 있습니다.",
+      "예상 체결가격이 계속 변할 수 있어 주문가격과 수량을 확인해야 합니다.",
+      "너무 잦은 리밸런싱은 거래비용과 세금을 늘릴 수 있습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "동시호가 관련 주의사항: 예상 체결가격이 계속 변할 수 있어 주문가격과 수량을 확인해야 합니다.",
+    "relatedTermId": "call_auction"
+  },
+  {
+    "id": "quiz_274",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“자산을 가격 손실을 크게 내지 않고 빠르게 현금화할 수 있는 정도”",
+    "options": [
+      "추적오차",
+      "신용스프레드",
+      "BPS",
+      "유동성"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 유동성입니다. 거래량과 주문이 풍부한 자산은 일반적으로 원하는 시점에 거래하기 쉬워 유동성이 높다고 합니다.",
+    "relatedTermId": "liquidity"
+  },
+  {
+    "id": "quiz_275",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘유동성’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "자산을 가격 손실을 크게 내지 않고 빠르게 현금화할 수 있는 정도",
+      "주권에 표시되는 회계상 기준금액",
+      "펀드와 ETF 등 투자상품을 설계하고 운용하는 금융회사",
+      "거짓 정보나 고수익 보장 약속으로 투자금을 가로채는 행위"
+    ],
+    "answerIndex": 0,
+    "explanation": "유동성은(는) 자산을 가격 손실을 크게 내지 않고 빠르게 현금화할 수 있는 정도입니다.",
+    "relatedTermId": "liquidity"
+  },
+  {
+    "id": "quiz_276",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘유동성’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "주주라고 해서 기업의 채무에 개인재산으로 무한책임을 지는 것은 아닙니다.",
+      "지정가 주문은 원하는 가격에 도달하지 않으면 체결되지 않을 수 있습니다.",
+      "일회성 이익과 주식수 변동이 EPS를 왜곡할 수 있습니다.",
+      "유동성이 낮으면 큰 주문이 가격을 크게 움직일 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "유동성 관련 주의사항: 유동성이 낮으면 큰 주문이 가격을 크게 움직일 수 있습니다.",
+    "relatedTermId": "liquidity"
+  },
+  {
+    "id": "quiz_277",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“일정 기간 동안 거래된 주식의 금액 합계”",
+    "options": [
+      "인버스 ETF",
+      "소비자심리지수",
+      "거래대금",
+      "우선주"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 거래대금입니다. 거래대금은 거래량에 거래가격을 반영해 실제 자금이 얼마나 오갔는지 보여줍니다.",
+    "relatedTermId": "trading_value"
+  },
+  {
+    "id": "quiz_278",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘거래대금’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "전화로 기관이나 지인을 사칭해 송금과 개인정보 제공을 유도하는 사기",
+      "투자 후 처음 넣은 돈보다 적은 금액이 남는 상황",
+      "일정 기간 동안 거래된 주식의 금액 합계",
+      "정기적으로 돈을 납입해 목돈을 만드는 금융상품"
+    ],
+    "answerIndex": 2,
+    "explanation": "거래대금은(는) 일정 기간 동안 거래된 주식의 금액 합계입니다.",
+    "relatedTermId": "trading_value"
+  },
+  {
+    "id": "quiz_279",
+    "category": "주식 거래",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘거래대금’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "거래대금 증가만으로 매수 또는 매도 우위를 단정할 수 없습니다.",
+      "등록 여부와 공시를 확인하고 확정수익 약속을 경계해야 합니다.",
+      "광고된 최고금리가 본인에게 실제 적용되는지 조건을 확인해야 합니다.",
+      "수수료와 환매조건을 확인해야 합니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "거래대금 관련 주의사항: 거래대금 증가만으로 매수 또는 매도 우위를 단정할 수 없습니다.",
+    "relatedTermId": "trading_value"
+  },
+  {
+    "id": "quiz_280",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“미국 대형 상장기업 500개의 주가 흐름을 나타내는 대표 지수”",
+    "options": [
+      "S&P 500",
+      "표면금리",
+      "중도해지",
+      "추적오차"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 S&P 500입니다. S&P 500은 미국 주식시장과 대형기업의 전반적인 흐름을 파악하는 데 널리 사용됩니다.",
+    "relatedTermId": "sp500"
+  },
+  {
+    "id": "quiz_281",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘S&P 500’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "미국 대형 상장기업 500개의 주가 흐름을 나타내는 대표 지수",
+      "소득 중 저축에 사용하는 금액의 비율",
+      "약정 한도 안에서 납입 시기와 금액을 비교적 자유롭게 정할 수 있는 적금",
+      "금융상품의 약정 만기 전에 계약을 종료하는 것"
+    ],
+    "answerIndex": 0,
+    "explanation": "S&P 500은(는) 미국 대형 상장기업 500개의 주가 흐름을 나타내는 대표 지수입니다.",
+    "relatedTermId": "sp500"
+  },
+  {
+    "id": "quiz_282",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘S&P 500’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "스프레드가 높다는 것은 높은 수익 가능성과 함께 부도위험도 크다는 뜻일 수 있습니다.",
+      "미국 전체 기업이나 모든 산업을 완벽히 대표하는 것은 아닙니다.",
+      "중도해지하면 약정금리보다 낮은 이율이 적용될 수 있습니다.",
+      "문자 링크 대신 공식 앱이나 대표번호로 확인해야 합니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "S&P 500 관련 주의사항: 미국 전체 기업이나 모든 산업을 완벽히 대표하는 것은 아닙니다.",
+    "relatedTermId": "sp500"
+  },
+  {
+    "id": "quiz_283",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“나스닥시장 상장기업의 흐름을 나타내며 기술주 비중이 높은 지수”",
+    "options": [
+      "총보수",
+      "하한가",
+      "NASDAQ 지수",
+      "괴리율"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 NASDAQ 지수입니다. NASDAQ 지수는 성장주와 기술기업 비중이 높아 금리와 성장기대 변화에 민감할 수 있습니다.",
+    "relatedTermId": "nasdaq"
+  },
+  {
+    "id": "quiz_284",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘NASDAQ 지수’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "금융상품의 약정 만기 전에 계약을 종료하는 것",
+      "소득 중 저축에 사용하는 금액의 비율",
+      "금융회사가 지급불능 상태가 될 때 법정 한도 내 예금을 보호하는 제도",
+      "나스닥시장 상장기업의 흐름을 나타내며 기술주 비중이 높은 지수"
+    ],
+    "answerIndex": 3,
+    "explanation": "NASDAQ 지수은(는) 나스닥시장 상장기업의 흐름을 나타내며 기술주 비중이 높은 지수입니다.",
+    "relatedTermId": "nasdaq"
+  },
+  {
+    "id": "quiz_285",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘NASDAQ 지수’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "등록 여부와 공시를 확인하고 확정수익 약속을 경계해야 합니다.",
+      "세금과 수수료까지 반영하면 실제 체감수익은 더 낮을 수 있습니다.",
+      "모든 금융상품 금리에 즉시 같은 폭으로 반영되지는 않습니다.",
+      "지수 상승이 모든 기술기업의 실적개선을 뜻하지는 않습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "NASDAQ 지수 관련 주의사항: 지수 상승이 모든 기술기업의 실적개선을 뜻하지는 않습니다.",
+    "relatedTermId": "nasdaq"
+  },
+  {
+    "id": "quiz_286",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“미국의 대표 우량기업 30개 주가를 바탕으로 계산하는 지수”",
+    "options": [
+      "경기선행지수",
+      "인버스 ETF",
+      "다우존스 산업평균지수",
+      "회사채"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 다우존스 산업평균지수입니다. 다우지수는 구성종목 수는 적지만 미국 주요 기업의 장기 흐름을 보여주는 전통적인 지수입니다.",
+    "relatedTermId": "dow_jones"
+  },
+  {
+    "id": "quiz_287",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘다우존스 산업평균지수’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "기업이 새 주식을 발행해 투자자로부터 자금을 받는 것",
+      "미국의 대표 우량기업 30개 주가를 바탕으로 계산하는 지수",
+      "기업의 소유권을 일정 단위로 나눈 증권",
+      "여러 자산에 나누어 투자해 특정 자산 위험을 줄이는 전략"
+    ],
+    "answerIndex": 1,
+    "explanation": "다우존스 산업평균지수은(는) 미국의 대표 우량기업 30개 주가를 바탕으로 계산하는 지수입니다.",
+    "relatedTermId": "dow_jones"
+  },
+  {
+    "id": "quiz_288",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘다우존스 산업평균지수’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "스프레드가 높다는 것은 높은 수익 가능성과 함께 부도위험도 크다는 뜻일 수 있습니다.",
+      "종목 수가 적어 미국시장 전체 흐름과 차이가 날 수 있습니다.",
+      "출처가 불명확한 링크는 열지 말고 공식 앱에서 직접 확인해야 합니다.",
+      "상한가 종목은 다음 거래일 큰 변동과 급락 가능성도 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "다우존스 산업평균지수 관련 주의사항: 종목 수가 적어 미국시장 전체 흐름과 차이가 날 수 있습니다.",
+    "relatedTermId": "dow_jones"
+  },
+  {
+    "id": "quiz_289",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“미국 주식시장의 향후 단기 변동성 기대를 나타내는 지수”",
+    "options": [
+      "BPS",
+      "동시호가",
+      "VIX",
+      "이표채"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 VIX입니다. VIX는 옵션가격을 이용해 시장이 예상하는 변동성을 측정하며 공포지수라고도 불립니다.",
+    "relatedTermId": "vix"
+  },
+  {
+    "id": "quiz_290",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘VIX’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "개인의 자산이나 소득 대비 부채 부담 수준을 나타내는 비율",
+      "미국 주식시장의 향후 단기 변동성 기대를 나타내는 지수",
+      "채무자가 원금과 이자를 갚을 능력을 등급으로 평가한 것",
+      "특정 조건을 충족할 때 기본금리에 추가로 적용되는 금리"
+    ],
+    "answerIndex": 1,
+    "explanation": "VIX은(는) 미국 주식시장의 향후 단기 변동성 기대를 나타내는 지수입니다.",
+    "relatedTermId": "vix"
+  },
+  {
+    "id": "quiz_291",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘VIX’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "추종 지수가 하락하면 펀드 가치도 하락할 수 있습니다.",
+      "납입액이 적으면 만기 수령액과 이자도 줄어들 수 있습니다.",
+      "가입 대상, 월 납입한도, 지원금 지급조건과 중도해지 조건을 확인해야 합니다.",
+      "VIX가 높다고 반드시 주가가 즉시 더 하락하는 것은 아닙니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "VIX 관련 주의사항: VIX가 높다고 반드시 주가가 즉시 더 하락하는 것은 아닙니다.",
+    "relatedTermId": "vix"
+  },
+  {
+    "id": "quiz_292",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“일정 기간 한 나라에서 생산된 최종 재화와 서비스의 시장가치”",
+    "options": [
+      "국채",
+      "EPS",
+      "만기",
+      "GDP"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 GDP입니다. GDP는 경제규모와 성장률을 평가하는 대표적인 거시경제 지표입니다.",
+    "relatedTermId": "gdp"
+  },
+  {
+    "id": "quiz_293",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘GDP’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "현재 주가에 발행주식 수를 곱한 기업의 시장가치",
+      "금융상품의 약정 만기 전에 계약을 종료하는 것",
+      "기업이 자기 회사의 발행주식을 직접 보유한 것",
+      "일정 기간 한 나라에서 생산된 최종 재화와 서비스의 시장가치"
+    ],
+    "answerIndex": 3,
+    "explanation": "GDP은(는) 일정 기간 한 나라에서 생산된 최종 재화와 서비스의 시장가치입니다.",
+    "relatedTermId": "gdp"
+  },
+  {
+    "id": "quiz_294",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘GDP’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "필수지출과 선택지출을 구분하지 않고 무조건 줄이면 생활의 질이 악화될 수 있습니다.",
+      "주가 급락으로 배당수익률이 높아 보이는 경우 기업상태를 함께 확인해야 합니다.",
+      "가격이 낮다고 반드시 저평가된 것은 아닙니다.",
+      "GDP만으로 국민의 삶의 질과 소득분배를 모두 설명할 수는 없습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "GDP 관련 주의사항: GDP만으로 국민의 삶의 질과 소득분배를 모두 설명할 수는 없습니다.",
+    "relatedTermId": "gdp"
+  },
+  {
+    "id": "quiz_295",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“경제활동인구 중 일자리가 없지만 구직 중인 사람의 비율”",
+    "options": [
+      "목표자금",
+      "다우존스 산업평균지수",
+      "실업률",
+      "배당수익률"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 실업률입니다. 실업률은 노동시장과 경기상황을 판단하는 중요한 지표입니다.",
+    "relatedTermId": "unemployment_rate"
+  },
+  {
+    "id": "quiz_296",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘실업률’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "정부가 재정자금을 마련하기 위해 발행하는 채권",
+      "개인의 자산이나 소득 대비 부채 부담 수준을 나타내는 비율",
+      "타인의 개인정보를 이용해 계좌, 대출, 휴대전화 등을 개설하거나 사용하는 행위",
+      "경제활동인구 중 일자리가 없지만 구직 중인 사람의 비율"
+    ],
+    "answerIndex": 3,
+    "explanation": "실업률은(는) 경제활동인구 중 일자리가 없지만 구직 중인 사람의 비율입니다.",
+    "relatedTermId": "unemployment_rate"
+  },
+  {
+    "id": "quiz_297",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘실업률’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "초보자는 고변동성 자산 비중을 제한하는 것이 좋습니다.",
+      "구직을 포기한 사람은 통계상 경제활동인구에서 제외될 수 있습니다.",
+      "적자 기업은 PER 해석이 어렵습니다.",
+      "증자 목적, 발행가격, 신주 규모를 확인해야 합니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "실업률 관련 주의사항: 구직을 포기한 사람은 통계상 경제활동인구에서 제외될 수 있습니다.",
+    "relatedTermId": "unemployment_rate"
+  },
+  {
+    "id": "quiz_298",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“기업 구매담당자 설문으로 경기 확장과 위축을 판단하는 지수”",
+    "options": [
+      "동시호가",
+      "현금흐름",
+      "PMI",
+      "BPS"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 PMI입니다. PMI는 신규주문, 생산, 고용 등을 조사하며 일반적으로 기준선 위는 확장, 아래는 위축을 의미합니다.",
+    "relatedTermId": "pmi"
+  },
+  {
+    "id": "quiz_299",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘PMI’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "기업 구매담당자 설문으로 경기 확장과 위축을 판단하는 지수",
+      "미국 주식시장의 향후 단기 변동성 기대를 나타내는 지수",
+      "수시입출금이 가능하면서 일반 입출금통장보다 높은 금리를 제공하는 계좌",
+      "전화로 기관이나 지인을 사칭해 송금과 개인정보 제공을 유도하는 사기"
+    ],
+    "answerIndex": 0,
+    "explanation": "PMI은(는) 기업 구매담당자 설문으로 경기 확장과 위축을 판단하는 지수입니다.",
+    "relatedTermId": "pmi"
+  },
+  {
+    "id": "quiz_300",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘PMI’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "중간 이자를 같은 수익률로 재투자한다는 가정이 포함될 수 있습니다.",
+      "시가총액이 크다고 수익성과 안정성이 항상 높은 것은 아닙니다.",
+      "국가와 기관별 산출방식과 기준선을 확인해야 합니다.",
+      "거래대금 증가만으로 매수 또는 매도 우위를 단정할 수 없습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "PMI 관련 주의사항: 국가와 기관별 산출방식과 기준선을 확인해야 합니다.",
+    "relatedTermId": "pmi"
+  },
+  {
+    "id": "quiz_301",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“미국 달러의 가치를 주요 통화 묶음과 비교한 지수”",
+    "options": [
+      "명의도용",
+      "ROE",
+      "이표채",
+      "달러인덱스"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 달러인덱스입니다. 달러인덱스는 유로, 엔 등 주요 통화 대비 달러 강도를 보여줍니다.",
+    "relatedTermId": "dollar_index"
+  },
+  {
+    "id": "quiz_302",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘달러인덱스’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "나스닥시장 상장기업의 흐름을 나타내며 기술주 비중이 높은 지수",
+      "미국 달러의 가치를 주요 통화 묶음과 비교한 지수",
+      "예금, 주식, 채권 등 자산 종류별 투자비중을 정하는 것",
+      "미국의 대표 우량기업 30개 주가를 바탕으로 계산하는 지수"
+    ],
+    "answerIndex": 1,
+    "explanation": "달러인덱스은(는) 미국 달러의 가치를 주요 통화 묶음과 비교한 지수입니다.",
+    "relatedTermId": "dollar_index"
+  },
+  {
+    "id": "quiz_303",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘달러인덱스’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "비슷하게 움직이는 자산만 보유하면 효과가 작습니다.",
+      "하한가에서는 매도주문이 많아 원하는 시점에 팔지 못할 수 있습니다.",
+      "해외주가 상승에도 환율 하락으로 원화수익이 줄 수 있습니다.",
+      "원·달러 환율과 항상 같은 폭과 방향으로 움직이지는 않습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "달러인덱스 관련 주의사항: 원·달러 환율과 항상 같은 폭과 방향으로 움직이지는 않습니다.",
+    "relatedTermId": "dollar_index"
+  },
+  {
+    "id": "quiz_304",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“두 국가나 두 금융상품 사이의 금리 차이”",
+    "options": [
+      "채권가격",
+      "우선주",
+      "금리차",
+      "다단계 금융사기"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 금리차입니다. 국가 간 금리차는 자금이동과 환율에 영향을 줄 수 있으며 채권 간 금리차는 위험차이를 반영할 수 있습니다.",
+    "relatedTermId": "interest_rate_gap"
+  },
+  {
+    "id": "quiz_305",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘금리차’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "두 국가나 두 금융상품 사이의 금리 차이",
+      "기업의 주식을 보유해 소유권 일부를 가진 사람이나 기관",
+      "이자소득에 대한 세금을 공제한 뒤 실제로 받는 이자",
+      "상품 수익률이 추종 지수와 차이 나는 정도"
+    ],
+    "answerIndex": 0,
+    "explanation": "금리차은(는) 두 국가나 두 금융상품 사이의 금리 차이입니다.",
+    "relatedTermId": "interest_rate_gap"
+  },
+  {
+    "id": "quiz_306",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘금리차’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "미체결 주문의 유효기간을 확인해야 합니다.",
+      "추종 지수가 하락하면 펀드 가치도 하락할 수 있습니다.",
+      "환율은 금리차 외에도 무역, 경기, 심리의 영향을 받습니다.",
+      "등록 여부와 공시를 확인하고 확정수익 약속을 경계해야 합니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "금리차 관련 주의사항: 환율은 금리차 외에도 무역, 경기, 심리의 영향을 받습니다.",
+    "relatedTermId": "interest_rate_gap"
+  },
+  {
+    "id": "quiz_307",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“향후 경기 방향을 미리 파악하기 위해 여러 지표를 종합한 지수”",
+    "options": [
+      "파밍",
+      "경기선행지수",
+      "PER",
+      "순자산"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 경기선행지수입니다. 주문, 재고, 금융시장 등 경기보다 먼저 움직이는 항목을 조합해 경기전환 가능성을 판단합니다.",
+    "relatedTermId": "leading_indicator"
+  },
+  {
+    "id": "quiz_308",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘경기선행지수’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "특정 시장지수의 움직임을 따라가도록 운용하는 펀드",
+      "금융상품의 위험과 조건을 충분히 설명하지 않거나 부적합하게 판매하는 행위",
+      "기업이 주주에게 대가 없이 신주를 배정하는 것",
+      "향후 경기 방향을 미리 파악하기 위해 여러 지표를 종합한 지수"
+    ],
+    "answerIndex": 3,
+    "explanation": "경기선행지수은(는) 향후 경기 방향을 미리 파악하기 위해 여러 지표를 종합한 지수입니다.",
+    "relatedTermId": "leading_indicator"
+  },
+  {
+    "id": "quiz_309",
+    "category": "시장 지표",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘경기선행지수’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "낮은 PBR이 곧바로 저평가를 의미하지는 않습니다.",
+      "감정적인 공포매도보다 사전에 정한 기준에 따라 판단하는 것이 좋습니다.",
+      "과거 수익률만 보고 위험자산 비중을 높이면 안 됩니다.",
+      "선행지수가 실제 경기를 완벽히 예측하는 것은 아닙니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "경기선행지수 관련 주의사항: 선행지수가 실제 경기를 완벽히 예측하는 것은 아닙니다.",
+    "relatedTermId": "leading_indicator"
+  },
+  {
+    "id": "quiz_310",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“소비자가 경제상황과 향후 소비여건을 어떻게 느끼는지 나타내는 지수”",
+    "options": [
+      "분산투자",
+      "동시호가",
+      "국채",
+      "소비자심리지수"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 소비자심리지수입니다. 소비자심리는 가계의 소비와 저축 의사, 경기인식 등을 설문으로 측정합니다.",
+    "relatedTermId": "consumer_sentiment"
+  },
+  {
+    "id": "quiz_311",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘소비자심리지수’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "소비자가 경제상황과 향후 소비여건을 어떻게 느끼는지 나타내는 지수",
+      "기업 구매담당자 설문으로 경기 확장과 위축을 판단하는 지수",
+      "투입한 금액 대비 얻은 수익이나 손실의 비율",
+      "신규 투자자의 돈으로 기존 투자자에게 수익을 지급하며 확장하는 사기"
+    ],
+    "answerIndex": 0,
+    "explanation": "소비자심리지수은(는) 소비자가 경제상황과 향후 소비여건을 어떻게 느끼는지 나타내는 지수입니다.",
+    "relatedTermId": "consumer_sentiment"
+  },
+  {
+    "id": "quiz_312",
+    "category": "시장 지표",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘소비자심리지수’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "국채도 만기 전 매도하면 시장금리 변화로 손실이 발생할 수 있습니다.",
+      "매도호가가 많다고 반드시 주가가 하락하는 것은 아닙니다.",
+      "상품의 이자 계산 방식이 단리인지 확인해야 합니다.",
+      "심리지표는 실제 소비지출과 차이가 날 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "소비자심리지수 관련 주의사항: 심리지표는 실제 소비지출과 차이가 날 수 있습니다.",
+    "relatedTermId": "consumer_sentiment"
+  },
+  {
+    "id": "quiz_313",
+    "category": "자산관리",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“자산가격 변화로 달라진 포트폴리오 비중을 목표비중으로 되돌리는 작업”",
+    "options": [
+      "S&P 500",
+      "상한가",
+      "리밸런싱",
+      "인덱스펀드"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 리밸런싱입니다. 리밸런싱은 많이 오른 자산을 일부 줄이고 낮아진 자산을 늘려 위험수준을 관리합니다.",
+    "relatedTermId": "rebalancing"
+  },
+  {
+    "id": "quiz_314",
+    "category": "자산관리",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘리밸런싱’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "향후 경기 방향을 미리 파악하기 위해 여러 지표를 종합한 지수",
+      "자산가격 변화로 달라진 포트폴리오 비중을 목표비중으로 되돌리는 작업",
+      "일정한 금액을 정기적으로 나누어 투자하는 방식",
+      "일정 기간 한 나라에서 생산된 최종 재화와 서비스의 시장가치"
+    ],
+    "answerIndex": 1,
+    "explanation": "리밸런싱은(는) 자산가격 변화로 달라진 포트폴리오 비중을 목표비중으로 되돌리는 작업입니다.",
+    "relatedTermId": "rebalancing"
+  },
+  {
+    "id": "quiz_315",
+    "category": "자산관리",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘리밸런싱’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "너무 잦은 리밸런싱은 거래비용과 세금을 늘릴 수 있습니다.",
+      "구직을 포기한 사람은 통계상 경제활동인구에서 제외될 수 있습니다.",
+      "보통주와 가격, 거래량, 권리조건이 다르므로 종목 설명을 확인해야 합니다.",
+      "장부가치가 기업의 실제 시장가치와 항상 같지는 않습니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "리밸런싱 관련 주의사항: 너무 잦은 리밸런싱은 거래비용과 세금을 늘릴 수 있습니다.",
+    "relatedTermId": "rebalancing"
+  },
+  {
+    "id": "quiz_316",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“예금, 주식, 채권 등 자산 종류별 투자비중을 정하는 것”",
+    "options": [
+      "자산배분",
+      "할인채",
+      "원금",
+      "채권"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 자산배분입니다. 자산배분은 수익률 예측보다 투자목표와 위험감내 수준에 맞는 구조를 설계하는 과정입니다.",
+    "relatedTermId": "asset_allocation"
+  },
+  {
+    "id": "quiz_317",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘자산배분’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "기초지수가 하락할 때 수익이 나도록 반대 방향을 추종하는 ETF",
+      "미국의 대표 우량기업 30개 주가를 바탕으로 계산하는 지수",
+      "하루 동안 주가가 내릴 수 있는 법정 최저가격",
+      "예금, 주식, 채권 등 자산 종류별 투자비중을 정하는 것"
+    ],
+    "answerIndex": 3,
+    "explanation": "자산배분은(는) 예금, 주식, 채권 등 자산 종류별 투자비중을 정하는 것입니다.",
+    "relatedTermId": "asset_allocation"
+  },
+  {
+    "id": "quiz_318",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘자산배분’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "높은 배당률만 보고 투자하면 주가 하락 위험을 놓칠 수 있습니다.",
+      "만기 후 자동연장 또는 낮은 대기금리가 적용되는지 확인해야 합니다.",
+      "미국 전체 기업이나 모든 산업을 완벽히 대표하는 것은 아닙니다.",
+      "과거 수익률만 보고 위험자산 비중을 높이면 안 됩니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "자산배분 관련 주의사항: 과거 수익률만 보고 위험자산 비중을 높이면 안 됩니다.",
+    "relatedTermId": "asset_allocation"
+  },
+  {
+    "id": "quiz_319",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“일정 기간 들어오는 돈과 나가는 돈의 흐름”",
+    "options": [
+      "KOSPI",
+      "매도",
+      "현금흐름",
+      "ETF"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 현금흐름입니다. 현금흐름 관리는 수입, 고정지출, 변동지출, 저축을 파악해 잔여자금을 계획하는 기본 과정입니다.",
+    "relatedTermId": "cash_flow"
+  },
+  {
+    "id": "quiz_320",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘현금흐름’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "일정 기간 동안 거래된 주식의 금액 합계",
+      "특정 지수의 구성과 수익률을 따라가도록 운용하는 펀드",
+      "일정 기간 들어오는 돈과 나가는 돈의 흐름",
+      "이자소득세가 공제되기 전 계산된 이자"
+    ],
+    "answerIndex": 2,
+    "explanation": "현금흐름은(는) 일정 기간 들어오는 돈과 나가는 돈의 흐름입니다.",
+    "relatedTermId": "cash_flow"
+  },
+  {
+    "id": "quiz_321",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘현금흐름’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "표면금리만 보지 말고 발행기업의 신용등급을 확인해야 합니다.",
+      "일회성 지출과 비정기 수입도 함께 기록해야 정확합니다.",
+      "초보자는 고변동성 자산 비중을 제한하는 것이 좋습니다.",
+      "기업 청산 시 채권자와 우선주보다 변제순위가 뒤일 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "현금흐름 관련 주의사항: 일회성 지출과 비정기 수입도 함께 기록해야 정확합니다.",
+    "relatedTermId": "cash_flow"
+  },
+  {
+    "id": "quiz_322",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“소득 중 저축에 사용하는 금액의 비율”",
+    "options": [
+      "인버스 ETF",
+      "총보수",
+      "저축률",
+      "NASDAQ 지수"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 저축률입니다. 저축률은 월 소득 대비 예금, 적금 등으로 남기는 돈의 비중을 보여줍니다.",
+    "relatedTermId": "savings_rate"
+  },
+  {
+    "id": "quiz_323",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘저축률’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "소비자가 경제상황과 향후 소비여건을 어떻게 느끼는지 나타내는 지수",
+      "개인의 자산이나 소득 대비 부채 부담 수준을 나타내는 비율",
+      "일정 시간 주문을 모아 하나의 가격으로 동시에 체결하는 방식",
+      "소득 중 저축에 사용하는 금액의 비율"
+    ],
+    "answerIndex": 3,
+    "explanation": "저축률은(는) 소득 중 저축에 사용하는 금액의 비율입니다.",
+    "relatedTermId": "savings_rate"
+  },
+  {
+    "id": "quiz_324",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘저축률’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "액면가가 낮다고 주식이 저평가된 것은 아닙니다.",
+      "시가총액이 크다고 수익성과 안정성이 항상 높은 것은 아닙니다.",
+      "주주라고 해서 기업의 채무에 개인재산으로 무한책임을 지는 것은 아닙니다.",
+      "저축률을 무리하게 높여 필수생활비와 비상금을 부족하게 만들면 안 됩니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "저축률 관련 주의사항: 저축률을 무리하게 높여 필수생활비와 비상금을 부족하게 만들면 안 됩니다.",
+    "relatedTermId": "savings_rate"
+  },
+  {
+    "id": "quiz_325",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“소득 중 생활비와 소비에 사용하는 금액의 비율”",
+    "options": [
+      "레버리지",
+      "분산투자",
+      "소비율",
+      "물가상승률"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 소비율입니다. 소비율을 고정지출과 변동지출로 나누면 줄일 수 있는 항목을 찾기 쉽습니다.",
+    "relatedTermId": "consumption_rate"
+  },
+  {
+    "id": "quiz_326",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘소비율’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "한 주를 여러 주로 나누어 주식 수를 늘리고 주당 가격을 낮추는 것",
+      "미국 대형 상장기업 500개의 주가 흐름을 나타내는 대표 지수",
+      "소득 중 생활비와 소비에 사용하는 금액의 비율",
+      "기업의 주식을 보유해 소유권 일부를 가진 사람이나 기관"
+    ],
+    "answerIndex": 2,
+    "explanation": "소비율은(는) 소득 중 생활비와 소비에 사용하는 금액의 비율입니다.",
+    "relatedTermId": "consumption_rate"
+  },
+  {
+    "id": "quiz_327",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘소비율’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "주식 수가 늘어도 이론적으로 전체 지분가치가 즉시 증가하는 것은 아닙니다.",
+      "액면가가 낮다고 주식이 저평가된 것은 아닙니다.",
+      "신용등급은 미래 상환을 보장하지 않으며 상황에 따라 변경될 수 있습니다.",
+      "필수지출과 선택지출을 구분하지 않고 무조건 줄이면 생활의 질이 악화될 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "소비율 관련 주의사항: 필수지출과 선택지출을 구분하지 않고 무조건 줄이면 생활의 질이 악화될 수 있습니다.",
+    "relatedTermId": "consumption_rate"
+  },
+  {
+    "id": "quiz_328",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“보유한 전체 자산에서 전체 부채를 뺀 금액”",
+    "options": [
+      "순자산",
+      "만기수익률",
+      "PMI",
+      "신용점수"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 순자산입니다. 순자산은 현금, 예금, 투자자산 등에서 대출과 카드미지급금 같은 부채를 차감해 계산합니다.",
+    "relatedTermId": "net_worth"
+  },
+  {
+    "id": "quiz_329",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘순자산’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "채권가격이 금리변화에 얼마나 민감한지 나타내는 지표",
+      "높은 기대수익에는 일반적으로 더 큰 손실 가능성이 따르는 관계",
+      "여러 투자자의 돈을 모아 전문가가 운용하는 금융상품",
+      "보유한 전체 자산에서 전체 부채를 뺀 금액"
+    ],
+    "answerIndex": 3,
+    "explanation": "순자산은(는) 보유한 전체 자산에서 전체 부채를 뺀 금액입니다.",
+    "relatedTermId": "net_worth"
+  },
+  {
+    "id": "quiz_330",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘순자산’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "심리지표는 실제 소비지출과 차이가 날 수 있습니다.",
+      "거래대금 증가만으로 매수 또는 매도 우위를 단정할 수 없습니다.",
+      "장기간 보유 시 누적수익률이 단순히 지수 수익률의 배수가 되지 않을 수 있습니다.",
+      "주식과 부동산 등은 시장가격 변화로 순자산이 달라질 수 있습니다."
+    ],
+    "answerIndex": 3,
+    "explanation": "순자산 관련 주의사항: 주식과 부동산 등은 시장가격 변화로 순자산이 달라질 수 있습니다.",
+    "relatedTermId": "net_worth"
+  },
+  {
+    "id": "quiz_331",
+    "category": "자산관리",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“개인의 자산이나 소득 대비 부채 부담 수준을 나타내는 비율”",
+    "options": [
+      "채권 만기",
+      "수익률",
+      "개인 부채비율",
+      "포트폴리오"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 개인 부채비율입니다. 부채비율은 대출상환 가능성과 재무안정성을 점검할 때 활용할 수 있습니다.",
+    "relatedTermId": "debt_ratio_personal"
+  },
+  {
+    "id": "quiz_332",
+    "category": "자산관리",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘개인 부채비율’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "개인의 자산이나 소득 대비 부채 부담 수준을 나타내는 비율",
+      "특정 조건을 충족할 때 기본금리에 추가로 적용되는 금리",
+      "일정 기간 동안 실제로 거래된 주식 수",
+      "일정한 금액을 정기적으로 나누어 투자하는 방식"
+    ],
+    "answerIndex": 0,
+    "explanation": "개인 부채비율은(는) 개인의 자산이나 소득 대비 부채 부담 수준을 나타내는 비율입니다.",
+    "relatedTermId": "debt_ratio_personal"
+  },
+  {
+    "id": "quiz_333",
+    "category": "자산관리",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘개인 부채비율’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "비율 계산방식이 목적마다 다르므로 기준을 명확히 해야 합니다.",
+      "표면금리만 보지 말고 발행기업의 신용등급을 확인해야 합니다.",
+      "예상 체결가격이 계속 변할 수 있어 주문가격과 수량을 확인해야 합니다.",
+      "비슷하게 움직이는 자산만 보유하면 효과가 작습니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "개인 부채비율 관련 주의사항: 비율 계산방식이 목적마다 다르므로 기준을 명확히 해야 합니다.",
+    "relatedTermId": "debt_ratio_personal"
+  },
+  {
+    "id": "quiz_334",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“개인의 대출 상환능력과 금융거래 신뢰도를 점수로 평가한 값”",
+    "options": [
+      "신용점수",
+      "명의도용",
+      "신용등급",
+      "비상금"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 신용점수입니다. 신용점수는 연체, 대출규모, 거래기간 등의 영향을 받으며 대출 가능여부와 금리에 영향을 줄 수 있습니다.",
+    "relatedTermId": "credit_score"
+  },
+  {
+    "id": "quiz_335",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘신용점수’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "기업 순이익을 주식 수로 나눈 주당순이익",
+      "개인의 대출 상환능력과 금융거래 신뢰도를 점수로 평가한 값",
+      "이자소득세가 공제되기 전 계산된 이자",
+      "채권 발행자가 원금을 상환하기로 약속한 날짜"
+    ],
+    "answerIndex": 1,
+    "explanation": "신용점수은(는) 개인의 대출 상환능력과 금융거래 신뢰도를 점수로 평가한 값입니다.",
+    "relatedTermId": "credit_score"
+  },
+  {
+    "id": "quiz_336",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘신용점수’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "단기간 여러 금융회사에 대출을 반복 신청하면 신용평가에 불리할 수 있습니다.",
+      "비과세나 세제지원 여부에 따라 세후금액이 달라질 수 있습니다.",
+      "매매수수료와 운용보수는 다른 비용입니다.",
+      "해외주가 상승에도 환율 하락으로 원화수익이 줄 수 있습니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "신용점수 관련 주의사항: 단기간 여러 금융회사에 대출을 반복 신청하면 신용평가에 불리할 수 있습니다.",
+    "relatedTermId": "credit_score"
+  },
+  {
+    "id": "quiz_337",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“특정 목적과 시점에 맞춰 마련하려는 금액”",
+    "options": [
+      "파킹통장",
+      "명의도용",
+      "목표자금",
+      "KOSDAQ"
+    ],
+    "answerIndex": 2,
+    "explanation": "정답은 목표자금입니다. 목표자금은 전역, 교육, 주거, 여행 등 목적과 필요시점, 금액을 구체적으로 정해야 계획하기 쉽습니다.",
+    "relatedTermId": "financial_goal"
+  },
+  {
+    "id": "quiz_338",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘목표자금’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "이자소득세가 공제되기 전 계산된 이자",
+      "일정 기간 동안 실제로 거래된 주식 수",
+      "특정 목적과 시점에 맞춰 마련하려는 금액",
+      "한국 유가증권시장 대표 기업들의 흐름을 보여주는 지수"
+    ],
+    "answerIndex": 2,
+    "explanation": "목표자금은(는) 특정 목적과 시점에 맞춰 마련하려는 금액입니다.",
+    "relatedTermId": "financial_goal"
+  },
+  {
+    "id": "quiz_339",
+    "category": "자산관리",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘목표자금’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "목표기간이 짧으면 변동성 높은 투자보다 안정적 자산이 적합할 수 있습니다.",
+      "장부가치가 기업의 실제 시장가치와 항상 같지는 않습니다.",
+      "급전이 필요할 가능성이 있다면 비상금을 별도로 확보하는 것이 좋습니다.",
+      "상품의 이자 계산 방식이 단리인지 확인해야 합니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "목표자금 관련 주의사항: 목표기간이 짧으면 변동성 높은 투자보다 안정적 자산이 적합할 수 있습니다.",
+    "relatedTermId": "financial_goal"
+  },
+  {
+    "id": "quiz_340",
+    "category": "자산관리",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“명목수익률에서 물가상승의 영향을 반영한 실제 구매력 기준 수익률”",
+    "options": [
+      "중도해지",
+      "BPS",
+      "소비자심리지수",
+      "실질수익률"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 실질수익률입니다. 투자수익률이 플러스라도 물가가 더 크게 오르면 실질 구매력은 감소할 수 있습니다.",
+    "relatedTermId": "real_return"
+  },
+  {
+    "id": "quiz_341",
+    "category": "자산관리",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘실질수익률’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "만기 전까지 정기적으로 이자를 지급하는 채권",
+      "한국 유가증권시장 대표 기업들의 흐름을 보여주는 지수",
+      "명목수익률에서 물가상승의 영향을 반영한 실제 구매력 기준 수익률",
+      "정기적으로 돈을 납입해 목돈을 만드는 금융상품"
+    ],
+    "answerIndex": 2,
+    "explanation": "실질수익률은(는) 명목수익률에서 물가상승의 영향을 반영한 실제 구매력 기준 수익률입니다.",
+    "relatedTermId": "real_return"
+  },
+  {
+    "id": "quiz_342",
+    "category": "자산관리",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘실질수익률’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "세금과 수수료까지 반영하면 실제 체감수익은 더 낮을 수 있습니다.",
+      "등록 여부와 공시를 확인하고 확정수익 약속을 경계해야 합니다.",
+      "중도해지하면 약정금리보다 낮은 이율이 적용될 수 있습니다.",
+      "문자 링크 대신 공식 앱이나 대표번호로 확인해야 합니다."
+    ],
+    "answerIndex": 0,
+    "explanation": "실질수익률 관련 주의사항: 세금과 수수료까지 반영하면 실제 체감수익은 더 낮을 수 있습니다.",
+    "relatedTermId": "real_return"
+  },
+  {
+    "id": "quiz_343",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“전화로 기관이나 지인을 사칭해 송금과 개인정보 제공을 유도하는 사기”",
+    "options": [
+      "보이스피싱",
+      "적립식 투자",
+      "인버스 ETF",
+      "다단계 금융사기"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 보이스피싱입니다. 범죄자는 수사기관, 금융회사, 가족 등을 사칭해 불안감을 조성하고 즉시 송금을 요구합니다.",
+    "relatedTermId": "voice_phishing"
+  },
+  {
+    "id": "quiz_344",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘보이스피싱’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "전화로 기관이나 지인을 사칭해 송금과 개인정보 제공을 유도하는 사기",
+      "만기 전까지 정기적으로 이자를 지급하는 채권",
+      "예상하지 못한 지출에 대비해 쉽게 꺼내 쓰는 돈",
+      "소득 중 생활비와 소비에 사용하는 금액의 비율"
+    ],
+    "answerIndex": 0,
+    "explanation": "보이스피싱은(는) 전화로 기관이나 지인을 사칭해 송금과 개인정보 제공을 유도하는 사기입니다.",
+    "relatedTermId": "voice_phishing"
+  },
+  {
+    "id": "quiz_345",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘보이스피싱’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "가입 전 상품설명서와 핵심설명서를 읽고 이해되지 않는 부분은 서명하지 말아야 합니다.",
+      "일회성 지출과 비정기 수입도 함께 기록해야 정확합니다.",
+      "전화를 끊고 해당 기관의 공식 대표번호로 직접 확인해야 합니다.",
+      "지수 상승이 모든 기술기업의 실적개선을 뜻하지는 않습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "보이스피싱 관련 주의사항: 전화를 끊고 해당 기관의 공식 대표번호로 직접 확인해야 합니다.",
+    "relatedTermId": "voice_phishing"
+  },
+  {
+    "id": "quiz_346",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“문자메시지의 악성 링크를 이용해 개인정보나 금융정보를 탈취하는 사기”",
+    "options": [
+      "스미싱",
+      "주식분할",
+      "투자사기",
+      "주주"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 스미싱입니다. 택배, 청첩장, 과태료 등을 사칭한 링크로 악성 앱 설치나 가짜 사이트 접속을 유도합니다.",
+    "relatedTermId": "smishing"
+  },
+  {
+    "id": "quiz_347",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘스미싱’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "문자메시지의 악성 링크를 이용해 개인정보나 금융정보를 탈취하는 사기",
+      "정기적으로 돈을 납입해 목돈을 만드는 금융상품",
+      "한 주를 여러 주로 나누어 주식 수를 늘리고 주당 가격을 낮추는 것",
+      "개인의 대출 상환능력과 금융거래 신뢰도를 점수로 평가한 값"
+    ],
+    "answerIndex": 0,
+    "explanation": "스미싱은(는) 문자메시지의 악성 링크를 이용해 개인정보나 금융정보를 탈취하는 사기입니다.",
+    "relatedTermId": "smishing"
+  },
+  {
+    "id": "quiz_348",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘스미싱’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "총보수 외에 매매비용과 기타비용이 추가될 수 있습니다.",
+      "출처가 불명확한 링크는 열지 말고 공식 앱에서 직접 확인해야 합니다.",
+      "변동성이 큰 자산에 두면 필요할 때 손실일 수 있습니다.",
+      "유동성이 낮으면 큰 주문이 가격을 크게 움직일 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "스미싱 관련 주의사항: 출처가 불명확한 링크는 열지 말고 공식 앱에서 직접 확인해야 합니다.",
+    "relatedTermId": "smishing"
+  },
+  {
+    "id": "quiz_349",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“정상 주소를 입력해도 가짜 금융사이트로 연결해 정보를 빼내는 사기”",
+    "options": [
+      "저축률",
+      "적금",
+      "포트폴리오",
+      "파밍"
+    ],
+    "answerIndex": 3,
+    "explanation": "정답은 파밍입니다. 악성코드나 네트워크 설정 변조를 통해 사용자를 위조 사이트로 유도합니다.",
+    "relatedTermId": "pharming"
+  },
+  {
+    "id": "quiz_350",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘파밍’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "채권 액면가를 기준으로 약정된 연간 이자율",
+      "주가가 주당순이익의 몇 배인지 나타내는 지표",
+      "정상 주소를 입력해도 가짜 금융사이트로 연결해 정보를 빼내는 사기",
+      "채권이 시장에서 매매되는 현재 가격"
+    ],
+    "answerIndex": 2,
+    "explanation": "파밍은(는) 정상 주소를 입력해도 가짜 금융사이트로 연결해 정보를 빼내는 사기입니다.",
+    "relatedTermId": "pharming"
+  },
+  {
+    "id": "quiz_351",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘파밍’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "가격이 낮다고 반드시 저평가된 것은 아닙니다.",
+      "저축률을 무리하게 높여 필수생활비와 비상금을 부족하게 만들면 안 됩니다.",
+      "인증서 경고와 주소창을 확인하고 의심되면 다른 기기와 공식 앱을 이용해야 합니다.",
+      "만기 후 자동연장 또는 낮은 대기금리가 적용되는지 확인해야 합니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "파밍 관련 주의사항: 인증서 경고와 주소창을 확인하고 의심되면 다른 기기와 공식 앱을 이용해야 합니다.",
+    "relatedTermId": "pharming"
+  },
+  {
+    "id": "quiz_352",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“타인의 개인정보를 이용해 계좌, 대출, 휴대전화 등을 개설하거나 사용하는 행위”",
+    "options": [
+      "명의도용",
+      "예금자보호",
+      "펀드",
+      "실질수익률"
+    ],
+    "answerIndex": 0,
+    "explanation": "정답은 명의도용입니다. 신분증 사진, 인증번호, 계정정보가 유출되면 본인 모르게 금융거래가 발생할 수 있습니다.",
+    "relatedTermId": "identity_theft"
+  },
+  {
+    "id": "quiz_353",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "concept",
+    "question": "다음 중 ‘명의도용’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "타인의 개인정보를 이용해 계좌, 대출, 휴대전화 등을 개설하거나 사용하는 행위",
+      "미국 주식시장의 향후 단기 변동성 기대를 나타내는 지수",
+      "기업의 소유권을 일정 단위로 나눈 증권",
+      "일반적으로 의결권과 배당권을 가지는 대표적인 주식"
+    ],
+    "answerIndex": 0,
+    "explanation": "명의도용은(는) 타인의 개인정보를 이용해 계좌, 대출, 휴대전화 등을 개설하거나 사용하는 행위입니다.",
+    "relatedTermId": "identity_theft"
+  },
+  {
+    "id": "quiz_354",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "초급",
+    "type": "scenario",
+    "question": "‘명의도용’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "광고된 최고금리가 본인에게 실제 적용되는지 조건을 확인해야 합니다.",
+      "미국 전체 기업이나 모든 산업을 완벽히 대표하는 것은 아닙니다.",
+      "신분증과 인증번호를 타인에게 보내지 말고 정기적으로 금융거래 내역을 확인해야 합니다.",
+      "만기 후 자동연장 또는 낮은 대기금리가 적용되는지 확인해야 합니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "명의도용 관련 주의사항: 신분증과 인증번호를 타인에게 보내지 말고 정기적으로 금융거래 내역을 확인해야 합니다.",
+    "relatedTermId": "identity_theft"
+  },
+  {
+    "id": "quiz_355",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“신규 투자자의 돈으로 기존 투자자에게 수익을 지급하며 확장하는 사기”",
+    "options": [
+      "매수호가",
+      "다단계 금융사기",
+      "회사채",
+      "하한가"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 다단계 금융사기입니다. 실제 사업수익보다 신규 가입자 모집과 투자금 유입에 의존하며 자금유입이 끊기면 붕괴합니다.",
+    "relatedTermId": "ponzi_scheme"
+  },
+  {
+    "id": "quiz_356",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘다단계 금융사기’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "목돈을 정해진 기간 동안 맡기고 약정 이자를 받는 예금",
+      "두 국가나 두 금융상품 사이의 금리 차이",
+      "기초지수가 하락할 때 수익이 나도록 반대 방향을 추종하는 ETF",
+      "신규 투자자의 돈으로 기존 투자자에게 수익을 지급하며 확장하는 사기"
+    ],
+    "answerIndex": 3,
+    "explanation": "다단계 금융사기은(는) 신규 투자자의 돈으로 기존 투자자에게 수익을 지급하며 확장하는 사기입니다.",
+    "relatedTermId": "ponzi_scheme"
+  },
+  {
+    "id": "quiz_357",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘다단계 금융사기’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "필수지출과 선택지출을 구분하지 않고 무조건 줄이면 생활의 질이 악화될 수 있습니다.",
+      "자금이 필요한 시점과 채권 만기가 맞는지 확인해야 합니다.",
+      "사업모델보다 추천인 수당과 확정수익을 강조하면 투자하지 말아야 합니다.",
+      "장중 시장가격은 수급에 따라 NAV와 차이가 날 수 있습니다."
+    ],
+    "answerIndex": 2,
+    "explanation": "다단계 금융사기 관련 주의사항: 사업모델보다 추천인 수당과 확정수익을 강조하면 투자하지 말아야 합니다.",
+    "relatedTermId": "ponzi_scheme"
+  },
+  {
+    "id": "quiz_358",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "중급",
+    "type": "definition",
+    "question": "다음 설명에 해당하는 금융 용어는 무엇인가요?\n“금융상품의 위험과 조건을 충분히 설명하지 않거나 부적합하게 판매하는 행위”",
+    "options": [
+      "ROE",
+      "불완전판매",
+      "우선주",
+      "리밸런싱"
+    ],
+    "answerIndex": 1,
+    "explanation": "정답은 불완전판매입니다. 판매자는 투자자의 경험과 위험성향을 확인하고 상품의 손실가능성과 비용을 설명해야 합니다.",
+    "relatedTermId": "mis_selling"
+  },
+  {
+    "id": "quiz_359",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "중급",
+    "type": "concept",
+    "question": "다음 중 ‘불완전판매’에 대한 설명으로 가장 적절한 것은 무엇인가요?",
+    "options": [
+      "금융상품의 위험과 조건을 충분히 설명하지 않거나 부적합하게 판매하는 행위",
+      "채권을 현재가격에 매수해 만기까지 보유할 때 예상되는 연환산 수익률",
+      "최초 원금에 대해서만 이자를 계산하는 방식",
+      "주권에 표시되는 회계상 기준금액"
+    ],
+    "answerIndex": 0,
+    "explanation": "불완전판매은(는) 금융상품의 위험과 조건을 충분히 설명하지 않거나 부적합하게 판매하는 행위입니다.",
+    "relatedTermId": "mis_selling"
+  },
+  {
+    "id": "quiz_360",
+    "category": "금융 위험·사기 예방",
+    "difficulty": "중급",
+    "type": "scenario",
+    "question": "‘불완전판매’을 이해하거나 활용할 때 가장 적절한 주의사항은 무엇인가요?",
+    "options": [
+      "낮은 PBR이 곧바로 저평가를 의미하지는 않습니다.",
+      "가입 전 상품설명서와 핵심설명서를 읽고 이해되지 않는 부분은 서명하지 말아야 합니다.",
+      "기업 실적과 시장 상황에 따라 손실이 발생할 수 있습니다.",
+      "기업 청산 시 채권자와 우선주보다 변제순위가 뒤일 수 있습니다."
+    ],
+    "answerIndex": 1,
+    "explanation": "불완전판매 관련 주의사항: 가입 전 상품설명서와 핵심설명서를 읽고 이해되지 않는 부분은 서명하지 말아야 합니다.",
+    "relatedTermId": "mis_selling"
+  }
+]

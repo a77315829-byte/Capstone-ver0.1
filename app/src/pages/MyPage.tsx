@@ -1,4 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, {
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
 import {
 	Badge,
 	Box,
@@ -12,58 +17,95 @@ import {
 	Heading,
 	HStack,
 	SimpleGrid,
+	Skeleton,
 	Spacer,
 	Stack,
 	Stat,
 	StatLabel,
 	StatNumber,
 	Table,
+	TableContainer,
 	Tbody,
 	Td,
 	Text,
 	Th,
 	Thead,
 	Tr,
+	useToast,
 } from "@chakra-ui/react";
+import { RepeatIcon } from "@chakra-ui/icons";
+import { useNavigate } from "react-router-dom";
 
-type Holding = {
+import api from "../services/api.service";
+import MilitaryProfileCard from "../components/profile/MilitaryProfileCard";
+import UsPortfolioMyPageSection from "../components/profile/UsPortfolioMyPageSection";
+
+type TradingOrderSide = "BUY" | "SELL";
+type TradingOrderType = "MARKET" | "LIMIT";
+type TradingOrderStatus =
+	| "PENDING"
+	| "FILLED"
+	| "CANCELED"
+	| "REJECTED";
+
+type TradingAccountSummary = {
+	userId: string;
+	cash: number;
+	reservedCash: number;
+	availableCash: number;
+	initialCash: number;
+	currency?: string;
+
+	totalAsset?: number;
+	totalEvaluationAmount?: number;
+	totalBuyAmount?: number;
+	totalProfitLoss?: number;
+	totalProfitLossRate?: number;
+};
+
+type PortfolioHolding = {
+	id: string;
 	symbol: string;
 	name: string;
+	market: string;
 	quantity: number;
+	reservedQuantity: number;
+	availableQuantity: number;
 	avgPrice: number;
 	currentPrice: number;
+	changeRate: number;
+	evaluationAmount: number;
+	buyAmount: number;
+	profitLoss: number;
+	profitLossRate: number;
 };
 
-type TradeRecord = {
-	id: string;
-	type: "BUY" | "SELL";
+type PortfolioData = {
+	account: TradingAccountSummary;
+	holdings: PortfolioHolding[];
+};
+
+type TradeOrderData = {
+	_id: string;
+	userId: string;
 	symbol: string;
 	name: string;
+	market: string;
+	side: TradingOrderSide;
+	orderType: TradingOrderType;
+	status: TradingOrderStatus;
 	quantity: number;
-	price: number;
+	filledQuantity: number;
+	orderPrice: number;
+	limitPrice?: number | null;
+	executedPrice?: number | null;
+	reservedAmount: number;
+	reservedQuantity: number;
+	realizedProfit: number;
+	rejectReason?: string;
 	createdAt: string;
-};
-
-type ScenarioRecord = {
-	id: string;
-	scenarioTitle: string;
-	chapterTitle: string;
-	stepNumber: number;
-	action: "BUY" | "SELL" | "HOLD";
-	reason: string;
-	tags: string[];
-	aiFeedback: string;
-	createdAt: string;
-};
-
-type AiRecord = {
-	id: string;
-	source: "REALTIME" | "SCENARIO";
-	title: string;
-	question: string;
-	aiDecision: "BUY" | "SELL" | "HOLD";
-	summary: string;
-	createdAt: string;
+	executedAt?: string | null;
+	canceledAt?: string | null;
 };
 
 const won = new Intl.NumberFormat("ko-KR", {
@@ -74,159 +116,80 @@ const won = new Intl.NumberFormat("ko-KR", {
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
 
-const actionLabel = {
+const sideLabel: Record<TradingOrderSide, string> = {
 	BUY: "매수",
 	SELL: "매도",
-	HOLD: "관망",
 };
 
-const actionColor = {
+const sideColor: Record<TradingOrderSide, string> = {
 	BUY: "red",
 	SELL: "blue",
-	HOLD: "gray",
 };
 
-const MOCK_CASH = 7_250_000;
+const statusLabel: Record<TradingOrderStatus, string> = {
+	PENDING: "미체결",
+	FILLED: "체결",
+	CANCELED: "취소",
+	REJECTED: "거절",
+};
 
-const MOCK_HOLDINGS: Holding[] = [
-	{
-		symbol: "005930",
-		name: "삼성전자",
-		quantity: 4,
-		avgPrice: 351500,
-		currentPrice: 329000,
-	},
-	{
-		symbol: "000150",
-		name: "두산",
-		quantity: 1,
-		avgPrice: 180000,
-		currentPrice: 174000,
-	},
-	{
-		symbol: "005380",
-		name: "현대차",
-		quantity: 3,
-		avgPrice: 70000,
-		currentPrice: 73000,
-	},
-	{
-		symbol: "011070",
-		name: "LG이노텍",
-		quantity: 3,
-		avgPrice: 117300,
-		currentPrice: 116000,
-	},
-];
+const statusColor: Record<TradingOrderStatus, string> = {
+	PENDING: "orange",
+	FILLED: "green",
+	CANCELED: "gray",
+	REJECTED: "red",
+};
 
-const MOCK_TRADES: TradeRecord[] = [
-	{
-		id: "trade-1",
-		type: "BUY",
-		symbol: "005930",
-		name: "삼성전자",
-		quantity: 2,
-		price: 351500,
-		createdAt: "2026-06-07 10:12",
-	},
-	{
-		id: "trade-2",
-		type: "BUY",
-		symbol: "000150",
-		name: "두산",
-		quantity: 1,
-		price: 180000,
-		createdAt: "2026-06-07 10:25",
-	},
-	{
-		id: "trade-3",
-		type: "SELL",
-		symbol: "005930",
-		name: "삼성전자",
-		quantity: 1,
-		price: 340000,
-		createdAt: "2026-06-07 11:02",
-	},
-];
+function unwrapApiData<T>(raw: unknown): T {
+	const value = raw as {
+		success?: boolean;
+		data?: T;
+		output?: T;
+	};
 
-const MOCK_SCENARIO_RECORDS: ScenarioRecord[] = [
-	{
-		id: "scenario-1",
-		scenarioTitle: "코로나 팬데믹 초기 폭락",
-		chapterTitle: "떨어질 때의 태도",
-		stepNumber: 1,
-		action: "HOLD",
-		reason: "공포로 급락했지만 추가 정책 대응과 시장 안정 여부를 확인해야 한다고 판단했습니다.",
-		tags: ["공포", "변동성", "관망"],
-		aiFeedback:
-			"공포에 의한 투매보다 리스크를 먼저 확인한 점은 적절합니다. 다만 분할 매수 기준도 함께 세웠다면 더 좋습니다.",
-		createdAt: "2026-06-07 12:30",
-	},
-	{
-		id: "scenario-2",
-		scenarioTitle: "2차전지 급등장",
-		chapterTitle: "오를 때의 태도",
-		stepNumber: 2,
-		action: "BUY",
-		reason: "거래량이 증가했고 섹터 관심이 강해서 단기 상승 가능성이 있다고 봤습니다.",
-		tags: ["추격매수", "거래량", "테마"],
-		aiFeedback:
-			"상승 흐름을 포착한 점은 좋지만, 과열 구간에서 진입 비중을 조절할 필요가 있습니다.",
-		createdAt: "2026-06-07 13:05",
-	},
-];
+	if (value?.success === true && value.data !== undefined) {
+		return value.data;
+	}
 
-const MOCK_AI_RECORDS: AiRecord[] = [
-	{
-		id: "ai-1",
-		source: "REALTIME",
-		title: "삼성전자",
-		question: "AI라면 지금 매수할까?",
-		aiDecision: "BUY",
-		summary:
-			"단기 하락 이후 반등 가능성이 있으나 변동성이 높아 분할 매수가 더 적절합니다.",
-		createdAt: "2026-06-07 11:40",
-	},
-	{
-		id: "ai-2",
-		source: "REALTIME",
-		title: "두산",
-		question: "지금 팔아야 할까?",
-		aiDecision: "HOLD",
-		summary:
-			"단기 변동성이 있으나 추세 훼손이 명확하지 않아 추가 확인이 필요합니다.",
-		createdAt: "2026-06-07 12:10",
-	},
-	{
-		id: "ai-3",
-		source: "SCENARIO",
-		title: "코로나 팬데믹 초기 폭락",
-		question: "급락장에서 관망이 맞을까?",
-		aiDecision: "HOLD",
-		summary:
-			"시장 공포가 과도하지만 바닥 확인 전까지는 관망 또는 분할 접근이 합리적입니다.",
-		createdAt: "2026-06-07 12:35",
-	},
-];
+	if (value?.data !== undefined) {
+		return value.data;
+	}
 
-function getHoldingValue(holding: Holding) {
-	return holding.quantity * holding.currentPrice;
+	if (value?.output !== undefined) {
+		return value.output;
+	}
+
+	return raw as T;
 }
 
-function getPurchaseAmount(holding: Holding) {
-	return holding.quantity * holding.avgPrice;
+function formatDateTime(value?: string | null): string {
+	if (!value) {
+		return "-";
+	}
+
+	const date = new Date(value);
+
+	if (Number.isNaN(date.getTime())) {
+		return value;
+	}
+
+	return date.toLocaleString("ko-KR", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: false,
+	});
 }
 
-function getProfitLoss(holding: Holding) {
-	return getHoldingValue(holding) - getPurchaseAmount(holding);
-}
-
-function getProfitRate(holding: Holding) {
-	const purchaseAmount = getPurchaseAmount(holding);
-
-	if (purchaseAmount <= 0) return 0;
-
-	return (getProfitLoss(holding) / purchaseAmount) * 100;
+function getHoldingValue(
+	holding: PortfolioHolding,
+): number {
+	return Number(
+		holding.evaluationAmount ??
+			holding.quantity * holding.currentPrice,
+	);
 }
 
 function DonutChart({
@@ -234,10 +197,10 @@ function DonutChart({
 	holdings,
 }: {
 	cash: number;
-	holdings: Holding[];
+	holdings: PortfolioHolding[];
 }) {
-	const size = 360;
-	const strokeWidth = 30;
+	const size = 300;
+	const strokeWidth = 28;
 	const radius = (size - strokeWidth) / 2;
 	const circumference = 2 * Math.PI * radius;
 
@@ -253,33 +216,57 @@ function DonutChart({
 
 	const items = [
 		{
-			label: "보유 WON",
-			value: cash,
-			color: colors[0],
+			label: "현금",
+			value: Math.max(0, cash),
+			color: colors[0] ?? "#CBD5E0",
 		},
 		...holdings.map((holding, index) => ({
 			label: holding.name,
-			value: getHoldingValue(holding),
-			color: colors[(index + 1) % colors.length],
+			value: Math.max(0, getHoldingValue(holding)),
+			color:
+				colors[(index + 1) % colors.length] ??
+				"#3182CE",
 		})),
 	].filter((item) => item.value > 0);
 
-	const total = items.reduce((sum, item) => sum + item.value, 0);
+	const total = items.reduce(
+		(sum, item) => sum + item.value,
+		0,
+	);
 
 	let accumulated = 0;
 
 	if (total <= 0) {
 		return (
-			<Flex h="260px" align="center" justify="center">
-				<Text color="gray.500">포트폴리오 데이터가 없습니다.</Text>
+			<Flex
+				minH="250px"
+				align="center"
+				justify="center"
+			>
+				<Text color="gray.500">
+					포트폴리오 데이터가 없습니다.
+				</Text>
 			</Flex>
 		);
 	}
 
 	return (
-		<Flex direction={{ base: "column", md: "row" }} gap="6" align="center">
-			<Box position="relative" w={`${size}px`} h={`${size}px`}>
-				<svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+		<Flex
+			direction={{ base: "column", md: "row" }}
+			gap="6"
+			align="center"
+		>
+			<Box
+				position="relative"
+				w={`${size}px`}
+				h={`${size}px`}
+				maxW="100%"
+			>
+				<svg
+					width="100%"
+					height="100%"
+					viewBox={`0 0 ${size} ${size}`}
+				>
 					<circle
 						cx={size / 2}
 						cy={size / 2}
@@ -293,13 +280,14 @@ function DonutChart({
 						const ratio = item.value / total;
 						const dash = ratio * circumference;
 						const gap = circumference - dash;
-						const offset = -accumulated * circumference;
+						const offset =
+							-accumulated * circumference;
 
 						accumulated += ratio;
 
 						return (
 							<circle
-								key={item.label}
+								key={`${item.label}-${item.color}`}
 								cx={size / 2}
 								cy={size / 2}
 								r={radius}
@@ -325,7 +313,10 @@ function DonutChart({
 					<Text fontSize="sm" color="gray.500">
 						총 자산
 					</Text>
-					<Text fontWeight="900" fontSize="lg">
+					<Text
+						fontWeight="900"
+						fontSize="lg"
+					>
 						{won.format(total)}
 					</Text>
 				</Flex>
@@ -333,25 +324,48 @@ function DonutChart({
 
 			<Stack spacing="3" flex="1" w="100%">
 				{items.map((item) => {
-					const ratio = total > 0 ? (item.value / total) * 100 : 0;
+					const ratio =
+						total > 0
+							? (item.value / total) * 100
+							: 0;
 
 					return (
-						<Flex key={item.label} align="center">
+						<Flex
+							key={`legend-${item.label}-${item.color}`}
+							align="center"
+						>
 							<Box
 								w="12px"
 								h="12px"
 								borderRadius="full"
 								bg={item.color}
 								mr="2"
+								flexShrink={0}
 							/>
-							<Text fontSize="sm" fontWeight="800">
+
+							<Text
+								fontSize="sm"
+								fontWeight="800"
+								noOfLines={1}
+							>
 								{item.label}
 							</Text>
+
 							<Spacer />
-							<Text fontSize="sm" color="gray.500" mr="3">
+
+							<Text
+								fontSize="sm"
+								color="gray.500"
+								mr="3"
+							>
 								{ratio.toFixed(1)}%
 							</Text>
-							<Text fontSize="sm" fontWeight="900">
+
+							<Text
+								fontSize="sm"
+								fontWeight="900"
+								whiteSpace="nowrap"
+							>
 								{won.format(item.value)}
 							</Text>
 						</Flex>
@@ -363,329 +377,819 @@ function DonutChart({
 }
 
 export default function MyPage() {
-	const [cash] = useState(MOCK_CASH);
-	const [holdings] = useState(MOCK_HOLDINGS);
-	const [tradeRecords] = useState(MOCK_TRADES);
-	const [scenarioRecords] = useState(MOCK_SCENARIO_RECORDS);
-	const [aiRecords] = useState(MOCK_AI_RECORDS);
+	const toast = useToast();
+	const navigate = useNavigate();
 
-	const stockValue = useMemo(() => {
-		return holdings.reduce((sum, holding) => sum + getHoldingValue(holding), 0);
-	}, [holdings]);
+	const [portfolio, setPortfolio] =
+		useState<PortfolioData | null>(null);
+	const [tradeOrders, setTradeOrders] =
+		useState<TradeOrderData[]>([]);
+	const [isLoading, setIsLoading] =
+		useState(true);
+	const [lastUpdatedAt, setLastUpdatedAt] =
+		useState<Date | null>(null);
 
-	const totalAsset = cash + stockValue;
+	const loadMyPageData = useCallback(async () => {
+		try {
+			setIsLoading(true);
 
-	const totalPurchaseAmount = useMemo(() => {
-		return holdings.reduce(
-			(sum, holding) => sum + getPurchaseAmount(holding),
-			0,
-		);
-	}, [holdings]);
+			const [portfolioResponse, orderResponse] =
+				await Promise.all([
+					api.get(
+						"/trading/portfolio?evaluate=true",
+					),
+					api.get(
+						"/trading/orders?limit=50",
+					),
+				]);
 
-	const totalProfitLoss = useMemo(() => {
-		return holdings.reduce((sum, holding) => sum + getProfitLoss(holding), 0);
-	}, [holdings]);
+			const portfolioData =
+				unwrapApiData<PortfolioData>(
+					portfolioResponse.data,
+				);
 
-	const totalProfitRate =
-		totalPurchaseAmount > 0
-			? (totalProfitLoss / totalPurchaseAmount) * 100
-			: 0;
+			const orderData =
+				unwrapApiData<TradeOrderData[]>(
+					orderResponse.data,
+				);
+
+			setPortfolio({
+				account: portfolioData.account,
+				holdings: Array.isArray(
+					portfolioData.holdings,
+				)
+					? portfolioData.holdings
+					: [],
+			});
+
+			setTradeOrders(
+				Array.isArray(orderData)
+					? orderData
+					: [],
+			);
+
+			setLastUpdatedAt(new Date());
+		} catch (error: any) {
+			console.error(
+				"마이페이지 데이터 조회 실패:",
+				error,
+			);
+
+			if (error?.response?.status === 401) {
+				toast({
+					title: "로그인이 필요합니다.",
+					description:
+						"로그인 후 개인 포트폴리오를 확인할 수 있습니다.",
+					status: "warning",
+					duration: 2500,
+					isClosable: true,
+				});
+
+				navigate("/login", {
+					replace: true,
+				});
+				return;
+			}
+
+			toast({
+				title:
+					"포트폴리오를 불러오지 못했습니다.",
+				description:
+					error?.response?.data?.message ??
+					"거래 서버 연결 상태를 확인하세요.",
+				status: "error",
+				duration: 3500,
+				isClosable: true,
+			});
+		} finally {
+			setIsLoading(false);
+		}
+	}, [navigate, toast]);
+
+	useEffect(() => {
+		void loadMyPageData();
+	}, [loadMyPageData]);
+
+	const account = portfolio?.account;
+	const holdings = portfolio?.holdings ?? [];
+
+	const cash = Number(account?.cash ?? 0);
+
+	const stockEvaluationAmount = useMemo(
+		() =>
+			Number(
+				account?.totalEvaluationAmount ??
+					holdings.reduce(
+						(sum, holding) =>
+							sum +
+							getHoldingValue(holding),
+						0,
+					),
+			),
+		[
+			account?.totalEvaluationAmount,
+			holdings,
+		],
+	);
+
+	const totalAsset = Number(
+		account?.totalAsset ??
+			cash + stockEvaluationAmount,
+	);
+
+	const initialCash = Number(
+		account?.initialCash ?? 0,
+	);
+
+	const totalProfitLoss = Number(
+		account?.totalProfitLoss ??
+			totalAsset - initialCash,
+	);
+
+	const totalProfitRate = Number(
+		account?.totalProfitLossRate ??
+			(initialCash > 0
+				? (totalProfitLoss / initialCash) *
+					100
+				: 0),
+	);
+
+	const sortedOrders = useMemo(
+		() =>
+			[...tradeOrders].sort(
+				(first, second) =>
+					new Date(
+						second.createdAt,
+					).getTime() -
+					new Date(
+						first.createdAt,
+					).getTime(),
+			),
+		[tradeOrders],
+	);
 
 	return (
-		<Box px={{ base: 4, md: 8 }} py="6" bg="gray.50" minH="100vh">
-			<Flex align="center" mb="6">
+		<Box
+			px={{ base: 4, md: 8 }}
+			py="6"
+			bg="gray.50"
+			minH="100vh"
+		>
+			<Flex
+				align={{
+					base: "flex-start",
+					md: "center",
+				}}
+				direction={{
+					base: "column",
+					md: "row",
+				}}
+				gap="3"
+				mb="6"
+			>
 				<Box>
-					<Heading size="lg">마이페이지</Heading>
+					<Heading size="lg">
+						마이페이지
+					</Heading>
 					<Text mt="1" color="gray.500">
-						보유자산, 포트폴리오, 학습 기록, AI 판단 기록을 확인합니다.
+						로그인 계정의 실시간 모의투자
+						자산과 거래 기록을 확인합니다.
 					</Text>
+
+					{lastUpdatedAt && (
+						<Text
+							mt="1"
+							fontSize="xs"
+							color="gray.400"
+						>
+							마지막 갱신:{" "}
+							{lastUpdatedAt.toLocaleString(
+								"ko-KR",
+							)}
+						</Text>
+					)}
 				</Box>
 
 				<Spacer />
 
-				<Button size="sm" variant="outline">
-					API 연결 예정
+				<Button
+					size="sm"
+					variant="outline"
+					leftIcon={<RepeatIcon />}
+					isLoading={isLoading}
+					onClick={() =>
+						void loadMyPageData()
+					}
+				>
+					새로고침
 				</Button>
 			</Flex>
 
-			<SimpleGrid columns={{ base: 1, md: 4 }} spacing="4" mb="5">
-				<Card>
-					<CardBody>
-						<Stat>
-							<StatLabel>총 보유자산</StatLabel>
-							<StatNumber>{won.format(totalAsset)}</StatNumber>
-						</Stat>
-					</CardBody>
-				</Card>
+			<MilitaryProfileCard />
 
-				<Card>
-					<CardBody>
-						<Stat>
-							<StatLabel>보유 WON</StatLabel>
-							<StatNumber>{won.format(cash)}</StatNumber>
-						</Stat>
-					</CardBody>
-				</Card>
+			{isLoading && !portfolio ? (
+				<Stack spacing="4">
+					<SimpleGrid
+						columns={{
+							base: 1,
+							md: 2,
+							xl: 5,
+						}}
+						spacing="4"
+					>
+						{Array.from({
+							length: 5,
+						}).map((_, index) => (
+							<Skeleton
+								key={index}
+								h="118px"
+								borderRadius="12px"
+							/>
+						))}
+					</SimpleGrid>
 
-				<Card>
-					<CardBody>
-						<Stat>
-							<StatLabel>주식 평가금액</StatLabel>
-							<StatNumber>{won.format(stockValue)}</StatNumber>
-						</Stat>
-					</CardBody>
-				</Card>
+					<Skeleton
+						h="380px"
+						borderRadius="12px"
+					/>
+					<Skeleton
+						h="280px"
+						borderRadius="12px"
+					/>
+				</Stack>
+			) : (
+				<>
+					<SimpleGrid
+						columns={{
+							base: 1,
+							md: 2,
+							xl: 5,
+						}}
+						spacing="4"
+						mb="5"
+					>
+						<Card>
+							<CardBody>
+								<Stat>
+									<StatLabel>
+										총 보유자산
+									</StatLabel>
+									<StatNumber>
+										{won.format(
+											totalAsset,
+										)}
+									</StatNumber>
+								</Stat>
+							</CardBody>
+						</Card>
 
-				<Card>
-					<CardBody>
-						<Stat>
-							<StatLabel>총 수익률</StatLabel>
-							<StatNumber color={totalProfitRate >= 0 ? "red.500" : "blue.500"}>
-								{totalProfitRate > 0 ? "+" : ""}
-								{totalProfitRate.toFixed(2)}%
-							</StatNumber>
-						</Stat>
-					</CardBody>
-				</Card>
-			</SimpleGrid>
+						<Card>
+							<CardBody>
+								<Stat>
+									<StatLabel>
+										현금 잔액
+									</StatLabel>
+									<StatNumber>
+										{won.format(cash)}
+									</StatNumber>
+								</Stat>
+							</CardBody>
+						</Card>
 
-			<Grid templateColumns={{ base: "1fr", xl: "640px 1fr" }} gap="5" mb="5">
-				<GridItem>
-					<Card h="100%">
-						<CardHeader pb="0">
-							<Heading size="md">보유자산 포트폴리오</Heading>
-							<Text mt="1" fontSize="sm" color="gray.500">
-								게임머니와 주식 평가금액을 기준으로 자산 비중을 보여줍니다.
-							</Text>
-						</CardHeader>
+						<Card>
+							<CardBody>
+								<Stat>
+									<StatLabel>
+										주식 평가금액
+									</StatLabel>
+									<StatNumber>
+										{won.format(
+											stockEvaluationAmount,
+										)}
+									</StatNumber>
+								</Stat>
+							</CardBody>
+						</Card>
 
-						<CardBody>
-							<DonutChart cash={cash} holdings={holdings} />
-						</CardBody>
-					</Card>
-				</GridItem>
-
-				<GridItem>
-					<Card h="100%">
-						<CardHeader pb="0">
-							<Heading size="md">보유 종목</Heading>
-							<Text mt="1" fontSize="sm" color="gray.500">
-								종목별 평가금액과 수익률을 계산합니다.
-							</Text>
-						</CardHeader>
-
-						<CardBody overflowX="auto">
-							<Table size="sm">
-								<Thead>
-									<Tr>
-										<Th>종목</Th>
-										<Th isNumeric>수량</Th>
-										<Th isNumeric>평균단가</Th>
-										<Th isNumeric>현재가</Th>
-										<Th isNumeric>평가금액</Th>
-										<Th isNumeric>수익률</Th>
-									</Tr>
-								</Thead>
-
-								<Tbody>
-									{holdings.map((holding) => {
-										const evaluationAmount = getHoldingValue(holding);
-										const profitRate = getProfitRate(holding);
-
-										return (
-											<Tr key={holding.symbol}>
-												<Td>
-													<Text fontWeight="900">{holding.name}</Text>
-													<Text fontSize="xs" color="gray.500">
-														{holding.symbol}
-													</Text>
-												</Td>
-												<Td isNumeric>
-													{numberFormat.format(holding.quantity)}
-												</Td>
-												<Td isNumeric>{won.format(holding.avgPrice)}</Td>
-												<Td isNumeric>{won.format(holding.currentPrice)}</Td>
-												<Td isNumeric>{won.format(evaluationAmount)}</Td>
-												<Td
-													isNumeric
-													fontWeight="900"
-													color={profitRate >= 0 ? "red.500" : "blue.500"}
-												>
-													{profitRate > 0 ? "+" : ""}
-													{profitRate.toFixed(2)}%
-												</Td>
-											</Tr>
-										);
-									})}
-								</Tbody>
-							</Table>
-						</CardBody>
-					</Card>
-				</GridItem>
-			</Grid>
-
-			<Grid templateColumns={{ base: "1fr", xl: "1fr 1fr" }} gap="5">
-				<GridItem>
-					<Card h="100%">
-						<CardHeader pb="0">
-							<Heading size="md">실시간 모의투자 거래 기록</Heading>
-							<Text mt="1" fontSize="sm" color="gray.500">
-								실시간 거래소에서 매수/매도한 기록입니다.
-							</Text>
-						</CardHeader>
-
-						<CardBody>
-							<Stack spacing="3">
-								{tradeRecords.map((record) => (
-									<Flex
-										key={record.id}
-										p="3"
-										borderWidth="1px"
-										borderRadius="lg"
-										align="center"
+						<Card>
+							<CardBody>
+								<Stat>
+									<StatLabel>
+										총 평가손익
+									</StatLabel>
+									<StatNumber
+										color={
+											totalProfitLoss >= 0
+												? "red.500"
+												: "blue.500"
+										}
 									>
-										<Box>
-											<HStack mb="1">
-												<Badge colorScheme={actionColor[record.type]}>
-													{actionLabel[record.type]}
-												</Badge>
-												<Text fontWeight="900">{record.name}</Text>
-											</HStack>
-											<Text fontSize="sm" color="gray.500">
-												{record.symbol} · {numberFormat.format(record.quantity)}
-												주 · {won.format(record.price)}
-											</Text>
-										</Box>
+										{totalProfitLoss > 0
+											? "+"
+											: ""}
+										{won.format(
+											totalProfitLoss,
+										)}
+									</StatNumber>
+								</Stat>
+							</CardBody>
+						</Card>
 
-										<Spacer />
+						<Card>
+							<CardBody>
+								<Stat>
+									<StatLabel>
+										총 수익률
+									</StatLabel>
+									<StatNumber
+										color={
+											totalProfitRate >= 0
+												? "red.500"
+												: "blue.500"
+										}
+									>
+										{totalProfitRate > 0
+											? "+"
+											: ""}
+										{totalProfitRate.toFixed(
+											2,
+										)}
+										%
+									</StatNumber>
+								</Stat>
+							</CardBody>
+						</Card>
+					</SimpleGrid>
 
-										<Box textAlign="right">
-											<Text fontWeight="900">
-												{won.format(record.quantity * record.price)}
-											</Text>
-											<Text fontSize="xs" color="gray.500">
-												{record.createdAt}
-											</Text>
-										</Box>
-									</Flex>
-								))}
-							</Stack>
-						</CardBody>
-					</Card>
-				</GridItem>
+					<Grid
+						templateColumns={{
+							base: "1fr",
+							xl: "minmax(360px, 560px) 1fr",
+						}}
+						gap="5"
+						mb="5"
+					>
+						<GridItem>
+							<Card h="100%">
+								<CardHeader pb="0">
+									<Heading size="md">
+										보유자산 포트폴리오
+									</Heading>
+									<Text
+										mt="1"
+										fontSize="sm"
+										color="gray.500"
+									>
+										현금과 현재 주식
+										평가금액을 기준으로
+										자산 비중을
+										보여줍니다.
+									</Text>
+								</CardHeader>
 
-				<GridItem>
-					<Card h="100%">
-						<CardHeader pb="0">
-							<Heading size="md">과거 시나리오 학습 기록</Heading>
-							<Text mt="1" fontSize="sm" color="gray.500">
-								시나리오에서 제출한 판단, 태그, AI 피드백 기록입니다.
-							</Text>
-						</CardHeader>
+								<CardBody>
+									<DonutChart
+										cash={cash}
+										holdings={
+											holdings
+										}
+									/>
+								</CardBody>
+							</Card>
+						</GridItem>
 
-						<CardBody>
-							<Stack spacing="3">
-								{scenarioRecords.map((record) => (
-									<Box key={record.id} p="4" borderWidth="1px" borderRadius="xl">
-										<Flex align="center" mb="2">
-											<HStack>
-												<Badge colorScheme="purple">{record.chapterTitle}</Badge>
-												<Badge colorScheme={actionColor[record.action]}>
-													{actionLabel[record.action]}
-												</Badge>
-											</HStack>
+						<GridItem>
+							<Card h="100%">
+								<CardHeader pb="0">
+									<Heading size="md">
+										보유 종목
+									</Heading>
+									<Text
+										mt="1"
+										fontSize="sm"
+										color="gray.500"
+									>
+										실시간 모의투자
+										계좌에 보유 중인
+										종목입니다.
+									</Text>
+								</CardHeader>
 
-											<Spacer />
+								<CardBody>
+									<TableContainer>
+										<Table size="sm">
+											<Thead>
+												<Tr>
+													<Th>
+														종목
+													</Th>
+													<Th
+														isNumeric
+													>
+														수량
+													</Th>
+													<Th
+														isNumeric
+													>
+														평균단가
+													</Th>
+													<Th
+														isNumeric
+													>
+														현재가
+													</Th>
+													<Th
+														isNumeric
+													>
+														평가금액
+													</Th>
+													<Th
+														isNumeric
+													>
+														평가손익
+													</Th>
+													<Th
+														isNumeric
+													>
+														수익률
+													</Th>
+												</Tr>
+											</Thead>
 
-											<Text fontSize="xs" color="gray.500">
-												Step {record.stepNumber}
-											</Text>
-										</Flex>
+											<Tbody>
+												{holdings.map(
+													(
+														holding,
+													) => (
+														<Tr
+															key={
+																holding.id ||
+																holding.symbol
+															}
+														>
+															<Td>
+																<Text fontWeight="900">
+																	{
+																		holding.name
+																	}
+																</Text>
+																<Text
+																	fontSize="xs"
+																	color="gray.500"
+																>
+																	{
+																		holding.symbol
+																	}
+																	{" · "}
+																	{
+																		holding.market
+																	}
+																</Text>
+															</Td>
 
-										<Text fontWeight="900">{record.scenarioTitle}</Text>
+															<Td
+																isNumeric
+															>
+																{numberFormat.format(
+																	holding.quantity,
+																)}
+															</Td>
 
-										<Text mt="2" fontSize="sm" color="gray.600">
-											{record.reason}
-										</Text>
+															<Td
+																isNumeric
+															>
+																{won.format(
+																	holding.avgPrice,
+																)}
+															</Td>
 
-										<HStack mt="2" wrap="wrap">
-											{record.tags.map((tag) => (
-												<Badge key={tag} colorScheme="gray">
-													#{tag}
-												</Badge>
-											))}
-										</HStack>
+															<Td
+																isNumeric
+															>
+																{won.format(
+																	holding.currentPrice,
+																)}
+															</Td>
 
-										<Box mt="3" p="3" bg="gray.50" borderRadius="lg">
-											<Text fontSize="sm" fontWeight="900">
-												AI 피드백
-											</Text>
-											<Text mt="1" fontSize="sm" color="gray.600">
-												{record.aiFeedback}
-											</Text>
-										</Box>
+															<Td
+																isNumeric
+															>
+																{won.format(
+																	getHoldingValue(
+																		holding,
+																	),
+																)}
+															</Td>
 
-										<Text mt="2" fontSize="xs" color="gray.500">
-											{record.createdAt}
-										</Text>
-									</Box>
-								))}
-							</Stack>
-						</CardBody>
-					</Card>
-				</GridItem>
+															<Td
+																isNumeric
+																fontWeight="800"
+																color={
+																	holding.profitLoss >=
+																	0
+																		? "red.500"
+																		: "blue.500"
+																}
+															>
+																{holding.profitLoss >
+																0
+																	? "+"
+																	: ""}
+																{won.format(
+																	holding.profitLoss,
+																)}
+															</Td>
 
-				<GridItem colSpan={{ base: 1, xl: 2 }}>
+															<Td
+																isNumeric
+																fontWeight="900"
+																color={
+																	holding.profitLossRate >=
+																	0
+																		? "red.500"
+																		: "blue.500"
+																}
+															>
+																{holding.profitLossRate >
+																0
+																	? "+"
+																	: ""}
+																{holding.profitLossRate.toFixed(
+																	2,
+																)}
+																%
+															</Td>
+														</Tr>
+													),
+												)}
+
+												{holdings.length ===
+													0 && (
+													<Tr>
+														<Td
+															colSpan={
+																7
+															}
+															textAlign="center"
+															py="12"
+															color="gray.500"
+														>
+															보유 중인
+															종목이
+															없습니다.
+														</Td>
+													</Tr>
+												)}
+											</Tbody>
+										</Table>
+									</TableContainer>
+								</CardBody>
+							</Card>
+						</GridItem>
+					</Grid>
+
 					<Card>
 						<CardHeader pb="0">
-							<Heading size="md">AI라면 질문/판단 기록</Heading>
-							<Text mt="1" fontSize="sm" color="gray.500">
-								실시간 모의투자와 시나리오에서 확인한 AI 판단 기록입니다.
-							</Text>
+							<Flex align="center">
+								<Box>
+									<Heading size="md">
+										실시간 모의투자
+										주문 기록
+									</Heading>
+									<Text
+										mt="1"
+										fontSize="sm"
+										color="gray.500"
+									>
+										현재 로그인 계정에서
+										등록한 최근 주문
+										기록입니다.
+									</Text>
+								</Box>
+
+								<Spacer />
+
+								<Badge
+									colorScheme="gray"
+									fontSize="sm"
+								>
+									최근{" "}
+									{sortedOrders.length}
+									건
+								</Badge>
+							</Flex>
 						</CardHeader>
 
 						<CardBody>
-							<SimpleGrid columns={{ base: 1, md: 3 }} spacing="4">
-								{aiRecords.map((record) => (
-									<Box key={record.id} p="4" borderWidth="1px" borderRadius="xl">
-										<Flex align="center" mb="2">
-											<Badge
-												colorScheme={
-													record.source === "REALTIME" ? "blue" : "purple"
-												}
+							<TableContainer>
+								<Table size="sm">
+									<Thead>
+										<Tr>
+											<Th>
+												구분
+											</Th>
+											<Th>
+												상태
+											</Th>
+											<Th>
+												종목
+											</Th>
+											<Th>
+												주문방식
+											</Th>
+											<Th
+												isNumeric
 											>
-												{record.source === "REALTIME"
-													? "실시간"
-													: "시나리오"}
-											</Badge>
+												주문수량
+											</Th>
+											<Th
+												isNumeric
+											>
+												체결수량
+											</Th>
+											<Th
+												isNumeric
+											>
+												가격
+											</Th>
+											<Th
+												isNumeric
+											>
+												거래금액
+											</Th>
+											<Th>
+												일시
+											</Th>
+										</Tr>
+									</Thead>
 
-											<Spacer />
+									<Tbody>
+										{sortedOrders.map(
+											(order) => {
+												const displayPrice =
+													Number(
+														order.executedPrice ??
+															order.limitPrice ??
+															order.orderPrice ??
+															0,
+													);
 
-											<Badge colorScheme={actionColor[record.aiDecision]}>
-												{actionLabel[record.aiDecision]}
-											</Badge>
-										</Flex>
+												const displayQuantity =
+													order.status ===
+													"FILLED"
+														? Number(
+																order.filledQuantity ??
+																	order.quantity,
+															)
+														: Number(
+																order.quantity,
+															);
 
-										<Text fontWeight="900">{record.title}</Text>
+												const totalAmount =
+													displayPrice *
+													displayQuantity;
 
-										<Text mt="2" fontSize="sm" color="gray.500">
-											Q. {record.question}
-										</Text>
+												return (
+													<Tr
+														key={
+															order._id
+														}
+													>
+														<Td>
+															<Badge
+																colorScheme={
+																	sideColor[
+																		order
+																			.side
+																	]
+																}
+															>
+																{
+																	sideLabel[
+																		order
+																			.side
+																	]
+																}
+															</Badge>
+														</Td>
 
-										<Text mt="2" fontSize="sm" color="gray.700">
-											{record.summary}
-										</Text>
+														<Td>
+															<Badge
+																colorScheme={
+																	statusColor[
+																		order
+																			.status
+																	]
+																}
+																variant="subtle"
+															>
+																{
+																	statusLabel[
+																		order
+																			.status
+																	]
+																}
+															</Badge>
+														</Td>
 
-										<Text mt="3" fontSize="xs" color="gray.500">
-											{record.createdAt}
-										</Text>
-									</Box>
-								))}
-							</SimpleGrid>
+														<Td>
+															<Text fontWeight="900">
+																{
+																	order.name
+																}
+															</Text>
+															<Text
+																fontSize="xs"
+																color="gray.500"
+															>
+																{
+																	order.symbol
+																}
+																{" · "}
+																{
+																	order.market
+																}
+															</Text>
+														</Td>
+
+														<Td>
+															{order.orderType ===
+															"MARKET"
+																? "시장가"
+																: "지정가"}
+														</Td>
+
+														<Td
+															isNumeric
+														>
+															{numberFormat.format(
+																order.quantity,
+															)}
+														</Td>
+
+														<Td
+															isNumeric
+														>
+															{numberFormat.format(
+																order.filledQuantity,
+															)}
+														</Td>
+
+														<Td
+															isNumeric
+														>
+															{won.format(
+																displayPrice,
+															)}
+														</Td>
+
+														<Td
+															isNumeric
+															fontWeight="800"
+														>
+															{won.format(
+																totalAmount,
+															)}
+														</Td>
+
+														<Td
+															whiteSpace="nowrap"
+															fontSize="xs"
+															color="gray.500"
+														>
+															{formatDateTime(
+																order.executedAt ??
+																	order.createdAt,
+															)}
+														</Td>
+													</Tr>
+												);
+											},
+										)}
+
+										{sortedOrders.length ===
+											0 && (
+											<Tr>
+												<Td
+													colSpan={9}
+													textAlign="center"
+													py="12"
+													color="gray.500"
+												>
+													주문 기록이
+													없습니다.
+												</Td>
+											</Tr>
+										)}
+									</Tbody>
+								</Table>
+							</TableContainer>
 						</CardBody>
 					</Card>
-				</GridItem>
-			</Grid>
+
+					<UsPortfolioMyPageSection />
+				</>
+			)}
 		</Box>
 	);
 }

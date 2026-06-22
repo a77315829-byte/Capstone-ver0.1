@@ -1,205 +1,245 @@
 import React from "react";
-import { Box, Button, Flex, IconButton, Text } from "@chakra-ui/react";
-import { Link as RouterLink, useLocation } from "react-router-dom";
-import { StarIcon, SunIcon } from "@chakra-ui/icons";
+import {
+	Box,
+	Button,
+	Flex,
+	HStack,
+	Menu,
+	MenuButton,
+	MenuItem,
+	MenuList,
+	Image,
+	Text,
+} from "@chakra-ui/react";
+import { HamburgerIcon } from "@chakra-ui/icons";
+import {
+	Link as RouterLink,
+	useLocation,
+} from "react-router-dom";
+import AccountMenu from "./AccountMenu";
 
-type MenuCircleProps = {
+interface NavItem {
 	label: string;
 	to: string;
-	left: number;
-	active: boolean;
-};
+	activePaths: string[];
+	background: string;
+	hoverBackground: string;
+}
 
-const OUTER = 61.7;
-const INNER = 54.58;
-const INNER_OFFSET = 3.56;
+const NAV_ITEMS: NavItem[] = [
+	{
+		label: "실시간 차트",
+		to: "/exchange",
+		activePaths: ["/exchange", "/stocks"],
+		background: "#F97316",
+		hoverBackground: "#EA580C",
+	},
+	{
+		label: "잔여금 계산기",
+		to: "/salary",
+		activePaths: ["/salary", "/advisor"],
+		background: "#2563EB",
+		hoverBackground: "#1D4ED8",
+	},
+	{
+		label: "금융 사전·퀴즈",
+		to: "/learn",
+		activePaths: ["/learn", "/quiz"],
+		background: "#EC4899",
+		hoverBackground: "#DB2777",
+	},
+	{
+		label: "커뮤니티",
+		to: "/community",
+		activePaths: ["/community"],
+		background: "#7C3AED",
+		hoverBackground: "#6D28D9",
+	},
+];
 
-function MenuCircle({ label, to, left, active }: MenuCircleProps) {
+function isPathActive(
+	pathname: string,
+	activePaths: string[],
+): boolean {
+	return activePaths.some(
+		(path) =>
+			pathname === path ||
+			pathname.startsWith(`${path}/`),
+	);
+}
+
+function LogoPlaceholder() {
 	return (
 		<Box
 			as={RouterLink}
-			to={to}
-			position="absolute"
-			left={`${left}px`}
-			top="18px"
-			w={`${OUTER}px`}
-			h={`${OUTER}px`}
-			borderRadius="full"
-			bg="white"
+			to="/exchange"
 			display="flex"
 			alignItems="center"
 			justifyContent="center"
+			flexShrink={0}
+			w={{ base: "90px", md: "120px" }}
+			h="42px"
 			textDecoration="none"
-			zIndex={2}
 		>
-			<Box
-				w={`${INNER}px`}
-				h={`${INNER}px`}
-				borderRadius="full"
-				bg={active ? "#FFEEF9" : "#D9D9D9"}
-				display="flex"
-				alignItems="center"
-				justifyContent="center"
-				fontSize="9px"
-				fontWeight="700"
-				color="black"
-				fontFamily="'SUIT', 'Suite', 'Pretendard', sans-serif"
-				transition="0.15s ease"
-				_hover={{
-					bg: active ? "#FFEEF9" : "#eeeeee",
-				}}
-			>
-				{label}
-			</Box>
+			<Image
+				src="/logo.png"
+				alt="Antitude"
+				maxW="100%"
+				maxH="38px"
+				w="auto"
+				h="auto"
+				objectFit="contain"
+			/>
 		</Box>
 	);
 }
 
-function AntFace() {
-	return (
-		<Box
-			position="absolute"
-			left="0"
-			top="14px"
-			w="62px"
-			h="62px"
-			zIndex={10}
-			pointerEvents="none"
-		>
-			{/* 더듬이 */}
-			<svg
-				width="50"
-				height="48"
-				viewBox="0 0 72 40"
-				style={{
-					position: "absolute",
-					left: "14px",
-					top: "-24px",
-					overflow: "visible",
-					zIndex: 20,
-				}}
-			>
-				<path
-					d="M18 44 C16 26 22 12 30 4"
-					stroke="black"
-					strokeWidth="2.2"
-					fill="none"
-					strokeLinecap="round"
-				/>
-				<path
-					d="M34 44 C42 24 50 14 62 8"
-					stroke="black"
-					strokeWidth="2.2"
-					fill="none"
-					strokeLinecap="round"
-				/>
-
-				<circle cx="30" cy="4" r="4" fill="black" />
-				<circle cx="62" cy="8" r="4" fill="black" />
-			</svg>
-
-			{/* 흰 테두리 */}
-			<Box
-				position="absolute"
-				left="0"
-				top="1"
-				w="62px"
-				h="62px"
-				borderRadius="full"
-				bg="white"
-			>
-				{/* 검은 얼굴 */}
-				<Box
-					position="absolute"
-					left="4px"
-					top="4px"
-					w="54px"
-					h="54px"
-					borderRadius="full"
-					bg="black"
-				>
-					{/* 흰 눈 */}
-					<Box
-						position="absolute"
-						left="15px"
-						top="10px"
-						w="22px"
-						h="22px"
-						borderRadius="full"
-						bg="white"
-					>
-						{/* 검은 눈동자 */}
-						<Box
-							position="absolute"
-							right="2px"
-							top="4px"
-							w="13px"
-							h="13px"
-							borderRadius="full"
-							bg="black"
-						>
-							{/* 반짝이 */}
-							<Box
-								position="absolute"
-								right="2px"
-								top="4px"
-								w="3px"
-								h="3px"
-								borderRadius="full"
-								bg="white"
-							/>
-						</Box>
-					</Box>
-				</Box>
-			</Box>
-		</Box>
-	);
-}
-function AntitudeMenu() {
+function DesktopNavigation() {
 	const location = useLocation();
 
-	const isActive = (path: string) => {
-		if (path === "/exchange") {
-			return (
-				location.pathname === "/" ||
-				location.pathname.startsWith("/exchange")
-			);
-		}
+	return (
+		<HStack
+			display={{ base: "none", lg: "flex" }}
+			spacing="7px"
+		>
+			{NAV_ITEMS.map((item) => {
+				const active = isPathActive(
+					location.pathname,
+					item.activePaths,
+				);
 
-		return location.pathname.startsWith(path);
-	};
+				return (
+					<Button
+						key={item.to}
+						as={RouterLink}
+						to={item.to}
+						h="32px"
+						minW="auto"
+						px="14px"
+						borderRadius="full"
+						bg={item.background}
+						color="white"
+						fontSize="13px"
+						fontWeight="800"
+						letterSpacing="-0.02em"
+						boxShadow={
+							active
+								? `0 0 0 3px ${item.background}33`
+								: "none"
+						}
+						borderWidth={active ? "2px" : "0"}
+						borderColor={
+							active
+								? "whiteAlpha.700"
+								: "transparent"
+						}
+						transition="all 0.15s ease"
+						_hover={{
+							bg: item.hoverBackground,
+							transform: "translateY(-1px)",
+							boxShadow: "sm",
+						}}
+						_active={{
+							transform: "translateY(0)",
+						}}
+					>
+						{item.label}
+					</Button>
+				);
+			})}
+		</HStack>
+	);
+}
+
+function MobileNavigation() {
+	const location = useLocation();
 
 	return (
-		<Box
-			position="relative"
-			w="260px"
-			h="82px"
-			flexShrink={0}
-			fontFamily="'SUIT', 'Suite', 'Pretendard', sans-serif"
-		>
-			<AntFace />
+		<Menu placement="bottom-end">
+			<MenuButton
+				as={Button}
+				display={{ base: "inline-flex", lg: "none" }}
+				minW="40px"
+				h="40px"
+				p="0"
+				variant="outline"
+				borderRadius="10px"
+				aria-label="메뉴 열기"
+			>
+				<HamburgerIcon boxSize="20px" />
+			</MenuButton>
 
-			<MenuCircle
-	label="거래소"
-	to="/exchange"
-	left={50}
-	active={isActive("/exchange")}
-/>
+			<MenuList
+				minW="210px"
+				py="8px"
+				borderRadius="12px"
+				boxShadow="xl"
+			>
+				{NAV_ITEMS.map((item) => {
+					const active = isPathActive(
+						location.pathname,
+						item.activePaths,
+					);
 
-<MenuCircle
-	label="시나리오"
-	to="/scenario"
-	left={102}
-	active={isActive("/scenario")}
-/>
+					return (
+						<MenuItem
+							key={item.to}
+							as={RouterLink}
+							to={item.to}
+							mx="8px"
+							my="3px"
+							w="calc(100% - 16px)"
+							borderRadius="8px"
+							fontWeight={active ? "800" : "600"}
+							color={active ? "white" : "gray.700"}
+							bg={
+								active
+									? item.background
+									: "transparent"
+							}
+							_hover={{
+								bg: active
+									? item.hoverBackground
+									: "gray.100",
+							}}
+						>
+							<Box
+								w="8px"
+								h="8px"
+								mr="10px"
+								borderRadius="full"
+								bg={item.background}
+							/>
 
-<MenuCircle
-	label="마이페이지"
-	to="/mypage"
-	left={154}
-	active={isActive("/Mypage")}
-/>
-		</Box>
+							{item.label}
+						</MenuItem>
+					);
+				})}
+
+				<MenuItem
+					as={RouterLink}
+					to="/mypage"
+					mx="8px"
+					mt="8px"
+					w="calc(100% - 16px)"
+					borderRadius="8px"
+					fontWeight="600"
+				>
+					마이페이지
+				</MenuItem>
+
+				<MenuItem
+					as={RouterLink}
+					to="/login"
+					mx="8px"
+					w="calc(100% - 16px)"
+					borderRadius="8px"
+					fontWeight="600"
+				>
+					로그인
+				</MenuItem>
+			</MenuList>
+		</Menu>
 	);
 }
 
@@ -207,49 +247,57 @@ export default function Navbar() {
 	return (
 		<Box
 			as="header"
+			position="sticky"
+			top="0"
+			zIndex={1500}
 			w="100%"
 			bg="white"
-			borderBottom="1px solid #edf2f7"
-			px={{ base: 4, md: 6 }}
-			py="2px"
-			minH="88px"
-			overflow="visible"
-			fontFamily="'SUIT', 'Suite', 'Pretendard', sans-serif"
+			borderBottomWidth="1px"
+			borderBottomColor="gray.200"
+			boxShadow="0 1px 4px rgba(0, 0, 0, 0.04)"
 		>
-			<Flex align="center" justify="space-between" h="100%">
-	<Flex align="center" gap="14px">
-		<Text
-			fontFamily="'SUIT', 'Suite', 'Pretendard', sans-serif"
-			fontSize="24px"
-			fontWeight="900"
-			letterSpacing="-0.04em"
-			color="black"
-			whiteSpace="nowrap"
-			lineHeight="0"
-			mt="-2px"
-		>
-			앤티튜드
-		</Text>
+			<Flex
+				w="100%"
+				minH="66px"
+				px={{ base: "10px", md: "16px" }}
+				align="center"
+				justify="space-between"
+				gap="16px"
+			>
+				<Flex
+					align="center"
+					gap={{ base: "10px", xl: "16px" }}
+					minW={0}
+				>
+					<LogoPlaceholder />
+					<DesktopNavigation />
+				</Flex>
 
-		<AntitudeMenu />
-	</Flex>
-
-	<Flex align="center" gap="2">
-					<IconButton
-						aria-label="toggle color mode"
-						icon={<SunIcon />}
-						variant="outline"
+				<Flex
+					align="center"
+					justify="flex-end"
+					gap="8px"
+					flexShrink={0}
+				>
+					<Button
+						as={RouterLink}
+						to="/mypage"
+						display={{
+							base: "none",
+							md: "inline-flex",
+						}}
 						size="sm"
-					/>
-					<IconButton
-						aria-label="favorite"
-						icon={<StarIcon />}
-						variant="outline"
-						size="sm"
-					/>
-					<Button as={RouterLink} to="/login" size="sm" variant="outline">
-						Login
+						variant="ghost"
+						fontSize="13px"
+						fontWeight="700"
+						color="gray.700"
+					>
+						마이페이지
 					</Button>
+
+					<AccountMenu />
+
+					<MobileNavigation />
 				</Flex>
 			</Flex>
 		</Box>

@@ -116,7 +116,7 @@ export default function Signup() {
 							<Stack spacing={5} pt={2}>
 								<Turnstile
 									ref={turnstileRef}
-									siteKey="0x4AAAAAAAI6ckchuGZipSqE"
+									siteKey="1x00000000000000000000AA"
 								/>
 								<Button
 									loadingText="Submitting"
