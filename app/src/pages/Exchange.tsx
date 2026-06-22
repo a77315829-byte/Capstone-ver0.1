@@ -1,4 +1,5 @@
 import React, {
+	useCallback,
 	useEffect,
 	useState,
 } from "react";
@@ -16,11 +17,18 @@ import {
 } from "react-router-dom";
 
 import DomesticExchange from "./DomesticExchange";
+import FloatingNewsDrawer from "../components/FloatingNewsDrawer";
 import UsMarketPanel from "../components/UsMarketPanel";
 
 type MarketView =
 	| "KR"
 	| "US";
+
+export interface SelectedNewsStock {
+	symbol: string;
+	name: string;
+	market: string;
+}
 
 export default function Exchange() {
 	const [
@@ -43,6 +51,37 @@ export default function Exchange() {
 			queryMarket,
 		);
 
+	const [
+		selectedNewsStock,
+		setSelectedNewsStock,
+	] =
+		useState<SelectedNewsStock>(
+			queryMarket === "US"
+				? {
+						symbol: "NVDA",
+						name: "엔비디아",
+						market: "NASDAQ",
+					}
+				: {
+						symbol: "005930",
+						name: "삼성전자",
+						market: "KOSPI",
+					},
+		);
+
+	const handleSelectedStockChange =
+		useCallback(
+			(
+				stock:
+					SelectedNewsStock,
+			) => {
+				setSelectedNewsStock(
+					stock,
+				);
+			},
+			[],
+		);
+
 	useEffect(() => {
 		setMarketView(
 			queryMarket,
@@ -53,6 +92,21 @@ export default function Exchange() {
 		market: MarketView,
 	) => {
 		setMarketView(market);
+
+		setSelectedNewsStock(
+			market === "US"
+				? {
+						symbol: "NVDA",
+						name: "엔비디아",
+						market: "NASDAQ",
+					}
+				: {
+						symbol: "005930",
+						name: "삼성전자",
+						market: "KOSPI",
+					},
+		);
+
 		setSearchParams({
 			market,
 		});
@@ -148,10 +202,30 @@ export default function Exchange() {
 			</Flex>
 
 			{marketView === "KR" ? (
-				<DomesticExchange />
+				<DomesticExchange
+					onStockChange={
+						handleSelectedStockChange
+					}
+				/>
 			) : (
-				<UsMarketPanel />
+				<UsMarketPanel
+					onStockChange={
+						handleSelectedStockChange
+					}
+				/>
 			)}
+
+			<FloatingNewsDrawer
+				symbol={
+					selectedNewsStock.symbol
+				}
+				name={
+					selectedNewsStock.name
+				}
+				market={
+					selectedNewsStock.market
+				}
+			/>
 		</Box>
 	);
 }

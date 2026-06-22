@@ -1021,13 +1021,52 @@ function StockDetailPanel({
 	);
 }
 
-export default function DomesticExchange() {
+interface DomesticExchangeProps {
+	onStockChange?: (
+		stock: {
+			symbol: string;
+			name: string;
+			market: string;
+		},
+	) => void;
+}
+
+export default function DomesticExchange({
+	onStockChange,
+}: DomesticExchangeProps) {
 	const toast = useToast();
 
 	const [selectedSymbol, setSelectedSymbol] = useState("005930");
 	const [searchKeyword, setSearchKeyword] = useState("삼성전자");
 	const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 	const [stock, setStock] = useState<StockSummary | null>(null);
+
+	useEffect(() => {
+		const symbol =
+			stock?.symbol ??
+			selectedSymbol;
+
+		if (!symbol) {
+			return;
+		}
+
+		onStockChange?.({
+			symbol,
+			name:
+				stock?.name ??
+				symbol,
+			market:
+				stock?.market ??
+				"KRX",
+		});
+	}, [
+		onStockChange,
+		selectedSymbol,
+		stock?.symbol,
+		stock?.name,
+		stock?.market,
+	]);
+
 	const [chartPoints, setChartPoints] = useState<ChartPoint[]>([]);
 	const [isLoadingStock, setIsLoadingStock] = useState(false);
 	const [isSearching, setIsSearching] = useState(false);
@@ -1349,8 +1388,8 @@ export default function DomesticExchange() {
 				const closedStatus =
 					error?.response?.data
 						?.data as
-						| MarketStatus
-						| undefined;
+					| MarketStatus
+					| undefined;
 
 				if (closedStatus) {
 					setMarketStatus(
@@ -1821,7 +1860,7 @@ export default function DomesticExchange() {
 										borderRadius="full"
 									>
 										{isLoadingMarketStatus &&
-										!marketStatus
+											!marketStatus
 											? "시장 상태 확인 중"
 											: marketStatus?.isOpen
 												? "정규장 운영 중"
@@ -1941,7 +1980,7 @@ export default function DomesticExchange() {
 									}
 								>
 									{orderType === "LIMIT" &&
-									isMarketClosed
+										isMarketClosed
 										? "예약 매수"
 										: "매수"}
 								</Button>
@@ -1956,7 +1995,7 @@ export default function DomesticExchange() {
 									}
 								>
 									{orderType === "LIMIT" &&
-									isMarketClosed
+										isMarketClosed
 										? "예약 매도"
 										: "매도"}
 								</Button>

@@ -37,8 +37,8 @@ import { RepeatIcon } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
 
 import api from "../services/api.service";
-import MilitaryProfileCard from "../components/profile/MilitaryProfileCard";
-import UsPortfolioMyPageSection from "../components/profile/UsPortfolioMyPageSection";
+import MilitaryProfileCard from "../components/Profile/MilitaryProfileCard";
+import UsPortfolioMyPageSection from "../components/Profile/UsPortfolioMyPageSection";
 
 type TradingOrderSide = "BUY" | "SELL";
 type TradingOrderType = "MARKET" | "LIMIT";

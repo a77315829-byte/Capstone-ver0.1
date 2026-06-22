@@ -802,7 +802,19 @@ function UsPriceHistoryTable({
 	);
 }
 
-export default function UsMarketPanel() {
+interface UsMarketPanelProps {
+	onStockChange?: (
+		stock: {
+			symbol: string;
+			name: string;
+			market: string;
+		},
+	) => void;
+}
+
+export default function UsMarketPanel({
+	onStockChange,
+}: UsMarketPanelProps) {
 	const toast =
 		useToast();
 
@@ -838,6 +850,42 @@ export default function UsMarketPanel() {
 		useState<UsStockQuote | null>(
 			null,
 		);
+
+	useEffect(() => {
+		const symbol =
+			quote?.symbol ??
+			selectedSymbol;
+
+		if (!symbol) {
+			return;
+		}
+
+		onStockChange?.({
+			symbol,
+			name:
+				quote?.name ??
+				symbol,
+			market:
+				quote?.market ??
+				(
+					selectedExchange ===
+					"NAS"
+						? "NASDAQ"
+						: selectedExchange ===
+							  "NYS"
+							? "NYSE"
+							: "AMEX"
+				),
+		});
+	}, [
+		onStockChange,
+		selectedSymbol,
+		selectedExchange,
+		quote?.symbol,
+		quote?.name,
+		quote?.market,
+	]);
+
 
 	const [
 		chartData,
