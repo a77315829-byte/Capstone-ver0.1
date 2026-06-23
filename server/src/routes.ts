@@ -17,6 +17,8 @@ import militaryProfileController from "./controller/militaryProfile.controller";
 import marketSessionController from "./controller/marketSession.controller";
 import usStocksController from "./controller/usStocks.controller";
 import usTradingController from "./controller/usTrading.controller";
+import salaryAiController from "./controller/salaryAi.controller";
+
 // Auth routes
 router.post(
 	"/api/auth/signup",
@@ -145,6 +147,16 @@ router.post("/api/ai/stock-assistant", aiController.stockAssistant);
 router.post(
 	"/api/ai/asset-advice",
 	assetAdviceController.generateAdvice,
+);
+router.get(
+	"/api/salary-ai/latest",
+	[authJwt.verifyToken],
+	salaryAiController.getLatest,
+);
+router.post(
+  "/api/salary-ai/analyze",
+  [authJwt.verifyToken],
+  salaryAiController.analyze,
 );
 
 

@@ -3,8 +3,13 @@ import mongoose, {
 	Schema,
 } from "mongoose";
 
+import type {
+	MilitaryBranch,
+} from "./militaryProfile.model";
+
 export type CommunityPostScope =
 	| "global"
+	| "branch"
 	| "division";
 
 export interface ICommunityPost extends Document {
@@ -13,6 +18,10 @@ export interface ICommunityPost extends Document {
 	authorCode: string;
 
 	scope: CommunityPostScope;
+	branch?: MilitaryBranch | null;
+	branchName?: string | null;
+
+	/* 구버전 데이터 호환용 */
 	divisionCode?: string | null;
 	divisionName?: string | null;
 
@@ -53,9 +62,27 @@ const CommunityPostSchema =
 			},
 			scope: {
 				type: String,
-				enum: ["global", "division"],
+				enum: ["global", "branch", "division"],
 				required: true,
 				index: true,
+			},
+			branch: {
+				type: String,
+				enum: [
+					"ARMY",
+					"NAVY",
+					"AIR_FORCE",
+					"MARINE",
+					"SOCIAL_SERVICE",
+					"ETC",
+					null,
+				],
+				default: null,
+				index: true,
+			},
+			branchName: {
+				type: String,
+				default: null,
 			},
 			divisionCode: {
 				type: String,
@@ -128,7 +155,7 @@ const CommunityPostSchema =
 
 CommunityPostSchema.index({
 	scope: 1,
-	divisionCode: 1,
+	branch: 1,
 	createdAt: -1,
 });
 

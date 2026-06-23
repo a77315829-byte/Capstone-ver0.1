@@ -1,4 +1,14 @@
-export type CommunityScope = "global" | "division";
+export type MilitaryBranch =
+	| "ARMY"
+	| "NAVY"
+	| "AIR_FORCE"
+	| "MARINE"
+	| "SOCIAL_SERVICE"
+	| "ETC";
+
+export type CommunityScope =
+	| "global"
+	| "branch";
 
 export type CommunityCategory =
 	| "전체"
@@ -14,17 +24,21 @@ export type CommunitySort =
 	| "popular"
 	| "comments";
 
+export type CommunityLeaderboardMode =
+	| "live"
+	| "monthly";
+
 export interface CommunityProfile {
 	nickname: string;
-	divisionCode: string | null;
-	divisionName: string | null;
+	branch: MilitaryBranch | null;
+	branchName: string | null;
 }
 
 export interface CommunityPostSummary {
 	id: string;
 	scope: CommunityScope;
-	divisionCode: string | null;
-	divisionName: string | null;
+	branch: MilitaryBranch | null;
+	branchName: string | null;
 	category: Exclude<CommunityCategory, "전체">;
 	title: string;
 	contentPreview: string;
@@ -65,21 +79,48 @@ export interface CommunityPostListResponse {
 
 export interface CommunityLeaderboardEntry {
 	id: string;
+	userId?: string;
 	month: string;
-	divisionCode: string;
-	divisionName: string;
+	branch: MilitaryBranch;
+	branchName: string;
 	nickname: string;
 	authorCode: string;
+	currentEquity: number;
+	startEquity: number;
 	returnRate: number;
 	maxDrawdown: number;
 	consistencyScore: number;
 	activityScore: number;
 	totalScore: number;
-	divisionRank: number;
-	overallRank: number;
+	filledTradeCount: number;
+	activeTradingDays: number;
+	isEligible: boolean;
+	branchRank: number | null;
+	overallRank: number | null;
 	badge:
 		| "투자왕"
 		| "수익왕"
 		| "안정왕"
 		| null;
+}
+
+export interface CommunityLeaderboardResponse {
+	mode: CommunityLeaderboardMode;
+	month: string;
+	branch: MilitaryBranch | null;
+	generatedAt: string;
+	entries: CommunityLeaderboardEntry[];
+}
+
+export interface CommunityBranchWinner {
+	branch: MilitaryBranch;
+	branchName: string;
+	winner: CommunityLeaderboardEntry | null;
+}
+
+export interface MyCommunityPerformance {
+	branch: MilitaryBranch | null;
+	branchName: string | null;
+	live: CommunityLeaderboardEntry | null;
+	monthly: CommunityLeaderboardEntry | null;
 }

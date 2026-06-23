@@ -20,8 +20,8 @@ export interface ICommunityProfile extends Document {
 	unitName?: string | null;
 
 	/*
-	 * 기존 사단 라운지 코드의 임시 호환 필드입니다.
-	 * 커뮤니티를 unitCode 기반으로 전환한 뒤 삭제할 수 있습니다.
+	 * 구버전 사단 게시판 데이터 호환용입니다.
+	 * 신규 커뮤니티에서는 branch만 사용합니다.
 	 */
 	divisionCode?: string | null;
 	divisionName?: string | null;
@@ -54,6 +54,7 @@ const CommunityProfileSchema =
 					"NAVY",
 					"AIR_FORCE",
 					"MARINE",
+					"SOCIAL_SERVICE",
 					"ETC",
 				],
 				default: null,
@@ -89,7 +90,6 @@ const CommunityProfileSchema =
 				trim: true,
 				maxlength: 30,
 			},
-
 			divisionCode: {
 				type: String,
 				default: null,
@@ -99,7 +99,6 @@ const CommunityProfileSchema =
 				type: String,
 				default: null,
 			},
-
 			nicknameChangedAt: {
 				type: Date,
 				default: null,

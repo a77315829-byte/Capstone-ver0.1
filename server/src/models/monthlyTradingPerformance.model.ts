@@ -1,5 +1,6 @@
 import mongoose, {
 	Document,
+	Model,
 	Schema,
 } from "mongoose";
 
@@ -7,25 +8,37 @@ import type {
 	MilitaryBranch,
 } from "./militaryProfile.model";
 
-export interface ICommunityMonthlyRank extends Document {
+export interface EquityHistoryPoint {
+	date: string;
+	equity: number;
+}
+
+export interface IMonthlyTradingPerformance
+	extends Document {
 	month: string;
 	userId: string;
 	branch: MilitaryBranch;
 	branchName: string;
-	market: "DOMESTIC";
 	nickname: string;
 	authorCode: string;
+	market: "DOMESTIC";
 
-	startEquity: number;
+	monthStartEquity: number;
 	currentEquity: number;
 	returnRate: number;
 	maxDrawdown: number;
+	dailyVolatility: number;
+
+	filledTradeCount: number;
+	activeTradingDays: number;
+	reasonEntryCount: number;
+	isEligible: boolean;
+
+	returnScore: number;
+	drawdownScore: number;
 	consistencyScore: number;
 	activityScore: number;
 	totalScore: number;
-	filledTradeCount: number;
-	activeTradingDays: number;
-	isEligible: boolean;
 
 	branchRank: number | null;
 	overallRank: number | null;
@@ -35,16 +48,30 @@ export interface ICommunityMonthlyRank extends Document {
 		| "안정왕"
 		| null;
 
-	/* 구버전 사단 랭킹 데이터 호환용 */
-	divisionCode?: string | null;
-	divisionName?: string | null;
-
+	equityHistory: EquityHistoryPoint[];
 	createdAt: Date;
 	updatedAt: Date;
 }
 
-const CommunityMonthlyRankSchema =
-	new Schema<ICommunityMonthlyRank>(
+const EquityHistorySchema = new Schema<EquityHistoryPoint>(
+	{
+		date: {
+			type: String,
+			required: true,
+		},
+		equity: {
+			type: Number,
+			required: true,
+			min: 0,
+		},
+	},
+	{
+		_id: false,
+	},
+);
+
+const MonthlyTradingPerformanceSchema =
+	new Schema<IMonthlyTradingPerformance>(
 		{
 			month: {
 				type: String,
@@ -73,22 +100,22 @@ const CommunityMonthlyRankSchema =
 				type: String,
 				required: true,
 			},
+			nickname: {
+				type: String,
+				default: "ㅇㅇ",
+				required: true,
+			},
+			authorCode: {
+				type: String,
+				required: true,
+			},
 			market: {
 				type: String,
 				enum: ["DOMESTIC"],
 				default: "DOMESTIC",
 				required: true,
 			},
-			nickname: {
-				type: String,
-				required: true,
-				default: "ㅇㅇ",
-			},
-			authorCode: {
-				type: String,
-				required: true,
-			},
-			startEquity: {
+			monthStartEquity: {
 				type: Number,
 				required: true,
 				min: 0,
@@ -100,36 +127,55 @@ const CommunityMonthlyRankSchema =
 			},
 			returnRate: {
 				type: Number,
-				required: true,
+				default: 0,
 			},
 			maxDrawdown: {
 				type: Number,
-				required: true,
+				default: 0,
 			},
-			consistencyScore: {
+			dailyVolatility: {
 				type: Number,
-				required: true,
-			},
-			activityScore: {
-				type: Number,
-				required: true,
-			},
-			totalScore: {
-				type: Number,
-				required: true,
-				index: true,
+				default: 0,
 			},
 			filledTradeCount: {
 				type: Number,
 				default: 0,
+				min: 0,
 			},
 			activeTradingDays: {
 				type: Number,
 				default: 0,
+				min: 0,
+			},
+			reasonEntryCount: {
+				type: Number,
+				default: 0,
+				min: 0,
 			},
 			isEligible: {
 				type: Boolean,
 				default: false,
+				index: true,
+			},
+			returnScore: {
+				type: Number,
+				default: 0,
+			},
+			drawdownScore: {
+				type: Number,
+				default: 0,
+			},
+			consistencyScore: {
+				type: Number,
+				default: 0,
+			},
+			activityScore: {
+				type: Number,
+				default: 0,
+			},
+			totalScore: {
+				type: Number,
+				default: 0,
 				index: true,
 			},
 			branchRank: {
@@ -150,13 +196,9 @@ const CommunityMonthlyRankSchema =
 				],
 				default: null,
 			},
-			divisionCode: {
-				type: String,
-				default: null,
-			},
-			divisionName: {
-				type: String,
-				default: null,
+			equityHistory: {
+				type: [EquityHistorySchema],
+				default: [],
 			},
 		},
 		{
@@ -164,7 +206,7 @@ const CommunityMonthlyRankSchema =
 		},
 	);
 
-CommunityMonthlyRankSchema.index(
+MonthlyTradingPerformanceSchema.index(
 	{
 		month: 1,
 		userId: 1,
@@ -175,14 +217,18 @@ CommunityMonthlyRankSchema.index(
 	},
 );
 
-CommunityMonthlyRankSchema.index({
+MonthlyTradingPerformanceSchema.index({
 	month: 1,
 	branch: 1,
 	branchRank: 1,
 });
 
-export default mongoose.models.CommunityMonthlyRank ||
-	mongoose.model<ICommunityMonthlyRank>(
-		"CommunityMonthlyRank",
-		CommunityMonthlyRankSchema,
+const MonthlyTradingPerformance =
+	(mongoose.models
+		.MonthlyTradingPerformance as Model<IMonthlyTradingPerformance>) ||
+	mongoose.model<IMonthlyTradingPerformance>(
+		"MonthlyTradingPerformance",
+		MonthlyTradingPerformanceSchema,
 	);
+
+export default MonthlyTradingPerformance;

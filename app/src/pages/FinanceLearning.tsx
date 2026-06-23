@@ -165,8 +165,9 @@ function DictionaryView() {
 			<Card
 				borderRadius="18px"
 				borderWidth="1px"
-				borderColor="gray.200"
-				boxShadow="sm"
+				borderColor="army.200"
+				bg="#FFFEFA"
+				boxShadow="panel"
 			>
 				<CardBody p={{ base: "20px", md: "24px" }}>
 					<Grid
@@ -178,7 +179,7 @@ function DictionaryView() {
 					>
 						<InputGroup>
 							<InputLeftElement pointerEvents="none">
-								<SearchIcon color="gray.400" />
+								<SearchIcon color="army.400" />
 							</InputLeftElement>
 
 							<Input
@@ -189,6 +190,15 @@ function DictionaryView() {
 								placeholder="용어 또는 설명 검색"
 								borderRadius="12px"
 								bg="white"
+								borderColor="army.200"
+								_hover={{
+									borderColor: "army.400",
+								}}
+								_focusVisible={{
+									borderColor: "army.500",
+									boxShadow:
+										"0 0 0 1px #697F43",
+								}}
 							/>
 						</InputGroup>
 
@@ -198,6 +208,8 @@ function DictionaryView() {
 								setCategory(event.target.value)
 							}
 							borderRadius="12px"
+							bg="white"
+							borderColor="army.200"
 						>
 							{categories.map((item) => (
 								<option key={item} value={item}>
@@ -212,6 +224,8 @@ function DictionaryView() {
 								setDifficulty(event.target.value)
 							}
 							borderRadius="12px"
+							bg="white"
+							borderColor="army.200"
 						>
 							<option value={ALL}>전체 난이도</option>
 							<option value="초급">초급</option>
@@ -255,15 +269,15 @@ function DictionaryView() {
 							textAlign="left"
 							borderRadius="18px"
 							borderWidth="1px"
-							borderColor="gray.200"
+							borderColor="army.200"
 							boxShadow="sm"
-							bg="white"
+							bg="#FFFEFA"
 							transition="all 0.16s ease"
 							onClick={() => openTerm(term)}
 							_hover={{
 								transform: "translateY(-3px)",
 								boxShadow: "md",
-								borderColor: "pink.200",
+								borderColor: "army.400",
 							}}
 						>
 							<CardBody p="22px">
@@ -273,7 +287,8 @@ function DictionaryView() {
 									gap="3"
 								>
 									<Badge
-										colorScheme="pink"
+										bg="khaki.100"
+										color="army.800"
 										borderRadius="full"
 										px="2.5"
 										py="1"
@@ -282,10 +297,15 @@ function DictionaryView() {
 									</Badge>
 
 									<Badge
-										colorScheme={
+										bg={
 											term.difficulty === "초급"
-												? "green"
-												: "purple"
+												? "army.100"
+												: "signal.100"
+										}
+										color={
+											term.difficulty === "초급"
+												? "army.700"
+												: "signal.800"
 										}
 										borderRadius="full"
 									>
@@ -312,7 +332,7 @@ function DictionaryView() {
 								<Text
 									fontSize="xs"
 									fontWeight="800"
-									color="pink.600"
+									color="army.600"
 								>
 									자세히 보기
 								</Text>
@@ -321,7 +341,12 @@ function DictionaryView() {
 					))}
 				</SimpleGrid>
 			) : (
-				<Card borderRadius="18px">
+				<Card
+					borderRadius="18px"
+					borderWidth="1px"
+					borderColor="army.200"
+					bg="#FFFEFA"
+				>
 					<CardBody py="70px">
 						<Stack align="center" spacing="3">
 							<SearchIcon boxSize="24px" color="gray.400" />
@@ -344,18 +369,31 @@ function DictionaryView() {
 			>
 				<ModalOverlay />
 
-				<ModalContent borderRadius="18px">
+				<ModalContent
+					borderRadius="18px"
+					bg="#FFFEFA"
+					borderWidth="1px"
+					borderColor="army.200"
+				>
 					<ModalHeader pr="12">
 						<Stack spacing="2">
 							<HStack spacing="2" wrap="wrap">
-								<Badge colorScheme="pink">
+								<Badge
+									bg="khaki.100"
+									color="army.800"
+								>
 									{selectedTerm?.category}
 								</Badge>
 								<Badge
-									colorScheme={
+									bg={
 										selectedTerm?.difficulty === "초급"
-											? "green"
-											: "purple"
+											? "army.100"
+											: "signal.100"
+									}
+									color={
+										selectedTerm?.difficulty === "초급"
+											? "army.700"
+											: "signal.800"
 									}
 								>
 									{selectedTerm?.difficulty}
@@ -376,11 +414,11 @@ function DictionaryView() {
 								<Box
 									p="4"
 									borderRadius="14px"
-									bg="pink.50"
+									bg="army.50"
 									borderWidth="1px"
-									borderColor="pink.100"
+									borderColor="army.200"
 								>
-									<Text fontWeight="800" color="pink.700">
+									<Text fontWeight="800" color="army.800">
 										{selectedTerm.shortDefinition}
 									</Text>
 								</Box>
@@ -401,7 +439,9 @@ function DictionaryView() {
 									<Text
 										p="4"
 										borderRadius="12px"
-										bg="gray.50"
+										bg="field.50"
+										borderWidth="1px"
+										borderColor="field.100"
 										lineHeight="1.75"
 									>
 										{selectedTerm.example}
@@ -422,7 +462,9 @@ function DictionaryView() {
 													gap="3"
 													p="3"
 													borderRadius="12px"
-													bg="gray.50"
+													bg="field.50"
+													borderWidth="1px"
+													borderColor="field.100"
 												>
 													<CheckCircleIcon
 														mt="3px"
@@ -440,18 +482,18 @@ function DictionaryView() {
 								<Box
 									p="4"
 									borderRadius="14px"
-									bg="orange.50"
+									bg="signal.50"
 									borderWidth="1px"
-									borderColor="orange.100"
+									borderColor="signal.200"
 								>
-									<Text fontWeight="900" color="orange.700">
+									<Text fontWeight="900" color="signal.800">
 										주의사항
 									</Text>
 									<Text
 										mt="2"
 										fontSize="sm"
 										lineHeight="1.75"
-										color="orange.800"
+										color="signal.900"
 									>
 										{selectedTerm.caution}
 									</Text>
@@ -469,7 +511,8 @@ function DictionaryView() {
 													px="3"
 													py="1.5"
 													borderRadius="full"
-													colorScheme="gray"
+													bg="army.100"
+													color="army.800"
 												>
 													{term}
 												</Badge>
@@ -572,7 +615,12 @@ function QuizView() {
 
 	if (session.length === 0) {
 		return (
-			<Card borderRadius="18px">
+			<Card
+				borderRadius="18px"
+				borderWidth="1px"
+				borderColor="army.200"
+				bg="#FFFEFA"
+			>
 				<CardBody py="70px">
 					<Stack align="center" spacing="4">
 						<InfoIcon boxSize="24px" color="orange.500" />
@@ -580,7 +628,7 @@ function QuizView() {
 							조건에 맞는 문제가 없습니다.
 						</Text>
 						<Button
-							colorScheme="purple"
+							colorScheme="army"
 							onClick={() => {
 								setCategory(ALL);
 								setDifficulty(ALL);
@@ -604,8 +652,9 @@ function QuizView() {
 			<Card
 				borderRadius="20px"
 				borderWidth="1px"
-				borderColor="purple.100"
-				boxShadow="md"
+				borderColor="army.200"
+				bg="#FFFEFA"
+				boxShadow="panel"
 			>
 				<CardBody p={{ base: "24px", md: "40px" }}>
 					<Stack align="center" spacing="7">
@@ -647,10 +696,10 @@ function QuizView() {
 								p="5"
 								textAlign="center"
 								borderRadius="16px"
-								bg="blue.50"
+								bg="army.50"
 							>
 								<StatLabel>정답</StatLabel>
-								<StatNumber color="blue.700">
+								<StatNumber color="army.800">
 									{score}/{session.length}
 								</StatNumber>
 							</Stat>
@@ -659,10 +708,10 @@ function QuizView() {
 								p="5"
 								textAlign="center"
 								borderRadius="16px"
-								bg="green.50"
+								bg="field.50"
 							>
 								<StatLabel>정답률</StatLabel>
-								<StatNumber color="green.700">
+								<StatNumber color="field.800">
 									{percentage}%
 								</StatNumber>
 							</Stat>
@@ -671,10 +720,10 @@ function QuizView() {
 								p="5"
 								textAlign="center"
 								borderRadius="16px"
-								bg="purple.50"
+								bg="khaki.50"
 							>
 								<StatLabel>최고 연속 정답</StatLabel>
-								<StatNumber color="purple.700">
+								<StatNumber color="khaki.800">
 									{bestStreak}
 								</StatNumber>
 							</Stat>
@@ -682,7 +731,7 @@ function QuizView() {
 
 						<Button
 							leftIcon={<RepeatIcon />}
-							colorScheme="purple"
+							colorScheme="army"
 							borderRadius="12px"
 							onClick={() => restartQuiz()}
 						>
@@ -699,8 +748,9 @@ function QuizView() {
 			<Card
 				borderRadius="18px"
 				borderWidth="1px"
-				borderColor="gray.200"
-				boxShadow="sm"
+				borderColor="army.200"
+				bg="#FFFEFA"
+				boxShadow="panel"
 			>
 				<CardBody p={{ base: "18px", md: "22px" }}>
 					<Grid
@@ -766,16 +816,17 @@ function QuizView() {
 			<Card
 				borderRadius="20px"
 				borderWidth="1px"
-				borderColor="gray.200"
-				boxShadow="md"
+				borderColor="army.200"
+				bg="#FFFEFA"
+				boxShadow="panel"
 				overflow="hidden"
 			>
 				<Box
 					px={{ base: "20px", md: "28px" }}
 					py="18px"
-					bg="gray.50"
+					bg="army.50"
 					borderBottomWidth="1px"
-					borderBottomColor="gray.200"
+					borderBottomColor="army.200"
 				>
 					<Flex
 						mb="2"
@@ -788,10 +839,16 @@ function QuizView() {
 						</Text>
 
 						<HStack spacing="2">
-							<Badge colorScheme="blue">
+							<Badge
+								bg="field.100"
+								color="field.800"
+							>
 								정답 {score}
 							</Badge>
-							<Badge colorScheme="purple">
+							<Badge
+								bg="signal.100"
+								color="signal.800"
+							>
 								연속 {streak}
 							</Badge>
 						</HStack>
@@ -802,7 +859,7 @@ function QuizView() {
 							((currentIndex + 1) / session.length) *
 							100
 						}
-						colorScheme="purple"
+						colorScheme="army"
 						borderRadius="full"
 					/>
 				</Box>
@@ -811,14 +868,22 @@ function QuizView() {
 					<Stack spacing="6">
 						<Box>
 							<HStack mb="3" spacing="2" wrap="wrap">
-								<Badge colorScheme="pink">
+								<Badge
+									bg="khaki.100"
+									color="army.800"
+								>
 									{currentQuiz.category}
 								</Badge>
 								<Badge
-									colorScheme={
+									bg={
 										currentQuiz.difficulty === "초급"
-											? "green"
-											: "purple"
+											? "army.100"
+											: "signal.100"
+									}
+									color={
+										currentQuiz.difficulty === "초급"
+											? "army.700"
+											: "signal.800"
 									}
 								>
 									{currentQuiz.difficulty}
@@ -847,13 +912,13 @@ function QuizView() {
 										currentQuiz.answerIndex;
 
 									let background = "white";
-									let borderColor = "gray.200";
-									let color = "gray.800";
+									let borderColor = "army.200";
+									let color = "army.900";
 
 									if (!isChecked && isSelected) {
-										background = "purple.50";
-										borderColor = "purple.400";
-										color = "purple.700";
+										background = "army.50";
+										borderColor = "army.500";
+										color = "army.800";
 									}
 
 									if (isChecked && isCorrect) {
@@ -903,7 +968,8 @@ function QuizView() {
 													h="28px"
 													flexShrink={0}
 													borderRadius="full"
-													bg="gray.100"
+													bg="army.100"
+													color="army.800"
 													fontSize="sm"
 													fontWeight="900"
 												>
@@ -986,7 +1052,7 @@ function QuizView() {
 							{!isChecked ? (
 								<Button
 									minW="120px"
-									colorScheme="purple"
+									colorScheme="army"
 									borderRadius="12px"
 									isDisabled={selectedIndex === null}
 									onClick={checkAnswer}
@@ -996,7 +1062,7 @@ function QuizView() {
 							) : (
 								<Button
 									minW="120px"
-									colorScheme="purple"
+									colorScheme="army"
 									borderRadius="12px"
 									onClick={nextQuestion}
 								>
@@ -1015,55 +1081,97 @@ function QuizView() {
 
 export default function FinanceLearning() {
 	return (
-		<Box minH="calc(100vh - 66px)" bg="#F6F8FC">
+		<Box
+			minH="calc(100vh - 66px)"
+			bg="#F2F1E9"
+		>
 			<Box
 				maxW="1440px"
 				mx="auto"
-				px={{ base: "16px", md: "24px", xl: "32px" }}
-				py={{ base: "24px", md: "36px" }}
+				px={{
+					base: "16px",
+					md: "24px",
+					xl: "32px",
+				}}
+				py={{
+					base: "24px",
+					md: "36px",
+				}}
 			>
-				<Box mb="7">
-					<HStack mb="3" spacing="2">
+				<Box
+					mb="7"
+					px={{
+						base: "22px",
+						md: "32px",
+					}}
+					py={{
+						base: "28px",
+						md: "36px",
+					}}
+					borderRadius="22px"
+					bgGradient="linear(to-r, army.900, army.700, army.600)"
+					color="white"
+					boxShadow="panel"
+				>
+					<HStack
+						mb="4"
+						spacing="2"
+						wrap="wrap"
+					>
 						<Badge
 							px="3"
 							py="1"
-							borderRadius="full"
-							colorScheme="pink"
+							bg="khaki.200"
+							color="army.900"
 						>
-							금융 사전
+							전군 금융 학습
 						</Badge>
 
 						<Badge
 							px="3"
 							py="1"
-							borderRadius="full"
-							colorScheme="purple"
+							bg="whiteAlpha.200"
+							color="white"
 						>
-							퀴즈 학습
+							사전 · 퀴즈
 						</Badge>
 					</HStack>
 
 					<Heading
-						fontSize={{ base: "28px", md: "36px" }}
+						fontSize={{
+							base: "30px",
+							md: "40px",
+						}}
 						letterSpacing="-0.04em"
 					>
 						금융 기초 학습
 					</Heading>
 
-					<Text mt="2" color="gray.600">
-						금융 용어 {financeTerms.length}개와 객관식 퀴즈 {financeQuizzes.length}개로
+					<Text
+						mt="3"
+						maxW="760px"
+						color="whiteAlpha.800"
+						lineHeight="1.8"
+					>
+						금융 용어{" "}
+						{financeTerms.length}개와
+						객관식 퀴즈{" "}
+						{financeQuizzes.length}개로
 						핵심 개념을 학습합니다.
 					</Text>
 				</Box>
 
-				<Tabs variant="unstyled" isLazy>
+				<Tabs
+					variant="unstyled"
+					isLazy
+				>
 					<TabList
 						mb="6"
 						p="1.5"
 						maxW="500px"
-						bg="white"
+						bg="#FFFEFA"
 						borderWidth="1px"
-						borderColor="gray.200"
+						borderColor="army.200"
 						borderRadius="16px"
 						boxShadow="sm"
 					>
@@ -1071,9 +1179,12 @@ export default function FinanceLearning() {
 							flex="1"
 							borderRadius="12px"
 							fontWeight="900"
+							color="army.800"
 							_selected={{
-								bg: "pink.500",
+								bg: "army.700",
 								color: "white",
+								boxShadow:
+									"0 4px 12px rgba(64, 79, 43, 0.24)",
 							}}
 						>
 							용어 사전
@@ -1083,9 +1194,12 @@ export default function FinanceLearning() {
 							flex="1"
 							borderRadius="12px"
 							fontWeight="900"
+							color="army.800"
 							_selected={{
-								bg: "purple.500",
+								bg: "army.700",
 								color: "white",
+								boxShadow:
+									"0 4px 12px rgba(64, 79, 43, 0.24)",
 							}}
 						>
 							퀴즈 학습

@@ -44,7 +44,53 @@ function App() {
 				<Route path="*" element={<NotFound />} />
 				<Route path="/mypage" element={<MyPage />} />
 				<Route path="/salary" element={<SalaryCalculator />} />
-				<Route path="/learn" element={<FinanceLearning />} />
+
+				<Route
+					path="/salary-planner"
+					element={
+						<SalaryCalculator />
+					}
+				/>
+
+				<Route
+					path="/learn"
+					element={
+						<FinanceLearning />
+					}
+				/>
+
+				<Route
+					path="/learning"
+					element={
+						<FinanceLearning />
+					}
+				/>
+
+				<Route
+					path="/finance-learning"
+					element={
+						<FinanceLearning />
+					}
+				/>
+
+				<Route
+					path="/dictionary"
+					element={
+						<FinanceLearning />
+					}
+				/>
+
+				<Route
+					path="/quiz"
+					element={
+						<FinanceLearning />
+					}
+				/>
+
+				<Route
+					path="*"
+					element={<NotFound />}
+				/>
 			</Routes>
 		</>
 	);

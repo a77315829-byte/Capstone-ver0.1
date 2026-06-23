@@ -70,7 +70,7 @@ function Author({
 			</Text>
 
 			{isPostAuthor && (
-				<Badge colorScheme="pink" fontSize="9px">
+				<Badge colorScheme="army" fontSize="9px">
 					글쓴이
 				</Badge>
 			)}
@@ -267,7 +267,7 @@ export default function CommunityPostDetail() {
 	}
 
 	return (
-		<Box minH="calc(100vh - 72px)" bg="#F4F5F7">
+		<Box minH="calc(100vh - 72px)" bg="#F2F1E9">
 			<Box
 				maxW="1080px"
 				mx="auto"
@@ -275,9 +275,9 @@ export default function CommunityPostDetail() {
 				py={{ base: "18px", md: "28px" }}
 			>
 				<Card
-					borderRadius="0"
+					borderRadius="14px"
 					borderWidth="1px"
-					borderColor="gray.300"
+					borderColor="army.200"
 					boxShadow="none"
 				>
 					<CardBody p="0">
@@ -286,15 +286,15 @@ export default function CommunityPostDetail() {
 							py="10px"
 							align="center"
 							justify="space-between"
-							bg="gray.50"
+							bg="army.50"
 							borderBottomWidth="1px"
-							borderColor="gray.300"
+							borderColor="army.200"
 						>
 							<Button
 								as={RouterLink}
 								to="/community"
 								size="xs"
-								borderRadius="0"
+								borderRadius="14px"
 								leftIcon={<ArrowBackIcon />}
 							>
 								목록
@@ -302,15 +302,15 @@ export default function CommunityPostDetail() {
 
 							<HStack spacing="2">
 								<Badge colorScheme="gray">
-									{post.scope === "division"
-										? post.divisionName
+									{post.scope === "branch"
+										? post.branchName
 										: "전체"}
 								</Badge>
-								<Badge colorScheme="pink">
+								<Badge colorScheme="army">
 									{post.category}
 								</Badge>
 								{post.isFeatured && (
-									<Badge colorScheme="purple">
+									<Badge colorScheme="signal">
 										추천글
 									</Badge>
 								)}
@@ -375,7 +375,7 @@ export default function CommunityPostDetail() {
 										<Text
 											key={tag}
 											fontSize="12px"
-											color="blue.600"
+											color="army.600"
 										>
 											#{tag}
 										</Text>
@@ -386,8 +386,8 @@ export default function CommunityPostDetail() {
 							<Flex mt="26px" justify="center">
 								<Button
 									leftIcon={<StarIcon />}
-									borderRadius="0"
-									colorScheme="pink"
+									borderRadius="14px"
+									colorScheme="army"
 									variant="outline"
 									isLoading={isLiking}
 									onClick={toggleLike}
@@ -401,18 +401,18 @@ export default function CommunityPostDetail() {
 
 				<Card
 					mt="12px"
-					borderRadius="0"
+					borderRadius="14px"
 					borderWidth="1px"
-					borderColor="gray.300"
+					borderColor="army.200"
 					boxShadow="none"
 				>
 					<CardBody p="0">
 						<Box
 							px="14px"
 							py="10px"
-							bg="gray.50"
+							bg="army.50"
 							borderBottomWidth="1px"
-							borderColor="gray.300"
+							borderColor="army.200"
 						>
 							<Text fontSize="13px" fontWeight="900">
 								댓글 {comments.length}
@@ -437,7 +437,7 @@ export default function CommunityPostDetail() {
 										px={{ base: "12px", md: "16px" }}
 										py="12px"
 										borderBottomWidth="1px"
-										borderColor="gray.200"
+										borderColor="army.100"
 									>
 										<Flex
 											align="center"
@@ -476,13 +476,13 @@ export default function CommunityPostDetail() {
 							</Stack>
 						)}
 
-						<Box p="12px" bg="gray.50">
+						<Box p="12px" bg="army.50">
 							<Textarea
 								value={commentText}
 								minH="90px"
 								maxLength={1000}
-								borderRadius="0"
-								bg="white"
+								borderRadius="14px"
+								bg="#FFFEFA"
 								placeholder="댓글을 입력하세요."
 								onChange={(event) =>
 									setCommentText(event.target.value)
@@ -492,8 +492,8 @@ export default function CommunityPostDetail() {
 							<Flex mt="8px" justify="flex-end">
 								<Button
 									size="sm"
-									borderRadius="0"
-									colorScheme="pink"
+									borderRadius="14px"
+									colorScheme="army"
 									isLoading={isSubmittingComment}
 									onClick={submitComment}
 								>

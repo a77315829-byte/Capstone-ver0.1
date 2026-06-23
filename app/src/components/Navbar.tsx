@@ -35,7 +35,7 @@ const NAV_ITEMS: NavItem[] = [
 		hoverBackground: "#EA580C",
 	},
 	{
-		label: "잔여금 계산기",
+		label: "전역자금 플래너",
 		to: "/salary",
 		activePaths: ["/salary", "/advisor"],
 		background: "#2563EB",
@@ -49,7 +49,7 @@ const NAV_ITEMS: NavItem[] = [
 		hoverBackground: "#DB2777",
 	},
 	{
-		label: "커뮤니티",
+		label: "군 커뮤니티",
 		to: "/community",
 		activePaths: ["/community"],
 		background: "#7C3AED",

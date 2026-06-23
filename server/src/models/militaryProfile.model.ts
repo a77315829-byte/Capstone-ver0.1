@@ -9,6 +9,7 @@ export type MilitaryBranch =
 	| "NAVY"
 	| "AIR_FORCE"
 	| "MARINE"
+	| "SOCIAL_SERVICE"
 	| "ETC";
 
 export type MilitaryRank =
@@ -76,6 +77,7 @@ const militaryProfileSchema =
 					"NAVY",
 					"AIR_FORCE",
 					"MARINE",
+					"SOCIAL_SERVICE",
 					"ETC",
 				],
 				default: "ARMY",

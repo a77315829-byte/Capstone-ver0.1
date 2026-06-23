@@ -1,4 +1,4 @@
-interface MonthlyPerformanceInput {
+export interface MonthlyPerformanceInput {
 	returnRate: number;
 	maxDrawdown: number;
 	dailyVolatility: number;
@@ -23,11 +23,8 @@ function clamp(
 }
 
 /*
- * 실시간 모의투자 계좌의 월간 성과를
- * 교육 목적의 위험조정 점수로 변환합니다.
- *
- * 추후 같은 사단 사용자의 수익률 백분위로
- * returnScore를 대체하면 더욱 공정한 상대평가가 됩니다.
+ * 월간 모의투자 성과를 교육 목적의 위험조정 점수로 변환합니다.
+ * 수익률만 높은 사용자가 아니라 손실 관리와 꾸준한 참여도 함께 반영합니다.
  */
 export function calculateMonthlyInvestmentScore({
 	returnRate,

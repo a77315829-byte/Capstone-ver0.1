@@ -1,4 +1,7 @@
-import { Request, Response } from "express";
+import {
+	Request,
+	Response,
+} from "express";
 import mongoose from "mongoose";
 
 import CommunityProfile from "../models/communityProfile.model";
@@ -6,7 +9,21 @@ import CommunityPost from "../models/communityPost.model";
 import CommunityComment from "../models/communityComment.model";
 import CommunityReaction from "../models/communityReaction.model";
 import CommunityMonthlyRank from "../models/communityMonthlyRank.model";
-import { createCommunityAuthorCode } from "../utils/communityAuthorCode";
+import MilitaryProfile, {
+	type MilitaryBranch,
+} from "../models/militaryProfile.model";
+
+import {
+	createCommunityAuthorCode,
+} from "../utils/communityAuthorCode";
+import {
+	BRANCH_LABELS,
+	PUBLIC_BRANCHES,
+	getLivePerformanceEntries,
+	getMonthKey,
+	serializePerformanceEntry,
+	syncMonthlyPerformance,
+} from "../services/portfolioPerformance.service";
 
 const ALLOWED_CATEGORIES = new Set([
 	"주식·ETF",
@@ -17,10 +34,33 @@ const ALLOWED_CATEGORIES = new Set([
 	"자유",
 ]);
 
-function getUserId(req: Request): string {
-	const userId = String((req as any).userId || "");
+const ALLOWED_BRANCHES = new Set<MilitaryBranch>([
+	"ARMY",
+	"NAVY",
+	"AIR_FORCE",
+	"MARINE",
+	"SOCIAL_SERVICE",
+	"ETC",
+]);
 
-	if (!mongoose.Types.ObjectId.isValid(userId)) {
+function getUserId(req: Request): string {
+	/*
+	 * 현재 프로젝트의 authJwt.verifyToken은 req.body.userId에
+	 * JWT 사용자 ID를 넣습니다. 다른 미들웨어 형식도 함께 지원해
+	 * 커뮤니티 API가 인증 방식 차이로 깨지지 않게 합니다.
+	 */
+	const userId = String(
+		(req as any).userId ??
+			req.body?.userId ??
+			(req as any).user?.id ??
+			"",
+	);
+
+	if (
+		!mongoose.Types.ObjectId.isValid(
+			userId,
+		)
+	) {
 		throw new Error("UNAUTHORIZED");
 	}
 
@@ -34,55 +74,114 @@ function escapeRegExp(value: string): string {
 	);
 }
 
-function getMonthKey(date = new Date()): string {
-	return [
-		date.getUTCFullYear(),
-		String(date.getUTCMonth() + 1).padStart(2, "0"),
-	].join("-");
+function normalizeBranch(
+	value: unknown,
+): MilitaryBranch | null {
+	const branch = String(value || "")
+		.trim()
+		.toUpperCase() as MilitaryBranch;
+
+	return ALLOWED_BRANCHES.has(branch)
+		? branch
+		: null;
+}
+
+function getBranchName(
+	branch: MilitaryBranch | null,
+): string | null {
+	if (!branch) {
+		return null;
+	}
+
+	return BRANCH_LABELS[branch] ?? "기타";
 }
 
 async function getOrCreateProfile(
 	userId: string,
 ) {
+	const militaryProfile =
+		await MilitaryProfile.findOne({
+			userId,
+		})
+			.select(
+				"branch unitType unitCode unitName",
+			)
+			.lean();
+
+	const setFields: Record<string, any> = {};
+
+	if (militaryProfile) {
+		setFields.branch =
+			militaryProfile.branch;
+		setFields.unitType =
+			militaryProfile.unitType ?? null;
+		setFields.unitCode =
+			militaryProfile.unitCode ?? null;
+		setFields.unitName =
+			militaryProfile.unitName ?? null;
+	}
+
 	return CommunityProfile.findOneAndUpdate(
 		{
 			userId,
 		},
 		{
+			...(Object.keys(setFields).length > 0
+				? {
+						$set: setFields,
+					}
+				: {}),
 			$setOnInsert: {
 				userId,
 				nickname: "ㅇㅇ",
-				divisionCode: null,
-				divisionName: null,
 			},
 		},
 		{
 			upsert: true,
 			new: true,
+			runValidators: true,
 		},
 	);
 }
 
 function serializeProfile(profile: any) {
+	const branch = normalizeBranch(
+		profile?.branch,
+	);
+
 	return {
-		nickname: profile.nickname || "ㅇㅇ",
-		divisionCode:
-			profile.divisionCode || null,
-		divisionName:
-			profile.divisionName || null,
+		nickname:
+			String(profile?.nickname || "ㅇㅇ"),
+		branch,
+		branchName:
+			getBranchName(branch),
 	};
 }
 
-function serializePostSummary(post: any) {
-	const content = String(post.content || "");
+function serializePostSummary(
+	post: any,
+	legacyBranch: MilitaryBranch | null = null,
+) {
+	const content = String(
+		post.content || "",
+	);
+
+	const branch =
+		normalizeBranch(post.branch) ??
+		legacyBranch;
 
 	return {
 		id: String(post._id),
-		scope: post.scope,
-		divisionCode:
-			post.divisionCode || null,
-		divisionName:
-			post.divisionName || null,
+		scope:
+			post.scope === "global"
+				? "global"
+				: "branch",
+		branch,
+		branchName:
+			getBranchName(branch) ??
+			post.branchName ??
+			post.divisionName ??
+			null,
 		category: post.category,
 		title: post.title,
 		contentPreview:
@@ -103,9 +202,15 @@ function serializePostSummary(post: any) {
 	};
 }
 
-function serializePostDetail(post: any) {
+function serializePostDetail(
+	post: any,
+	legacyBranch: MilitaryBranch | null = null,
+) {
 	return {
-		...serializePostSummary(post),
+		...serializePostSummary(
+			post,
+			legacyBranch,
+		),
 		content: post.content,
 		updatedAt: post.updatedAt,
 	};
@@ -130,6 +235,66 @@ function serializeComment(
 	};
 }
 
+async function getLegacyBranchByAuthor(
+	authorIds: string[],
+) {
+	const validIds = authorIds.filter(
+		(id) =>
+			mongoose.Types.ObjectId.isValid(id),
+	);
+
+	const [communityProfiles, militaryProfiles] =
+		await Promise.all([
+			CommunityProfile.find({
+				userId: {
+					$in: validIds,
+				},
+			})
+				.select("userId branch")
+				.lean(),
+			MilitaryProfile.find({
+				userId: {
+					$in: validIds,
+				},
+			})
+				.select("userId branch")
+				.lean(),
+		]);
+
+	const map = new Map<
+		string,
+		MilitaryBranch
+	>();
+
+	for (const profile of militaryProfiles) {
+		const branch = normalizeBranch(
+			profile.branch,
+		);
+
+		if (branch) {
+			map.set(
+				String(profile.userId),
+				branch,
+			);
+		}
+	}
+
+	for (const profile of communityProfiles) {
+		const branch = normalizeBranch(
+			profile.branch,
+		);
+
+		if (branch) {
+			map.set(
+				String(profile.userId),
+				branch,
+			);
+		}
+	}
+
+	return map;
+}
+
 const getProfile = async (
 	req: Request,
 	res: Response,
@@ -152,7 +317,10 @@ const getProfile = async (
 			});
 		}
 
-		console.error("getProfile error:", error);
+		console.error(
+			"getProfile error:",
+			error,
+		);
 		return res.status(500).json({
 			message:
 				"커뮤니티 프로필 조회에 실패했습니다.",
@@ -168,19 +336,13 @@ const updateProfile = async (
 		const userId = getUserId(req);
 
 		const nickname =
-			String(req.body.nickname || "ㅇㅇ")
+			String(
+				req.body.nickname || "ㅇㅇ",
+			)
 				.trim()
 				.slice(0, 12) || "ㅇㅇ";
 
-		const divisionCode =
-			req.body.divisionCode
-				? String(req.body.divisionCode)
-				: null;
-
-		const divisionName =
-			req.body.divisionName
-				? String(req.body.divisionName)
-				: null;
+		await getOrCreateProfile(userId);
 
 		const profile =
 			await CommunityProfile.findOneAndUpdate(
@@ -190,17 +352,11 @@ const updateProfile = async (
 				{
 					$set: {
 						nickname,
-						divisionCode,
-						divisionName,
 						nicknameChangedAt:
 							new Date(),
 					},
-					$setOnInsert: {
-						userId,
-					},
 				},
 				{
-					upsert: true,
 					new: true,
 					runValidators: true,
 				},
@@ -219,7 +375,10 @@ const updateProfile = async (
 			});
 		}
 
-		console.error("updateProfile error:", error);
+		console.error(
+			"updateProfile error:",
+			error,
+		);
 		return res.status(500).json({
 			message:
 				"커뮤니티 설정 저장에 실패했습니다.",
@@ -233,14 +392,13 @@ const listPosts = async (
 ) => {
 	try {
 		const scope =
-			req.query.scope === "division"
-				? "division"
+			req.query.scope === "branch"
+				? "branch"
 				: "global";
 
-		const divisionCode =
-			req.query.divisionCode
-				? String(req.query.divisionCode)
-				: null;
+		const branch = normalizeBranch(
+			req.query.branch,
+		);
 
 		const category =
 			req.query.category
@@ -269,31 +427,77 @@ const listPosts = async (
 			),
 		);
 
-		const filter: Record<string, any> = {
-			status: "active",
-			scope,
-		};
+		if (scope === "branch" && !branch) {
+			return res.status(400).json({
+				message:
+					"군종 게시판 조회에는 branch가 필요합니다.",
+			});
+		}
 
-		if (scope === "division") {
-			if (!divisionCode) {
-				return res.status(400).json({
-					message:
-						"사단 게시판 조회에는 divisionCode가 필요합니다.",
-				});
-			}
+		const andConditions: Record<
+			string,
+			any
+		>[] = [
+			{
+				status: "active",
+			},
+		];
 
-			filter.divisionCode = divisionCode;
+		if (scope === "global") {
+			andConditions.push({
+				scope: "global",
+			});
+		} else if (branch) {
+			const [communityUserIds, militaryUserIds] =
+				await Promise.all([
+					CommunityProfile.distinct(
+						"userId",
+						{
+							branch,
+						},
+					),
+					MilitaryProfile.distinct(
+						"userId",
+						{
+							branch,
+						},
+					),
+				]);
+
+			const legacyAuthorIds = [
+				...communityUserIds,
+				...militaryUserIds,
+			];
+
+			andConditions.push({
+				$or: [
+					{
+						scope: "branch",
+						branch,
+					},
+					{
+						scope: "division",
+						authorId: {
+							$in: legacyAuthorIds,
+						},
+					},
+				],
+			});
 		}
 
 		if (
 			category &&
 			ALLOWED_CATEGORIES.has(category)
 		) {
-			filter.category = category;
+			andConditions.push({
+				category,
+			});
 		}
 
 		if (featured) {
-			filter.isFeatured = true;
+			andConditions.push({
+				isFeatured: true,
+			});
 		}
 
 		if (search) {
@@ -302,17 +506,27 @@ const listPosts = async (
 				"i",
 			);
 
-			filter.$or = [
-				{ title: regex },
-				{ content: regex },
-				{ tags: regex },
-			];
+			andConditions.push({
+				$or: [
+					{ title: regex },
+					{ content: regex },
+					{ tags: regex },
+				],
+			});
 		}
 
-		const sortName =
-			String(req.query.sort || "latest");
+		const filter = {
+			$and: andConditions,
+		};
 
-		let sort: Record<string, 1 | -1> = {
+		const sortName = String(
+			req.query.sort || "latest",
+		);
+
+		let sort: Record<
+			string,
+			1 | -1
+		> = {
 			createdAt: -1,
 		};
 
@@ -340,9 +554,27 @@ const listPosts = async (
 				),
 			]);
 
+		const legacyBranchMap =
+			await getLegacyBranchByAuthor(
+				posts
+					.filter(
+						(post: any) =>
+							post.scope ===
+							"division",
+					)
+					.map((post: any) =>
+						String(post.authorId),
+					),
+			);
+
 		return res.status(200).json({
-			posts: posts.map(
-				serializePostSummary,
+			posts: posts.map((post: any) =>
+				serializePostSummary(
+					post,
+					legacyBranchMap.get(
+						String(post.authorId),
+					) ?? null,
+				),
 			),
 			page,
 			limit,
@@ -353,7 +585,10 @@ const listPosts = async (
 			),
 		});
 	} catch (error) {
-		console.error("listPosts error:", error);
+		console.error(
+			"listPosts error:",
+			error,
+		);
 		return res.status(500).json({
 			message:
 				"게시글 목록 조회에 실패했습니다.",
@@ -371,29 +606,32 @@ const createPost = async (
 			await getOrCreateProfile(userId);
 
 		const scope =
-			req.body.scope === "division"
-				? "division"
+			req.body.scope === "branch"
+				? "branch"
 				: "global";
 
-		const category =
-			String(req.body.category || "");
+		const category = String(
+			req.body.category || "",
+		);
+		const title = String(
+			req.body.title || "",
+		).trim();
+		const content = String(
+			req.body.content || "",
+		).trim();
 
-		const title =
-			String(req.body.title || "").trim();
-
-		const content =
-			String(req.body.content || "").trim();
-
-		const tags = Array.isArray(req.body.tags)
+		const tags = Array.isArray(
+			req.body.tags,
+		)
 			? req.body.tags
-				.map((tag: unknown) =>
-					String(tag)
-						.trim()
-						.replace(/^#/, "")
-						.slice(0, 20),
-				)
-				.filter(Boolean)
-				.slice(0, 5)
+					.map((tag: unknown) =>
+						String(tag)
+							.trim()
+							.replace(/^#/, "")
+							.slice(0, 20),
+					)
+					.filter(Boolean)
+					.slice(0, 5)
 			: [];
 
 		if (!ALLOWED_CATEGORIES.has(category)) {
@@ -423,19 +661,20 @@ const createPost = async (
 			});
 		}
 
-		if (
-			scope === "division" &&
-			!profile.divisionCode
-		) {
+		const branch = normalizeBranch(
+			profile.branch,
+		);
+
+		if (scope === "branch" && !branch) {
 			return res.status(400).json({
 				message:
-					"사단을 설정한 뒤 작성할 수 있습니다.",
+					"마이페이지에서 복무 구분을 먼저 설정하세요.",
 			});
 		}
 
 		const boardKey =
-			scope === "division"
-				? `division:${profile.divisionCode}`
+			scope === "branch"
+				? `branch:${branch}`
 				: "global";
 
 		const authorCode =
@@ -451,13 +690,13 @@ const createPost = async (
 					profile.nickname || "ㅇㅇ",
 				authorCode,
 				scope,
-				divisionCode:
-					scope === "division"
-						? profile.divisionCode
+				branch:
+					scope === "branch"
+						? branch
 						: null,
-				divisionName:
-					scope === "division"
-						? profile.divisionName
+				branchName:
+					scope === "branch"
+						? getBranchName(branch)
 						: null,
 				category,
 				title,
@@ -478,7 +717,10 @@ const createPost = async (
 			});
 		}
 
-		console.error("createPost error:", error);
+		console.error(
+			"createPost error:",
+			error,
+		);
 		return res.status(500).json({
 			message:
 				"게시글 등록에 실패했습니다.",
@@ -527,11 +769,29 @@ const getPost = async (
 			});
 		}
 
+		const legacyBranchMap =
+			post.scope === "division"
+				? await getLegacyBranchByAuthor([
+						String(post.authorId),
+					])
+				: new Map<
+						string,
+						MilitaryBranch
+					>();
+
 		return res.status(200).json(
-			serializePostDetail(post),
+			serializePostDetail(
+				post,
+				legacyBranchMap.get(
+					String(post.authorId),
+				) ?? null,
+			),
 		);
 	} catch (error) {
-		console.error("getPost error:", error);
+		console.error(
+			"getPost error:",
+			error,
+		);
 		return res.status(500).json({
 			message:
 				"게시글 조회에 실패했습니다.",
@@ -571,9 +831,7 @@ const togglePostLike = async (
 			});
 		}
 
-		if (
-			String(post.authorId) === userId
-		) {
+		if (String(post.authorId) === userId) {
 			return res.status(400).json({
 				message:
 					"본인 글은 추천할 수 없습니다.",
@@ -612,14 +870,13 @@ const togglePostLike = async (
 				},
 			);
 
-		const featuredThreshold =
-			Math.max(
-				1,
-				Number(
-					process.env
-						.COMMUNITY_FEATURED_LIKE_THRESHOLD,
-				) || 5,
-			);
+		const featuredThreshold = Math.max(
+			1,
+			Number(
+				process.env
+					.COMMUNITY_FEATURED_LIKE_THRESHOLD,
+			) || 5,
+		);
 
 		const isFeatured =
 			likeCount >= featuredThreshold &&
@@ -673,12 +930,13 @@ const listComments = async (
 			});
 		}
 
-		const post = await CommunityPost.findOne({
-			_id: postId,
-			status: "active",
-		})
-			.select("authorId")
-			.exec();
+		const post =
+			await CommunityPost.findOne({
+				_id: postId,
+				status: "active",
+			})
+				.select("authorId")
+				.exec();
 
 		if (!post) {
 			return res.status(404).json({
@@ -736,8 +994,9 @@ const createComment = async (
 			});
 		}
 
-		const content =
-			String(req.body.content || "").trim();
+		const content = String(
+			req.body.content || "",
+		).trim();
 
 		if (
 			content.length < 2 ||
@@ -765,10 +1024,14 @@ const createComment = async (
 		const profile =
 			await getOrCreateProfile(userId);
 
+		const branch =
+			normalizeBranch(post.branch) ??
+			normalizeBranch(profile.branch);
+
 		const boardKey =
-			post.scope === "division"
-				? `division:${post.divisionCode}`
-				: "global";
+			post.scope === "global"
+				? "global"
+				: `branch:${branch ?? "ETC"}`;
 
 		const authorCode =
 			createCommunityAuthorCode({
@@ -837,9 +1100,7 @@ const deletePost = async (
 			});
 		}
 
-		if (
-			String(post.authorId) !== userId
-		) {
+		if (String(post.authorId) !== userId) {
 			return res.status(403).json({
 				message:
 					"본인 글만 삭제할 수 있습니다.",
@@ -862,7 +1123,10 @@ const deletePost = async (
 			});
 		}
 
-		console.error("deletePost error:", error);
+		console.error(
+			"deletePost error:",
+			error,
+		);
 		return res.status(500).json({
 			message:
 				"게시글 삭제에 실패했습니다.",
@@ -870,7 +1134,141 @@ const deletePost = async (
 	}
 };
 
-const getLeaderboard = async (
+const getLiveLeaderboard = async (
+	req: Request,
+	res: Response,
+) => {
+	try {
+		const branch = normalizeBranch(
+			req.query.branch,
+		);
+		const month =
+			req.query.month
+				? String(req.query.month)
+				: getMonthKey();
+		const limit = Math.min(
+			100,
+			Math.max(
+				1,
+				Number(req.query.limit) || 30,
+			),
+		);
+
+		const entries =
+			await getLivePerformanceEntries(
+				month,
+			);
+
+		const filtered = entries
+			.filter((entry) =>
+				branch
+					? entry.branch === branch
+					: true,
+			)
+			.sort((a, b) =>
+				branch
+					? (a.branchRank ?? 9999) -
+						(b.branchRank ?? 9999)
+					: (a.overallRank ?? 9999) -
+						(b.overallRank ?? 9999),
+			)
+			.slice(0, limit)
+			.map(serializePerformanceEntry);
+
+		return res.status(200).json({
+			mode: "live",
+			month,
+			branch,
+			generatedAt:
+				new Date().toISOString(),
+			entries: filtered,
+		});
+	} catch (error) {
+		console.error(
+			"getLiveLeaderboard error:",
+			error,
+		);
+		return res.status(500).json({
+			message:
+				"실시간 수익률 순위 조회에 실패했습니다.",
+		});
+	}
+};
+
+const getMonthlyLeaderboard = async (
+	req: Request,
+	res: Response,
+) => {
+	try {
+		const branch = normalizeBranch(
+			req.query.branch,
+		);
+		const month =
+			req.query.month
+				? String(req.query.month)
+				: getMonthKey();
+		const limit = Math.min(
+			100,
+			Math.max(
+				1,
+				Number(req.query.limit) || 30,
+			),
+		);
+
+		await syncMonthlyPerformance(month);
+
+		const filter: Record<string, any> = {
+			month,
+			market: "DOMESTIC",
+		};
+
+		if (branch) {
+			filter.branch = branch;
+		}
+
+		const entries =
+			await CommunityMonthlyRank.find(
+				filter,
+			)
+				.sort(
+					branch
+						? {
+							isEligible: -1,
+							branchRank: 1,
+							totalScore: -1,
+						}
+						: {
+							isEligible: -1,
+							overallRank: 1,
+							totalScore: -1,
+						},
+				)
+				.limit(limit)
+				.lean();
+
+		return res.status(200).json({
+			mode: "monthly",
+			month,
+			branch,
+			generatedAt:
+				new Date().toISOString(),
+			entries: entries.map(
+				serializePerformanceEntry,
+			),
+		});
+	} catch (error) {
+		console.error(
+			"getMonthlyLeaderboard error:",
+			error,
+		);
+		return res.status(500).json({
+			message:
+				"이달의 투자왕 순위 조회에 실패했습니다.",
+		});
+	}
+};
+
+const getBranchWinners = async (
 	req: Request,
 	res: Response,
 ) => {
@@ -880,76 +1278,132 @@ const getLeaderboard = async (
 				? String(req.query.month)
 				: getMonthKey();
 
-		const divisionCode =
-			req.query.divisionCode
-				? String(req.query.divisionCode)
-				: null;
+		await syncMonthlyPerformance(month);
 
-		const filter: Record<string, any> = {
-			month,
-		};
+		const winners = await Promise.all(
+			PUBLIC_BRANCHES.map(
+				async (branch) => {
+					const winner =
+						await CommunityMonthlyRank.findOne(
+							{
+								month,
+								market:
+									"DOMESTIC",
+								branch,
+								isEligible:
+									true,
+								branchRank: 1,
+							},
+						)
+							.lean();
 
-		if (divisionCode) {
-			filter.divisionCode =
-				divisionCode;
-		}
-
-		const query =
-			CommunityMonthlyRank.find(filter);
-
-		if (divisionCode) {
-			query.sort({
-				divisionRank: 1,
-			});
-		} else {
-			query.sort({
-				overallRank: 1,
-			});
-		}
-
-		const entries = await query
-			.limit(20)
-			.lean();
-
-		return res.status(200).json(
-			entries.map((entry) => ({
-				id: String(entry._id),
-				month: entry.month,
-				divisionCode:
-					entry.divisionCode,
-				divisionName:
-					entry.divisionName,
-				nickname: entry.nickname,
-				authorCode:
-					entry.authorCode,
-				returnRate:
-					entry.returnRate,
-				maxDrawdown:
-					entry.maxDrawdown,
-				consistencyScore:
-					entry.consistencyScore,
-				activityScore:
-					entry.activityScore,
-				totalScore:
-					entry.totalScore,
-				divisionRank:
-					entry.divisionRank,
-				overallRank:
-					entry.overallRank,
-				badge: entry.badge,
-			})),
+					return {
+						branch,
+						branchName:
+							BRANCH_LABELS[branch],
+						winner: winner
+							? serializePerformanceEntry(
+									winner,
+								)
+							: null,
+					};
+				},
+			),
 		);
+
+		return res.status(200).json({
+			month,
+			generatedAt:
+				new Date().toISOString(),
+			winners,
+		});
 	} catch (error) {
 		console.error(
-			"getLeaderboard error:",
+			"getBranchWinners error:",
 			error,
 		);
 		return res.status(500).json({
 			message:
-				"투자왕 순위 조회에 실패했습니다.",
+				"군종별 투자왕 조회에 실패했습니다.",
 		});
 	}
 };
+
+const getMyLeaderboard = async (
+	req: Request,
+	res: Response,
+) => {
+	try {
+		const userId = getUserId(req);
+		const month =
+			req.query.month
+				? String(req.query.month)
+				: getMonthKey();
+
+		const [profile, liveEntries] =
+			await Promise.all([
+				getOrCreateProfile(userId),
+				getLivePerformanceEntries(
+					month,
+				),
+			]);
+
+		await syncMonthlyPerformance(month);
+
+		const monthly =
+			await CommunityMonthlyRank.findOne({
+				month,
+				market: "DOMESTIC",
+				userId,
+			}).lean();
+
+		const branch = normalizeBranch(
+			profile.branch,
+		);
+
+		const live = liveEntries.find(
+			(entry) =>
+				entry.userId === userId,
+		);
+
+		return res.status(200).json({
+			branch,
+			branchName:
+				getBranchName(branch),
+			live: live
+				? serializePerformanceEntry(
+						live,
+					)
+				: null,
+			monthly: monthly
+				? serializePerformanceEntry(
+						monthly,
+					)
+				: null,
+		});
+	} catch (error) {
+		if (
+			error instanceof Error &&
+			error.message === "UNAUTHORIZED"
+		) {
+			return res.status(401).json({
+				message: "로그인이 필요합니다.",
+			});
+		}
+
+		console.error(
+			"getMyLeaderboard error:",
+			error,
+		);
+		return res.status(500).json({
+			message:
+				"내 투자 순위 조회에 실패했습니다.",
+		});
+	}
+};
+
+/* 기존 /community/leaderboard 경로 호환 */
+const getLeaderboard = getMonthlyLeaderboard;
 
 export default {
 	getProfile,
@@ -961,5 +1415,9 @@ export default {
 	listComments,
 	createComment,
 	deletePost,
+	getLiveLeaderboard,
+	getMonthlyLeaderboard,
+	getBranchWinners,
+	getMyLeaderboard,
 	getLeaderboard,
 };

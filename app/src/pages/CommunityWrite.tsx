@@ -7,10 +7,12 @@ import {
 	Alert,
 	AlertDescription,
 	AlertIcon,
+	Badge,
 	Box,
 	Button,
 	Card,
 	CardBody,
+	Flex,
 	FormControl,
 	FormLabel,
 	Heading,
@@ -44,8 +46,8 @@ export default function CommunityWrite() {
 	const [searchParams] = useSearchParams();
 
 	const initialScope: CommunityScope =
-		searchParams.get("scope") === "division"
-			? "division"
+		searchParams.get("scope") === "branch"
+			? "branch"
 			: "global";
 
 	const [profile, setProfile] =
@@ -71,7 +73,10 @@ export default function CommunityWrite() {
 					);
 				setProfile(response.data);
 			} catch (error) {
-				console.error("프로필 조회 실패:", error);
+				console.error(
+					"프로필 조회 실패:",
+					error,
+				);
 			}
 		};
 
@@ -82,7 +87,11 @@ export default function CommunityWrite() {
 		() =>
 			tagsText
 				.split(",")
-				.map((tag) => tag.trim().replace(/^#/, ""))
+				.map((tag) =>
+					tag
+						.trim()
+						.replace(/^#/, ""),
+				)
 				.filter(Boolean)
 				.slice(0, 5),
 		[tagsText],
@@ -91,7 +100,8 @@ export default function CommunityWrite() {
 	const submit = async () => {
 		if (title.trim().length < 2) {
 			toast({
-				title: "제목을 2자 이상 입력하세요.",
+				title:
+					"제목을 2자 이상 입력하세요.",
 				status: "warning",
 				duration: 2500,
 			});
@@ -100,18 +110,20 @@ export default function CommunityWrite() {
 
 		if (content.trim().length < 5) {
 			toast({
-				title: "내용을 5자 이상 입력하세요.",
+				title:
+					"내용을 5자 이상 입력하세요.",
 				status: "warning",
 				duration: 2500,
 			});
 			return;
 		}
 
-		if (scope === "division" && !profile?.divisionCode) {
+		if (scope === "branch" && !profile?.branch) {
 			toast({
-				title: "사단 설정이 필요합니다.",
+				title:
+					"복무 구분 설정이 필요합니다.",
 				description:
-					"커뮤니티 메인에서 사단을 먼저 설정하세요.",
+					"마이페이지의 군 프로필에서 복무 구분을 먼저 설정하세요.",
 				status: "warning",
 				duration: 3000,
 			});
@@ -134,12 +146,15 @@ export default function CommunityWrite() {
 				);
 
 			toast({
-				title: "게시글을 등록했습니다.",
+				title:
+					"게시글을 등록했습니다.",
 				status: "success",
 				duration: 2000,
 			});
 
-			navigate(`/community/${response.data.id}`);
+			navigate(
+				`/community/${response.data.id}`,
+			);
 		} catch (error: any) {
 			toast({
 				title: "게시글 등록 실패",
@@ -155,41 +170,50 @@ export default function CommunityWrite() {
 	};
 
 	return (
-		<Box minH="calc(100vh - 72px)" bg="#F4F5F7">
+		<Box
+			minH="calc(100vh - 72px)"
+			bg="#F2F1E9"
+		>
 			<Box
 				maxW="960px"
 				mx="auto"
 				px={{ base: "12px", md: "20px" }}
-				py={{ base: "18px", md: "28px" }}
+				py={{ base: "18px", md: "30px" }}
 			>
-				<Card
-					borderRadius="0"
-					borderWidth="1px"
-					borderColor="gray.300"
-					boxShadow="none"
+				<Box
+					mb="4"
+					p={{ base: "5", md: "6" }}
+					borderRadius="18px"
+					bgGradient="linear(to-r, army.900, army.600)"
+					color="white"
 				>
-					<CardBody p={{ base: "18px", md: "26px" }}>
-						<Stack spacing="5">
-							<Box>
-								<Heading size="md">
-									게시글 작성
-								</Heading>
-								<Text
-									mt="1"
-									fontSize="13px"
-									color="gray.500"
-								>
-									작성자는{" "}
-									<strong>
-										{profile?.nickname || "ㅇㅇ"}
-									</strong>
-									와 가상 식별코드로 표시됩니다.
-								</Text>
-							</Box>
+					<Badge colorScheme="signal">
+						금융 학습 공유
+					</Badge>
+					<Heading mt="2" size="md">
+						게시글 작성
+					</Heading>
+					<Text
+						mt="2"
+						fontSize="13px"
+						color="whiteAlpha.800"
+					>
+						작성자는 {profile?.nickname || "ㅇㅇ"}와 게시판별 가상 식별코드로 표시됩니다.
+					</Text>
+				</Box>
 
+				<Card
+					borderWidth="1px"
+					borderColor="army.200"
+					boxShadow="sm"
+				>
+					<CardBody
+						p={{ base: "18px", md: "26px" }}
+					>
+						<Stack spacing="5">
 							<Alert
 								status="warning"
-								borderRadius="0"
+								borderRadius="12px"
 								alignItems="flex-start"
 							>
 								<AlertIcon mt="2px" />
@@ -197,30 +221,26 @@ export default function CommunityWrite() {
 									fontSize="13px"
 									lineHeight="1.7"
 								>
-									부대 위치, 중대·소대, 인원, 훈련일정,
-									근무시간, 이동계획, 실명, 군번 등 군 관련
-									민감정보를 작성하지 마세요.
+									부대 위치, 중대·소대, 인원, 훈련일정, 근무시간, 이동계획, 실명, 군번 등 군 관련 민감정보를 작성하지 마세요.
 								</AlertDescription>
 							</Alert>
 
-							<HStack
-								align="flex-end"
-								spacing="4"
-								flexWrap="wrap"
+							<Flex
+								align={{ base: "stretch", md: "flex-end" }}
+								direction={{ base: "column", md: "row" }}
+								gap="4"
 							>
 								<FormControl
-									w={{ base: "100%", md: "220px" }}
+									w={{ base: "100%", md: "260px" }}
 								>
 									<FormLabel fontWeight="800">
 										게시판
 									</FormLabel>
 									<Select
 										value={scope}
-										borderRadius="0"
 										onChange={(event) =>
 											setScope(
-												event.target
-													.value as CommunityScope,
+												event.target.value as CommunityScope,
 											)
 										}
 									>
@@ -228,14 +248,12 @@ export default function CommunityWrite() {
 											전체 게시판
 										</option>
 										<option
-											value="division"
-											disabled={
-												!profile?.divisionCode
-											}
+											value="branch"
+											disabled={!profile?.branch}
 										>
-											{profile?.divisionName
-												? `${profile.divisionName} 라운지`
-												: "사단 미설정"}
+											{profile?.branchName
+												? `${profile.branchName} 금융 라운지`
+												: "복무 구분 미설정"}
 										</option>
 									</Select>
 								</FormControl>
@@ -248,11 +266,9 @@ export default function CommunityWrite() {
 									</FormLabel>
 									<Select
 										value={category}
-										borderRadius="0"
 										onChange={(event) =>
 											setCategory(
-												event.target
-													.value as Exclude<
+												event.target.value as Exclude<
 													CommunityCategory,
 													"전체"
 												>,
@@ -271,7 +287,7 @@ export default function CommunityWrite() {
 										))}
 									</Select>
 								</FormControl>
-							</HStack>
+							</Flex>
 
 							<FormControl>
 								<FormLabel fontWeight="800">
@@ -280,7 +296,6 @@ export default function CommunityWrite() {
 								<Input
 									value={title}
 									maxLength={80}
-									borderRadius="0"
 									placeholder="제목을 입력하세요."
 									onChange={(event) =>
 										setTitle(event.target.value)
@@ -305,10 +320,11 @@ export default function CommunityWrite() {
 									minH="320px"
 									maxLength={5000}
 									resize="vertical"
-									borderRadius="0"
-									placeholder="금융 질문이나 경험을 작성하세요."
+									placeholder="금융 질문이나 모의투자 경험을 작성하세요."
 									onChange={(event) =>
-										setContent(event.target.value)
+										setContent(
+											event.target.value,
+										)
 									}
 								/>
 								<Text
@@ -327,7 +343,6 @@ export default function CommunityWrite() {
 								</FormLabel>
 								<Input
 									value={tagsText}
-									borderRadius="0"
 									placeholder="ETF, 전역자금, 비상금처럼 쉼표로 구분"
 									onChange={(event) =>
 										setTagsText(
@@ -343,13 +358,12 @@ export default function CommunityWrite() {
 										wrap="wrap"
 									>
 										{tags.map((tag) => (
-											<Text
+											<Badge
 												key={tag}
-												fontSize="12px"
-												color="blue.600"
+												colorScheme="army"
 											>
 												#{tag}
-											</Text>
+											</Badge>
 										))}
 									</HStack>
 								)}
@@ -357,16 +371,13 @@ export default function CommunityWrite() {
 
 							<HStack justify="flex-end">
 								<Button
-									borderRadius="0"
 									variant="outline"
 									onClick={() => navigate(-1)}
 								>
 									취소
 								</Button>
-
 								<Button
-									borderRadius="0"
-									colorScheme="pink"
+									colorScheme="army"
 									isLoading={isSubmitting}
 									loadingText="등록 중"
 									onClick={submit}
