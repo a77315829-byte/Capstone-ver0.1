@@ -28,18 +28,18 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
 	{
-		label: "실시간 차트",
-		to: "/exchange",
-		activePaths: ["/exchange", "/stocks"],
-		background: "#F97316",
-		hoverBackground: "#EA580C",
-	},
-	{
 		label: "전역자금 플래너",
 		to: "/salary",
 		activePaths: ["/salary", "/advisor"],
 		background: "#2563EB",
 		hoverBackground: "#1D4ED8",
+	},
+	{
+		label: "실시간 차트",
+		to: "/exchange",
+		activePaths: ["/exchange", "/stocks"],
+		background: "#F97316",
+		hoverBackground: "#EA580C",
 	},
 	{
 		label: "금융 사전·퀴즈",

@@ -15,17 +15,9 @@ export type MilitaryRankMode =
 	| "AUTO"
 	| "MANUAL";
 
-export type MilitaryUnitType =
-	| "CORPS"
-	| "DIVISION"
-	| "BRIGADE"
-	| "FLEET"
-	| "COMMAND"
-	| "WING"
-	| "GROUP"
-	| "EDUCATION"
-	| "DIRECT"
-	| "OTHER";
+export type DischargeDateSource =
+	| "AUTO"
+	| "MANUAL";
 
 export interface MilitaryProfile {
 	id: string;
@@ -33,12 +25,9 @@ export interface MilitaryProfile {
 
 	branch: MilitaryBranch;
 
-	unitType: MilitaryUnitType | null;
-	unitCode: string | null;
-	unitName: string | null;
-
 	enlistmentDate: string;
 	dischargeDate: string;
+	dischargeDateSource: DischargeDateSource;
 
 	selectedRank: MilitaryRank;
 	rankMode: MilitaryRankMode;
@@ -60,17 +49,17 @@ export interface MilitaryProfile {
 export interface MilitaryProfileResponse {
 	configured: boolean;
 	profile: MilitaryProfile | null;
+	serviceMonthsByBranch: Partial<
+		Record<MilitaryBranch, number>
+	>;
 }
 
 export interface SaveMilitaryProfileRequest {
 	branch: MilitaryBranch;
 
-	unitType: MilitaryUnitType | null;
-	unitCode: string | null;
-	unitName: string | null;
-
 	enlistmentDate: string;
 	dischargeDate: string;
+	dischargeDateSource: DischargeDateSource;
 
 	selectedRank: MilitaryRank;
 	rankMode: MilitaryRankMode;

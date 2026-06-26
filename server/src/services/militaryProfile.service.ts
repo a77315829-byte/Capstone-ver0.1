@@ -1,7 +1,22 @@
 import type {
 	IMilitaryProfile,
+	MilitaryBranch,
 	MilitaryRank,
 } from "../models/militaryProfile.model";
+
+/*
+ * 병무청 안내 기준 병 복무기간입니다.
+ * ETC는 복무 형태를 특정할 수 없어 자동 계산 대상에서 제외합니다.
+ * 서버가 이 값을 원본으로 관리하고 조회 API를 통해 프론트에 전달합니다.
+ */
+export const SERVICE_MONTHS_BY_BRANCH:
+	Partial<Record<MilitaryBranch, number>> = {
+	ARMY: 18,
+	NAVY: 20,
+	AIR_FORCE: 21,
+	MARINE: 18,
+	SOCIAL_SERVICE: 21,
+};
 
 /*
  * 프로젝트에서 사용하는 예상 계급 일정입니다.
@@ -75,6 +90,34 @@ function addUtcMonths(
 	);
 
 	return result;
+}
+
+export function calculateAutomaticDischargeDate(
+	enlistmentDate: Date,
+	branch: MilitaryBranch,
+): Date | null {
+	const serviceMonths =
+		SERVICE_MONTHS_BY_BRANCH[branch];
+
+	if (!serviceMonths) {
+		return null;
+	}
+
+	/*
+	 * 예: 2025-03-10 입대 + 18개월 복무
+	 *     -> 만료 기준일 2026-09-10
+	 *     -> 전역 예정일 2026-09-09
+	 */
+	const dischargeDate = addUtcMonths(
+		enlistmentDate,
+		serviceMonths,
+	);
+
+	dischargeDate.setUTCDate(
+		dischargeDate.getUTCDate() - 1,
+	);
+
+	return dischargeDate;
 }
 
 function toDateOnly(date: Date): string {
@@ -244,24 +287,15 @@ export function serializeMilitaryProfile(
 
 		branch: profile.branch,
 
-		unitType:
-			profile.unitType ??
-			(profile.divisionCode || profile.divisionName
-				? "DIVISION"
-				: null),
-		unitCode:
-			profile.unitCode ??
-			profile.divisionCode ??
-			null,
-		unitName:
-			profile.unitName ??
-			profile.divisionName ??
-			null,
 
 		enlistmentDate:
 			toDateOnly(enlistmentDate),
 		dischargeDate:
 			toDateOnly(dischargeDate),
+		dischargeDateSource:
+			profile.dischargeDateSource === "AUTO"
+				? "AUTO"
+				: "MANUAL",
 
 		selectedRank:
 			profile.selectedRank,

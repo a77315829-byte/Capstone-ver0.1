@@ -1,7 +1,6 @@
 import React, {
 	useCallback,
 	useEffect,
-	useMemo,
 	useState,
 } from "react";
 import {
@@ -47,35 +46,28 @@ import {
 import api from "../../services/api.service";
 import {
 	BRANCH_LABEL,
-	getPublicUnitOptions,
-	getUnitTypeOptions,
-	isUnitTypeAllowed,
 	MILITARY_BRANCH_OPTIONS,
 	MILITARY_RANK_MODE_OPTIONS,
 	MILITARY_RANK_OPTIONS,
 	RANK_LABEL,
 	RANK_MODE_LABEL,
-	UNIT_TYPE_LABEL,
 } from "../../data/military.constants";
 import type {
+	DischargeDateSource,
 	MilitaryBranch,
 	MilitaryProfile,
 	MilitaryProfileResponse,
 	MilitaryRank,
 	MilitaryRankMode,
-	MilitaryUnitType,
 	SaveMilitaryProfileRequest,
 } from "../../types/militaryProfile.types";
 
 interface MilitaryProfileFormState {
 	branch: MilitaryBranch;
 
-	unitType: MilitaryUnitType | "";
-	unitCode: string;
-	unitName: string;
-
 	enlistmentDate: string;
 	dischargeDate: string;
+	dischargeDateSource: DischargeDateSource;
 
 	selectedRank: MilitaryRank;
 	rankMode: MilitaryRankMode;
@@ -84,12 +76,9 @@ interface MilitaryProfileFormState {
 const DEFAULT_FORM: MilitaryProfileFormState = {
 	branch: "ARMY",
 
-	unitType: "",
-	unitCode: "",
-	unitName: "",
-
 	enlistmentDate: "",
 	dischargeDate: "",
+	dischargeDateSource: "AUTO",
 
 	selectedRank: "PRIVATE",
 	rankMode: "AUTO",
@@ -113,6 +102,55 @@ function formatDate(value: string | null): string {
 	});
 }
 
+function calculateDischargeDate(
+	enlistmentDate: string,
+	serviceMonths: number | undefined,
+): string {
+	if (
+		!serviceMonths ||
+		!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(
+			enlistmentDate,
+		)
+	) {
+		return "";
+	}
+
+	const result = new Date(
+		`${enlistmentDate}T00:00:00.000Z`,
+	);
+
+	if (Number.isNaN(result.getTime())) {
+		return "";
+	}
+
+	const originalDay = result.getUTCDate();
+
+	result.setUTCDate(1);
+	result.setUTCMonth(
+		result.getUTCMonth() + serviceMonths,
+	);
+
+	const lastDayOfTargetMonth =
+		new Date(
+			Date.UTC(
+				result.getUTCFullYear(),
+				result.getUTCMonth() + 1,
+				0,
+			),
+		).getUTCDate();
+
+	result.setUTCDate(
+		Math.min(
+			originalDay,
+			lastDayOfTargetMonth,
+		),
+	);
+
+	result.setUTCDate(result.getUTCDate() - 1);
+
+	return result.toISOString().slice(0, 10);
+}
+
 function makeForm(
 	profile: MilitaryProfile | null,
 ): MilitaryProfileFormState {
@@ -123,45 +161,19 @@ function makeForm(
 	return {
 		branch: profile.branch,
 
-		unitType:
-			profile.unitType ?? "",
-		unitCode:
-			profile.unitCode ?? "",
-		unitName:
-			profile.unitName ?? "",
-
 		enlistmentDate:
 			profile.enlistmentDate,
 		dischargeDate:
 			profile.dischargeDate,
+		dischargeDateSource:
+			profile.dischargeDateSource ??
+			"MANUAL",
 
 		selectedRank:
 			profile.selectedRank,
 		rankMode:
 			profile.rankMode,
 	};
-}
-
-function getUnitDisplayName(
-	profile: MilitaryProfile,
-): string {
-	const typeLabel = profile.unitType
-		? UNIT_TYPE_LABEL[profile.unitType]
-		: null;
-
-	if (profile.unitName && typeLabel) {
-		return `${typeLabel} · ${profile.unitName}`;
-	}
-
-	if (profile.unitName) {
-		return profile.unitName;
-	}
-
-	if (typeLabel) {
-		return typeLabel;
-	}
-
-	return "상위 부대 미설정";
 }
 
 export default function MilitaryProfileCard() {
@@ -178,6 +190,12 @@ export default function MilitaryProfileCard() {
 		useState<MilitaryProfileFormState>(
 			DEFAULT_FORM,
 		);
+	const [
+		serviceMonthsByBranch,
+		setServiceMonthsByBranch,
+	] = useState<
+		Partial<Record<MilitaryBranch, number>>
+	>({});
 
 	const loadProfile = useCallback(async () => {
 		try {
@@ -191,6 +209,10 @@ export default function MilitaryProfileCard() {
 			const loadedProfile =
 				response.data.profile ?? null;
 
+			setServiceMonthsByBranch(
+				response.data.serviceMonthsByBranch ??
+					{},
+			);
 			setProfile(loadedProfile);
 			setForm(makeForm(loadedProfile));
 		} catch (error: any) {
@@ -220,26 +242,6 @@ export default function MilitaryProfileCard() {
 		void loadProfile();
 	}, [loadProfile]);
 
-	const unitTypeOptions = useMemo(
-		() =>
-			getUnitTypeOptions(
-				form.branch,
-			),
-		[form.branch],
-	);
-
-	const publicUnitOptions = useMemo(
-		() =>
-			getPublicUnitOptions(
-				form.branch,
-				form.unitType || null,
-			),
-		[
-			form.branch,
-			form.unitType,
-		],
-	);
-
 	const openEditor = () => {
 		setForm(makeForm(profile));
 		modal.onOpen();
@@ -249,50 +251,107 @@ export default function MilitaryProfileCard() {
 		branch: MilitaryBranch,
 	) => {
 		setForm((previous) => {
-			const nextUnitType =
-				isUnitTypeAllowed(
-					branch,
-					previous.unitType || null,
-				)
-					? previous.unitType
-					: "";
+			const serviceMonths =
+				serviceMonthsByBranch[branch];
+
+			const shouldKeepManualDate =
+				previous.dischargeDateSource ===
+				"MANUAL";
 
 			return {
 				...previous,
 				branch,
-				unitType: nextUnitType,
-				unitCode: "",
-				unitName: "",
+				dischargeDate:
+					shouldKeepManualDate
+						? previous.dischargeDate
+						: calculateDischargeDate(
+								previous.enlistmentDate,
+								serviceMonths,
+							),
+				dischargeDateSource:
+					shouldKeepManualDate ||
+					!serviceMonths
+						? "MANUAL"
+						: "AUTO",
 			};
 		});
 	};
 
-	const handleUnitTypeChange = (
-		unitType: MilitaryUnitType | "",
+	const handleEnlistmentDateChange = (
+		enlistmentDate: string,
 	) => {
+		setForm((previous) => {
+			if (
+				previous.dischargeDateSource ===
+				"MANUAL"
+			) {
+				return {
+					...previous,
+					enlistmentDate,
+				};
+			}
+
+			const serviceMonths =
+				serviceMonthsByBranch[
+					previous.branch
+				];
+
+			return {
+				...previous,
+				enlistmentDate,
+				dischargeDate:
+					calculateDischargeDate(
+						enlistmentDate,
+						serviceMonths,
+					),
+				dischargeDateSource:
+					serviceMonths
+						? "AUTO"
+						: "MANUAL",
+			};
+		});
+	};
+
+	const enableManualDischargeDate = () => {
 		setForm((previous) => ({
 			...previous,
-			unitType,
-			unitCode: "",
-			unitName: "",
+			dischargeDateSource: "MANUAL",
 		}));
 	};
 
-	const handlePublicUnitChange = (
-		unitCode: string,
-	) => {
-		const selected =
-			publicUnitOptions.find(
-				(option) =>
-					option.code === unitCode,
-			);
+	const enableAutomaticDischargeDate = () => {
+		const serviceMonths =
+			serviceMonthsByBranch[form.branch];
+
+		if (!serviceMonths) {
+			toast({
+				title:
+					"이 군종은 자동 계산을 지원하지 않습니다.",
+				description:
+					"전역 예정일을 직접 입력하세요.",
+				status: "warning",
+				duration: 2600,
+			});
+			return;
+		}
+
+		if (!form.enlistmentDate) {
+			toast({
+				title: "입대일을 먼저 선택하세요.",
+				status: "warning",
+				duration: 2200,
+			});
+			return;
+		}
 
 		setForm((previous) => ({
 			...previous,
-			unitCode:
-				selected?.code ?? "",
-			unitName:
-				selected?.name ?? "",
+			dischargeDate:
+				calculateDischargeDate(
+					previous.enlistmentDate,
+					serviceMonths,
+				),
+			dischargeDateSource: "AUTO",
 		}));
 	};
 
@@ -311,22 +370,6 @@ export default function MilitaryProfileCard() {
 				title: "전역일을 선택하세요.",
 				status: "warning",
 				duration: 2200,
-			});
-			return;
-		}
-
-		if (
-			form.unitType &&
-			!isUnitTypeAllowed(
-				form.branch,
-				form.unitType,
-			)
-		) {
-			toast({
-				title:
-					"해당 군종에 맞는 부대 유형을 선택하세요.",
-				status: "warning",
-				duration: 2600,
 			});
 			return;
 		}
@@ -353,17 +396,12 @@ export default function MilitaryProfileCard() {
 		const body: SaveMilitaryProfileRequest = {
 			branch: form.branch,
 
-			unitType:
-				form.unitType || null,
-			unitCode:
-				form.unitCode.trim() || null,
-			unitName:
-				form.unitName.trim() || null,
-
 			enlistmentDate:
 				form.enlistmentDate,
 			dischargeDate:
 				form.dischargeDate,
+			dischargeDateSource:
+				form.dischargeDateSource,
 
 			selectedRank:
 				form.selectedRank,
@@ -387,7 +425,7 @@ export default function MilitaryProfileCard() {
 			toast({
 				title: "군 프로필을 저장했습니다.",
 				description:
-					"군종과 상위 부대 정보가 사용자 계정에 저장되었습니다.",
+					"군종과 복무 정보가 사용자 계정에 저장되었습니다.",
 				status: "success",
 				duration: 2600,
 				isClosable: true,
@@ -441,10 +479,10 @@ export default function MilitaryProfileCard() {
 								fontSize="sm"
 								color="gray.500"
 							>
-								군종, 상위 부대 유형,
-								입대일과 전역일을
-								저장하면 예상 계급과 전역
-								D-Day를 표시합니다.
+								군종과 입대일을 저장하면
+								복무기간 기준 전역 예정일과
+								예상 계급, 전역 D-Day를
+								표시합니다.
 							</Text>
 
 							<Button
@@ -463,20 +501,22 @@ export default function MilitaryProfileCard() {
 					onClose={modal.onClose}
 					form={form}
 					setForm={setForm}
-					unitTypeOptions={
-						unitTypeOptions
-					}
-					publicUnitOptions={
-						publicUnitOptions
-					}
 					onBranchChange={
 						handleBranchChange
 					}
-					onUnitTypeChange={
-						handleUnitTypeChange
+					onEnlistmentDateChange={
+						handleEnlistmentDateChange
 					}
-					onPublicUnitChange={
-						handlePublicUnitChange
+					onEnableManualDischargeDate={
+						enableManualDischargeDate
+					}
+					onEnableAutomaticDischargeDate={
+						enableAutomaticDischargeDate
+					}
+					serviceMonths={
+						serviceMonthsByBranch[
+							form.branch
+						]
 					}
 					isSaving={isSaving}
 					onSave={saveProfile}
@@ -530,10 +570,6 @@ export default function MilitaryProfileCard() {
 								{BRANCH_LABEL[
 									profile.branch
 								]}
-								{" · "}
-								{getUnitDisplayName(
-									profile,
-								)}
 							</Text>
 						</Box>
 
@@ -597,6 +633,16 @@ export default function MilitaryProfileCard() {
 								{formatDate(
 									profile.dischargeDate,
 								)}
+							</Text>
+							<Text
+								mt="1"
+								fontSize="xs"
+								color="gray.500"
+							>
+								{profile.dischargeDateSource ===
+								"AUTO"
+									? "군종·입대일 기준 자동 계산"
+									: "사용자 직접 입력"}
 							</Text>
 						</Stat>
 
@@ -718,20 +764,22 @@ export default function MilitaryProfileCard() {
 				onClose={modal.onClose}
 				form={form}
 				setForm={setForm}
-				unitTypeOptions={
-					unitTypeOptions
-				}
-				publicUnitOptions={
-					publicUnitOptions
-				}
 				onBranchChange={
 					handleBranchChange
 				}
-				onUnitTypeChange={
-					handleUnitTypeChange
+				onEnlistmentDateChange={
+					handleEnlistmentDateChange
 				}
-				onPublicUnitChange={
-					handlePublicUnitChange
+				onEnableManualDischargeDate={
+					enableManualDischargeDate
+				}
+				onEnableAutomaticDischargeDate={
+					enableAutomaticDischargeDate
+				}
+				serviceMonths={
+					serviceMonthsByBranch[
+						form.branch
+					]
 				}
 				isSaving={isSaving}
 				onSave={saveProfile}
@@ -745,11 +793,11 @@ function MilitaryProfileModal({
 	onClose,
 	form,
 	setForm,
-	unitTypeOptions,
-	publicUnitOptions,
 	onBranchChange,
-	onUnitTypeChange,
-	onPublicUnitChange,
+	onEnlistmentDateChange,
+	onEnableManualDischargeDate,
+	onEnableAutomaticDischargeDate,
+	serviceMonths,
 	isSaving,
 	onSave,
 }: {
@@ -759,23 +807,15 @@ function MilitaryProfileModal({
 	setForm: React.Dispatch<
 		React.SetStateAction<MilitaryProfileFormState>
 	>;
-	unitTypeOptions: Array<{
-		value: MilitaryUnitType;
-		label: string;
-	}>;
-	publicUnitOptions: Array<{
-		code: string;
-		name: string;
-	}>;
 	onBranchChange: (
 		branch: MilitaryBranch,
 	) => void;
-	onUnitTypeChange: (
-		unitType: MilitaryUnitType | "",
+	onEnlistmentDateChange: (
+		enlistmentDate: string,
 	) => void;
-	onPublicUnitChange: (
-		unitCode: string,
-	) => void;
+	onEnableManualDischargeDate: () => void;
+	onEnableAutomaticDischargeDate: () => void;
+	serviceMonths: number | undefined;
 	isSaving: boolean;
 	onSave: () => void;
 }) {
@@ -839,137 +879,6 @@ function MilitaryProfileModal({
 							</GridItem>
 
 							<GridItem>
-								<FormControl>
-									<FormLabel>
-										상위 부대 유형
-									</FormLabel>
-									<Select
-										value={
-											form.unitType
-										}
-										onChange={(event) =>
-											onUnitTypeChange(
-												event
-													.target
-													.value as
-													| MilitaryUnitType
-													| "",
-											)
-										}
-									>
-										<option value="">
-											미설정
-										</option>
-
-										{unitTypeOptions.map(
-											(option) => (
-												<option
-													key={
-														option.value
-													}
-													value={
-														option.value
-													}
-												>
-													{
-														option.label
-													}
-												</option>
-											),
-										)}
-									</Select>
-
-									<FormHelperText>
-										군종을 바꾸면 사용
-										가능한 부대 유형이
-										자동으로 바뀝니다.
-									</FormHelperText>
-								</FormControl>
-							</GridItem>
-
-							<GridItem
-								colSpan={{
-									base: 1,
-									md: 2,
-								}}
-							>
-								<FormControl>
-									<FormLabel>
-										공개 상위 부대
-									</FormLabel>
-
-									{publicUnitOptions.length >
-									0 ? (
-										<Select
-											value={
-												form.unitCode
-											}
-											onChange={(
-												event,
-											) =>
-												onPublicUnitChange(
-													event
-														.target
-														.value,
-												)
-											}
-										>
-											<option value="">
-												미설정
-											</option>
-
-											{publicUnitOptions.map(
-												(
-													option,
-												) => (
-													<option
-														key={
-															option.code
-														}
-														value={
-															option.code
-														}
-													>
-														{
-															option.name
-														}
-													</option>
-												),
-											)}
-										</Select>
-									) : (
-										<Input
-											value={
-												form.unitName
-											}
-											maxLength={30}
-											placeholder="예: 공개된 상위 부대명만 입력"
-											onChange={(event) =>
-												setForm(
-													(previous) => ({
-														...previous,
-														unitCode:
-															"",
-														unitName:
-															event
-																.target
-																.value,
-													}),
-												)
-											}
-										/>
-									)}
-
-									<FormHelperText color="orange.700">
-										대대·중대·소대,
-										생활관, 근무 위치,
-										작전 관련 정보는
-										입력하지 마세요.
-									</FormHelperText>
-								</FormControl>
-							</GridItem>
-
-							<GridItem>
 								<FormControl isRequired>
 									<FormLabel>
 										입대일
@@ -980,42 +889,97 @@ function MilitaryProfileModal({
 											form.enlistmentDate
 										}
 										onChange={(event) =>
-											setForm(
-												(previous) => ({
-													...previous,
-													enlistmentDate:
-														event
-															.target
-															.value,
-												}),
+											onEnlistmentDateChange(
+												event.target.value,
 											)
 										}
 									/>
+									<FormHelperText>
+										자동 계산 상태에서는
+										입대일을 바꾸면 전역
+										예정일도 다시 계산됩니다.
+									</FormHelperText>
 								</FormControl>
 							</GridItem>
 
 							<GridItem>
 								<FormControl isRequired>
-									<FormLabel>
-										전역일
-									</FormLabel>
+									<Flex
+										align="center"
+										justify="space-between"
+										mb="2"
+									>
+										<FormLabel mb="0">
+											전역 예정일
+										</FormLabel>
+										<Badge
+											colorScheme={
+												form.dischargeDateSource ===
+												"AUTO"
+													? "purple"
+													: "orange"
+											}
+										>
+											{form.dischargeDateSource ===
+											"AUTO"
+												? "자동 계산"
+												: "직접 입력"}
+										</Badge>
+									</Flex>
+
 									<Input
 										type="date"
 										value={
 											form.dischargeDate
+										}
+										isReadOnly={
+											form.dischargeDateSource ===
+											"AUTO"
+										}
+										bg={
+											form.dischargeDateSource ===
+											"AUTO"
+												? "gray.50"
+												: undefined
 										}
 										onChange={(event) =>
 											setForm(
 												(previous) => ({
 													...previous,
 													dischargeDate:
-														event
-															.target
-															.value,
+														event.target.value,
+													dischargeDateSource:
+														"MANUAL",
 												}),
 											)
 										}
 									/>
+
+									<Button
+										mt="2"
+										size="xs"
+										variant="outline"
+										onClick={
+											form.dischargeDateSource ===
+											"AUTO"
+												? onEnableManualDischargeDate
+												: onEnableAutomaticDischargeDate
+										}
+									>
+										{form.dischargeDateSource ===
+										"AUTO"
+											? "전역일 직접 수정"
+											: "자동 계산으로 전환"}
+									</Button>
+
+									<FormHelperText>
+										{form.dischargeDateSource ===
+										"AUTO"
+											? serviceMonths
+												? `${serviceMonths}개월 복무기간을 기준으로 자동 계산합니다.`
+												: "이 군종은 자동 계산을 지원하지 않습니다."
+											: "직접 수정한 날짜는 입대일을 바꿔도 자동으로 덮어쓰지 않습니다."}
+									</FormHelperText>
 								</FormControl>
 							</GridItem>
 

@@ -1,3 +1,5 @@
+import type { MilitaryBranch } from "./militaryProfile.types";
+
 export type SoldierRank =
 	| "이병"
 	| "일병"
@@ -206,6 +208,8 @@ export interface SavedSalaryPlan {
 }
 
 export interface MilitaryProfileApiData {
+	branch?: MilitaryBranch;
+
 	selectedRank?: MilitaryRank;
 	calculatedRank?: MilitaryRank;
 	displayRank?: MilitaryRank;

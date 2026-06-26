@@ -5,13 +5,15 @@ import {
 import mongoose from "mongoose";
 
 import MilitaryProfile, {
+	DischargeDateSource,
 	MilitaryBranch,
 	MilitaryRank,
 	MilitaryRankMode,
-	MilitaryUnitType,
 } from "../models/militaryProfile.model";
 import CommunityProfile from "../models/communityProfile.model";
 import {
+	calculateAutomaticDischargeDate,
+	SERVICE_MONTHS_BY_BRANCH,
 	serializeMilitaryProfile,
 } from "../services/militaryProfile.service";
 
@@ -38,63 +40,12 @@ const ALLOWED_RANK_MODES =
 		"MANUAL",
 	]);
 
-const ALLOWED_UNIT_TYPES =
-	new Set<MilitaryUnitType>([
-		"CORPS",
-		"DIVISION",
-		"BRIGADE",
-		"FLEET",
-		"COMMAND",
-		"WING",
-		"GROUP",
-		"EDUCATION",
-		"DIRECT",
-		"OTHER",
+const ALLOWED_DISCHARGE_DATE_SOURCES =
+	new Set<DischargeDateSource>([
+		"AUTO",
+		"MANUAL",
 	]);
 
-const UNIT_TYPES_BY_BRANCH:
-	Record<MilitaryBranch, MilitaryUnitType[]> = {
-	ARMY: [
-		"CORPS",
-		"DIVISION",
-		"BRIGADE",
-		"COMMAND",
-		"EDUCATION",
-		"DIRECT",
-		"OTHER",
-	],
-	NAVY: [
-		"FLEET",
-		"COMMAND",
-		"GROUP",
-		"EDUCATION",
-		"DIRECT",
-		"OTHER",
-	],
-	AIR_FORCE: [
-		"WING",
-		"COMMAND",
-		"GROUP",
-		"EDUCATION",
-		"DIRECT",
-		"OTHER",
-	],
-	MARINE: [
-		"DIVISION",
-		"BRIGADE",
-		"COMMAND",
-		"EDUCATION",
-		"DIRECT",
-		"OTHER",
-	],
-	ETC: [
-		"COMMAND",
-		"GROUP",
-		"EDUCATION",
-		"DIRECT",
-		"OTHER",
-	],
-};
 
 function getAuthenticatedUserId(
 	req: Request,
@@ -154,19 +105,6 @@ function parseDateOnly(
 	return date;
 }
 
-function normalizeOptionalText(
-	value: unknown,
-	maxLength: number,
-): string | null {
-	const text =
-		String(value ?? "").trim();
-
-	if (!text) {
-		return null;
-	}
-
-	return text.slice(0, maxLength);
-}
 
 function sendError(
 	res: Response,
@@ -222,6 +160,8 @@ const getMilitaryProfile = async (
 			return res.status(200).json({
 				configured: false,
 				profile: null,
+				serviceMonthsByBranch:
+					SERVICE_MONTHS_BY_BRANCH,
 			});
 		}
 
@@ -231,6 +171,8 @@ const getMilitaryProfile = async (
 				serializeMilitaryProfile(
 					profile,
 				),
+			serviceMonthsByBranch:
+				SERVICE_MONTHS_BY_BRANCH,
 		});
 	} catch (error) {
 		return sendError(
@@ -264,15 +206,12 @@ const saveMilitaryProfile = async (
 				req.body.rankMode ?? "",
 			) as MilitaryRankMode;
 
-		const unitTypeText =
+		const dischargeDateSource =
 			String(
-				req.body.unitType ?? "",
-			).trim();
+				req.body.dischargeDateSource ??
+					"MANUAL",
+			) as DischargeDateSource;
 
-		const unitType =
-			unitTypeText
-				? unitTypeText as MilitaryUnitType
-				: null;
 
 		if (!ALLOWED_BRANCHES.has(branch)) {
 			return res.status(400).json({
@@ -300,26 +239,16 @@ const saveMilitaryProfile = async (
 		}
 
 		if (
-			unitType &&
-			!ALLOWED_UNIT_TYPES.has(unitType)
+			!ALLOWED_DISCHARGE_DATE_SOURCES.has(
+				dischargeDateSource,
+			)
 		) {
 			return res.status(400).json({
 				message:
-					"올바른 부대 유형을 선택하세요.",
+					"올바른 전역일 설정 방식을 선택하세요.",
 			});
 		}
 
-		if (
-			unitType &&
-			!UNIT_TYPES_BY_BRANCH[
-				branch
-			].includes(unitType)
-		) {
-			return res.status(400).json({
-				message:
-					"선택한 군종과 부대 유형이 맞지 않습니다.",
-			});
-		}
 
 		const enlistmentDate =
 			parseDateOnly(
@@ -327,11 +256,30 @@ const saveMilitaryProfile = async (
 				"입대일",
 			);
 
-		const dischargeDate =
-			parseDateOnly(
+		let dischargeDate: Date;
+
+		if (dischargeDateSource === "AUTO") {
+			const calculatedDischargeDate =
+				calculateAutomaticDischargeDate(
+					enlistmentDate,
+					branch,
+				);
+
+			if (!calculatedDischargeDate) {
+				return res.status(400).json({
+					message:
+						"해당 군종은 전역일 자동 계산을 지원하지 않습니다. 전역일을 직접 입력하세요.",
+				});
+			}
+
+			dischargeDate =
+				calculatedDischargeDate;
+		} else {
+			dischargeDate = parseDateOnly(
 				req.body.dischargeDate,
 				"전역일",
 			);
+		}
 
 		if (
 			dischargeDate <= enlistmentDate
@@ -342,32 +290,6 @@ const saveMilitaryProfile = async (
 			});
 		}
 
-		const unitCode =
-			normalizeOptionalText(
-				req.body.unitCode,
-				50,
-			);
-
-		const unitName =
-			normalizeOptionalText(
-				req.body.unitName,
-				30,
-			);
-
-		/*
-		 * 현재 커뮤니티는 divisionCode 기반입니다.
-		 * 기존 사단 라운지와의 호환을 위해 사단 선택일 때만
-		 * 구버전 필드에 값을 복사합니다.
-		 */
-		const legacyDivisionCode =
-			unitType === "DIVISION"
-				? unitCode
-				: null;
-
-		const legacyDivisionName =
-			unitType === "DIVISION"
-				? unitName
-				: null;
 
 		const profile =
 			await MilitaryProfile.findOneAndUpdate(
@@ -377,18 +299,9 @@ const saveMilitaryProfile = async (
 				{
 					$set: {
 						branch,
-
-						unitType,
-						unitCode,
-						unitName,
-
-						divisionCode:
-							legacyDivisionCode,
-						divisionName:
-							legacyDivisionName,
-
 						enlistmentDate,
 						dischargeDate,
+						dischargeDateSource,
 						selectedRank,
 						rankMode,
 					},
@@ -410,15 +323,6 @@ const saveMilitaryProfile = async (
 			{
 				$set: {
 					branch,
-
-					unitType,
-					unitCode,
-					unitName,
-
-					divisionCode:
-						legacyDivisionCode,
-					divisionName:
-						legacyDivisionName,
 				},
 				$setOnInsert: {
 					userId,

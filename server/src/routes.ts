@@ -18,6 +18,7 @@ import marketSessionController from "./controller/marketSession.controller";
 import usStocksController from "./controller/usStocks.controller";
 import usTradingController from "./controller/usTrading.controller";
 import salaryAiController from "./controller/salaryAi.controller";
+import onboardingController from "./controller/onboarding.controller";
 
 // Auth routes
 router.post(
@@ -51,6 +52,12 @@ router.put(
 	"/api/user/military-profile",
 	[authJwt.verifyToken],
 	militaryProfileController.saveMilitaryProfile,
+);
+
+router.get(
+	"/api/user/onboarding-status",
+	[authJwt.verifyToken],
+	onboardingController.getOnboardingStatus,
 );
 
 // User watchlist routes

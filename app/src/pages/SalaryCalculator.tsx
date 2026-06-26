@@ -50,6 +50,10 @@ import {
 import api from "../services/api.service";
 
 import {
+	BRANCH_LABEL,
+} from "../data/military.constants";
+
+import {
 	analyzeSalaryPlan,
 	getLatestSalaryPlan,
 } from "../services/salaryPlanner.service";
@@ -87,6 +91,12 @@ const MILITARY_RANK_MAP:
 	CORPORAL: "상병",
 	SERGEANT: "병장",
 };
+
+type MilitaryProfileStatus =
+	| "LOADING"
+	| "CONFIGURED"
+	| "MISSING"
+	| "ERROR";
 
 const SAVINGS_OPTIONS =
 	Array.from(
@@ -279,6 +289,17 @@ function createDefaultDischargeDate():
 		.slice(0, 10);
 }
 
+function formatDateOnly(
+	value: string,
+): string {
+	return value
+		? value.replace(
+			/-/g,
+			".",
+		)
+		: "-";
+}
+
 function calculateMonthsLeft(
 	dateText: string,
 ): number {
@@ -345,6 +366,10 @@ function createSnapshotSignature(
 	return JSON.stringify({
 		rank:
 			snapshot.rank,
+		enlistmentDate:
+			snapshot.enlistmentDate,
+		promotionSpendingRate:
+			snapshot.promotionSpendingRate,
 		militarySavings:
 			snapshot.militarySavings,
 		existingMilitarySavingsPrincipal:
@@ -739,6 +764,23 @@ export default function SalaryCalculator() {
 	] = useState(false);
 
 	const [
+		militaryBranch,
+		setMilitaryBranch,
+	] = useState<
+		NonNullable<
+			MilitaryProfileApiData["branch"]
+		> | null
+	>(null);
+
+	const [
+		militaryProfileStatus,
+		setMilitaryProfileStatus,
+	] =
+		useState<MilitaryProfileStatus>(
+			"LOADING",
+		);
+
+	const [
 		militarySavings,
 		setMilitarySavings,
 	] = useState(0);
@@ -1115,6 +1157,10 @@ export default function SalaryCalculator() {
 					plan.snapshot;
 
 				setRank(saved.rank);
+				setEnlistmentDate(
+					saved.enlistmentDate ??
+						"",
+				);
 				setMilitarySavings(
 					saved.militarySavings,
 				);
@@ -1212,50 +1258,71 @@ export default function SalaryCalculator() {
 							? latestResult.value
 							: null;
 
-					const profile =
-						profileResult.status ===
-						"fulfilled"
-							? unwrapApiData<MilitaryProfileApiData>(
-									profileResult
-										.value
-										.data,
-								)
-							: null;
-
-					const displayRank =
-						profile
-							?.displayRank ??
-						profile
-							?.selectedRank;
-
 					if (latestPlan) {
 						applySavedPlan(
 							latestPlan,
 						);
+					}
 
-						if (
-							!latestPlan.snapshot
-								.enlistmentDate &&
-							profile?.enlistmentDate
-						) {
-							setEnlistmentDate(
-								profile.enlistmentDate.slice(
-									0,
-									10,
-								),
-							);
-						}
-
+					if (
+						profileResult.status ===
+						"rejected"
+					) {
 						setProfileLinked(
-							Boolean(
-								displayRank ||
-									profile?.enlistmentDate ||
-									profile?.dischargeDate,
-							),
+							false,
+						);
+						setMilitaryBranch(
+							null,
+						);
+						setMilitaryProfileStatus(
+							"ERROR",
 						);
 
 						return;
 					}
+
+					const profile =
+						unwrapApiData<
+							MilitaryProfileApiData | null
+						>(
+							profileResult
+								.value
+								.data,
+						);
+
+					const displayRank =
+						profile?.displayRank ??
+						profile?.selectedRank;
+
+					if (
+						!profile?.branch ||
+						!displayRank ||
+						!profile.enlistmentDate ||
+						!profile.dischargeDate
+					) {
+						setProfileLinked(
+							false,
+						);
+						setMilitaryBranch(
+							null,
+						);
+						setMilitaryProfileStatus(
+							"MISSING",
+						);
+
+						return;
+					}
+
+					setProfileLinked(
+						true,
+					);
+					setMilitaryProfileStatus(
+						"CONFIGURED",
+					);
+					setMilitaryBranch(
+						profile.branch ??
+							null,
+					);
 
 					if (displayRank) {
 						setRank(
@@ -1263,14 +1330,10 @@ export default function SalaryCalculator() {
 								displayRank
 							],
 						);
-
-						setProfileLinked(
-							true,
-						);
 					}
 
 					if (
-						profile?.enlistmentDate
+						profile.enlistmentDate
 					) {
 						setEnlistmentDate(
 							profile.enlistmentDate.slice(
@@ -1278,14 +1341,10 @@ export default function SalaryCalculator() {
 								10,
 							),
 						);
-
-						setProfileLinked(
-							true,
-						);
 					}
 
 					if (
-						profile?.dischargeDate
+						profile.dischargeDate
 					) {
 						setDischargeDate(
 							profile.dischargeDate.slice(
@@ -1293,15 +1352,21 @@ export default function SalaryCalculator() {
 								10,
 							),
 						);
-
-						setProfileLinked(
-							true,
-						);
 					}
 				} catch (error) {
 					console.warn(
 						"급여 플래너 초기 데이터 조회 실패:",
 						error,
+					);
+
+					setProfileLinked(
+						false,
+					);
+					setMilitaryBranch(
+						null,
+					);
+					setMilitaryProfileStatus(
+						"ERROR",
 					);
 				} finally {
 					setIsInitialLoading(
@@ -1320,6 +1385,26 @@ export default function SalaryCalculator() {
 					SalaryPlannerSnapshot,
 				silent = false,
 			) => {
+				if (
+					militaryProfileStatus !==
+					"CONFIGURED"
+				) {
+					if (!silent) {
+						toast({
+							title:
+								"군 프로필을 먼저 설정하세요.",
+							description:
+								"군종, 계급, 입대일과 전역 예정일을 불러온 뒤 플랜을 생성할 수 있습니다.",
+							status:
+								"warning",
+							isClosable:
+								true,
+						});
+					}
+
+					return;
+				}
+
 				try {
 					const activeExpenseCount =
 						[
@@ -1458,7 +1543,10 @@ export default function SalaryCalculator() {
 					);
 				}
 			},
-			[toast],
+			[
+				militaryProfileStatus,
+				toast,
+			],
 		);
 
 
@@ -1807,6 +1895,72 @@ export default function SalaryCalculator() {
 					</Button>
 				</Flex>
 
+				{!isInitialLoading &&
+					militaryProfileStatus !==
+						"CONFIGURED" && (
+						<Alert
+							mb="6"
+							status={
+								militaryProfileStatus ===
+								"ERROR"
+									? "error"
+									: "warning"
+							}
+							borderRadius="16px"
+							alignItems="flex-start"
+						>
+							<AlertIcon mt="1" />
+
+							<Flex
+								flex="1"
+								align={{
+									base:
+										"stretch",
+									md:
+										"center",
+								}}
+								justify="space-between"
+								direction={{
+									base:
+										"column",
+									md:
+										"row",
+								}}
+								gap="4"
+							>
+								<Box>
+									<Text fontWeight="900">
+										{militaryProfileStatus ===
+										"ERROR"
+											? "군 프로필을 불러오지 못했습니다."
+											: "군 프로필을 먼저 설정해 주세요."}
+									</Text>
+
+									<AlertDescription mt="1">
+										군종, 계급, 입대일과 전역 예정일을 불러온 뒤 전역 자금 플랜을 생성할 수 있습니다.
+									</AlertDescription>
+								</Box>
+
+								<Button
+									flexShrink={0}
+									colorScheme={
+										militaryProfileStatus ===
+										"ERROR"
+											? "red"
+											: "orange"
+									}
+									onClick={() =>
+										navigate(
+											"/mypage",
+										)
+									}
+								>
+									군 프로필 설정하기
+								</Button>
+							</Flex>
+						</Alert>
+					)}
+
 				<Card
 					mb="6"
 					overflow="hidden"
@@ -1922,6 +2076,11 @@ export default function SalaryCalculator() {
 								}}
 								isLoading={
 									isAiLoading
+								}
+								isDisabled={
+									isInitialLoading ||
+									militaryProfileStatus !==
+										"CONFIGURED"
 								}
 								loadingText="분석 중"
 								onClick={() =>
@@ -2252,7 +2411,7 @@ export default function SalaryCalculator() {
 									>
 										<Box>
 											<Heading size="md">
-												1. 계급 및 장병적금
+												1. 군 프로필 및 장병적금
 											</Heading>
 
 											<Text
@@ -2277,6 +2436,83 @@ export default function SalaryCalculator() {
 								</CardHeader>
 
 								<CardBody>
+									{profileLinked && (
+										<Flex
+											mb="5"
+											p="4"
+											align={{
+												base:
+													"stretch",
+												md:
+													"center",
+											}}
+											justify="space-between"
+											direction={{
+												base:
+													"column",
+												md:
+													"row",
+											}}
+											gap="4"
+											borderRadius="14px"
+											bg="green.50"
+											borderWidth="1px"
+											borderColor="green.200"
+										>
+											<Box>
+												<Text
+													fontSize="lg"
+													fontWeight="900"
+													color="green.900"
+												>
+													{militaryBranch
+														? BRANCH_LABEL[
+																militaryBranch
+															]
+														: "군종 미설정"}{" "}
+													· {rank}
+												</Text>
+
+												<Text
+													mt="1"
+													fontSize="sm"
+													color="green.800"
+												>
+													입대일{" "}
+													{formatDateOnly(
+														enlistmentDate,
+													)}
+													{" · "}전역 예정일{" "}
+													{formatDateOnly(
+														dischargeDate,
+													)}
+												</Text>
+
+												<Text
+													mt="1"
+													fontSize="xs"
+													fontWeight="800"
+													color="green.700"
+												>
+													군 프로필에서 불러옴
+												</Text>
+											</Box>
+
+											<Button
+												size="sm"
+												variant="outline"
+												colorScheme="green"
+												onClick={() =>
+													navigate(
+														"/mypage",
+													)
+												}
+											>
+												군 프로필 수정
+											</Button>
+										</Flex>
+									)}
+
 									<SimpleGrid
 										columns={{
 											base: 1,
@@ -3199,6 +3435,9 @@ export default function SalaryCalculator() {
 												type="date"
 												value={
 													enlistmentDate
+												}
+												isDisabled={
+													profileLinked
 												}
 												onChange={(
 													event,

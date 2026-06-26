@@ -22,36 +22,18 @@ export type MilitaryRankMode =
 	| "AUTO"
 	| "MANUAL";
 
-export type MilitaryUnitType =
-	| "CORPS"
-	| "DIVISION"
-	| "BRIGADE"
-	| "FLEET"
-	| "COMMAND"
-	| "WING"
-	| "GROUP"
-	| "EDUCATION"
-	| "DIRECT"
-	| "OTHER";
+export type DischargeDateSource =
+	| "AUTO"
+	| "MANUAL";
 
 export interface IMilitaryProfile extends Document {
 	userId: mongoose.Types.ObjectId;
 
 	branch: MilitaryBranch;
 
-	unitType?: MilitaryUnitType | null;
-	unitCode?: string | null;
-	unitName?: string | null;
-
-	/*
-	 * 구버전 데이터 마이그레이션용 필드입니다.
-	 * 신규 코드에서는 unitType/unitCode/unitName을 사용합니다.
-	 */
-	divisionCode?: string | null;
-	divisionName?: string | null;
-
 	enlistmentDate: Date;
 	dischargeDate: Date;
+	dischargeDateSource: DischargeDateSource;
 
 	selectedRank: MilitaryRank;
 	rankMode: MilitaryRankMode;
@@ -83,52 +65,22 @@ const militaryProfileSchema =
 				default: "ARMY",
 				required: true,
 			},
-			unitType: {
-				type: String,
-				enum: [
-					"CORPS",
-					"DIVISION",
-					"BRIGADE",
-					"FLEET",
-					"COMMAND",
-					"WING",
-					"GROUP",
-					"EDUCATION",
-					"DIRECT",
-					"OTHER",
-				],
-				default: null,
-				index: true,
-			},
-			unitCode: {
-				type: String,
-				default: null,
-				trim: true,
-				maxlength: 50,
-				index: true,
-			},
-			unitName: {
-				type: String,
-				default: null,
-				trim: true,
-				maxlength: 30,
-			},
-
-			divisionCode: {
-				type: String,
-				default: null,
-			},
-			divisionName: {
-				type: String,
-				default: null,
-			},
-
 			enlistmentDate: {
 				type: Date,
 				required: true,
 			},
 			dischargeDate: {
 				type: Date,
+				required: true,
+			},
+			dischargeDateSource: {
+				type: String,
+				enum: ["AUTO", "MANUAL"],
+				/*
+				 * 기존 데이터는 사용자가 직접 입력한 날짜로 간주합니다.
+				 * 새 프로필은 프론트에서 AUTO를 명시해 저장합니다.
+				 */
+				default: "MANUAL",
 				required: true,
 			},
 			selectedRank: {

@@ -6,7 +6,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import StockView from "./pages/StockView";
 import NotFound from "./pages/NotFound";
-import React from "react";
+import tokens from "./services/tokens.service";
 import ScenarioChapter from "./pages/ScenarioChapter";
 import ScenarioPlay from "./pages/ScenarioPlay";
 import MyPage from "./pages/MyPage";
@@ -15,13 +15,26 @@ import FinanceLearning from "./pages/FinanceLearning";
 import Community from "./pages/Community";
 import CommunityWrite from "./pages/CommunityWrite";
 import CommunityPostDetail from "./pages/CommunityPostDetail";
+
+function EntryRoute() {
+	return (
+		<Navigate
+			to={tokens.isAuthenticated() ? "/salary" : "/login"}
+			replace
+		/>
+	);
+}
+
 function App() {
 	return (
 		<>
 			<Navbar />
 
 			<Routes>
-				<Route path="/" element={<Navigate to="/exchange" replace />} />
+				<Route
+					path="/"
+					element={<EntryRoute />}
+				/>
 
 				<Route path="/exchange" element={<Exchange />} />
 				{/* 해커톤 버전에서는 사용하지 않음
