@@ -133,6 +133,15 @@ type TradingAccountSummary = {
 	totalBuyAmount?: number;
 	totalProfitLoss?: number;
 	totalProfitLossRate?: number;
+	totalDeposits?: number;
+	manualDeposits?: number;
+	salaryPlanDeposits?: number;
+	salaryPlanFunding?: {
+		enabled: boolean;
+		amount: number;
+		planId?: string | null;
+		lastAppliedPeriod?: string | null;
+	};
 };
 
 type PortfolioHolding = {
@@ -1101,6 +1110,9 @@ export default function DomesticExchange({
 	const [isSubmittingOrder, setIsSubmittingOrder] =
 		useState(false);
 
+	const [isToppingUp, setIsToppingUp] =
+		useState(false);
+
 	const [marketStatus, setMarketStatus] =
 		useState<MarketStatus | null>(null);
 
@@ -1462,6 +1474,45 @@ export default function DomesticExchange({
 			});
 		}
 	};
+
+	const topUpTradingAccount = async () => {
+		try {
+			setIsToppingUp(true);
+
+			const response = await api.post(
+				"/trading/top-up",
+			);
+			const result = unwrapApiData(
+				response.data,
+			) as {
+				amount: number;
+			};
+
+			toast({
+				title: "모의투자 현금이 충전되었습니다.",
+				description: `${won.format(
+					result.amount,
+				)}이 계좌에 추가되었습니다.`,
+				status: "success",
+				isClosable: true,
+			});
+
+			await loadTradingData();
+		} catch (error: any) {
+			console.error(error);
+			toast({
+				title: "계좌 충전 실패",
+				description:
+					error?.response?.data?.message ??
+					"잠시 후 다시 시도하세요.",
+				status: "error",
+				isClosable: true,
+			});
+		} finally {
+			setIsToppingUp(false);
+		}
+	};
+
 
 	const resetTradingAccount = async () => {
 		try {
@@ -2001,6 +2052,18 @@ export default function DomesticExchange({
 								</Button>
 
 								<Button
+									size="sm"
+									colorScheme="green"
+									onClick={() =>
+										void topUpTradingAccount()
+									}
+									isLoading={isToppingUp}
+									loadingText="충전 중"
+								>
+									100만 원 충전
+								</Button>
+
+								<Button
 									variant="ghost"
 									size="sm"
 									onClick={resetTradingAccount}
@@ -2009,6 +2072,20 @@ export default function DomesticExchange({
 									계좌 초기화
 								</Button>
 							</Flex>
+
+							{portfolio?.account?.salaryPlanFunding
+								?.enabled && (
+									<Text
+										mt="3"
+										fontSize="sm"
+										color="blue.600"
+									>
+										전역 자금 플래너에서 매월 {won.format(
+											portfolio.account
+												.salaryPlanFunding.amount,
+										)} 자동 입금이 설정되어 있습니다.
+									</Text>
+								)}
 
 							<Text mt="3" fontSize="sm" color="gray.500">
 								※ 시장가 주문은 국내 정규장 중에만 가능합니다.

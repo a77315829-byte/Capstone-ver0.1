@@ -915,6 +915,11 @@ export default function SalaryCalculator() {
 		setIsAiLoading,
 	] = useState(false);
 
+	const [
+		isFundingTrading,
+		setIsFundingTrading,
+	] = useState(false);
+
 
 	const monthlySalary =
 		SALARY_BY_RANK[rank];
@@ -1548,6 +1553,79 @@ export default function SalaryCalculator() {
 				toast,
 			],
 		);
+
+
+	const enableMonthlyTradingFunding =
+		async () => {
+			if (
+				!aiResult ||
+				aiResult.allocation
+					.investmentPractice <= 0
+			) {
+				toast({
+					title:
+						"모의투자 학습 금액이 없습니다.",
+					status: "warning",
+					isClosable: true,
+				});
+				return;
+			}
+
+			try {
+				setIsFundingTrading(true);
+
+				const response = await api.post(
+					"/trading/salary-plan-funding/enable",
+				);
+
+				const result =
+					unwrapApiData<{
+						funding?: {
+							applied?: boolean;
+							amount?: number;
+						};
+					}>(response.data);
+
+				toast({
+					title:
+						result.funding?.applied
+							? "이번 달 모의투자 자금이 입금되었습니다."
+							: "월 모의투자 자동 입금이 설정되었습니다.",
+					description:
+						result.funding?.applied
+							? `${formatCurrency(
+								result.funding.amount ??
+									aiResult.allocation
+										.investmentPractice,
+							)}이 국내 모의투자 계좌에 반영되었습니다.`
+							: "다음 달 첫 거래소 접속 때 한 번만 자동 입금됩니다.",
+					status: "success",
+					isClosable: true,
+				});
+
+				navigate(
+					"/exchange?market=KR",
+				);
+			} catch (error) {
+				console.error(
+					"월 모의투자 입금 설정 실패:",
+					error,
+				);
+
+				toast({
+					title:
+						"모의투자 자금을 연결하지 못했습니다.",
+					description:
+						(error as any)?.response
+							?.data?.message ??
+						"서버 연결 상태를 확인하세요.",
+					status: "error",
+					isClosable: true,
+				});
+			} finally {
+				setIsFundingTrading(false);
+			}
+		};
 
 
 	const updateExpense =
@@ -4169,12 +4247,14 @@ export default function SalaryCalculator() {
 														size="sm"
 														colorScheme="blue"
 														onClick={() =>
-															navigate(
-																"/exchange",
-															)
+															void enableMonthlyTradingFunding()
 														}
+														isLoading={
+															isFundingTrading
+														}
+														loadingText="계좌 반영 중"
 													>
-														이 금액 기준으로 모의투자 시작
+														매월 이 금액으로 모의투자 시작
 													</Button>
 												</Box>
 											)}

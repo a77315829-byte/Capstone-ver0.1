@@ -616,8 +616,8 @@ function normalizeResult(
 			? 0
 			: snapshot.actualRatios
 						.savings >= 30
-				? safeRemaining * 0.35
-				: safeRemaining * 0.15;
+				? safeRemaining * 0.5
+				: safeRemaining * 0.25;
 
 	allocation.investmentPractice =
 		Math.min(
@@ -674,6 +674,26 @@ function normalizeResult(
 					allocation
 						.investmentPractice,
 			);
+	}
+
+	/*
+	 * LLM이 잔여금보다 적게 배분한 경우에도
+	 * investmentPractice 등 LLM의 판단은 유지합니다.
+	 * 누락된 금액만 flexible에 더해 전체 합계를 맞춥니다.
+	 */
+	const normalizedAllocationTotal =
+		allocation.emergency +
+		allocation.goal +
+		allocation.investmentPractice +
+		allocation.flexible;
+
+	if (
+		normalizedAllocationTotal <
+		safeRemaining
+	) {
+		allocation.flexible +=
+			safeRemaining -
+			normalizedAllocationTotal;
 	}
 
 	const savings =
@@ -925,6 +945,18 @@ export async function analyzeSalaryPlan(
 - 장병적금 누적 원금과 앞으로의 적금·매칭 예상액이 목표를 충분히 충족한다면,
   "저축을 더 늘리기보다 일정 금액으로 모의투자를 연습해 금융 판단 경험을 쌓는다"는 방향을 제안할 수 있다.
 
+잔여금 배분 원칙:
+1. remainingAmount 전액을 emergency, goal, investmentPractice, flexible 네 항목에 모두 배분한다.
+2. 네 항목의 합계는 반드시 remainingAmount와 정확히 같아야 하며, 배분되지 않은 금액을 남기지 않는다.
+3. 초과 지출이 없고 전역 목표 달성이 가능하며 장병적금 기반이 안정적이면, investmentPractice를 소액 체험 수준으로 지나치게 낮게 잡지 않는다.
+4. 재정적으로 안정적인 경우 investmentPractice는 일반적으로 remainingAmount의 30~50% 범위에서 적극적으로 배정한다.
+5. 현재 저축률이 30% 이상이고 전역 목표 달성이 가능한 경우, 특별한 재정 위험이 없다면 investmentPractice를 remainingAmount의 35% 이상으로 우선 검토한다.
+6. 비상금과 필수 목표 저축을 확보한 뒤에는 flexible보다 investmentPractice에 더 높은 우선순위를 둔다. 단, 사용자의 재정 상태에 따라 합리적인 근거가 있으면 조정할 수 있다.
+7. investmentPractice를 remainingAmount의 20% 미만으로 제안할 경우에는 allocationReason에 구체적인 위험 요인을 반드시 설명한다.
+8. 목표 달성이 불가능하거나 초과 지출이 있으면 investmentPractice는 0원으로 둔다.
+9. 각 배분 금액은 가능한 한 1,000원 단위 정수로 작성한다.
+10. allocationReason에는 모의투자 금액을 해당 수준으로 정한 이유를 사용자의 저축률, 목표 달성 가능성, 잔여금 수치와 연결해 설명한다.
+
 월 행동 플랜 작성 원칙:
 1. 2~4개의 행동을 작성한다.
 2. 가능하면 사용자가 입력한 실제 항목명을 활용한다.
@@ -954,7 +986,8 @@ ${JSON.stringify(
 - diagnosis.summary는 2~4문장으로 작성한다.
 - diagnosis.evidence는 입력 수치에서 계산 가능한 근거를 2~4개 작성한다.
 - recommendedRatios의 합은 100이어야 한다.
-- allocation의 합은 remainingAmount를 초과하면 안 된다.
+- allocation의 emergency, goal, investmentPractice, flexible 합계는 반드시 remainingAmount와 정확히 같아야 한다.
+- remainingAmount가 0보다 크면 배분되지 않은 잔액을 남기지 않는다.
 - projection과 goalAssessment는 출력하지 않는다. 서버가 숫자로 계산한다.
 
 출력 JSON:

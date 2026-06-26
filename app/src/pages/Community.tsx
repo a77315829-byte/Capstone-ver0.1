@@ -734,36 +734,33 @@ export default function Community() {
 		toast,
 	]);
 
-	const loadLeaderboard = useCallback(async () => {
+	const loadLeaderboard = useCallback(async (forceRefresh = false) => {
 		if (!showLeaderboard) {
 			return;
 		}
 
 		try {
 			setIsLeaderboardLoading(true);
-			const [leaderboardResponse, winnersResponse] = await Promise.all([
-				api.get<CommunityLeaderboardResponse>(
+			const leaderboardResponse =
+				await api.get<CommunityLeaderboardResponse>(
 					`/community/leaderboard/${leaderboardMode}`,
 					{
 						params: {
 							branch: selectedBranch,
 							limit: 30,
-							_: Date.now(),
+							refresh: forceRefresh
+								? "true"
+								: undefined,
 						},
 					},
-				),
-				api.get<{
-					month: string;
-					generatedAt: string;
-					winners: CommunityBranchWinner[];
-				}>("/community/leaderboard/branch-winners", {
-					params: { _: Date.now() },
-				}),
-			]);
+				);
 
-			setLeaderboard(leaderboardResponse.data.entries || []);
-			setLeaderboardGeneratedAt(leaderboardResponse.data.generatedAt || "");
-			setBranchWinners(winnersResponse.data.winners || []);
+			setLeaderboard(
+				leaderboardResponse.data.entries || [],
+			);
+			setLeaderboardGeneratedAt(
+				leaderboardResponse.data.generatedAt || "",
+			);
 		} catch (error) {
 			console.warn("투자 랭킹 조회 실패:", error);
 			setLeaderboard([]);
@@ -771,6 +768,39 @@ export default function Community() {
 			setIsLeaderboardLoading(false);
 		}
 	}, [leaderboardMode, selectedBranch, showLeaderboard]);
+
+	/*
+	 * 군종별 우승자는 월간 집계가 필요하므로 실시간 랭킹과 분리해서
+	 * 불러옵니다. 우승자 계산이 늦어져도 랭킹 표는 먼저 표시됩니다.
+	 */
+	const loadBranchWinners = useCallback(async (forceRefresh = false) => {
+		if (!showLeaderboard) {
+			return;
+		}
+
+		try {
+			const response = await api.get<{
+				month: string;
+				generatedAt: string;
+				winners: CommunityBranchWinner[];
+			}>("/community/leaderboard/branch-winners", {
+				params: {
+					refresh: forceRefresh
+						? "true"
+						: undefined,
+				},
+			});
+
+			setBranchWinners(
+				response.data.winners || [],
+			);
+		} catch (error) {
+			console.warn(
+				"군종별 투자왕 조회 실패:",
+				error,
+			);
+		}
+	}, [showLeaderboard]);
 
 	useEffect(() => {
 		void loadProfile();
@@ -783,6 +813,10 @@ export default function Community() {
 	useEffect(() => {
 		void loadLeaderboard();
 	}, [loadLeaderboard]);
+
+	useEffect(() => {
+		void loadBranchWinners();
+	}, [loadBranchWinners]);
 
 	useEffect(() => {
 		if (!showLeaderboard) {
@@ -999,7 +1033,10 @@ export default function Community() {
 									winners={branchWinners}
 									generatedAt={leaderboardGeneratedAt}
 									isLoading={isLeaderboardLoading}
-									onRefresh={() => void loadLeaderboard()}
+									onRefresh={() => {
+										void loadLeaderboard(true);
+										void loadBranchWinners(true);
+									}}
 								/>
 							</Box>
 						) : (

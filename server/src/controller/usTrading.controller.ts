@@ -11,6 +11,7 @@ import {
 	getUsPortfolio,
 	getUsTradeOrders,
 	resetUsTradingAccount,
+	topUpUsTradingAccount,
 } from "../services/usTrading.service";
 
 function getAuthenticatedUserId(
@@ -240,6 +241,31 @@ export async function checkPending(
 	}
 }
 
+export async function topUp(
+	req: Request,
+	res: Response,
+) {
+	try {
+		const data =
+			await topUpUsTradingAccount(
+				getAuthenticatedUserId(
+					req,
+				),
+			);
+
+		return res.status(200).json({
+			success: true,
+			data,
+		});
+	} catch (error) {
+		return sendError(
+			res,
+			error,
+			"미국 모의계좌 충전에 실패했습니다.",
+		);
+	}
+}
+
 export async function reset(
 	req: Request,
 	res: Response,
@@ -272,5 +298,6 @@ export default {
 	postOrder,
 	cancelOrder,
 	checkPending,
+	topUp,
 	reset,
 };

@@ -8,6 +8,8 @@ import UsTradingAccount, {
 	UsTradingAccountDocument,
 } from "../models/usTradingAccount.model";
 
+import FundingTransaction from "../models/fundingTransaction.model";
+
 import UsHolding, {
 	UsHoldingDocument,
 } from "../models/usHolding.model";
@@ -29,7 +31,10 @@ import {
 } from "./usMarketSession.service";
 
 const DEFAULT_INITIAL_USD =
-	10_000;
+	0;
+
+export const MANUAL_US_TOP_UP_AMOUNT =
+	1_000;
 
 type CreateUsOrderInput = {
 	userId?: string;
@@ -168,6 +173,8 @@ async function getOrCreateAccount(
 				reservedCash: 0,
 				initialCash:
 					DEFAULT_INITIAL_USD,
+				totalDeposits: 0,
+				manualDeposits: 0,
 				currency: "USD",
 			});
 	}
@@ -1368,8 +1375,22 @@ function serializeAccount(
 		initialCash:
 			roundUsd(
 				Number(
-					account.initialCash ||
+					account.initialCash ??
 						DEFAULT_INITIAL_USD,
+				),
+			),
+		totalDeposits:
+			roundUsd(
+				Number(
+					account.totalDeposits ??
+						0,
+				),
+			),
+		manualDeposits:
+			roundUsd(
+				Number(
+					account.manualDeposits ??
+						0,
 				),
 			),
 		currency: "USD",
@@ -1551,19 +1572,29 @@ export async function getUsPortfolio(
 				totalEvaluationAmount,
 		);
 
+	const initialCash =
+		Number(
+			account.initialCash ??
+				DEFAULT_INITIAL_USD,
+		);
+
+	const totalDeposits =
+		Number(
+			account.totalDeposits ??
+				0,
+		);
+
 	const totalProfitLoss =
 		roundUsd(
 			totalAsset -
-				Number(
-					account.initialCash ||
-						DEFAULT_INITIAL_USD,
-				),
+				initialCash -
+				totalDeposits,
 		);
 
-	const initialCash =
-		Number(
-			account.initialCash ||
-				DEFAULT_INITIAL_USD,
+	const investedCapital =
+		roundUsd(
+			initialCash +
+				totalDeposits,
 		);
 
 	return {
@@ -1576,10 +1607,10 @@ export async function getUsPortfolio(
 			totalBuyAmount,
 			totalProfitLoss,
 			totalProfitLossRate:
-				initialCash > 0
+				investedCapital > 0
 					? roundUsd(
 							(totalProfitLoss /
-								initialCash) *
+								investedCapital) *
 								100,
 						)
 					: 0,
@@ -1647,6 +1678,74 @@ export async function getUsTradeOrders(
 		.lean();
 }
 
+export async function topUpUsTradingAccount(
+	userIdInput?: string,
+) {
+	const userId =
+		getUserId(
+			userIdInput,
+		);
+
+	const account =
+		await getOrCreateAccount(
+			userId,
+		);
+
+	const fundingRecord =
+		await FundingTransaction.create({
+			userId,
+			market: "US",
+			type: "MANUAL_TOP_UP",
+			amount:
+				MANUAL_US_TOP_UP_AMOUNT,
+			currency: "USD",
+		});
+
+	try {
+		await UsTradingAccount.updateOne(
+			{
+				_id: account._id,
+			},
+			{
+				$inc: {
+					cash:
+						MANUAL_US_TOP_UP_AMOUNT,
+					totalDeposits:
+						MANUAL_US_TOP_UP_AMOUNT,
+					manualDeposits:
+						MANUAL_US_TOP_UP_AMOUNT,
+				},
+			},
+		);
+	} catch (error) {
+		await FundingTransaction.deleteOne({
+			_id: fundingRecord._id,
+		});
+		throw error;
+	}
+
+	const updatedAccount =
+		await UsTradingAccount.findOne({
+			userId,
+		});
+
+	if (!updatedAccount) {
+		throw createServiceError(
+			500,
+			"미국 모의계좌를 갱신하지 못했습니다.",
+		);
+	}
+
+	return {
+		amount:
+			MANUAL_US_TOP_UP_AMOUNT,
+		account:
+			serializeAccount(
+				updatedAccount,
+			),
+	};
+}
+
 export async function resetUsTradingAccount(
 	userIdInput?: string,
 ) {
@@ -1662,6 +1761,10 @@ export async function resetUsTradingAccount(
 		UsTradeOrder.deleteMany({
 			userId,
 		}),
+		FundingTransaction.deleteMany({
+			userId,
+			market: "US",
+		}),
 	]);
 
 	const account =
@@ -1676,6 +1779,8 @@ export async function resetUsTradingAccount(
 					reservedCash: 0,
 					initialCash:
 						DEFAULT_INITIAL_USD,
+					totalDeposits: 0,
+					manualDeposits: 0,
 					currency: "USD",
 				},
 				$setOnInsert: {

@@ -959,6 +959,11 @@ export default function UsMarketPanel({
 	] = useState(false);
 
 	const [
+		isToppingUp,
+		setIsToppingUp,
+	] = useState(false);
+
+	const [
 		isSearching,
 		setIsSearching,
 	] = useState(false);
@@ -1497,11 +1502,63 @@ export default function UsMarketPanel({
 			}
 		};
 
+	const topUpAccount =
+		async () => {
+			try {
+				setIsToppingUp(
+					true,
+				);
+
+				const response =
+					await api.post(
+						"/us-trading/top-up",
+					);
+
+				const result =
+					unwrapApiData<{
+						amount: number;
+					}>(response.data);
+
+				toast({
+					title:
+						"미국 모의투자 현금이 충전되었습니다.",
+					description:
+						`${usd.format(
+							result.amount,
+						)}이 계좌에 추가되었습니다.`,
+					status: "success",
+					duration: 2400,
+					isClosable: true,
+				});
+
+				await loadTradingData(
+					true,
+				);
+			} catch (error: any) {
+				toast({
+					title:
+						"미국 모의계좌 충전 실패",
+					description:
+						error?.response
+							?.data?.message ??
+						"잠시 후 다시 시도하세요.",
+					status: "error",
+					duration: 2800,
+					isClosable: true,
+				});
+			} finally {
+				setIsToppingUp(
+					false,
+				);
+			}
+		};
+
+
 	const resetAccount =
 		async () => {
 			const accepted =
 				window.confirm(
-					"미국 모의계좌의 보유종목과 주문내역을 모두 초기화하고 $10,000로 되돌릴까요?",
+					"미국 모의계좌의 보유종목과 주문내역을 모두 초기화하고 잔액을 $0로 만들까요?",
 				);
 
 			if (!accepted) {
@@ -2427,6 +2484,20 @@ export default function UsMarketPanel({
 									isMarketClosed
 										? "예약 매도"
 										: "매도"}
+								</Button>
+
+								<Button
+									size="sm"
+									colorScheme="green"
+									onClick={() =>
+										void topUpAccount()
+									}
+									isLoading={
+										isToppingUp
+									}
+									loadingText="충전 중"
+								>
+									$1,000 충전
 								</Button>
 
 								<Button

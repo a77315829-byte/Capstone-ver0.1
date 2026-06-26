@@ -165,8 +165,13 @@ CommunityPostSchema.index({
 	createdAt: -1,
 });
 
-export default mongoose.models.CommunityPost ||
+const CommunityPostModel =
+	(mongoose.models.CommunityPost as
+		| mongoose.Model<ICommunityPost>
+		| undefined) ??
 	mongoose.model<ICommunityPost>(
 		"CommunityPost",
 		CommunityPostSchema,
 	);
+
+export default CommunityPostModel;

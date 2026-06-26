@@ -5,6 +5,13 @@ export interface TradingAccountDocument extends Document {
 	cash: number;
 	reservedCash: number;
 	initialCash: number;
+	totalDeposits: number;
+	manualDeposits: number;
+	salaryPlanDeposits: number;
+	salaryPlanFundingEnabled: boolean;
+	salaryPlanFundingAmount: number;
+	salaryPlanId?: string;
+	lastSalaryFundingPeriod?: string;
 	currency: string;
 	createdAt: Date;
 	updatedAt: Date;
@@ -21,7 +28,7 @@ const TradingAccountSchema = new Schema<TradingAccountDocument>(
 		cash: {
 			type: Number,
 			required: true,
-			default: 10_000_000,
+			default: 0,
 		},
 		reservedCash: {
 			type: Number,
@@ -31,7 +38,40 @@ const TradingAccountSchema = new Schema<TradingAccountDocument>(
 		initialCash: {
 			type: Number,
 			required: true,
-			default: 10_000_000,
+			default: 0,
+		},
+		totalDeposits: {
+			type: Number,
+			required: true,
+			default: 0,
+		},
+		manualDeposits: {
+			type: Number,
+			required: true,
+			default: 0,
+		},
+		salaryPlanDeposits: {
+			type: Number,
+			required: true,
+			default: 0,
+		},
+		salaryPlanFundingEnabled: {
+			type: Boolean,
+			required: true,
+			default: false,
+		},
+		salaryPlanFundingAmount: {
+			type: Number,
+			required: true,
+			default: 0,
+		},
+		salaryPlanId: {
+			type: String,
+			default: undefined,
+		},
+		lastSalaryFundingPeriod: {
+			type: String,
+			default: undefined,
 		},
 		currency: {
 			type: String,

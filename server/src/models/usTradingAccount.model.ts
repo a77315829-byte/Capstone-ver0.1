@@ -11,6 +11,8 @@ export interface UsTradingAccountDocument
 	cash: number;
 	reservedCash: number;
 	initialCash: number;
+	totalDeposits: number;
+	manualDeposits: number;
 
 	currency: "USD";
 
@@ -30,7 +32,7 @@ const UsTradingAccountSchema =
 			cash: {
 				type: Number,
 				required: true,
-				default: 10_000,
+				default: 0,
 			},
 			reservedCash: {
 				type: Number,
@@ -40,7 +42,17 @@ const UsTradingAccountSchema =
 			initialCash: {
 				type: Number,
 				required: true,
-				default: 10_000,
+				default: 0,
+			},
+			totalDeposits: {
+				type: Number,
+				required: true,
+				default: 0,
+			},
+			manualDeposits: {
+				type: Number,
+				required: true,
+				default: 0,
 			},
 			currency: {
 				type: String,

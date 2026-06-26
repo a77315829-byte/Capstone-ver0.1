@@ -145,6 +145,18 @@ router.post(
 	tradingController.resetDemo,
 );
 
+router.post(
+	"/api/trading/top-up",
+	[authJwt.verifyToken],
+	tradingController.topUp,
+);
+
+router.post(
+	"/api/trading/salary-plan-funding/enable",
+	[authJwt.verifyToken],
+	tradingController.enableSalaryFunding,
+);
+
 router.post("/api/trading/orders", tradingController.postOrder);
 router.post("/api/trading/orders/:orderId/cancel", tradingController.cancelOrder);
 router.post("/api/trading/orders/check-pending", tradingController.checkPending);
@@ -240,7 +252,29 @@ router.post(
 	communityController.createComment,
 );
 
-// 사단별 월간 모의투자 순위
+// 군종별 모의투자 순위
+router.get(
+	"/api/community/leaderboard/live",
+	communityController.getLiveLeaderboard,
+);
+
+router.get(
+	"/api/community/leaderboard/monthly",
+	communityController.getMonthlyLeaderboard,
+);
+
+router.get(
+	"/api/community/leaderboard/branch-winners",
+	communityController.getBranchWinners,
+);
+
+router.get(
+	"/api/community/leaderboard/me",
+	[authJwt.verifyToken],
+	communityController.getMyLeaderboard,
+);
+
+// 기존 경로 호환
 router.get(
 	"/api/community/leaderboard",
 	communityController.getLeaderboard,
@@ -321,6 +355,12 @@ router.post(
 // ================================
 // 미국 모의계좌 초기화
 // ================================
+
+router.post(
+	"/api/us-trading/top-up",
+	[authJwt.verifyToken],
+	usTradingController.topUp,
+);
 
 router.post(
 	"/api/us-trading/reset",

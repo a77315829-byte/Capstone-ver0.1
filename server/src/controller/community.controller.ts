@@ -103,9 +103,7 @@ async function getOrCreateProfile(
 		await MilitaryProfile.findOne({
 			userId,
 		})
-			.select(
-				"branch unitType unitCode unitName",
-			)
+			.select("branch")
 			.lean();
 
 	const setFields: Record<string, any> = {};
@@ -113,12 +111,6 @@ async function getOrCreateProfile(
 	if (militaryProfile) {
 		setFields.branch =
 			militaryProfile.branch;
-		setFields.unitType =
-			militaryProfile.unitType ?? null;
-		setFields.unitCode =
-			militaryProfile.unitCode ?? null;
-		setFields.unitName =
-			militaryProfile.unitName ?? null;
 	}
 
 	return CommunityProfile.findOneAndUpdate(
@@ -930,13 +922,21 @@ const listComments = async (
 			});
 		}
 
-		const post =
+		type PostAuthorProjection = {
+			authorId:
+				| mongoose.Types.ObjectId
+				| string;
+		};
+
+		const post = (
 			await CommunityPost.findOne({
 				_id: postId,
 				status: "active",
 			})
 				.select("authorId")
-				.exec();
+				.lean()
+				.exec()
+		) as PostAuthorProjection | null;
 
 		if (!post) {
 			return res.status(404).json({

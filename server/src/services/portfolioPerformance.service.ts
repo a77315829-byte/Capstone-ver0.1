@@ -4,6 +4,7 @@ import TradingAccount from "../models/tradingAccount.model";
 import User from "../models/user.model";
 import Holding from "../models/holding.model";
 import TradeOrder from "../models/tradeOrder.model";
+import FundingTransaction from "../models/fundingTransaction.model";
 import CommunityProfile from "../models/communityProfile.model";
 import MilitaryProfile, {
 	type MilitaryBranch,
@@ -80,9 +81,56 @@ interface AccountPerformanceBase {
 	authorCode: string;
 	currentEquity: number;
 	initialCash: number;
+	totalDeposits: number;
+	monthlyDeposits: number;
+	depositsBeforeMonth: number;
+	investedCapital: number;
 	filledTradeCount: number;
 	activeTradingDays: number;
 }
+
+interface TimedCacheEntry<T> {
+	value: T;
+	expiresAt: number;
+}
+
+const QUOTE_CACHE_TTL_MS = 60_000;
+const ACCOUNT_BASE_CACHE_TTL_MS = 20_000;
+const LIVE_PERFORMANCE_CACHE_TTL_MS = 30_000;
+const MONTHLY_PERFORMANCE_CACHE_TTL_MS = 60_000;
+
+const quoteCache = new Map<
+	string,
+	TimedCacheEntry<number>
+>();
+const quoteRequests = new Map<
+	string,
+	Promise<number | null>
+>();
+const accountBaseCache = new Map<
+	string,
+	TimedCacheEntry<AccountPerformanceBase[]>
+>();
+const accountBaseRequests = new Map<
+	string,
+	Promise<AccountPerformanceBase[]>
+>();
+const livePerformanceCache = new Map<
+	string,
+	TimedCacheEntry<PerformanceEntry[]>
+>();
+const livePerformanceRequests = new Map<
+	string,
+	Promise<PerformanceEntry[]>
+>();
+const monthlyPerformanceCache = new Map<
+	string,
+	TimedCacheEntry<PerformanceEntry[]>
+>();
+const monthlyPerformanceRequests = new Map<
+	string,
+	Promise<PerformanceEntry[]>
+>();
 
 function round(
 	value: number,
@@ -247,8 +295,75 @@ function calculateDailyVolatility(
 	);
 }
 
+async function fetchQuote(
+	symbol: string,
+	forceRefresh = false,
+): Promise<number | null> {
+	const cached = quoteCache.get(symbol);
+	const now = Date.now();
+
+	if (
+		!forceRefresh &&
+		cached &&
+		cached.expiresAt > now
+	) {
+		return cached.value;
+	}
+
+	const pending = quoteRequests.get(symbol);
+
+	if (pending) {
+		return pending;
+	}
+
+	const request = (async () => {
+		try {
+			const stock =
+				await fetchStockData(
+					symbol,
+				);
+
+			const price = Number(
+				stock.price ??
+					stock.regularMarketPrice ??
+					0,
+			);
+
+			if (
+				Number.isFinite(price) &&
+				price > 0
+			) {
+				quoteCache.set(symbol, {
+					value: price,
+					expiresAt:
+						now +
+						QUOTE_CACHE_TTL_MS,
+				});
+				return price;
+			}
+		} catch (error) {
+			console.warn(
+				`랭킹 시세 조회 실패: ${symbol}`,
+				error,
+			);
+		}
+
+		/*
+		 * 외부 시세 API가 잠시 실패하면 마지막 정상 가격을 사용합니다.
+		 * 캐시 만료 여부와 관계없이 0원으로 떨어지는 것을 방지합니다.
+		 */
+		return cached?.value ?? null;
+	})().finally(() => {
+		quoteRequests.delete(symbol);
+	});
+
+	quoteRequests.set(symbol, request);
+	return request;
+}
+
 async function fetchQuoteMap(
 	symbols: string[],
+	forceRefresh = false,
 ): Promise<Map<string, number>> {
 	const quoteMap = new Map<
 		string,
@@ -270,33 +385,19 @@ async function fetchQuoteMap(
 	await Promise.all(
 		uniqueSymbols.map(
 			async (symbol) => {
-				try {
-					const stock =
-						await fetchStockData(
-							symbol,
-						);
-
-					const price = Number(
-						stock.price ??
-							stock.regularMarketPrice ??
-							0,
+				const price =
+					await fetchQuote(
+						symbol,
+						forceRefresh,
 					);
 
-					if (
-						Number.isFinite(
-							price,
-						) &&
-						price > 0
-					) {
-						quoteMap.set(
-							symbol,
-							price,
-						);
-					}
-				} catch (error) {
-					console.warn(
-						`랭킹 시세 조회 실패: ${symbol}`,
-						error,
+				if (
+					price !== null &&
+					price > 0
+				) {
+					quoteMap.set(
+						symbol,
+						price,
 					);
 				}
 			},
@@ -428,8 +529,9 @@ async function loadIdentityMap(
 	};
 }
 
-async function buildAccountPerformanceBase(
+async function loadAccountPerformanceBase(
 	month: string,
+	forceQuoteRefresh = false,
 ): Promise<AccountPerformanceBase[]> {
 	const { start, end } =
 		getMonthRange(month);
@@ -447,8 +549,12 @@ async function buildAccountPerformanceBase(
 			String(account.userId),
 	);
 
-	const [holdings, orders, identity] =
-		await Promise.all([
+	const [
+		holdings,
+		orders,
+		fundingTransactions,
+		identity,
+	] = await Promise.all([
 			Holding.find({
 				userId: {
 					$in: userIds,
@@ -469,6 +575,16 @@ async function buildAccountPerformanceBase(
 					"userId executedAt createdAt",
 				)
 				.lean(),
+			FundingTransaction.find({
+				userId: {
+					$in: userIds,
+				},
+				market: "KR",
+			})
+				.select(
+					"userId amount createdAt",
+				)
+				.lean(),
 			loadIdentityMap(userIds),
 		]);
 
@@ -477,6 +593,7 @@ async function buildAccountPerformanceBase(
 			(holding) =>
 				holding.symbol,
 		),
+		forceQuoteRefresh,
 	);
 
 	const holdingsByUser = new Map<
@@ -509,6 +626,43 @@ async function buildAccountPerformanceBase(
 			[];
 		list.push(order);
 		ordersByUser.set(userId, list);
+	}
+
+	const totalDepositsByUser =
+		new Map<string, number>();
+	const monthlyDepositsByUser =
+		new Map<string, number>();
+
+	for (const transaction of fundingTransactions) {
+		const userId = String(
+			transaction.userId,
+		);
+		const amount = Math.max(
+			0,
+			Number(transaction.amount || 0),
+		);
+
+		totalDepositsByUser.set(
+			userId,
+			(totalDepositsByUser.get(userId) ?? 0) +
+				amount,
+		);
+
+		const createdAt = new Date(
+			transaction.createdAt,
+		);
+
+		if (
+			createdAt >= start &&
+			createdAt < end
+		) {
+			monthlyDepositsByUser.set(
+				userId,
+				(monthlyDepositsByUser.get(
+					userId,
+				) ?? 0) + amount,
+			);
+		}
 	}
 
 	return accounts.map((account) => {
@@ -580,6 +734,29 @@ async function buildAccountPerformanceBase(
 				accountUserId,
 			) ?? [];
 
+		const initialCash = Math.max(
+			0,
+			Number(account.initialCash || 0),
+		);
+		const totalDeposits = Math.max(
+			0,
+			totalDepositsByUser.get(
+				accountUserId,
+			) ?? 0,
+		);
+		const monthlyDeposits = Math.max(
+			0,
+			monthlyDepositsByUser.get(
+				accountUserId,
+			) ?? 0,
+		);
+		const depositsBeforeMonth = Math.max(
+			0,
+			totalDeposits - monthlyDeposits,
+		);
+		const investedCapital =
+			initialCash + totalDeposits;
+
 		const activeTradingDays =
 			new Set(
 				monthlyOrders.map(
@@ -610,18 +787,67 @@ async function buildAccountPerformanceBase(
 					stockValue,
 				0,
 			),
-			initialCash: Math.max(
-				1,
-				Number(
-					account.initialCash ||
-						1,
-				),
-			),
+			initialCash,
+			totalDeposits,
+			monthlyDeposits,
+			depositsBeforeMonth,
+			investedCapital,
 			filledTradeCount:
 				monthlyOrders.length,
 			activeTradingDays,
 		};
 	});
+}
+
+
+async function buildAccountPerformanceBase(
+	month: string,
+	forceRefresh = false,
+): Promise<AccountPerformanceBase[]> {
+	const cached = accountBaseCache.get(month);
+	const now = Date.now();
+
+	if (
+		!forceRefresh &&
+		cached &&
+		cached.expiresAt > now
+	) {
+		return cached.value;
+	}
+
+	const pending =
+		accountBaseRequests.get(month);
+
+	if (pending) {
+		return pending;
+	}
+
+	const request =
+		loadAccountPerformanceBase(
+			month,
+			forceRefresh,
+		)
+			.then((value) => {
+				accountBaseCache.set(month, {
+					value,
+					expiresAt:
+						Date.now() +
+						ACCOUNT_BASE_CACHE_TTL_MS,
+				});
+				return value;
+			})
+			.finally(() => {
+				accountBaseRequests.delete(
+					month,
+				);
+			});
+
+	accountBaseRequests.set(
+		month,
+		request,
+	);
+
+	return request;
 }
 
 function assignLiveRanks(
@@ -682,22 +908,29 @@ function assignLiveRanks(
 	}));
 }
 
-export async function getLivePerformanceEntries(
-	month = getMonthKey(),
+async function calculateLivePerformanceEntries(
+	month: string,
+	forceRefresh = false,
 ): Promise<PerformanceEntry[]> {
 	const bases =
 		await buildAccountPerformanceBase(
 			month,
+			forceRefresh,
 		);
 
 	const entries: PerformanceEntry[] =
 		bases.map((base) => {
-			const returnRate = round(
-				((base.currentEquity -
-					base.initialCash) /
-					base.initialCash) *
-					100,
-			);
+			const adjustedProfit =
+				base.currentEquity -
+					base.investedCapital;
+			const returnRate =
+				base.investedCapital > 0
+					? round(
+						(adjustedProfit /
+							base.investedCapital) *
+							100,
+					)
+					: 0;
 
 			return {
 				id: `live:${base.userId}`,
@@ -712,7 +945,7 @@ export async function getLivePerformanceEntries(
 				currentEquity:
 					base.currentEquity,
 				startEquity:
-					base.initialCash,
+					base.investedCapital,
 				returnRate,
 				maxDrawdown: 0,
 				consistencyScore: 0,
@@ -722,7 +955,8 @@ export async function getLivePerformanceEntries(
 					base.filledTradeCount,
 				activeTradingDays:
 					base.activeTradingDays,
-				isEligible: true,
+				isEligible:
+					base.investedCapital > 0,
 				branchRank: null,
 				overallRank: null,
 				badge: null,
@@ -730,6 +964,60 @@ export async function getLivePerformanceEntries(
 		});
 
 	return assignLiveRanks(entries);
+}
+
+export async function getLivePerformanceEntries(
+	month = getMonthKey(),
+	forceRefresh = false,
+): Promise<PerformanceEntry[]> {
+	const cached =
+		livePerformanceCache.get(month);
+	const now = Date.now();
+
+	if (
+		!forceRefresh &&
+		cached &&
+		cached.expiresAt > now
+	) {
+		return cached.value;
+	}
+
+	const pending =
+		livePerformanceRequests.get(month);
+
+	if (pending) {
+		return pending;
+	}
+
+	const request =
+		calculateLivePerformanceEntries(
+			month,
+			forceRefresh,
+		)
+			.then((value) => {
+				livePerformanceCache.set(
+					month,
+					{
+						value,
+						expiresAt:
+							Date.now() +
+							LIVE_PERFORMANCE_CACHE_TTL_MS,
+					},
+				);
+				return value;
+			})
+			.finally(() => {
+				livePerformanceRequests.delete(
+					month,
+				);
+			});
+
+	livePerformanceRequests.set(
+		month,
+		request,
+	);
+
+	return request;
 }
 
 function updateTodayHistory(
@@ -900,12 +1188,14 @@ function assignMonthlyRanksAndBadges(
 	}));
 }
 
-export async function syncMonthlyPerformance(
-	month = getMonthKey(),
+async function calculateAndPersistMonthlyPerformance(
+	month: string,
+	forceRefresh = false,
 ): Promise<PerformanceEntry[]> {
 	const bases =
 		await buildAccountPerformanceBase(
 			month,
+			forceRefresh,
 		);
 
 	const currentDocuments =
@@ -927,6 +1217,7 @@ export async function syncMonthlyPerformance(
 	}
 
 	const entries: PerformanceEntry[] = [];
+	const performanceOperations: any[] = [];
 
 	for (const base of bases) {
 		const existing =
@@ -936,12 +1227,16 @@ export async function syncMonthlyPerformance(
 
 		const monthStartEquity =
 			Math.max(
-				1,
+				0,
 				Number(
 					existing?.monthStartEquity ??
-						base.currentEquity,
+						(base.initialCash +
+							base.depositsBeforeMonth),
 				),
 			);
+		const monthlyCapital =
+			monthStartEquity +
+				base.monthlyDeposits;
 
 		const history = updateTodayHistory(
 			Array.isArray(
@@ -952,12 +1247,16 @@ export async function syncMonthlyPerformance(
 			base.currentEquity,
 		);
 
-		const returnRate = round(
-			((base.currentEquity -
-				monthStartEquity) /
-				monthStartEquity) *
-				100,
-		);
+		const returnRate =
+			monthlyCapital > 0
+				? round(
+					((base.currentEquity -
+						monthStartEquity -
+						base.monthlyDeposits) /
+						monthlyCapital) *
+						100,
+				)
+				: 0;
 
 		const maxDrawdown =
 			calculateMaxDrawdown(
@@ -986,6 +1285,7 @@ export async function syncMonthlyPerformance(
 			});
 
 		const isEligible =
+			monthlyCapital > 0 &&
 			base.filledTradeCount >= 3 &&
 			base.activeTradingDays >= 3;
 
@@ -1023,56 +1323,63 @@ export async function syncMonthlyPerformance(
 			badge: null,
 		});
 
-		await MonthlyTradingPerformance.findOneAndUpdate(
-			{
-				month,
-				userId: base.userId,
-				market: "DOMESTIC",
-			},
-			{
-				$set: {
-					branch: base.branch,
-					branchName:
-						base.branchName,
-					nickname:
-						base.nickname,
-					authorCode:
-						base.authorCode,
-					monthStartEquity,
-					currentEquity:
-						base.currentEquity,
-					returnRate,
-					maxDrawdown,
-					dailyVolatility,
-					filledTradeCount:
-						base.filledTradeCount,
-					activeTradingDays:
-						base.activeTradingDays,
-					reasonEntryCount,
-					isEligible,
-					returnScore:
-						score.returnScore,
-					drawdownScore:
-						score.drawdownScore,
-					consistencyScore:
-						score.consistencyScore,
-					activityScore:
-						score.activityScore,
-					totalScore:
-						score.totalScore,
-					equityHistory:
-						history,
-				},
-				$setOnInsert: {
+		performanceOperations.push({
+			updateOne: {
+				filter: {
 					month,
 					userId: base.userId,
 					market: "DOMESTIC",
 				},
-			},
-			{
+				update: {
+					$set: {
+						branch: base.branch,
+						branchName:
+							base.branchName,
+						nickname:
+							base.nickname,
+						authorCode:
+							base.authorCode,
+						monthStartEquity,
+						currentEquity:
+							base.currentEquity,
+						returnRate,
+						maxDrawdown,
+						dailyVolatility,
+						filledTradeCount:
+							base.filledTradeCount,
+						activeTradingDays:
+							base.activeTradingDays,
+						reasonEntryCount,
+						isEligible,
+						returnScore:
+							score.returnScore,
+						drawdownScore:
+							score.drawdownScore,
+						consistencyScore:
+							score.consistencyScore,
+						activityScore:
+							score.activityScore,
+						totalScore:
+							score.totalScore,
+						equityHistory:
+							history,
+					},
+					$setOnInsert: {
+						month,
+						userId: base.userId,
+						market: "DOMESTIC",
+					},
+				},
 				upsert: true,
-				new: true,
-				runValidators: true,
+			},
+		});
+	}
+
+	if (performanceOperations.length > 0) {
+		await MonthlyTradingPerformance.bulkWrite(
+			performanceOperations,
+			{
+				ordered: false,
 			},
 		);
 	}
@@ -1083,17 +1390,17 @@ export async function syncMonthlyPerformance(
 		);
 
 	if (ranked.length > 0) {
-		await Promise.all(
-			ranked.map(async (entry) => {
-				await MonthlyTradingPerformance.updateOne(
-					{
+		const rankOperations: any[] =
+			ranked.map((entry) => ({
+				updateOne: {
+					filter: {
 						month,
 						userId:
 							entry.userId,
 						market:
 							"DOMESTIC",
 					},
-					{
+					update: {
 						$set: {
 							branchRank:
 								entry.branchRank,
@@ -1103,17 +1410,20 @@ export async function syncMonthlyPerformance(
 								entry.badge,
 						},
 					},
-				);
+				},
+			}));
 
-				await CommunityMonthlyRank.findOneAndUpdate(
-					{
+		const communityRankOperations: any[] =
+			ranked.map((entry) => ({
+				updateOne: {
+					filter: {
 						month,
 						userId:
 							entry.userId,
 						market:
 							"DOMESTIC",
 					},
-					{
+					update: {
 						$set: {
 							branch:
 								entry.branch,
@@ -1158,17 +1468,83 @@ export async function syncMonthlyPerformance(
 								"DOMESTIC",
 						},
 					},
-					{
-						upsert: true,
-						new: true,
-						runValidators: true,
-					},
-				);
-			}),
-		);
+					upsert: true,
+				},
+			}));
+
+		await Promise.all([
+			MonthlyTradingPerformance.bulkWrite(
+				rankOperations,
+				{
+					ordered: false,
+				},
+			),
+			CommunityMonthlyRank.bulkWrite(
+				communityRankOperations,
+				{
+					ordered: false,
+				},
+			),
+		]);
 	}
 
 	return ranked;
+}
+
+export async function syncMonthlyPerformance(
+	month = getMonthKey(),
+	forceRefresh = false,
+): Promise<PerformanceEntry[]> {
+	const cached =
+		monthlyPerformanceCache.get(month);
+	const now = Date.now();
+
+	if (
+		!forceRefresh &&
+		cached &&
+		cached.expiresAt > now
+	) {
+		return cached.value;
+	}
+
+	const pending =
+		monthlyPerformanceRequests.get(
+			month,
+		);
+
+	if (pending) {
+		return pending;
+	}
+
+	const request =
+		calculateAndPersistMonthlyPerformance(
+			month,
+			forceRefresh,
+		)
+			.then((value) => {
+				monthlyPerformanceCache.set(
+					month,
+					{
+						value,
+						expiresAt:
+							Date.now() +
+							MONTHLY_PERFORMANCE_CACHE_TTL_MS,
+					},
+				);
+				return value;
+			})
+			.finally(() => {
+				monthlyPerformanceRequests.delete(
+					month,
+				);
+			});
+
+	monthlyPerformanceRequests.set(
+		month,
+		request,
+	);
+
+	return request;
 }
 
 export function serializePerformanceEntry(
