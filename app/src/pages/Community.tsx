@@ -59,6 +59,8 @@ import {
 } from "react-router-dom";
 
 import api from "../services/api.service";
+
+import RelatedFinancialTerms from "../components/RelatedFinancialTerms";
 import {
 	COMMUNITY_BRANCH_OPTIONS,
 	COMMUNITY_CATEGORIES,
@@ -947,6 +949,18 @@ export default function Community() {
 						</HStack>
 					</Flex>
 				</Box>
+
+				<RelatedFinancialTerms
+					title="커뮤니티 글과 랭킹에서 자주 보는 용어"
+					description="수익률과 위험관리 관련 표현을 확인한 뒤 게시글과 랭킹을 읽어보세요."
+					termIds={[
+						"yield",
+						"portfolio",
+						"diversification",
+						"volatility",
+						"principal_loss",
+					]}
+				/>
 
 				<SimpleGrid columns={{ base: 1, md: 3 }} spacing="3" mb="4">
 					<Card borderWidth="1px" borderColor="army.200">

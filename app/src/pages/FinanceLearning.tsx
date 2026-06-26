@@ -1,4 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, {
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
 import {
 	Badge,
 	Box,
@@ -45,6 +49,13 @@ import {
 	SearchIcon,
 } from "@chakra-ui/icons";
 
+import {
+	useLocation,
+	useNavigate,
+	useSearchParams,
+} from "react-router-dom";
+
+
 import financeTermsData from "../data/financeTerms.json";
 import financeQuizzesData from "../data/financeQuizzes.json";
 import type {
@@ -90,6 +101,7 @@ function shuffleArray<T>(items: T[]): T[] {
 function makeQuizSession(
 	category: string,
 	difficulty: string,
+	relatedTermId?: string | null,
 ): FinanceQuiz[] {
 	const filtered = financeQuizzes.filter((quiz) => {
 		const categoryMatches =
@@ -98,7 +110,15 @@ function makeQuizSession(
 		const difficultyMatches =
 			difficulty === ALL || quiz.difficulty === difficulty;
 
-		return categoryMatches && difficultyMatches;
+		const termMatches =
+			!relatedTermId ||
+			quiz.relatedTermId === relatedTermId;
+
+		return (
+			categoryMatches &&
+			difficultyMatches &&
+			termMatches
+		);
 	});
 
 	return shuffleArray(filtered).slice(
@@ -107,7 +127,13 @@ function makeQuizSession(
 	);
 }
 
-function DictionaryView() {
+function DictionaryView({
+	initialTermId,
+	onStartQuiz,
+}: {
+	initialTermId?: string | null;
+	onStartQuiz: (termId: string) => void;
+}) {
 	const [searchText, setSearchText] = useState("");
 	const [category, setCategory] = useState(ALL);
 	const [difficulty, setDifficulty] = useState(ALL);
@@ -115,6 +141,36 @@ function DictionaryView() {
 		useState<FinanceTerm | null>(null);
 
 	const modal = useDisclosure();
+
+	useEffect(() => {
+		if (!initialTermId) {
+			return;
+		}
+
+		const requestedTerm =
+			financeTerms.find(
+				(term) =>
+					term.id ===
+					initialTermId,
+			);
+
+		if (!requestedTerm) {
+			return;
+		}
+
+		setSearchText(
+			requestedTerm.term,
+		);
+		setCategory(ALL);
+		setDifficulty(ALL);
+		setSelectedTerm(
+			requestedTerm,
+		);
+		modal.onOpen();
+	}, [
+		initialTermId,
+		modal.onOpen,
+	]);
 
 	const categories = useMemo(
 		() => [
@@ -525,6 +581,26 @@ function DictionaryView() {
 					</ModalBody>
 
 					<ModalFooter>
+						<Button
+							mr="2"
+							variant="outline"
+							colorScheme="army"
+							isDisabled={
+								!selectedTerm
+							}
+							onClick={() => {
+								if (
+									selectedTerm
+								) {
+									onStartQuiz(
+										selectedTerm.id,
+									);
+								}
+							}}
+						>
+							관련 퀴즈 풀기
+						</Button>
+
 						<Button onClick={modal.onClose}>
 							닫기
 						</Button>
@@ -535,7 +611,13 @@ function DictionaryView() {
 	);
 }
 
-function QuizView() {
+function QuizView({
+	initialTermId,
+	onClearTerm,
+}: {
+	initialTermId?: string | null;
+	onClearTerm: () => void;
+}) {
 	const categories = useMemo(
 		() => [
 			ALL,
@@ -550,8 +632,18 @@ function QuizView() {
 
 	const [category, setCategory] = useState(ALL);
 	const [difficulty, setDifficulty] = useState(ALL);
+	const [
+		focusedTermId,
+		setFocusedTermId,
+	] = useState<string | null>(
+		initialTermId ?? null,
+	);
 	const [session, setSession] = useState<FinanceQuiz[]>(() =>
-		makeQuizSession(ALL, ALL),
+		makeQuizSession(
+			ALL,
+			ALL,
+			initialTermId,
+		),
 	);
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [selectedIndex, setSelectedIndex] =
@@ -567,9 +659,17 @@ function QuizView() {
 	const restartQuiz = (
 		nextCategory = category,
 		nextDifficulty = difficulty,
+		nextTermId:
+			| string
+			| null =
+			focusedTermId,
 	) => {
 		setSession(
-			makeQuizSession(nextCategory, nextDifficulty),
+			makeQuizSession(
+				nextCategory,
+				nextDifficulty,
+				nextTermId,
+			),
 		);
 		setCurrentIndex(0);
 		setSelectedIndex(null);
@@ -579,6 +679,33 @@ function QuizView() {
 		setBestStreak(0);
 		setFinished(false);
 	};
+
+	useEffect(() => {
+		const nextTermId =
+			initialTermId ?? null;
+
+		setFocusedTermId(
+			nextTermId,
+		);
+		setCategory(ALL);
+		setDifficulty(ALL);
+		restartQuiz(
+			ALL,
+			ALL,
+			nextTermId,
+		);
+		// URL의 term 변경 시 새 세션을 구성합니다.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [initialTermId]);
+
+	const focusedTerm =
+		focusedTermId
+			? financeTerms.find(
+					(term) =>
+						term.id ===
+						focusedTermId,
+				) ?? null
+			: null;
 
 	const checkAnswer = () => {
 		if (selectedIndex === null || !currentQuiz) {
@@ -745,73 +872,157 @@ function QuizView() {
 
 	return (
 		<Stack spacing="5">
-			<Card
-				borderRadius="18px"
-				borderWidth="1px"
-				borderColor="army.200"
-				bg="#FFFEFA"
-				boxShadow="panel"
-			>
-				<CardBody p={{ base: "18px", md: "22px" }}>
-					<Grid
-						templateColumns={{
-							base: "1fr",
-							md: "1fr 1fr auto",
+			{focusedTerm ? (
+				<Card
+					borderRadius="18px"
+					borderWidth="1px"
+					borderColor="army.300"
+					bg="army.50"
+					boxShadow="panel"
+				>
+					<CardBody
+						p={{
+							base:
+								"18px",
+							md:
+								"22px",
 						}}
-						gap="3"
-						alignItems="end"
 					>
-						<FormControl>
-							<FormLabel fontSize="sm" fontWeight="800">
-								카테고리
-							</FormLabel>
-							<Select
-								value={category}
-								onChange={(event) => {
-									const next = event.target.value;
-									setCategory(next);
-									restartQuiz(next, difficulty);
-								}}
-								borderRadius="12px"
-							>
-								{categories.map((item) => (
-									<option key={item} value={item}>
-										{item}
-									</option>
-								))}
-							</Select>
-						</FormControl>
-
-						<FormControl>
-							<FormLabel fontSize="sm" fontWeight="800">
-								난이도
-							</FormLabel>
-							<Select
-								value={difficulty}
-								onChange={(event) => {
-									const next = event.target.value;
-									setDifficulty(next);
-									restartQuiz(category, next);
-								}}
-								borderRadius="12px"
-							>
-								<option value={ALL}>전체 난이도</option>
-								<option value="초급">초급</option>
-								<option value="중급">중급</option>
-							</Select>
-						</FormControl>
-
-						<Button
-							leftIcon={<RepeatIcon />}
-							variant="outline"
-							borderRadius="12px"
-							onClick={() => restartQuiz()}
+						<Flex
+							align={{
+								base:
+									"flex-start",
+								md:
+									"center",
+							}}
+							justify="space-between"
+							direction={{
+								base:
+									"column",
+								md:
+									"row",
+							}}
+							gap="4"
 						>
-							문제 섞기
-						</Button>
-					</Grid>
-				</CardBody>
-			</Card>
+							<Box>
+								<Badge
+									colorScheme="army"
+								>
+									관련 용어 퀴즈
+								</Badge>
+								<Heading
+									mt="2"
+									size="sm"
+								>
+									{focusedTerm.term}
+								</Heading>
+								<Text
+									mt="1"
+									fontSize="sm"
+									color="gray.600"
+								>
+									{focusedTerm.shortDefinition}
+								</Text>
+							</Box>
+
+							<HStack spacing="2">
+								<Button
+									size="sm"
+									leftIcon={
+										<RepeatIcon />
+									}
+									variant="outline"
+									onClick={() =>
+										restartQuiz()
+									}
+								>
+									문제 섞기
+								</Button>
+								<Button
+									size="sm"
+									colorScheme="army"
+									onClick={() => {
+										setFocusedTermId(
+											null,
+										);
+										onClearTerm();
+									}}
+								>
+									전체 퀴즈
+								</Button>
+							</HStack>
+						</Flex>
+					</CardBody>
+				</Card>
+			) : (
+				<Card
+					borderRadius="18px"
+					borderWidth="1px"
+					borderColor="army.200"
+					bg="#FFFEFA"
+					boxShadow="panel"
+				>
+					<CardBody p={{ base: "18px", md: "22px" }}>
+						<Grid
+							templateColumns={{
+								base: "1fr",
+								md: "1fr 1fr auto",
+							}}
+							gap="3"
+							alignItems="end"
+						>
+							<FormControl>
+								<FormLabel fontSize="sm" fontWeight="800">
+									카테고리
+								</FormLabel>
+								<Select
+									value={category}
+									onChange={(event) => {
+										const next = event.target.value;
+										setCategory(next);
+										restartQuiz(next, difficulty);
+									}}
+									borderRadius="12px"
+								>
+									{categories.map((item) => (
+										<option key={item} value={item}>
+											{item}
+										</option>
+									))}
+								</Select>
+							</FormControl>
+
+							<FormControl>
+								<FormLabel fontSize="sm" fontWeight="800">
+									난이도
+								</FormLabel>
+								<Select
+									value={difficulty}
+									onChange={(event) => {
+										const next = event.target.value;
+										setDifficulty(next);
+										restartQuiz(category, next);
+									}}
+									borderRadius="12px"
+								>
+									<option value={ALL}>전체 난이도</option>
+									<option value="초급">초급</option>
+									<option value="중급">중급</option>
+								</Select>
+							</FormControl>
+
+							<Button
+								leftIcon={<RepeatIcon />}
+								variant="outline"
+								borderRadius="12px"
+								onClick={() => restartQuiz()}
+							>
+								문제 섞기
+							</Button>
+						</Grid>
+					</CardBody>
+				</Card>
+			)}
 
 			<Card
 				borderRadius="20px"
@@ -1080,6 +1291,51 @@ function QuizView() {
 }
 
 export default function FinanceLearning() {
+	const location =
+		useLocation();
+	const navigate =
+		useNavigate();
+	const [searchParams] =
+		useSearchParams();
+
+	const requestedTermId =
+		searchParams.get(
+			"term",
+		);
+
+	const routeTabIndex =
+		location.pathname ===
+		"/quiz"
+			? 1
+			: 0;
+
+	const [
+		tabIndex,
+		setTabIndex,
+	] = useState(
+		routeTabIndex,
+	);
+
+	useEffect(() => {
+		setTabIndex(
+			routeTabIndex,
+		);
+	}, [routeTabIndex]);
+
+	const changeTab = (
+		nextIndex: number,
+	) => {
+		setTabIndex(
+			nextIndex,
+		);
+
+		navigate(
+			nextIndex === 0
+				? "/dictionary"
+				: "/quiz",
+		);
+	};
+
 	return (
 		<Box
 			minH="calc(100vh - 66px)"
@@ -1162,6 +1418,8 @@ export default function FinanceLearning() {
 				</Box>
 
 				<Tabs
+					index={tabIndex}
+					onChange={changeTab}
 					variant="unstyled"
 					isLazy
 				>
@@ -1208,11 +1466,37 @@ export default function FinanceLearning() {
 
 					<TabPanels>
 						<TabPanel p="0">
-							<DictionaryView />
+							<DictionaryView
+								initialTermId={
+									tabIndex === 0
+										? requestedTermId
+										: null
+								}
+								onStartQuiz={(
+									termId,
+								) =>
+									navigate(
+										`/quiz?term=${encodeURIComponent(
+											termId,
+										)}`,
+									)
+								}
+							/>
 						</TabPanel>
 
 						<TabPanel p="0">
-							<QuizView />
+							<QuizView
+								initialTermId={
+									tabIndex === 1
+										? requestedTermId
+										: null
+								}
+								onClearTerm={() =>
+									navigate(
+										"/quiz",
+									)
+								}
+							/>
 						</TabPanel>
 					</TabPanels>
 				</Tabs>

@@ -46,6 +46,7 @@ import api from "../services/api.service";
 import type { MarketStatus } from "../types/marketSession.types";
 import MarketSimulatorPanel from "../components/MarketSimulatorPanel";
 import AiRamenPanel from "../components/AiRamenPanel";
+import RelatedFinancialTerms from "../components/RelatedFinancialTerms";
 
 
 type ChartPeriod = "1d" | "5d" | "1m" | "6m" | "YTD" | "1y" | "all";
@@ -1678,6 +1679,19 @@ export default function DomesticExchange({
 					실시간 모의투자
 				</Badge>
 			</Flex>
+
+			<RelatedFinancialTerms
+				title="현재 화면의 주요 투자 용어"
+				description="차트와 주문 화면에서 자주 보이는 지표와 거래 방식을 금융사전에서 확인하세요."
+				termIds={[
+					"per",
+					"pbr",
+					"volume",
+					"volatility",
+					"market_order",
+					"limit_order",
+				]}
+			/>
 
 			<Grid templateColumns={{ base: "1fr", xl: "minmax(0, 1fr) 360px" }} gap="5">
 				<GridItem>

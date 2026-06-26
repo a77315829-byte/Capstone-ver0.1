@@ -49,6 +49,8 @@ import {
 
 import api from "../services/api.service";
 
+import RelatedFinancialTerms from "../components/RelatedFinancialTerms";
+
 import {
 	BRANCH_LABEL,
 } from "../data/military.constants";
@@ -1972,6 +1974,18 @@ export default function SalaryCalculator() {
 						입력 초기화
 					</Button>
 				</Flex>
+
+				<RelatedFinancialTerms
+					title="이번 플래너에서 알아두면 좋은 용어"
+					description="저축 계획과 모의투자 금액을 이해하는 데 필요한 개념을 바로 확인할 수 있습니다."
+					termIds={[
+						"military_savings",
+						"savings_rate",
+						"emergency_fund",
+						"dca",
+						"diversification",
+					]}
+				/>
 
 				{!isInitialLoading &&
 					militaryProfileStatus !==
