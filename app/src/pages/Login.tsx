@@ -84,7 +84,7 @@ export default function Login() {
 			<Stack spacing={8} mx={"auto"} maxW={"lg"} px={{ base: 0, md: 6 }}>
 				<Stack align={"center"}>
 					<Heading fontSize={"4xl"} textAlign="center">
-						Sign in to your account
+						로그인
 					</Heading>
 					<HStack spacing="1">
 						<Text>Or</Text>
@@ -97,7 +97,7 @@ export default function Login() {
 					<form onSubmit={handleSubmit}>
 						<Stack spacing={4}>
 							<FormControl id="username" isRequired>
-								<FormLabel>Username</FormLabel>
+								<FormLabel>아이디</FormLabel>
 								<Input
 									type="text"
 									onChange={(e) =>
@@ -108,7 +108,7 @@ export default function Login() {
 								/>
 							</FormControl>
 							<FormControl id="password" isRequired>
-								<FormLabel>Password</FormLabel>
+								<FormLabel>비밀번호</FormLabel>
 								<InputGroup>
 									<Input
 										type={loginData.showPassword ? "text" : "password"}
@@ -155,7 +155,7 @@ export default function Login() {
 								/>
 
 								<Button type="submit">
-									Sign in
+									로그인
 								</Button>
 							</Stack>
 						</Stack>

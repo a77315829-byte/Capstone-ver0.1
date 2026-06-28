@@ -81,21 +81,21 @@ export default function Signup() {
 			<Stack spacing={8} mx={"auto"} maxW={"lg"} px={{ base: 0, md: 6 }}>
 				<Stack align={"center"}>
 					<Heading fontSize={"4xl"} textAlign="center">
-						Sign up
+						회원가입
 					</Heading>
 				</Stack>
 				<Box rounded={"lg"} boxShadow={"lg"} p={8} pt={{ base: 4, md: 8 }}>
 					<form>
 						<Stack spacing={4}>
 							<FormControl id="username" isRequired>
-								<FormLabel>Username</FormLabel>
+								<FormLabel>아이디</FormLabel>
 								<Input
 									type="text"
 									onChange={(e) => setUsername(e.target.value)}
 								/>
 							</FormControl>
 							<FormControl id="password" isRequired>
-								<FormLabel>Password</FormLabel>
+								<FormLabel>비밀번호</FormLabel>
 								<InputGroup>
 									<Input
 										type={showPassword ? "text" : "password"}
@@ -124,7 +124,7 @@ export default function Signup() {
 									onClick={handleSubmit}
 									type="submit"
 								>
-									Sign up
+									회원가입
 								</Button>
 							</Stack>
 							<HStack pt={2} fontWeight="500">
