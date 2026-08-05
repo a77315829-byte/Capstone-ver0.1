@@ -3,15 +3,16 @@
 import pytest
 
 from app.schemas.analysis import DbSaveStatus, DataSource
-from app.schemas.request import SelectedStock, SimulationRequest
+from app.schemas.request import ExternalStockData, SelectedStock, SimulationRequest
 from app.service import SimulationRejectedError, run_market_reaction_simulation
 
 
-def _request(text="AI 반도체 수요 증가로 삼성전자의 HBM 관련 실적 개선 가능성이 높아질 것으로 예상된다."):
+def _request(text="AI 반도체 수요 증가로 삼성전자의 HBM 관련 실적 개선 가능성이 높아질 것으로 예상된다.", stock_data=None):
     return SimulationRequest(
         user_id="test_user_001",
         selected_stock=SelectedStock(code="005930", name="삼성전자"),
         input_text=text,
+        stock_data=stock_data,
     )
 
 
@@ -56,3 +57,17 @@ async def test_unknown_stock_uses_default_stub(offline):
     resp = await run_market_reaction_simulation(request)
     assert resp.current_stock_context.data_source == DataSource.STUB
     assert len(resp.agent_reactions) == 5
+
+
+@pytest.mark.asyncio
+async def test_realtime_stock_data_overrides_stub_price(offline):
+    stock_data = ExternalStockData(current_price=81500, daily_change_rate=3.7)
+    resp = await run_market_reaction_simulation(_request(stock_data=stock_data))
+
+    assert resp.current_stock_context.data_source == DataSource.EXTERNAL_API
+    assert resp.current_stock_context.is_realtime is True
+    assert resp.current_stock_context.current_price == 81500
+    assert resp.meta.stock_data_source == DataSource.EXTERNAL_API
+    # stub(-0.10) 감점이 빠지므로 stub 케이스보다 신뢰도가 낮지 않아야 한다.
+    stub_resp = await run_market_reaction_simulation(_request())
+    assert resp.analysis_confidence.score >= stub_resp.analysis_confidence.score

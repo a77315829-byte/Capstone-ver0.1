@@ -1,16 +1,19 @@
-"""시세 stub.
+"""시세 stub / 실시간 시세 병합.
 
-실제 시세 API 연동 전 단계. 고정 stub 데이터만 반환한다.
-stub 은 실시간 시세가 아니므로 data_source="stub", is_realtime=False, observed_at=None 으로 표시한다.
-외부 API 호출을 하지 않는다.
+기본은 고정 stub 데이터이며, 외부 API 호출을 하지 않는다.
+Node backend(KIS 연동)가 실시간 현재가/등락률을 SimulationRequest.stock_data 로 전달하면
+그 값으로 current_price/daily_change_rate 를 덮어쓰고 data_source="external_api",
+is_realtime=True 로 표시한다. volume_trend/market_cap_trillion 은 Node 에서 아직
+신뢰할 만한 값을 계산하지 않으므로 stub 값을 그대로 사용한다(알려진 한계).
 """
 
 from __future__ import annotations
 
-from typing import Dict
+from datetime import datetime, timezone
+from typing import Dict, Optional
 
 from ..schemas.analysis import CurrentStockContext, DataSource
-from ..schemas.request import SelectedStock
+from ..schemas.request import ExternalStockData, SelectedStock
 
 # 종목코드별 stub (docs/test_fixtures.json 의 stock_stub_data 기반)
 _STUB_STOCKS: Dict[str, dict] = {
@@ -76,4 +79,24 @@ def get_stock_context_stub(selected_stock: SelectedStock) -> CurrentStockContext
         data_source=DataSource.STUB,
         is_realtime=False,
         observed_at=None,
+    )
+
+
+def get_stock_context(
+    selected_stock: SelectedStock,
+    external: Optional[ExternalStockData],
+) -> CurrentStockContext:
+    """external 에 실시간 현재가가 있으면 그 값으로 덮어쓰고, 없으면 stub 을 그대로 반환한다."""
+    stub = get_stock_context_stub(selected_stock)
+    if external is None or external.current_price is None:
+        return stub
+
+    return stub.model_copy(
+        update={
+            "current_price": external.current_price,
+            "daily_change_rate": external.daily_change_rate,
+            "data_source": DataSource.EXTERNAL_API,
+            "is_realtime": True,
+            "observed_at": external.observed_at or datetime.now(timezone.utc),
+        }
     )

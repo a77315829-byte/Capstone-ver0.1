@@ -26,6 +26,7 @@ from .core.sentiment import determine_market_sentiment
 from .core.summary import generate_summary
 from .core.validator import is_valid, validate_simulation_input
 from .schemas.analysis import (
+    DataSource,
     DbSaveStatus,
     ExternalContext,
     ImpactDirection,
@@ -38,7 +39,7 @@ from .schemas.analysis import (
 )
 from .schemas.request import SimulationRequest
 from .schemas.response import ImpactAnalysis, SimulationResponse
-from .services.stock_data import get_stock_context_stub
+from .services.stock_data import get_stock_context
 
 # LLM 호출 단계 총 개수: external_context(1) + agents(5) + summary(1) = 7
 _TOTAL_LLM_MODULES = 7
@@ -129,8 +130,8 @@ async def run_market_reaction_simulation(
     external_context, fb_external = await analyze_external_context(request)
     fallback_modules.extend(fb_external)
 
-    # 3) 실시간 모의투자 맥락 분석(시세 stub)
-    current_stock = get_stock_context_stub(request.selected_stock)
+    # 3) 실시간 모의투자 맥락 분석(request.stock_data 있으면 실시간 시세, 없으면 stub)
+    current_stock = get_stock_context(request.selected_stock, request.stock_data)
     realtime_context = build_realtime_context(current_stock, external_context)
 
     # 4) 분석 결과 통합(불확실성 병합)
@@ -153,14 +154,18 @@ async def run_market_reaction_simulation(
     fallback_modules.extend(fb_summary)
 
     # 8) 분석 신뢰도(전체 fallback 개수 + stub 감점 반영)
+    # 시세 stub: data_completeness=0.3. 실시간 시세(가격/등락률만 실측, volume_trend/시총은
+    # 여전히 stub 유래)는 "일부 누락"으로 간주해 0.6 을 적용한다(spec 섹션 13).
+    uses_stub_stock_data = current_stock.data_source == DataSource.STUB
+    data_completeness = 0.3 if uses_stub_stock_data else 0.6
     analysis_confidence = calculate_analysis_confidence(
         input_specificity=score_input_specificity(request.input_text),
         stock_relevance=_stock_relevance(request),
-        data_completeness=0.3,  # stub 사용
+        data_completeness=data_completeness,
         analysis_consistency=_analysis_consistency(external_context, realtime_context),
         uncertainty_score=score_uncertainty(len(uncertainty_factors)),
         fallback_modules_count=len(fallback_modules),
-        uses_stub_stock_data=True,
+        uses_stub_stock_data=uses_stub_stock_data,
     )
     standard_input.analysis_confidence = analysis_confidence.score
 

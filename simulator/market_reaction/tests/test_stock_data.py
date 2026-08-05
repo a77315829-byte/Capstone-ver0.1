@@ -1,8 +1,10 @@
-"""시세 stub 테스트."""
+"""시세 stub / 실시간 시세 병합 테스트."""
+
+from datetime import datetime, timezone
 
 from app.schemas.analysis import CurrentStockContext, DataSource
-from app.schemas.request import SelectedStock
-from app.services.stock_data import get_stock_context_stub
+from app.schemas.request import ExternalStockData, SelectedStock
+from app.services.stock_data import get_stock_context, get_stock_context_stub
 
 
 def test_samsung_stub():
@@ -45,3 +47,33 @@ def test_stub_is_never_realtime():
         assert ctx.data_source == DataSource.STUB
         assert ctx.is_realtime is False
         assert ctx.observed_at is None
+
+
+def test_get_stock_context_without_external_data_uses_stub():
+    ctx = get_stock_context(SelectedStock(code="005930", name="삼성전자"), None)
+    assert ctx.data_source == DataSource.STUB
+    assert ctx.is_realtime is False
+    assert ctx.current_price == 78600
+
+
+def test_get_stock_context_with_external_data_uses_realtime_price():
+    observed_at = datetime(2026, 8, 5, 9, 0, tzinfo=timezone.utc)
+    external = ExternalStockData(
+        current_price=81000, daily_change_rate=3.1, observed_at=observed_at
+    )
+    ctx = get_stock_context(SelectedStock(code="005930", name="삼성전자"), external)
+    assert ctx.data_source == DataSource.EXTERNAL_API
+    assert ctx.is_realtime is True
+    assert ctx.current_price == 81000
+    assert ctx.daily_change_rate == 3.1
+    assert ctx.observed_at == observed_at
+    # 산업/이름은 stub 매핑을 그대로 사용
+    assert ctx.industry == "반도체"
+    assert ctx.name == "삼성전자"
+
+
+def test_get_stock_context_falls_back_to_stub_when_price_missing():
+    external = ExternalStockData(current_price=None, daily_change_rate=None)
+    ctx = get_stock_context(SelectedStock(code="005930", name="삼성전자"), external)
+    assert ctx.data_source == DataSource.STUB
+    assert ctx.is_realtime is False
