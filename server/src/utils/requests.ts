@@ -39,7 +39,9 @@ interface KisResponse<T> {
 	msg1?: string;
 	output?: T;
 	output1?: any;
-	output2?: any[];
+	output2?: any;
+	output3?: any;
+	keyb?: string;
 }
 
 interface StockSearchResult {
@@ -124,6 +126,17 @@ const getKisConfig = () => {
 	}
 
 	return { appKey, appSecret, baseUrl, env };
+};
+
+const assertKisRealQuoteEnvironment = (featureName: string): void => {
+	const { env } = getKisConfig();
+
+	if (env === "demo") {
+		throw createHttpError(
+			501,
+			`${featureName}은(는) KIS 모의투자 시세 환경에서 지원되지 않습니다. 읽기 전용 실전 시세 앱키와 STOTRA_KIS_ENV=real 설정이 필요합니다.`,
+		);
+	}
 };
 
 const parseNumber = (value: any): number => {
@@ -655,6 +668,17 @@ export const fetchStockData = async (symbol: string): Promise<any> => {
 				stockInfo?.prdt_name || stockInfo?.prdt_abrv_name || stockName;
 		}
 
+		const needsExtendedStockInfo =
+			!quote.stck_fcam ||
+			!quote.lstn_stcn;
+
+		if (!stockInfo && needsExtendedStockInfo) {
+			stockInfo =
+				await fetchExactStockInfo(
+					normalizedSymbol,
+				).catch(() => null);
+		}
+
 		const stockData = {
 			symbol: normalizedSymbol,
 			name: stockName,
@@ -672,6 +696,30 @@ export const fetchStockData = async (symbol: string): Promise<any> => {
 			high: parseNumber(quote.stck_hgpr),
 			low: parseNumber(quote.stck_lwpr),
 			volume: parseNumber(quote.acml_vol),
+
+			listedShares:
+				parseNumber(
+					quote.lstn_stcn ??
+						stockInfo?.lstn_stcn ??
+						stockInfo?.listed_shares,
+				) || null,
+			foreignOwnershipRate:
+				parseNumber(
+					quote.hts_frgn_ehrt ??
+						quote.frgn_ehrt ??
+						stockInfo?.hts_frgn_ehrt,
+				) || null,
+			foreignHoldingQuantity:
+				parseNumber(
+					quote.frgn_hldn_qty ??
+						stockInfo?.frgn_hldn_qty,
+				) || null,
+			faceValue:
+				parseNumber(
+					quote.stck_fcam ??
+						stockInfo?.stck_fcam,
+				) || null,
+
 			fetchedAt: new Date().toISOString(),
 
 			marketCap: pickNumber(quote, ["hts_avls", "marketCap", "mkt_cap"]),
@@ -1045,8 +1093,8 @@ const fetchDailyStockData = async (
 				volume: parseNumber(item.acml_vol),
 			};
 		})
-		.filter((point) => point.close > 0)
-		.sort((a, b) => a.time - b.time);
+		.filter((point: OhlcvPoint) => point.close > 0)
+		.sort((a: OhlcvPoint, b: OhlcvPoint) => a.time - b.time);
 
 	if (period === "5d") {
 		points = points.slice(-5);
@@ -2162,3 +2210,380 @@ export const fetchUsHistoricalStockData =
 
 		return points;
 	};
+
+
+// ============================================================================
+// 국내 체결·투자자 동향 / 미국 호가·체결추이
+// 화면 조회 전용 데이터이며 DB에는 저장하지 않습니다.
+// ============================================================================
+
+export type PriceDirection = "UP" | "DOWN" | "FLAT";
+
+export type DomesticExecutionItem = {
+	time: string;
+	price: number;
+	quantity: number;
+	changePrice: number;
+	changeRate: number;
+	cumulativeVolume: number;
+	strength: number;
+	direction: PriceDirection;
+};
+
+export type DomesticExecutionData = {
+	symbol: string;
+	items: DomesticExecutionItem[];
+	fetchedAt: string;
+};
+
+const getSeoulTimeText = (): string => {
+	const values = Object.fromEntries(
+		new Intl.DateTimeFormat("en-CA", {
+			timeZone: "Asia/Seoul",
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+			hourCycle: "h23",
+		})
+			.formatToParts(new Date())
+			.map((part) => [part.type, part.value]),
+	);
+
+	const raw = `${values.hour ?? "15"}${values.minute ?? "30"}${values.second ?? "00"}`;
+	const numeric = Number(raw);
+
+	if (!Number.isFinite(numeric) || numeric < 90000) return "090000";
+	if (numeric > 153000) return "153000";
+	return raw;
+};
+
+const normalizeExecutionTime = (value: unknown): string => {
+	const raw = String(value ?? "").replace(/[^0-9]/g, "").padStart(6, "0").slice(-6);
+	return `${raw.slice(0, 2)}:${raw.slice(2, 4)}:${raw.slice(4, 6)}`;
+};
+
+const directionFromSign = (signCode: unknown, change: number): PriceDirection => {
+	const sign = String(signCode ?? "");
+	if (sign === "4" || sign === "5" || change < 0) return "DOWN";
+	if (sign === "1" || sign === "2" || change > 0) return "UP";
+	return "FLAT";
+};
+
+export const fetchDomesticExecutionData = async (
+	symbol: string,
+	limit = 30,
+): Promise<DomesticExecutionData> => {
+	const normalizedSymbol = normalizeStockSymbol(symbol);
+	const safeLimit = Math.min(Math.max(Math.floor(Number(limit) || 30), 1), 100);
+	const cacheKey = `${normalizedSymbol}-executions-${safeLimit}`;
+	const cached = stockCache.get(cacheKey) as DomesticExecutionData | undefined;
+	if (cached) return cached;
+
+	if (!isKisQuoteSupportedSymbol(normalizedSymbol)) {
+		throw createHttpError(400, `체결 조회는 6자리 국내 주식 코드만 지원합니다: ${normalizedSymbol}`);
+	}
+
+	const response = await kisGet<any>(
+		"/uapi/domestic-stock/v1/quotations/inquire-time-itemconclusion",
+		"FHPST01060000",
+		{
+			FID_COND_MRKT_DIV_CODE: KIS_MARKET_DIV_CODE,
+			FID_INPUT_ISCD: normalizedSymbol,
+			FID_INPUT_HOUR_1: getSeoulTimeText(),
+		},
+	);
+
+	const rows = Array.isArray(response.output2)
+		? response.output2
+		: Array.isArray(response.output)
+			? response.output
+			: [];
+
+	const items = rows
+		.map((item: any): DomesticExecutionItem => {
+			const changePrice = getSignedChange(
+				item.prdy_vrss ?? item.change,
+				item.prdy_vrss_sign ?? item.sign,
+			);
+
+			return {
+				time: normalizeExecutionTime(
+					item.stck_cntg_hour ?? item.cntg_hour ?? item.bsop_hour,
+				),
+				price: parseNumber(item.stck_prpr ?? item.cntg_prpr ?? item.price),
+				quantity: parseNumber(item.cntg_vol ?? item.ccld_qty ?? item.cnqn ?? item.volume),
+				changePrice,
+				changeRate: parseNumber(item.prdy_ctrt ?? item.rate),
+				cumulativeVolume: parseNumber(item.acml_vol ?? item.tvol),
+				strength: parseNumber(item.tday_rltv ?? item.cttr ?? item.vpow),
+				direction: directionFromSign(
+					item.prdy_vrss_sign ?? item.sign,
+					changePrice,
+				),
+			};
+		})
+		.filter((item: DomesticExecutionItem) => item.price > 0)
+		.slice(0, safeLimit);
+
+	const data: DomesticExecutionData = {
+		symbol: normalizedSymbol,
+		items,
+		fetchedAt: new Date().toISOString(),
+	};
+
+	stockCache.set(cacheKey, data, 3);
+	return data;
+};
+
+export type InvestorTrendPeriod = "1d" | "5d" | "30d" | "60d";
+
+export type InvestorTrendData = {
+	symbol: string;
+	period: InvestorTrendPeriod;
+	requestedDays: number;
+	availableDays: number;
+	individual: number;
+	foreign: number;
+	institution: number;
+	corporation: number;
+	fetchedAt: string;
+};
+
+const investorPeriodDays: Record<InvestorTrendPeriod, number> = {
+	"1d": 1,
+	"5d": 5,
+	"30d": 30,
+	"60d": 60,
+};
+
+export const fetchDomesticInvestorTrend = async (
+	symbol: string,
+	period: InvestorTrendPeriod = "1d",
+): Promise<InvestorTrendData> => {
+	const normalizedSymbol = normalizeStockSymbol(symbol);
+	const safePeriod: InvestorTrendPeriod = ["1d", "5d", "30d", "60d"].includes(period)
+		? period
+		: "1d";
+	const requestedDays = investorPeriodDays[safePeriod];
+	const cacheKey = `${normalizedSymbol}-investor-${safePeriod}`;
+	const cached = stockCache.get(cacheKey) as InvestorTrendData | undefined;
+	if (cached) return cached;
+
+	if (!isKisQuoteSupportedSymbol(normalizedSymbol)) {
+		throw createHttpError(400, `투자자 동향 조회는 6자리 국내 주식 코드만 지원합니다: ${normalizedSymbol}`);
+	}
+
+	const response = await kisGet<any>(
+		"/uapi/domestic-stock/v1/quotations/inquire-investor",
+		"FHKST01010900",
+		{
+			FID_COND_MRKT_DIV_CODE: KIS_MARKET_DIV_CODE,
+			FID_INPUT_ISCD: normalizedSymbol,
+		},
+	);
+
+	const rows = (Array.isArray(response.output) ? response.output : [])
+		.filter(Boolean)
+		.slice(0, requestedDays);
+
+	const totals = rows.reduce(
+		(acc, item: any) => {
+			const individual = parseNumber(
+				item.prsn_ntby_qty ?? item.individual_ntby_qty ?? item.prsn_ntby_tr_pbmn,
+			);
+			const foreign = parseNumber(
+				item.frgn_ntby_qty ?? item.foreign_ntby_qty ?? item.frgn_ntby_tr_pbmn,
+			);
+			const institution = parseNumber(
+				item.orgn_ntby_qty ?? item.institution_ntby_qty ?? item.orgn_ntby_tr_pbmn,
+			);
+			const explicitCorporation = pickNum(item, [
+				"etc_corp_ntby_qty",
+				"etc_ntby_qty",
+				"etc_corp_ntby_tr_pbmn",
+			]);
+
+			acc.individual += individual;
+			acc.foreign += foreign;
+			acc.institution += institution;
+			acc.corporation += explicitCorporation || -(individual + foreign + institution);
+			return acc;
+		},
+		{ individual: 0, foreign: 0, institution: 0, corporation: 0 },
+	);
+
+	const data: InvestorTrendData = {
+		symbol: normalizedSymbol,
+		period: safePeriod,
+		requestedDays,
+		availableDays: rows.length,
+		...totals,
+		fetchedAt: new Date().toISOString(),
+	};
+
+	// 이 API의 당일 값은 장 종료 후 반영되므로 분 단위 캐시를 적용합니다.
+	stockCache.set(cacheKey, data, 60);
+	return data;
+};
+
+export type UsOrderBookLevel = {
+	level: number;
+	askPrice: number;
+	askVolume: number;
+	bidPrice: number;
+	bidVolume: number;
+};
+
+export type UsOrderBookData = {
+	symbol: string;
+	exchange: UsExchangeCode;
+	currency: string;
+	totalAskVolume: number;
+	totalBidVolume: number;
+	levels: UsOrderBookLevel[];
+	quoteDate: string | null;
+	quoteTime: string | null;
+	fetchedAt: string;
+};
+
+const firstRecord = (value: any): any => {
+	if (Array.isArray(value)) return value[0] ?? null;
+	return value ?? null;
+};
+
+export const fetchUsOrderBookData = async (
+	symbol: string,
+	exchangeInput: string,
+): Promise<UsOrderBookData> => {
+	assertKisRealQuoteEnvironment("미국 주식 현재가 1호가");
+	const normalizedSymbol = normalizeUsStockSymbol(symbol);
+	const exchange = assertUsExchange(exchangeInput);
+	const cacheKey = `us-orderbook-${exchange}-${normalizedSymbol}`;
+	const cached = stockCache.get(cacheKey) as UsOrderBookData | undefined;
+	if (cached) return cached;
+
+	if (!normalizedSymbol) {
+		throw createHttpError(400, "미국 종목 티커가 필요합니다.");
+	}
+
+	const response = await kisGet<any>(
+		"/uapi/overseas-price/v1/quotations/inquire-asking-price",
+		"HHDFS76200100",
+		{ AUTH: "", EXCD: exchange, SYMB: normalizedSymbol },
+	);
+
+	const output1 = firstRecord(response.output1) ?? {};
+	const output2 = firstRecord(response.output2) ?? {};
+	const output3 = firstRecord(response.output3) ?? {};
+	const source = { ...output1, ...output2, ...output3 };
+
+	// KIS REST 응답은 현재가 1호가 중심이며, 필드가 더 제공되는 환경에서는 최대 10단계까지 흡수합니다.
+	const levels = Array.from({ length: 10 }, (_, index): UsOrderBookLevel => {
+		const level = index + 1;
+		return {
+			level,
+			askPrice: pickNum(source, [`pask${level}`, `askp${level}`]),
+			askVolume: pickNum(source, [`vask${level}`, `askp_rsqn${level}`]),
+			bidPrice: pickNum(source, [`pbid${level}`, `bidp${level}`]),
+			bidVolume: pickNum(source, [`vbid${level}`, `bidp_rsqn${level}`]),
+		};
+	}).filter((level) => level.askPrice > 0 || level.bidPrice > 0);
+
+	const data: UsOrderBookData = {
+		symbol: normalizedSymbol,
+		exchange,
+		currency: String(source.curr ?? "USD"),
+		totalAskVolume: pickNum(source, ["avol", "total_askp_rsqn"]) || levels.reduce((sum, item) => sum + item.askVolume, 0),
+		totalBidVolume: pickNum(source, ["bvol", "total_bidp_rsqn"]) || levels.reduce((sum, item) => sum + item.bidVolume, 0),
+		levels,
+		quoteDate: source.dymd ? String(source.dymd) : null,
+		quoteTime: source.dhms ? String(source.dhms) : null,
+		fetchedAt: new Date().toISOString(),
+	};
+
+	stockCache.set(cacheKey, data, 3);
+	return data;
+};
+
+export type UsExecutionItem = {
+	time: string;
+	price: number;
+	quantity: number;
+	cumulativeVolume: number;
+	changePrice: number;
+	changeRate: number;
+	strength: number;
+	bidPrice: number;
+	askPrice: number;
+	direction: PriceDirection;
+};
+
+export type UsExecutionData = {
+	symbol: string;
+	exchange: UsExchangeCode;
+	day: "0" | "1";
+	items: UsExecutionItem[];
+	fetchedAt: string;
+};
+
+export const fetchUsExecutionData = async (
+	symbol: string,
+	exchangeInput: string,
+	dayInput: string = "1",
+	limit = 30,
+): Promise<UsExecutionData> => {
+	assertKisRealQuoteEnvironment("미국 주식 체결추이");
+	const normalizedSymbol = normalizeUsStockSymbol(symbol);
+	const exchange = assertUsExchange(exchangeInput);
+	const day: "0" | "1" = dayInput === "0" ? "0" : "1";
+	const safeLimit = Math.min(Math.max(Math.floor(Number(limit) || 30), 1), 100);
+	const cacheKey = `us-executions-${exchange}-${normalizedSymbol}-${day}-${safeLimit}`;
+	const cached = stockCache.get(cacheKey) as UsExecutionData | undefined;
+	if (cached) return cached;
+
+	if (!normalizedSymbol) {
+		throw createHttpError(400, "미국 종목 티커가 필요합니다.");
+	}
+
+	const response = await kisGet<any>(
+		"/uapi/overseas-price/v1/quotations/inquire-ccnl",
+		"HHDFS76200300",
+		{ EXCD: exchange, TDAY: day, SYMB: normalizedSymbol, AUTH: "", KEYB: "" },
+	);
+
+	const rows = Array.isArray(response.output1)
+		? response.output1
+		: response.output1
+			? [response.output1]
+			: [];
+
+	const items = rows
+		.map((item: any): UsExecutionItem => {
+			const changePrice = parseNumber(item.diff);
+			return {
+				time: normalizeExecutionTime(item.khms ?? item.xhms),
+				price: parseNumber(item.last),
+				quantity: parseNumber(item.evol),
+				cumulativeVolume: parseNumber(item.tvol),
+				changePrice,
+				changeRate: parseNumber(item.rate),
+				strength: parseNumber(item.vpow),
+				bidPrice: parseNumber(item.pbid),
+				askPrice: parseNumber(item.pask),
+				direction: directionFromSign(item.sign, changePrice),
+			};
+		})
+		.filter((item: UsExecutionItem) => item.price > 0)
+		.slice(0, safeLimit);
+
+	const data: UsExecutionData = {
+		symbol: normalizedSymbol,
+		exchange,
+		day,
+		items,
+		fetchedAt: new Date().toISOString(),
+	};
+
+	stockCache.set(cacheKey, data, 5);
+	return data;
+};

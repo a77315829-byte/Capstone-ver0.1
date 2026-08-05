@@ -7,6 +7,7 @@ import {
 	UnlockIcon,
 } from "@chakra-ui/icons";
 import {
+	Avatar,
 	Button,
 	Menu,
 	MenuButton,
@@ -21,6 +22,24 @@ import {
 
 import tokens from "../services/tokens.service";
 
+const DEFAULT_PROFILE_IMAGE =
+	"/default-ant-profile.png";
+
+const getSavedProfileImage = (): string => {
+	try {
+		return (
+			localStorage
+				.getItem(
+					"profileImageUrl",
+				)
+				?.trim() ||
+			DEFAULT_PROFILE_IMAGE
+		);
+	} catch {
+		return DEFAULT_PROFILE_IMAGE;
+	}
+};
+
 export default function AccountMenu() {
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -30,19 +49,23 @@ export default function AccountMenu() {
 			tokens.getUsername(),
 		);
 
-	/*
-	 * 로그인 성공 후 다른 페이지로 이동하면
-	 * localStorage의 username을 다시 읽습니다.
-	 */
+	const [
+		profileImage,
+		setProfileImage,
+	] = useState<string>(
+		getSavedProfileImage(),
+	);
+
 	useEffect(() => {
-		setUsername(tokens.getUsername());
+		setUsername(
+			tokens.getUsername(),
+		);
+		setProfileImage(
+			getSavedProfileImage(),
+		);
 	}, [location.pathname]);
 
 	const handleLogout = () => {
-		/*
-		 * 먼저 저장된 JWT와 username을 삭제한 뒤
-		 * 로그인 화면으로 이동합니다.
-		 */
 		tokens.clearToken();
 		setUsername(null);
 
@@ -69,16 +92,44 @@ export default function AccountMenu() {
 			<MenuButton
 				as={Button}
 				size="sm"
-				variant="outline"
-				rightIcon={<ChevronDownIcon />}
+				variant="ghost"
+				rightIcon={
+					<ChevronDownIcon />
+				}
+				leftIcon={
+					<Avatar
+						size="sm"
+						name={username}
+						src={
+							profileImage
+						}
+						bg="#FFF1D6"
+						borderWidth="1px"
+						borderColor="app.borderSoft"
+					/>
+				}
+				px="8px"
+				h="46px"
+				fontWeight="800"
+				color="app.text"
+				_hover={{
+					bg: "#FFF4EA",
+				}}
 			>
 				{username}
 			</MenuButton>
 
-			<MenuList minW="150px">
+			<MenuList
+				minW="150px"
+				borderColor="app.borderSoft"
+			>
 				<MenuItem
-					icon={<UnlockIcon />}
-					onClick={handleLogout}
+					icon={
+						<UnlockIcon />
+					}
+					onClick={
+						handleLogout
+					}
 				>
 					로그아웃
 				</MenuItem>

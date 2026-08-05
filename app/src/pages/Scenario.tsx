@@ -9,13 +9,19 @@ import {
 	Grid,
 	GridItem,
 	Heading,
+	HStack,
+	Image,
 	Progress,
+	Select,
+	SimpleGrid,
+	Skeleton,
 	Spacer,
 	Stack,
 	Text,
 	useToast,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
+
 import api from "../services/api.service";
 
 type Chapter = {
@@ -31,285 +37,315 @@ type Chapter = {
 	isLocked: boolean;
 };
 
+type ScenarioItem = {
+	_id: string;
+	chapterId: number;
+	chapterTitle: string;
+	scenarioNo: string;
+	scenarioSlug: string;
+	title: string;
+	eventPeriod: string;
+	summary: string;
+	difficulty: "쉬움" | "보통" | "어려움";
+	estimatedMinutes: number;
+	keywords: string[];
+	learningPoints: string[];
+	status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+	completedStepCount: number;
+};
+
 const unwrapApiData = <T,>(payload: any): T => {
 	return payload?.data ?? payload;
 };
 
-const nodePositions = [
-	{ left: "13%", top: "58%" },
-	{ left: "28%", top: "40%" },
-	{ left: "43%", top: "64%" },
-	{ left: "58%", top: "43%" },
-	{ left: "73%", top: "63%" },
-	{ left: "86%", top: "45%" },
+const statusLabel: Record<ScenarioItem["status"], string> = {
+	NOT_STARTED: "미시작",
+	IN_PROGRESS: "진행 중",
+	COMPLETED: "완료",
+};
+
+const statusColor: Record<ScenarioItem["status"], string> = {
+	NOT_STARTED: "gray",
+	IN_PROGRESS: "orange",
+	COMPLETED: "green",
+};
+
+const bubblePositions = [
+	{ left: "43%", top: "47%", width: 252, height: 252 },
+	{ left: "14%", top: "25%", width: 184, height: 184 },
+	{ left: "12%", top: "67%", width: 166, height: 166 },
+	{ left: "76%", top: "24%", width: 184, height: 184 },
+	{ left: "76%", top: "66%", width: 170, height: 170 },
+	{ left: "43%", top: "84%", width: 210, height: 128 },
 ];
 
-function ChapterBurrowNode({
-	chapter,
+function getScenarioYear(eventPeriod: string): string {
+	const year = eventPeriod?.match(/(?:19|20)\d{2}/)?.[0];
+	return year ?? "과거";
+}
+
+function difficultyLevel(difficulty: ScenarioItem["difficulty"]): number {
+	if (difficulty === "어려움") return 3;
+	if (difficulty === "보통") return 2;
+	return 1;
+}
+
+function ScenarioBubble({
+	scenario,
 	index,
 	isSelected,
-	onHover,
-	onClick,
+	onSelect,
 }: {
-	chapter: Chapter;
+	scenario: ScenarioItem;
 	index: number;
 	isSelected: boolean;
-	onHover: () => void;
-	onClick: () => void;
+	onSelect: () => void;
 }) {
-	const pos = nodePositions[index] ?? nodePositions[0]!;
+	const position = bubblePositions[index % bubblePositions.length]!;
+	const level = difficultyLevel(scenario.difficulty);
+	const year = getScenarioYear(scenario.eventPeriod);
 
 	return (
-		<Box
+		<Button
 			position="absolute"
-			left={pos.left}
-			top={pos.top}
+			left={position.left}
+			top={position.top}
 			transform="translate(-50%, -50%)"
-			textAlign="center"
-			onMouseEnter={onHover}
+			w={`${position.width}px`}
+			h={`${position.height}px`}
+			minW="0"
+			p="18px"
+			borderRadius="50%"
+			whiteSpace="normal"
+			bg="transparent"
+			borderWidth={isSelected ? "2px" : "1.5px"}
+			borderColor={isSelected ? "brand.500" : "#343434"}
+			color="app.text"
+			boxShadow={isSelected ? "0 8px 24px rgba(246, 107, 36, 0.10)" : "none"}
+			_hover={{
+				bg: "#FFFDF9",
+				borderColor: "brand.500",
+				transform: "translate(-50%, -50%) translateY(-3px)",
+			}}
+			_active={{
+				transform: "translate(-50%, -50%)",
+			}}
+			onClick={onSelect}
 		>
-			<Button
-				w={{ base: "116px", xl: "150px" }}
-				h={{ base: "82px", xl: "104px" }}
-				borderRadius="50% 50% 44% 44%"
-				bg={isSelected ? "#FFEEF9" : "#6B4A2F"}
-				color={isSelected ? "black" : "white"}
-				border="7px solid rgba(255,255,255,0.95)"
-				boxShadow={
-					isSelected
-						? "0 12px 0 rgba(255, 190, 225, 0.6), 0 16px 24px rgba(0,0,0,0.12)"
-						: "0 10px 0 rgba(70,45,28,0.35), 0 14px 20px rgba(0,0,0,0.12)"
-				}
-				_hover={{
-					bg: "#FFEEF9",
-					color: "black",
-					transform: "translateY(-4px)",
-				}}
-				_active={{
-					transform: "translateY(0)",
-				}}
-				onClick={onClick}
-			>
-				<Stack spacing="1" align="center">
-					<Text fontSize={{ base: "xs", xl: "sm" }} fontWeight="900">
-						Chapter {chapter.chapterId}
+			<Stack spacing="8px" align="center">
+				<Badge
+					variant="outline"
+					borderColor="brand.500"
+					color="brand.500"
+					fontSize="13px"
+					px="10px"
+					py="2px"
+				>
+					{year}
+				</Badge>
+				<Text
+					fontSize={position.width >= 230 ? "20px" : "16px"}
+					fontWeight="900"
+					lineHeight="1.25"
+					noOfLines={2}
+				>
+					{scenario.title}
+				</Text>
+				<HStack spacing="8px">
+					<Text fontSize="12px" fontWeight="600">
+						난이도
 					</Text>
-					<Text
-						fontSize={{ base: "sm", xl: "md" }}
-						fontWeight="900"
-						lineHeight="1.2"
-						whiteSpace="normal"
-					>
-						{chapter.chapterTitle}
-					</Text>
-				</Stack>
-			</Button>
-
-			<Badge
-				mt="3"
-				colorScheme={isSelected ? "pink" : "gray"}
-				borderRadius="full"
-				px="3"
-			>
-				{chapter.completedCount}/{chapter.scenarioCount}
-			</Badge>
-		</Box>
+					<HStack spacing="5px">
+						{[1, 2, 3].map((dot) => (
+							<Box
+								key={dot}
+								w="10px"
+								h="10px"
+								borderRadius="full"
+								borderWidth="1px"
+								borderColor="brand.500"
+								bg={dot <= level ? "brand.500" : "transparent"}
+							/>
+						))}
+					</HStack>
+				</HStack>
+				<HStack spacing="7px">
+					<Box
+						w="14px"
+						h="14px"
+						borderRadius="full"
+						borderWidth="1px"
+						borderColor="app.border"
+					/>
+					<Text fontSize="12px">{scenario.estimatedMinutes}분</Text>
+				</HStack>
+			</Stack>
+		</Button>
 	);
 }
 
-function BurrowMap({
-	chapters,
-	selectedChapter,
-	setSelectedChapter,
+function MobileScenarioCard({
+	scenario,
+	isSelected,
+	onSelect,
 }: {
-	chapters: Chapter[];
-	selectedChapter: Chapter | null;
-	setSelectedChapter: (chapter: Chapter) => void;
+	scenario: ScenarioItem;
+	isSelected: boolean;
+	onSelect: () => void;
 }) {
-	const navigate = useNavigate();
-
 	return (
-		<Box
-			position="relative"
-			h={{ base: "calc(100vh - 190px)", xl: "calc(100vh - 170px)" }}
-			minH={{ base: "560px", xl: "700px" }}
-			borderRadius="3xl"
-			overflow="hidden"
-			bg="#F6F0E8"
-			borderWidth="1px"
-			boxShadow="sm"
+		<Button
+			h="auto"
+			minH="150px"
+			p="18px"
+			whiteSpace="normal"
+			variant="outline"
+			borderColor={isSelected ? "brand.500" : "app.border"}
+			bg={isSelected ? "brand.50" : "app.surface"}
+			onClick={onSelect}
 		>
-			<Box
-				position="absolute"
-				left="0"
-				top="0"
-				w="100%"
-				h="32%"
-				bg="linear-gradient(180deg, #FFFFFF 0%, #EEF7EF 100%)"
-			/>
-
-			{Array.from({ length: 28 }).map((_, index) => (
-				<Box
-					key={index}
-					position="absolute"
-					left={`${3 + index * 3.7}%`}
-					top={`${11 + (index % 4) * 3}%`}
-					w="4px"
-					h={`${34 + (index % 5) * 10}px`}
-					bg="#8EA15E"
-					borderRadius="full"
-					transform={`rotate(${index % 2 === 0 ? -18 : 18}deg)`}
-					opacity="0.85"
-				/>
-			))}
-
-			<Box
-				position="absolute"
-				left="-5%"
-				bottom="-8%"
-				w="110%"
-				h="80%"
-				bg="#D8C5AA"
-				borderTop="5px solid #B8A189"
-				clipPath="polygon(0 22%, 9% 10%, 18% 16%, 29% 6%, 39% 17%, 50% 8%, 62% 18%, 74% 9%, 86% 17%, 100% 8%, 100% 100%, 0 100%)"
-			/>
-
-			<svg
-				width="100%"
-				height="100%"
-				viewBox="0 0 1200 760"
-				style={{
-					position: "absolute",
-					left: 0,
-					top: 0,
-					pointerEvents: "none",
-				}}
-			>
-				<path
-					d="M120 470 C210 580 330 575 445 510 C560 450 620 585 760 610 C910 640 1010 540 1090 440"
-					stroke="#9B8062"
-					strokeWidth="34"
-					fill="none"
-					strokeLinecap="round"
-					opacity="0.42"
-				/>
-				<path
-					d="M325 330 C335 435 405 475 505 520"
-					stroke="#9B8062"
-					strokeWidth="28"
-					fill="none"
-					strokeLinecap="round"
-					opacity="0.35"
-				/>
-				<path
-					d="M715 340 C690 455 760 515 875 575"
-					stroke="#9B8062"
-					strokeWidth="28"
-					fill="none"
-					strokeLinecap="round"
-					opacity="0.35"
-				/>
-			</svg>
-
-			{chapters.map((chapter, index) => (
-				<ChapterBurrowNode
-					key={chapter.chapterId}
-					chapter={chapter}
-					index={index}
-					isSelected={selectedChapter?.chapterId === chapter.chapterId}
-					onHover={() => setSelectedChapter(chapter)}
-					onClick={() => navigate(`/scenario/chapter/${chapter.chapterId}`)}
-				/>
-			))}
-
-			<Box position="absolute" left="28px" top="28px">
-				<Badge colorScheme="pink" px="4" py="2" borderRadius="full">
-					ANTITUDE SCENARIO MAP
+			<Stack spacing="8px" align="flex-start" w="100%">
+				<Badge colorScheme="orange" variant="outline">
+					{getScenarioYear(scenario.eventPeriod)}
 				</Badge>
+				<Text fontSize="17px" fontWeight="900" textAlign="left">
+					{scenario.title}
+				</Text>
+				<Text fontSize="12px" color="app.muted">
+					{scenario.difficulty} · 약 {scenario.estimatedMinutes}분
+				</Text>
+			</Stack>
+		</Button>
+	);
+}
+
+function ScenarioLoadingScreen({
+	scenario,
+	progress,
+}: {
+	scenario: ScenarioItem;
+	progress: number;
+}) {
+	return (
+		<Flex
+			minH="calc(100vh - 82px)"
+			px={{ base: "20px", md: "32px" }}
+			py={{ base: "42px", xl: "64px" }}
+			align="center"
+			justify="flex-start"
+			direction="column"
+			bg="app.background"
+		>
+			<Badge
+				bg="brand.500"
+				color="white"
+				px="20px"
+				py="7px"
+				fontSize="18px"
+				borderRadius="10px"
+			>
+				{getScenarioYear(scenario.eventPeriod)}
+			</Badge>
+
+			<Heading
+				mt="28px"
+				fontSize={{ base: "34px", md: "44px" }}
+				letterSpacing="-0.045em"
+				textAlign="center"
+			>
+				{scenario.title}
+			</Heading>
+			<Text
+				mt="14px"
+				fontSize={{ base: "14px", md: "17px" }}
+				lineHeight="1.7"
+				textAlign="center"
+				maxW="760px"
+				color="app.subtleText"
+			>
+				{scenario.summary}
+			</Text>
+
+			<Image
+				mt={{ base: "24px", md: "38px" }}
+				src="/scenario-loading.png"
+				alt="개미굴 학습 시나리오"
+				w="100%"
+				maxW="980px"
+				maxH="520px"
+				objectFit="contain"
+			/>
+
+			<Box mt="24px" w="100%" maxW="700px">
+				<Text mb="12px" textAlign="center" fontSize="16px" fontWeight="700">
+					시나리오를 불러오는 중입니다......
+				</Text>
+				<Flex align="center" gap="14px">
+					<Progress
+						value={progress}
+						flex="1"
+						h="14px"
+						borderRadius="full"
+						bg="#FBE1D3"
+						colorScheme="orange"
+					/>
+					<Text minW="44px" color="brand.500" fontWeight="800">
+						{progress}%
+					</Text>
+				</Flex>
 			</Box>
-
-			{selectedChapter && (
-				<Card
-					position="absolute"
-					right="28px"
-					bottom="28px"
-					w={{ base: "300px", xl: "400px" }}
-					bg="rgba(255,255,255,0.94)"
-					backdropFilter="blur(8px)"
-					boxShadow="lg"
-				>
-					<CardBody>
-						<Stack spacing="3">
-							<Box>
-								<Text fontSize="sm" color="gray.500">
-									Chapter {selectedChapter.chapterId}
-								</Text>
-								<Heading size="md">{selectedChapter.chapterTitle}</Heading>
-								<Badge mt="2" colorScheme="purple">
-									{selectedChapter.coreAttitude}
-								</Badge>
-							</Box>
-
-							<Text fontSize="sm" color="gray.600">
-								{selectedChapter.chapterDescription}
-							</Text>
-
-							<Box>
-								<Flex mb="1">
-									<Text fontSize="sm">진행률</Text>
-									<Spacer />
-									<Text fontSize="sm" fontWeight="900">
-										{selectedChapter.progressRate}%
-									</Text>
-								</Flex>
-								<Progress
-									value={selectedChapter.progressRate}
-									colorScheme="pink"
-									borderRadius="full"
-								/>
-							</Box>
-
-							<Button
-								colorScheme="pink"
-								onClick={() =>
-									navigate(`/scenario/chapter/${selectedChapter.chapterId}`)
-								}
-							>
-								챕터 입장하기
-							</Button>
-						</Stack>
-					</CardBody>
-				</Card>
-			)}
-		</Box>
+		</Flex>
 	);
 }
 
 export default function Scenario() {
+	const navigate = useNavigate();
 	const toast = useToast();
 
 	const [chapters, setChapters] = useState<Chapter[]>([]);
-	const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
+	const [scenarios, setScenarios] = useState<ScenarioItem[]>([]);
+	const [selectedScenario, setSelectedScenario] = useState<ScenarioItem | null>(null);
+	const [selectedYear, setSelectedYear] = useState("전체");
+	const [selectedDifficulty, setSelectedDifficulty] = useState("전체");
 	const [isLoading, setIsLoading] = useState(false);
+	const [launchingScenario, setLaunchingScenario] = useState<ScenarioItem | null>(null);
+	const [launchProgress, setLaunchProgress] = useState(0);
 
-	const selected = useMemo(() => {
-		return selectedChapter ?? chapters[0] ?? null;
-	}, [selectedChapter, chapters]);
-
-	const loadData = async () => {
+	const loadScenarios = async () => {
 		try {
 			setIsLoading(true);
 
 			const chapterRes = await api.get("/scenarios/chapters");
 			const chapterData = unwrapApiData<Chapter[]>(chapterRes.data);
+			const normalizedChapters = Array.isArray(chapterData) ? chapterData : [];
+			setChapters(normalizedChapters);
 
-			setChapters(chapterData);
-			setSelectedChapter(chapterData[0] ?? null);
+			const scenarioGroups = await Promise.all(
+				normalizedChapters.map(async (chapter) => {
+					try {
+						const response = await api.get(
+							`/scenarios/chapters/${chapter.chapterId}`,
+						);
+						const data = unwrapApiData<ScenarioItem[]>(response.data);
+						return Array.isArray(data) ? data : [];
+					} catch (error) {
+						console.error(
+							`챕터 ${chapter.chapterId} 시나리오 조회 실패`,
+							error,
+						);
+						return [];
+					}
+				}),
+			);
+
+			const allScenarios = scenarioGroups.flat();
+			setScenarios(allScenarios);
+			setSelectedScenario(allScenarios[0] ?? null);
 		} catch (error) {
 			console.error(error);
-
 			toast({
-				title: "시나리오 챕터를 불러오지 못했습니다.",
+				title: "시나리오를 불러오지 못했습니다.",
+				description: "기존 시나리오 서버 연결 상태를 확인하세요.",
 				status: "error",
 				isClosable: true,
 			});
@@ -319,39 +355,384 @@ export default function Scenario() {
 	};
 
 	useEffect(() => {
-		loadData();
+		void loadScenarios();
 	}, []);
 
+	const years = useMemo(() => {
+		return Array.from(
+			new Set(scenarios.map((scenario) => getScenarioYear(scenario.eventPeriod))),
+		).sort();
+	}, [scenarios]);
+
+	const filteredScenarios = useMemo(() => {
+		return scenarios.filter((scenario) => {
+			const yearMatched =
+				selectedYear === "전체" ||
+				getScenarioYear(scenario.eventPeriod) === selectedYear;
+			const difficultyMatched =
+				selectedDifficulty === "전체" ||
+				scenario.difficulty === selectedDifficulty;
+			return yearMatched && difficultyMatched;
+		});
+	}, [scenarios, selectedYear, selectedDifficulty]);
+
+	useEffect(() => {
+		if (
+			selectedScenario &&
+			filteredScenarios.some(
+				(item) => item.scenarioSlug === selectedScenario.scenarioSlug,
+			)
+		) {
+			return;
+		}
+		setSelectedScenario(filteredScenarios[0] ?? null);
+	}, [filteredScenarios, selectedScenario]);
+
+	const recentScenarios = useMemo(() => {
+		const progressed = scenarios.filter(
+			(scenario) => scenario.status !== "NOT_STARTED",
+		);
+		return (progressed.length > 0 ? progressed : scenarios).slice(0, 3);
+	}, [scenarios]);
+
+	useEffect(() => {
+		if (!launchingScenario) return;
+
+		setLaunchProgress(12);
+		const intervalId = window.setInterval(() => {
+			setLaunchProgress((current) => {
+				if (current >= 100) return 100;
+				return Math.min(100, current + Math.max(2, Math.round((100 - current) / 8)));
+			});
+		}, 70);
+
+		return () => window.clearInterval(intervalId);
+	}, [launchingScenario]);
+
+	useEffect(() => {
+		if (!launchingScenario || launchProgress < 100) return;
+
+		const timeoutId = window.setTimeout(() => {
+			navigate(`/scenario/play/${launchingScenario.scenarioSlug}`);
+		}, 250);
+
+		return () => window.clearTimeout(timeoutId);
+	}, [launchProgress, launchingScenario, navigate]);
+
+	if (launchingScenario) {
+		return (
+			<ScenarioLoadingScreen
+				scenario={launchingScenario}
+				progress={launchProgress}
+			/>
+		);
+	}
+
 	return (
-		<Box px={{ base: 4, md: 8 }} py="6" bg="gray.50" minH="100vh">
-			<Flex align="center" mb="5">
-				<Box>
-					<Heading size="lg">시나리오</Heading>
-					<Text mt="1" color="gray.500">
-						개미굴을 선택해 투자 판단 학습을 시작하세요.
-					</Text>
-				</Box>
+		<Box
+			w="100%"
+			maxW="1680px"
+			mx="auto"
+			px={{ base: "16px", md: "24px" }}
+			pt={{ base: "22px", xl: "26px" }}
+			pb="64px"
+		>
+			<Box mb="18px">
+				<Heading size="md" letterSpacing="-0.035em">
+					과거 시나리오
+				</Heading>
+				<Text mt="7px" fontSize="12px" color="app.subtleText">
+					역사적인 경제 사건 속으로 들어가 당시 시장에서 투자 판단을 경험해보세요.
+				</Text>
+			</Box>
+
+			<Flex
+				direction={{ base: "column", lg: "row" }}
+				align={{ base: "stretch", lg: "center" }}
+				gap="12px"
+				mb="18px"
+			>
+				<HStack spacing="12px" wrap="wrap">
+					<Button
+						size="sm"
+						variant={selectedYear === "전체" ? "outline" : "ghost"}
+						borderColor={selectedYear === "전체" ? "brand.500" : "app.border"}
+						color={selectedYear === "전체" ? "brand.500" : "app.subtleText"}
+						onClick={() => setSelectedYear("전체")}
+					>
+						전체
+					</Button>
+					{years.slice(0, 5).map((year) => (
+						<Button
+							key={year}
+							size="sm"
+							variant="outline"
+							borderColor={selectedYear === year ? "brand.500" : "app.border"}
+							color={selectedYear === year ? "brand.500" : "app.subtleText"}
+							bg={selectedYear === year ? "brand.50" : "transparent"}
+							onClick={() => setSelectedYear(year)}
+						>
+							{year}년
+						</Button>
+					))}
+				</HStack>
+
 				<Spacer />
-				<Badge colorScheme="pink" px="3" py="1" borderRadius="full">
-					6개 챕터 · 18개 시나리오
-				</Badge>
+
+				<Select
+					w={{ base: "100%", lg: "150px" }}
+					size="sm"
+					value={selectedDifficulty}
+					onChange={(event) => setSelectedDifficulty(event.target.value)}
+				>
+					<option value="전체">난이도 전체</option>
+					<option value="쉬움">쉬움</option>
+					<option value="보통">보통</option>
+					<option value="어려움">어려움</option>
+				</Select>
 			</Flex>
 
-			<Grid templateColumns="1fr">
-				<GridItem>
+			<Grid
+				templateColumns={{ base: "1fr", "2xl": "minmax(0, 1fr) 460px" }}
+				gap="22px"
+				alignItems="stretch"
+			>
+				<GridItem minW="0">
 					{isLoading ? (
-						<Flex minH="600px" align="center" justify="center">
-							<Text color="gray.500">개미굴을 불러오는 중...</Text>
-						</Flex>
+						<Skeleton h="650px" borderRadius="10px" />
+					) : filteredScenarios.length > 0 ? (
+						<>
+							<Box
+								display={{ base: "none", "2xl": "block" }}
+								position="relative"
+								h="650px"
+								minW="0"
+							>
+								{filteredScenarios.slice(0, 6).map((scenario, index) => (
+									<ScenarioBubble
+										key={scenario.scenarioSlug}
+										scenario={scenario}
+										index={index}
+										isSelected={
+											selectedScenario?.scenarioSlug === scenario.scenarioSlug
+										}
+										onSelect={() => setSelectedScenario(scenario)}
+									/>
+								))}
+							</Box>
+
+							<SimpleGrid
+								display={{ base: "grid", "2xl": "none" }}
+								columns={{ base: 1, md: 2 }}
+								spacing="12px"
+							>
+								{filteredScenarios.slice(0, 6).map((scenario) => (
+									<MobileScenarioCard
+										key={scenario.scenarioSlug}
+										scenario={scenario}
+										isSelected={
+											selectedScenario?.scenarioSlug === scenario.scenarioSlug
+										}
+										onSelect={() => setSelectedScenario(scenario)}
+									/>
+								))}
+							</SimpleGrid>
+						</>
 					) : (
-						<BurrowMap
-							chapters={chapters}
-							selectedChapter={selected}
-							setSelectedChapter={setSelectedChapter}
-						/>
+						<Flex h="420px" align="center" justify="center">
+							<Text color="app.muted">조건에 맞는 시나리오가 없습니다.</Text>
+						</Flex>
 					)}
 				</GridItem>
+
+				<GridItem>
+					<Card h={{ "2xl": "650px" }}>
+						<CardBody p={{ base: "20px", md: "26px" }}>
+							{selectedScenario ? (
+								<Flex direction="column" h="100%">
+									<Flex align="flex-start">
+										<Badge
+											bg="brand.50"
+											color="brand.500"
+											px="10px"
+											py="5px"
+										>
+											선택된 시나리오
+										</Badge>
+										<Spacer />
+										<Button variant="ghost" size="sm" px="6px" fontSize="22px">
+											☆
+										</Button>
+									</Flex>
+
+									<Heading
+										mt="18px"
+										fontSize={{ base: "26px", md: "31px" }}
+										letterSpacing="-0.045em"
+									>
+										{selectedScenario.title}
+									</Heading>
+									<Text mt="20px" fontSize="14px" fontWeight="700">
+										{selectedScenario.eventPeriod}
+									</Text>
+									<Text
+										mt="7px"
+										fontSize="13px"
+										lineHeight="1.7"
+										color="app.subtleText"
+										noOfLines={3}
+									>
+										{selectedScenario.summary}
+									</Text>
+
+									<Stack mt="26px" spacing="17px" fontSize="13px">
+										<Flex>
+											<Text fontWeight="700">시작 시점</Text>
+											<Spacer />
+											<Text>{selectedScenario.eventPeriod}</Text>
+										</Flex>
+										<Flex>
+											<Text fontWeight="700">학습 난이도</Text>
+											<Spacer />
+											<Text color="brand.500">{selectedScenario.difficulty}</Text>
+										</Flex>
+										<Flex>
+											<Text fontWeight="700">플레이 시간</Text>
+											<Spacer />
+											<Text>약 {selectedScenario.estimatedMinutes}분</Text>
+										</Flex>
+										<Flex>
+											<Text fontWeight="700">학습 챕터</Text>
+											<Spacer />
+											<Text>{selectedScenario.chapterTitle}</Text>
+										</Flex>
+									</Stack>
+
+									<Box
+										mt="30px"
+										p="18px"
+										borderWidth="1px"
+										borderColor="app.border"
+										borderRadius="8px"
+									>
+										<Text fontSize="14px" fontWeight="800" mb="14px">
+											학습 포인트
+										</Text>
+										<Stack spacing="11px">
+											{selectedScenario.learningPoints?.slice(0, 3).map((point) => (
+												<Flex key={point} gap="10px" align="flex-start">
+													<Box
+														mt="3px"
+														w="14px"
+														h="14px"
+														borderRadius="full"
+														borderWidth="1px"
+														borderColor="brand.500"
+														flexShrink={0}
+													/>
+													<Text fontSize="13px" lineHeight="1.55">
+														{point}
+													</Text>
+												</Flex>
+											))}
+										</Stack>
+									</Box>
+
+									<Box flex="1" minH="18px" />
+									<Button
+										h="56px"
+										bg="brand.500"
+										color="white"
+										fontSize="20px"
+										_hover={{ bg: "brand.600" }}
+										onClick={() => setLaunchingScenario(selectedScenario)}
+									>
+										시나리오 시작하기
+									</Button>
+								</Flex>
+							) : (
+								<Flex h="100%" align="center" justify="center">
+									<Text color="app.muted">시나리오를 선택하세요.</Text>
+								</Flex>
+							)}
+						</CardBody>
+					</Card>
+				</GridItem>
 			</Grid>
+
+			<Card mt="24px">
+				<CardBody p={{ base: "18px", md: "24px" }}>
+					<Heading size="sm" mb="18px">
+						최근 플레이한 시나리오
+					</Heading>
+					<SimpleGrid columns={{ base: 1, lg: 3 }} spacing="16px">
+						{recentScenarios.map((scenario) => (
+							<Flex
+								key={`recent-${scenario.scenarioSlug}`}
+								borderWidth="1px"
+								borderColor="app.border"
+								borderRadius="8px"
+								p="14px"
+								gap="16px"
+								minH="150px"
+							>
+								<Box
+									w="118px"
+									flexShrink={0}
+									borderWidth="1px"
+									borderColor="app.border"
+									borderRadius="7px"
+									bg="app.background"
+								/>
+								<Flex direction="column" minW="0" flex="1">
+									<HStack>
+										<Badge colorScheme={statusColor[scenario.status]} variant="outline">
+											{statusLabel[scenario.status]}
+										</Badge>
+										<Text fontWeight="800" noOfLines={1}>
+											{scenario.title}
+										</Text>
+									</HStack>
+									<Text mt="8px" fontSize="12px" color="app.muted">
+										{scenario.eventPeriod}
+									</Text>
+									<Box flex="1" />
+									{scenario.status === "IN_PROGRESS" ? (
+										<Flex align="center" gap="8px">
+											<Progress
+												value={(scenario.completedStepCount / 3) * 100}
+												flex="1"
+												size="sm"
+												colorScheme="orange"
+												borderRadius="full"
+											/>
+											<Text fontSize="12px" color="brand.500">
+												{Math.round((scenario.completedStepCount / 3) * 100)}%
+											</Text>
+										</Flex>
+									) : (
+										<Button
+											size="sm"
+											variant="outline"
+											borderColor={
+												scenario.status === "COMPLETED"
+													? "green.400"
+													: "brand.400"
+											}
+											onClick={() => setLaunchingScenario(scenario)}
+										>
+											{scenario.status === "COMPLETED" ? "결과 보기" : "시작하기"}
+										</Button>
+									)}
+								</Flex>
+							</Flex>
+						))}
+					</SimpleGrid>
+					{chapters.length > 0 && scenarios.length === 0 && !isLoading && (
+						<Text color="app.muted">등록된 시나리오가 없습니다.</Text>
+					)}
+				</CardBody>
+			</Card>
 		</Box>
 	);
 }

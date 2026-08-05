@@ -6,6 +6,8 @@ import {
 import {
 	fetchUsHistoricalStockData,
 	fetchUsStockData,
+	fetchUsOrderBookData,
+	fetchUsExecutionData,
 	searchUsStocks,
 	UsChartPeriod,
 } from "../utils/requests";
@@ -128,6 +130,39 @@ export async function getHistorical(
 	}
 }
 
+
+export async function getOrderBook(
+	req: Request,
+	res: Response,
+) {
+	try {
+		const data = await fetchUsOrderBookData(
+			req.params.symbol,
+			req.params.exchange,
+		);
+		return res.status(200).json({ success: true, data });
+	} catch (error) {
+		return sendError(res, error, "미국 종목 호가 조회에 실패했습니다.");
+	}
+}
+
+export async function getExecutions(
+	req: Request,
+	res: Response,
+) {
+	try {
+		const data = await fetchUsExecutionData(
+			req.params.symbol,
+			req.params.exchange,
+			String(req.query.day || "1"),
+			Number(req.query.limit || 30),
+		);
+		return res.status(200).json({ success: true, data });
+	} catch (error) {
+		return sendError(res, error, "미국 종목 체결추이 조회에 실패했습니다.");
+	}
+}
+
 export function getMarketStatus(
 	_req: Request,
 	res: Response,
@@ -143,5 +178,7 @@ export default {
 	search,
 	getInfo,
 	getHistorical,
+	getOrderBook,
+	getExecutions,
 	getMarketStatus,
 };

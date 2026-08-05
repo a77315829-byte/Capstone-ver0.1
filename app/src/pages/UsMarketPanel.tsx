@@ -74,6 +74,50 @@ type UsChartPeriod =
 	| "6m"
 	| "1y";
 
+type UsOrderPanelMode = "BUY" | "SELL" | "MANAGE";
+type UsDetailSection = "orderbook" | "executions" | "information";
+
+type UsOrderBookLevelData = {
+	level: number;
+	askPrice: number;
+	askVolume: number;
+	bidPrice: number;
+	bidVolume: number;
+};
+
+type UsOrderBookData = {
+	symbol: string;
+	exchange: UsExchangeCode;
+	currency: string;
+	totalAskVolume: number;
+	totalBidVolume: number;
+	levels: UsOrderBookLevelData[];
+	quoteDate: string | null;
+	quoteTime: string | null;
+	fetchedAt: string;
+};
+
+type UsExecutionItemData = {
+	time: string;
+	price: number;
+	quantity: number;
+	cumulativeVolume: number;
+	changePrice: number;
+	changeRate: number;
+	strength: number;
+	bidPrice: number;
+	askPrice: number;
+	direction: "UP" | "DOWN" | "FLAT";
+};
+
+type UsExecutionData = {
+	symbol: string;
+	exchange: UsExchangeCode;
+	day: "0" | "1";
+	items: UsExecutionItemData[];
+	fetchedAt: string;
+};
+
 const usd =
 	new Intl.NumberFormat(
 		"en-US",
@@ -420,292 +464,100 @@ function UsCandlestickChart({
 }
 
 
+function UsDetailMetric({
+	label,
+	value,
+	accent,
+}: {
+	label: string;
+	value: React.ReactNode;
+	accent?: string;
+}) {
+	return (
+		<Box
+			p="12px"
+			borderWidth="1px"
+			borderColor="#F1E8DE"
+			borderRadius="10px"
+			bg="#FFFCF8"
+		>
+			<Text fontSize="10px" color="app.subtleText">{label}</Text>
+			<Text mt="5px" fontSize="13px" fontWeight="900" color={accent ?? "app.text"}>
+				{value}
+			</Text>
+		</Box>
+	);
+}
+
 function UsStockDetailPanel({
 	quote,
 	isLoading,
 }: {
-	quote:
-		| UsStockQuote
-		| null;
+	quote: UsStockQuote | null;
 	isLoading: boolean;
 }) {
 	if (isLoading) {
-		return (
-			<Flex
-				h="320px"
-				align="center"
-				justify="center"
-			>
-				<Spinner />
-			</Flex>
-		);
+		return <Flex h="360px" align="center" justify="center"><Spinner color="brand.500" /></Flex>;
 	}
 
 	if (!quote) {
-		return (
-			<Flex
-				h="260px"
-				align="center"
-				justify="center"
-				color="gray.500"
-			>
-				종목 상세정보를 불러오지 못했습니다.
-			</Flex>
-		);
+		return <Flex h="320px" align="center" justify="center" color="app.subtleText">종목 상세정보를 불러오지 못했습니다.</Flex>;
 	}
 
-	const isEtf =
-		quote.assetType === "ETF";
+	const isEtf = quote.assetType === "ETF";
+	const directionColor = quote.changeRate > 0 ? "#F05B45" : quote.changeRate < 0 ? "#2F67D8" : "app.text";
 
 	return (
-		<Stack spacing="5">
-			<Box>
-				<Flex
-					align="center"
-					gap="2"
-					wrap="wrap"
-				>
-					<Heading size="md">
-						{quote.name}
-					</Heading>
-
-					<Badge
-						colorScheme={
-							isEtf
-								? "teal"
-								: "blue"
-						}
-					>
-						{isEtf
-							? "ETF"
-							: "주식"}
-					</Badge>
+		<Grid templateColumns={{ base: "1fr", xl: "1.1fr 1fr 1fr" }} gap="14px">
+			<Box p="18px" borderWidth="1px" borderColor="app.borderSoft" borderRadius="12px" bg="white">
+				<Flex align="center" gap="8px" wrap="wrap">
+					<Heading size="sm">{isEtf ? "ETF 개요" : "기업 개요"}</Heading>
+					<Badge bg="orange.50" color="brand.600" borderRadius="full">{isEtf ? "ETF" : "주식"}</Badge>
 				</Flex>
-
-				<Text
-					mt="1"
-					fontSize="sm"
-					color="gray.500"
-				>
-					{quote.symbol}
-					{" · "}
-					{quote.market}
-					{" · "}
-					{quote.longName}
+				<Text mt="14px" fontSize="17px" fontWeight="900">{quote.name}</Text>
+				<Text mt="4px" fontSize="11px" color="app.subtleText">{quote.symbol} · {quote.market} · {quote.longName}</Text>
+				<Text mt="16px" fontSize="12px" lineHeight="1.8" color="#5B5147">
+					{quote.summary ?? (isEtf ? "미국 증시에 상장된 ETF입니다." : "미국 증시에 상장된 기업입니다.")}
 				</Text>
+				<SimpleGrid columns={2} spacing="8px" mt="18px">
+					<UsDetailMetric label={isEtf ? "ETF 분류" : "자산 유형"} value={quote.category ?? quote.assetType ?? "-"} />
+					<UsDetailMetric label="거래소" value={quote.market ?? "-"} />
+					{isEtf && <UsDetailMetric label="추종 지수" value={quote.benchmark ?? "-"} />}
+					{isEtf && <UsDetailMetric label="운용사" value={quote.issuer ?? "-"} />}
+				</SimpleGrid>
 			</Box>
 
-			<Box
-				p="4"
-				borderWidth="1px"
-				borderRadius="lg"
-				bg="gray.50"
-			>
-				<Text
-					fontWeight="900"
-					mb="2"
-				>
-					{isEtf
-						? "ETF 설명"
-						: "기업 설명"}
-				</Text>
-
-				<Text
-					color="gray.700"
-					lineHeight="1.8"
-				>
-					{quote.summary ??
-						(isEtf
-							? "여러 종목에 분산 투자하도록 설계된 미국 상장지수펀드입니다."
-							: "미국 증시에 상장된 기업입니다. 가격 흐름뿐 아니라 수익성과 기업가치 지표를 함께 확인하세요.")}
-				</Text>
+			<Box p="18px" borderWidth="1px" borderColor="app.borderSoft" borderRadius="12px" bg="white">
+				<Heading size="sm" mb="14px">재무 요약</Heading>
+				<SimpleGrid columns={2} spacing="8px">
+					<UsDetailMetric label="시가총액" value={Number(quote.marketCap ?? 0) > 0 ? compactUsd.format(Number(quote.marketCap)) : "-"} />
+					<UsDetailMetric label="PER" value={formatRatio(quote.per)} />
+					<UsDetailMetric label="PBR" value={formatRatio(quote.pbr)} />
+					<UsDetailMetric label="EPS" value={formatUsdOrDash(quote.eps)} />
+					<UsDetailMetric label="BPS" value={formatUsdOrDash(quote.bps)} />
+					<UsDetailMetric label="발행주식수" value={Number(quote.sharesOutstanding ?? 0) > 0 ? numberFormat.format(Number(quote.sharesOutstanding)) : "-"} />
+				</SimpleGrid>
+				<Text mt="12px" fontSize="9px" color="app.subtleText">KIS 현재가상세가 제공한 항목만 표시됩니다.</Text>
 			</Box>
 
-			{isEtf ? (
-				<SimpleGrid
-					columns={{
-						base: 1,
-						md: 3,
-					}}
-					spacing="4"
-				>
-					<Box
-						p="4"
-						borderWidth="1px"
-						borderRadius="lg"
-					>
-						<Text
-							fontSize="sm"
-							color="gray.500"
-						>
-							ETF 분류
-						</Text>
-						<Text
-							mt="1"
-							fontWeight="900"
-						>
-							{quote.category ??
-								quote.etpTypeName ??
-								"미국 ETF"}
-						</Text>
-					</Box>
-
-					<Box
-						p="4"
-						borderWidth="1px"
-						borderRadius="lg"
-					>
-						<Text
-							fontSize="sm"
-							color="gray.500"
-						>
-							추종 지수
-						</Text>
-						<Text
-							mt="1"
-							fontWeight="900"
-						>
-							{quote.benchmark ??
-								"정보 없음"}
-						</Text>
-					</Box>
-
-					<Box
-						p="4"
-						borderWidth="1px"
-						borderRadius="lg"
-					>
-						<Text
-							fontSize="sm"
-							color="gray.500"
-						>
-							운용사
-						</Text>
-						<Text
-							mt="1"
-							fontWeight="900"
-						>
-							{quote.issuer ??
-								"정보 없음"}
-						</Text>
-					</Box>
+			<Box p="18px" borderWidth="1px" borderColor="app.borderSoft" borderRadius="12px" bg="white">
+				<Heading size="sm" mb="14px">주가 정보</Heading>
+				<SimpleGrid columns={2} spacing="8px">
+					<UsDetailMetric label="현재가" value={usd.format(quote.price)} accent={directionColor} />
+					<UsDetailMetric label="등락률" value={`${quote.changeRate > 0 ? "+" : ""}${quote.changeRate.toFixed(2)}%`} accent={directionColor} />
+					<UsDetailMetric label="시가" value={formatUsdOrDash(quote.open)} />
+					<UsDetailMetric label="고가" value={formatUsdOrDash(quote.high)} accent="#F05B45" />
+					<UsDetailMetric label="저가" value={formatUsdOrDash(quote.low)} accent="#2F67D8" />
+					<UsDetailMetric label="전일 종가" value={formatUsdOrDash(quote.previousClose)} />
+					<UsDetailMetric label="거래량" value={numberFormat.format(quote.volume)} />
+					<UsDetailMetric label="52주 최고" value={formatUsdOrDash(quote.fiftyTwoWeekHigh)} />
+					<UsDetailMetric label="52주 최저" value={formatUsdOrDash(quote.fiftyTwoWeekLow)} />
 				</SimpleGrid>
-			) : (
-				<SimpleGrid
-					columns={{
-						base: 2,
-						md: 4,
-					}}
-					spacing="4"
-				>
-					<Stat>
-						<StatLabel>
-							시가총액
-						</StatLabel>
-						<StatNumber fontSize="lg">
-							{Number(
-								quote.marketCap ??
-									0,
-							) > 0
-								? compactUsd.format(
-										Number(
-											quote.marketCap,
-										),
-									)
-								: "-"}
-						</StatNumber>
-					</Stat>
-
-					<Stat>
-						<StatLabel>PER</StatLabel>
-						<StatNumber fontSize="lg">
-							{formatRatio(
-								quote.per,
-							)}
-						</StatNumber>
-					</Stat>
-
-					<Stat>
-						<StatLabel>PBR</StatLabel>
-						<StatNumber fontSize="lg">
-							{formatRatio(
-								quote.pbr,
-							)}
-						</StatNumber>
-					</Stat>
-
-					<Stat>
-						<StatLabel>EPS</StatLabel>
-						<StatNumber fontSize="lg">
-							{formatUsdOrDash(
-								quote.eps,
-							)}
-						</StatNumber>
-					</Stat>
-				</SimpleGrid>
-			)}
-
-			<SimpleGrid
-				columns={{
-					base: 2,
-					md: 4,
-				}}
-				spacing="4"
-			>
-				<Stat>
-					<StatLabel>
-						52주 최고
-					</StatLabel>
-					<StatNumber fontSize="lg">
-						{formatUsdOrDash(
-							quote.fiftyTwoWeekHigh,
-						)}
-					</StatNumber>
-				</Stat>
-
-				<Stat>
-					<StatLabel>
-						52주 최저
-					</StatLabel>
-					<StatNumber fontSize="lg">
-						{formatUsdOrDash(
-							quote.fiftyTwoWeekLow,
-						)}
-					</StatNumber>
-				</Stat>
-
-				<Stat>
-					<StatLabel>
-						거래량
-					</StatLabel>
-					<StatNumber fontSize="lg">
-						{numberFormat.format(
-							quote.volume,
-						)}
-					</StatNumber>
-				</Stat>
-
-				<Stat>
-					<StatLabel>
-						전일 종가
-					</StatLabel>
-					<StatNumber fontSize="lg">
-						{usd.format(
-							quote.previousClose,
-						)}
-					</StatNumber>
-				</Stat>
-			</SimpleGrid>
-
-			<Text
-				fontSize="xs"
-				color="gray.500"
-			>
-				※ PER·PBR·EPS·시가총액은 KIS 현재가상세 API가 제공한 경우에만 표시됩니다.
-			</Text>
-		</Stack>
+			</Box>
+		</Grid>
 	);
 }
+
 
 function UsPriceHistoryTable({
 	data,
@@ -804,6 +656,238 @@ function UsPriceHistoryTable({
 	);
 }
 
+
+function UsDetailSelectorCard({
+	title,
+	description,
+	selected,
+	onClick,
+	children,
+}: {
+	title: string;
+	description: string;
+	selected: boolean;
+	onClick: () => void;
+	children: React.ReactNode;
+}) {
+	return (
+		<Card
+			as="button"
+			type="button"
+			textAlign="left"
+			w="100%"
+			minH="220px"
+			borderWidth="1px"
+			borderColor={selected ? "brand.500" : "app.borderSoft"}
+			boxShadow={
+				selected
+					? "0 10px 28px rgba(242, 100, 56, 0.10)"
+					: "0 8px 24px rgba(73, 52, 30, 0.04)"
+			}
+			bg="white"
+			cursor="pointer"
+			onClick={onClick}
+			transition="border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease"
+			_hover={{ borderColor: "brand.400", transform: "translateY(-1px)" }}
+		>
+			<CardHeader pb="2">
+				<Flex align="center">
+					<Box>
+						<Heading size="sm" color={selected ? "brand.600" : "app.text"}>{title}</Heading>
+						<Text mt="1" fontSize="10px" color="app.subtleText">{description}</Text>
+					</Box>
+					<Spacer />
+					{selected && <Badge bg="orange.50" color="brand.600" borderRadius="full">선택됨</Badge>}
+				</Flex>
+			</CardHeader>
+			<CardBody pt="2">{children}</CardBody>
+		</Card>
+	);
+}
+
+function UsOrderBookPanel({ data, isLoading }: { data: UsOrderBookData | null; isLoading: boolean }) {
+	if (isLoading) return <Flex minH="280px" align="center" justify="center"><Spinner color="brand.500" /></Flex>;
+	const levels = data?.levels ?? [];
+	if (levels.length === 0) {
+		return <Flex minH="280px" align="center" justify="center" textAlign="center"><Box><Text fontSize="13px" fontWeight="900">미국 호가 데이터가 없습니다.</Text><Text mt="2" fontSize="11px" color="app.subtleText">KIS 실전/모의 환경의 해외주식 호가 지원 여부를 확인하세요.</Text></Box></Flex>;
+	}
+
+	return (
+		<Box>
+			<Grid templateColumns="1fr 1fr 1fr 1fr" px="12px" py="10px" bg="#FAF7F2" borderWidth="1px" borderColor="app.borderSoft" borderRadius="10px 10px 0 0">
+				{["매도 잔량", "매도 호가", "매수 호가", "매수 잔량"].map((label) => <Text key={label} fontSize="11px" fontWeight="800" color="app.subtleText" textAlign="center">{label}</Text>)}
+			</Grid>
+			<Stack spacing="0" borderWidth="1px" borderTopWidth="0" borderColor="app.borderSoft" borderRadius="0 0 10px 10px" overflow="hidden">
+				{levels.map((level) => (
+					<Grid key={level.level} templateColumns="1fr 1fr 1fr 1fr" px="12px" py="11px" borderBottomWidth="1px" borderColor="#F1E8DE">
+						<Text textAlign="center" fontSize="11px">{numberFormat.format(level.askVolume)}</Text>
+						<Text textAlign="center" fontSize="11px" fontWeight="900" color="#F05B45">{usd.format(level.askPrice)}</Text>
+						<Text textAlign="center" fontSize="11px" fontWeight="900" color="#2F67D8">{usd.format(level.bidPrice)}</Text>
+						<Text textAlign="center" fontSize="11px">{numberFormat.format(level.bidVolume)}</Text>
+					</Grid>
+				))}
+			</Stack>
+			<Flex mt="3" gap="4" justify="flex-end" fontSize="11px"><Text color="#F05B45">총 매도 {numberFormat.format(data?.totalAskVolume ?? 0)}</Text><Text color="#2F67D8">총 매수 {numberFormat.format(data?.totalBidVolume ?? 0)}</Text></Flex>
+		</Box>
+	);
+}
+
+type UsExecutionTrendBucket = {
+	label: string;
+	volume: number;
+	strength: number;
+	count: number;
+};
+
+function buildUsExecutionTrendBuckets(
+	items: UsExecutionItemData[],
+): UsExecutionTrendBucket[] {
+	const bucketMap = new Map<string, UsExecutionTrendBucket>();
+
+	for (const item of [...items].reverse()) {
+		const label = item.time.slice(0, 5);
+		const current = bucketMap.get(label) ?? {
+			label,
+			volume: 0,
+			strength: 0,
+			count: 0,
+		};
+
+		current.volume += Number(item.quantity || 0);
+		current.strength += Number(item.strength || 0);
+		current.count += 1;
+		bucketMap.set(label, current);
+	}
+
+	return Array.from(bucketMap.values())
+		.map((bucket) => ({
+			...bucket,
+			strength: bucket.count > 0 ? bucket.strength / bucket.count : 0,
+		}))
+		.slice(-10);
+}
+
+function UsExecutionVolumeTrend({ buckets }: { buckets: UsExecutionTrendBucket[] }) {
+	const maxVolume = Math.max(...buckets.map((bucket) => bucket.volume), 1);
+
+	return (
+		<Box p="14px" borderWidth="1px" borderColor="app.borderSoft" borderRadius="12px" bg="#FFFCF8">
+			<Flex align="center" mb="12px">
+				<Box>
+					<Text fontSize="12px" fontWeight="900">시간별 체결량 추이</Text>
+					<Text mt="2px" fontSize="10px" color="app.subtleText">최근 체결 데이터를 분 단위로 합산</Text>
+				</Box>
+				<Spacer />
+				<Text fontSize="10px" color="app.subtleText">{buckets.length}개 구간</Text>
+			</Flex>
+			<Flex h="126px" align="flex-end" gap="7px">
+				{buckets.map((bucket) => (
+					<Flex key={bucket.label} flex="1" h="100%" minW="0" direction="column" justify="flex-end" align="center">
+						<Text mb="4px" fontSize="9px" fontWeight="800" whiteSpace="nowrap">{numberFormat.format(bucket.volume)}</Text>
+						<Box w="100%" maxW="22px" h={`${Math.max((bucket.volume / maxVolume) * 88, 6)}px`} borderRadius="5px 5px 2px 2px" bg="brand.500" opacity="0.88" />
+						<Text mt="5px" fontSize="8px" color="app.subtleText">{bucket.label}</Text>
+					</Flex>
+				))}
+			</Flex>
+		</Box>
+	);
+}
+
+function UsExecutionStrengthTrend({ buckets }: { buckets: UsExecutionTrendBucket[] }) {
+	const values = buckets.map((bucket) => bucket.strength);
+	const minValue = Math.min(...values, 0);
+	const maxValue = Math.max(...values, 100, 1);
+	const range = Math.max(maxValue - minValue, 1);
+	const coordinateList = buckets.map((bucket, index) => {
+		const x = buckets.length <= 1 ? 160 : 12 + (index / (buckets.length - 1)) * 296;
+		const y = 102 - ((bucket.strength - minValue) / range) * 82;
+		return { x, y, label: bucket.label };
+	});
+	const points = coordinateList.map((point) => `${point.x},${point.y}`).join(" ");
+	const latestStrength =
+		values.length > 0
+			? (values[values.length - 1] ?? 0)
+			: 0;
+
+	return (
+		<Box p="14px" borderWidth="1px" borderColor="app.borderSoft" borderRadius="12px" bg="#FFFCF8">
+			<Flex align="center" mb="8px">
+				<Box>
+					<Text fontSize="12px" fontWeight="900">체결강도 추이</Text>
+					<Text mt="2px" fontSize="10px" color="app.subtleText">KIS 체결강도 필드 기준</Text>
+				</Box>
+				<Spacer />
+				<Text fontSize="15px" fontWeight="900" color={latestStrength >= 100 ? "#F05B45" : "#2F67D8"}>{latestStrength > 0 ? latestStrength.toFixed(1) : "-"}</Text>
+			</Flex>
+			<Box position="relative" h="122px">
+				<Box position="absolute" left="0" right="0" top="50%" borderTopWidth="1px" borderStyle="dashed" borderColor="#E3D5C8" />
+				<svg width="100%" height="112" viewBox="0 0 320 112" preserveAspectRatio="none">
+					<polyline fill="none" stroke="#F26438" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" points={points} />
+					{coordinateList.map((point, index) => (
+						<circle key={`${point.label}-${index}`} cx={point.x} cy={point.y} r="3.5" fill="#FFFFFF" stroke="#F26438" strokeWidth="2" />
+					))}
+				</svg>
+				<Flex mt="-2px" justify="space-between">
+					{buckets.map((bucket) => <Text key={bucket.label} fontSize="8px" color="app.subtleText">{bucket.label}</Text>)}
+				</Flex>
+			</Box>
+		</Box>
+	);
+}
+
+function UsExecutionPanel({ data, isLoading }: { data: UsExecutionData | null; isLoading: boolean }) {
+	if (isLoading) return <Flex minH="420px" align="center" justify="center"><Spinner color="brand.500" /></Flex>;
+	const rows = data?.items ?? [];
+	if (rows.length === 0) {
+		return <Flex minH="360px" align="center" justify="center" textAlign="center"><Box><Text fontSize="13px" fontWeight="900">미국 체결추이 데이터가 없습니다.</Text><Text mt="2" fontSize="11px" color="app.subtleText">장 운영시간 또는 KIS 해외주식 체결추이 지원 환경을 확인하세요.</Text></Box></Flex>;
+	}
+
+	const trendBuckets = buildUsExecutionTrendBuckets(rows);
+
+	return (
+		<Grid templateColumns={{ base: "1fr", xl: "minmax(0, 1.45fr) minmax(320px, 0.75fr)" }} gap="14px">
+			<Box borderWidth="1px" borderColor="app.borderSoft" borderRadius="12px" overflow="hidden" bg="white">
+				<Flex px="15px" py="12px" align="center" bg="#FFFCF8" borderBottomWidth="1px" borderColor="app.borderSoft">
+					<Box>
+						<Text fontSize="13px" fontWeight="900">실시간 체결내역</Text>
+						<Text mt="2px" fontSize="10px" color="app.subtleText">직전 체결가보다 높으면 빨강, 낮으면 파랑</Text>
+					</Box>
+					<Spacer />
+					<Badge bg="orange.50" color="brand.600" borderRadius="full">최근 {rows.length}건</Badge>
+				</Flex>
+				<TableContainer maxH="430px" overflowY="auto">
+					<Table size="sm">
+						<Thead bg="#FAF7F2" position="sticky" top="0" zIndex="1"><Tr><Th>시간</Th><Th isNumeric>체결가</Th><Th isNumeric>체결량</Th><Th isNumeric>등락률</Th><Th isNumeric>체결강도</Th><Th isNumeric>누적 거래량</Th></Tr></Thead>
+						<Tbody>
+							{rows.map((item, index) => {
+								const olderItem = rows[index + 1];
+								const referencePrice = olderItem?.price ?? item.price - item.changePrice;
+								const tickDirection = item.price > referencePrice ? "UP" : item.price < referencePrice ? "DOWN" : item.direction;
+								const color = tickDirection === "UP" ? "#F05B45" : tickDirection === "DOWN" ? "#2F67D8" : "app.text";
+								return (
+									<Tr key={`${item.time}-${index}`} _hover={{ bg: "#FFFAF5" }}>
+										<Td fontSize="11px">{item.time}</Td>
+										<Td isNumeric fontSize="12px" fontWeight="900" color={color}>{usd.format(item.price)}</Td>
+										<Td isNumeric fontSize="11px">{numberFormat.format(item.quantity)}</Td>
+										<Td isNumeric fontSize="11px" color={item.changeRate >= 0 ? "#F05B45" : "#2F67D8"}>{item.changeRate > 0 ? "+" : ""}{item.changeRate.toFixed(2)}%</Td>
+										<Td isNumeric fontSize="11px" fontWeight="800" color={item.strength >= 100 ? "#F05B45" : "#2F67D8"}>{item.strength > 0 ? item.strength.toFixed(1) : "-"}</Td>
+										<Td isNumeric fontSize="11px">{numberFormat.format(item.cumulativeVolume)}</Td>
+									</Tr>
+								);
+							})}
+						</Tbody>
+					</Table>
+				</TableContainer>
+			</Box>
+			<Stack spacing="14px">
+				<UsExecutionVolumeTrend buckets={trendBuckets} />
+				<UsExecutionStrengthTrend buckets={trendBuckets} />
+			</Stack>
+		</Grid>
+	);
+}
+
+
 interface UsMarketPanelProps {
 	onStockChange?: (
 		stock: {
@@ -820,17 +904,42 @@ export default function UsMarketPanel({
 	const toast =
 		useToast();
 
+	const initialSearchParams =
+		new URLSearchParams(
+			window.location.search,
+		);
+
+	const initialSymbol =
+		initialSearchParams
+			.get("symbol")
+			?.trim()
+			.toUpperCase() ||
+		"NVDA";
+
+	const requestedExchange =
+		initialSearchParams
+			.get("exchange")
+			?.trim()
+			.toUpperCase();
+
+	const initialExchange: UsExchangeCode =
+		requestedExchange === "NYS" ||
+		requestedExchange === "AMS" ||
+		requestedExchange === "NAS"
+			? requestedExchange
+			: "NAS";
+
 	const [
 		selectedSymbol,
 		setSelectedSymbol,
-	] = useState("NVDA");
+	] = useState(initialSymbol);
 
 	const [
 		selectedExchange,
 		setSelectedExchange,
 	] =
 		useState<UsExchangeCode>(
-			"NAS",
+			initialExchange,
 		);
 
 	const [
@@ -904,6 +1013,66 @@ export default function UsMarketPanel({
 			"1m",
 		);
 
+	useEffect(() => {
+		const handleStockSelected = (
+			event: Event,
+		) => {
+			const selected = (
+				event as CustomEvent<{
+					symbol?: string;
+					marketType?: string;
+					exchange?: string;
+				}>
+			).detail;
+
+			if (
+				selected?.marketType !== "US" ||
+				!selected.symbol
+			) {
+				return;
+			}
+
+			const nextSymbol =
+				selected.symbol
+					.trim()
+					.toUpperCase();
+
+			const nextExchange: UsExchangeCode =
+				selected.exchange === "NYS" ||
+				selected.exchange === "AMS" ||
+				selected.exchange === "NAS"
+					? selected.exchange
+					: "NAS";
+
+			setSelectedSymbol(nextSymbol);
+			setSelectedExchange(
+				nextExchange,
+			);
+
+			void loadQuote(
+				nextSymbol,
+				nextExchange,
+			);
+			void loadChart(
+				nextSymbol,
+				nextExchange,
+				chartPeriod,
+			);
+		};
+
+		window.addEventListener(
+			"antitude:stock-selected",
+			handleStockSelected,
+		);
+
+		return () => {
+			window.removeEventListener(
+				"antitude:stock-selected",
+				handleStockSelected,
+			);
+		};
+	}, [chartPeriod]);
+
 	const [
 		marketStatus,
 		setMarketStatus,
@@ -934,6 +1103,17 @@ export default function UsMarketPanel({
 		useState<UsOrderType>(
 			"LIMIT",
 		);
+
+	const [orderPanelMode, setOrderPanelMode] =
+		useState<UsOrderPanelMode>("BUY");
+
+	const [detailSection, setDetailSection] =
+		useState<UsDetailSection>("orderbook");
+
+	const [usOrderBook, setUsOrderBook] = useState<UsOrderBookData | null>(null);
+	const [isLoadingUsOrderBook, setIsLoadingUsOrderBook] = useState(false);
+	const [usExecutions, setUsExecutions] = useState<UsExecutionData | null>(null);
+	const [isLoadingUsExecutions, setIsLoadingUsExecutions] = useState(false);
 
 	const [
 		quantity,
@@ -1024,6 +1204,38 @@ export default function UsMarketPanel({
 				);
 			}
 		};
+
+	const loadUsOrderBook = async (
+		symbol = selectedSymbol,
+		exchange = selectedExchange,
+	) => {
+		try {
+			setIsLoadingUsOrderBook(true);
+			const response = await api.get(`/us-stocks/${exchange}/${symbol}/orderbook`);
+			setUsOrderBook(unwrapApiData<UsOrderBookData>(response.data));
+		} catch (error) {
+			console.error("미국 호가 조회 실패:", error);
+			setUsOrderBook(null);
+		} finally {
+			setIsLoadingUsOrderBook(false);
+		}
+	};
+
+	const loadUsExecutions = async (
+		symbol = selectedSymbol,
+		exchange = selectedExchange,
+	) => {
+		try {
+			setIsLoadingUsExecutions(true);
+			const response = await api.get(`/us-stocks/${exchange}/${symbol}/executions?day=1&limit=100`);
+			setUsExecutions(unwrapApiData<UsExecutionData>(response.data));
+		} catch (error) {
+			console.error("미국 체결추이 조회 실패:", error);
+			setUsExecutions(null);
+		} finally {
+			setIsLoadingUsExecutions(false);
+		}
+	};
 
 	const loadQuote =
 		async (
@@ -1290,6 +1502,10 @@ export default function UsMarketPanel({
 					item.exchange,
 				chartPeriod,
 			);
+
+			const actualExchange = loadedQuote?.exchange ?? item.exchange;
+			void loadUsOrderBook(item.symbol, actualExchange);
+			void loadUsExecutions(item.symbol, actualExchange);
 		};
 
 	const submitOrder =
@@ -1608,6 +1824,8 @@ export default function UsMarketPanel({
 				true,
 			),
 			loadMarketStatus(),
+			loadUsOrderBook(),
+			loadUsExecutions(),
 		]);
 
 		const timer =
@@ -1626,6 +1844,16 @@ export default function UsMarketPanel({
 
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	useEffect(() => {
+		if (detailSection !== "executions") return;
+		void loadUsExecutions(selectedSymbol, selectedExchange);
+		const timer = window.setInterval(() => {
+			void loadUsExecutions(selectedSymbol, selectedExchange);
+		}, 10_000);
+		return () => window.clearInterval(timer);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [detailSection, selectedSymbol, selectedExchange]);
 
 	useEffect(() => {
 		if (
@@ -1654,43 +1882,76 @@ export default function UsMarketPanel({
 		portfolio?.account;
 
 
+	const pendingOrders = useMemo(
+		() =>
+			orders.filter(
+				(order) =>
+					order.status === "PENDING" &&
+					order.symbol === selectedSymbol &&
+					order.exchange === selectedExchange,
+			),
+		[orders, selectedExchange, selectedSymbol],
+	);
+
+	const effectivePrice =
+		orderType === "LIMIT"
+			? limitPrice
+			: quote?.price ?? 0;
+
+	const maximumQuantity = useMemo(() => {
+		if (orderPanelMode === "SELL") {
+			return Math.max(1, Math.floor(selectedHolding?.quantity ?? 1));
+		}
+
+		const availableCash = Number(account?.availableCash ?? 0);
+		const price = Number(effectivePrice || quote?.price || 0);
+
+		return price > 0
+			? Math.max(1, Math.floor(availableCash / price))
+			: 1;
+	}, [
+		account?.availableCash,
+		effectivePrice,
+		orderPanelMode,
+		quote?.price,
+		selectedHolding?.quantity,
+	]);
+
+	const prepareUsOrderCorrection = (order: UsTradeOrder) => {
+		setOrderPanelMode(order.side);
+		setOrderType("LIMIT");
+		setQuantity(Math.max(1, order.quantity));
+		setLimitPrice(
+			Number(order.limitPrice ?? order.orderPrice ?? quote?.price ?? 0),
+		);
+	};
+
 	return (
 		<Box
-			px={{
-				base: 4,
-				md: 8,
-			}}
-			py="6"
-			bg="gray.50"
+			px={{ base: 4, md: 6, xl: 8 }}
+			py={{ base: 5, md: 7 }}
+			bg="app.background"
 			minH="100vh"
 		>
-			<Flex
-				mb="6"
-				align="end"
-				gap="4"
-				wrap="wrap"
-			>
+			<Flex mb="5" align="end" gap="4" wrap="wrap">
 				<Box>
-					<Heading size="lg">
-						거래소
-					</Heading>
-					<Text
-						color="gray.500"
-						mt="1"
-					>
-						KIS API 기반 미국 주식·ETF 모의투자 화면
+					<Heading size="lg" letterSpacing="-0.035em">실시간 차트</Heading>
+					<Text color="app.subtleText" mt="1" fontSize="sm">
+						미국 주식·ETF 시세를 확인하고 모의투자 주문을 실행합니다.
 					</Text>
 				</Box>
-
 				<Spacer />
-
 				<Badge
 					px="3"
-					py="1"
+					py="1.5"
 					borderRadius="full"
-					colorScheme="blue"
+					bg="orange.50"
+					color="brand.600"
+					borderWidth="1px"
+					borderColor="orange.100"
+					fontSize="12px"
 				>
-					USD 모의투자
+					미국 주식 · USD 모의투자
 				</Badge>
 			</Flex>
 
@@ -1707,1253 +1968,340 @@ export default function UsMarketPanel({
 				]}
 			/>
 
-			<Grid
-				templateColumns={{
-					base: "1fr",
-					xl:
-						"minmax(0, 1fr) 360px",
-				}}
-				gap="5"
+			<Card
+				mb="5"
+				borderColor="app.borderSoft"
+				boxShadow="0 8px 24px rgba(73, 52, 30, 0.05)"
+				overflow="hidden"
 			>
-				<GridItem>
-					<Card mb="5">
-						<CardBody>
-							{isLoadingQuote ||
-							!quote ? (
-								<Flex
-									h="120px"
-									align="center"
-									justify="center"
-								>
-									<Spinner />
-								</Flex>
-							) : (
-								<Flex
-									align="start"
-									gap="6"
-									wrap="wrap"
-								>
-									<Box minW="240px">
-										<Flex
-											align="center"
-											gap="2"
-											wrap="wrap"
-										>
-											<Text
-												color="gray.500"
-												fontWeight="700"
-											>
-												{quote.symbol}
-												{" · "}
-												{quote.market}
-											</Text>
-
-											<Badge
-												colorScheme={
-													quote.assetType ===
-													"ETF"
-														? "teal"
-														: "blue"
-												}
-											>
-												{quote.assetType ===
-												"ETF"
-													? "ETF"
-													: "주식"}
-											</Badge>
-										</Flex>
-
-										<Heading size="lg">
-											{quote.name}
-										</Heading>
-
-										<Heading
-											mt="3"
-											size="xl"
-										>
-											{usd.format(
-												quote.price,
-											)}
-										</Heading>
-
-										<Text
-											color={
-												isUp
-													? "red.500"
-													: "blue.500"
-											}
-											fontWeight="800"
-										>
-											{isUp
-												? "▲"
-												: "▼"}{" "}
-											{usd.format(
-												Math.abs(
-													quote.changePrice,
-												),
-											)}
-											{" "}
-											(
-											{quote.changeRate.toFixed(
-												2,
-											)}
-											%)
-										</Text>
-									</Box>
-
-									{quote.assetType ===
-									"ETF" ? (
-										<SimpleGrid
-											columns={{
-												base: 2,
-												md: 4,
-											}}
-											spacing="4"
-											flex="1"
-										>
-											<Stat>
-												<StatLabel>
-													추종 지수
-												</StatLabel>
-												<StatNumber fontSize="md">
-													{quote.benchmark ??
-														"-"}
-												</StatNumber>
-											</Stat>
-
-											<Stat>
-												<StatLabel>
-													운용사
-												</StatLabel>
-												<StatNumber fontSize="md">
-													{quote.issuer ??
-														"-"}
-												</StatNumber>
-											</Stat>
-
-											<Stat>
-												<StatLabel>
-													52주 최고
-												</StatLabel>
-												<StatNumber fontSize="lg">
-													{formatUsdOrDash(
-														quote.fiftyTwoWeekHigh,
-													)}
-												</StatNumber>
-											</Stat>
-
-											<Stat>
-												<StatLabel>
-													52주 최저
-												</StatLabel>
-												<StatNumber fontSize="lg">
-													{formatUsdOrDash(
-														quote.fiftyTwoWeekLow,
-													)}
-												</StatNumber>
-											</Stat>
-										</SimpleGrid>
-									) : (
-										<SimpleGrid
-											columns={{
-												base: 2,
-												md: 4,
-											}}
-											spacing="4"
-											flex="1"
-										>
-											<Stat>
-												<StatLabel>
-													시가총액
-												</StatLabel>
-												<StatNumber fontSize="lg">
-													{Number(
-														quote.marketCap ??
-															0,
-													) > 0
-														? compactUsd.format(
-																Number(
-																	quote.marketCap,
-																),
-															)
-														: "-"}
-												</StatNumber>
-											</Stat>
-
-											<Stat>
-												<StatLabel>
-													PER
-												</StatLabel>
-												<StatNumber fontSize="lg">
-													{formatRatio(
-														quote.per,
-													)}
-												</StatNumber>
-											</Stat>
-
-											<Stat>
-												<StatLabel>
-													PBR
-												</StatLabel>
-												<StatNumber fontSize="lg">
-													{formatRatio(
-														quote.pbr,
-													)}
-												</StatNumber>
-											</Stat>
-
-											<Stat>
-												<StatLabel>
-													EPS
-												</StatLabel>
-												<StatNumber fontSize="lg">
-													{formatUsdOrDash(
-														quote.eps,
-													)}
-												</StatNumber>
-											</Stat>
-										</SimpleGrid>
-									)}
-								</Flex>
-							)}
-						</CardBody>
-					</Card>
-
-					<Card mb="5">
-						<CardBody>
-							<Tabs
-								variant="enclosed"
-								colorScheme="blue"
-							>
-								<TabList>
-									<Tab>차트</Tab>
-									<Tab>정보</Tab>
-								</TabList>
-
-								<TabPanels>
-									<TabPanel
-										px="0"
-										pb="0"
-									>
-										<Flex
-											align="center"
-											gap="3"
-											wrap="wrap"
-											mb="4"
-										>
-											<Box>
-												<Heading size="md">
-													가격 차트
-												</Heading>
-												<Text
-													fontSize="sm"
-													color="gray.500"
-													mt="1"
-												>
-													현재 선택:{" "}
-													{chartPeriod ===
-													"1m"
-														? "1개월"
-														: chartPeriod ===
-															  "6m"
-															? "6개월"
-															: "1년"}
-												</Text>
-											</Box>
-
-											<Spacer />
-
-											<HStack
-												spacing="2"
-												wrap="wrap"
-											>
-												{(
-													[
-														[
-															"1개월",
-															"1m",
-														],
-														[
-															"6개월",
-															"6m",
-														],
-														[
-															"1년",
-															"1y",
-														],
-													] as const
-												).map(
-													([
-														label,
-														period,
-													]) => (
-														<Button
-															key={
-																period
-															}
-															size="sm"
-															h="30px"
-															px="4"
-															fontSize="12px"
-															fontWeight="900"
-															borderRadius="8px"
-															variant={
-																chartPeriod ===
-																period
-																	? "solid"
-																	: "outline"
-															}
-															colorScheme={
-																chartPeriod ===
-																period
-																	? "blue"
-																	: "gray"
-															}
-															onClick={() => {
-																setChartPeriod(
-																	period,
-																);
-
-																void loadChart(
-																	selectedSymbol,
-																	selectedExchange,
-																	period,
-																);
-															}}
-														>
-															{label}
-														</Button>
-													),
-												)}
-											</HStack>
-										</Flex>
-
-										{isLoadingChart ? (
-											<Flex
-												h="390px"
-												align="center"
-												justify="center"
-											>
-												<Spinner />
-											</Flex>
-										) : (
-											<UsCandlestickChart
-												data={
-													chartData
-												}
-												height={
-													390
-												}
-											/>
-										)}
-									</TabPanel>
-
-									<TabPanel
-										px="0"
-										pb="0"
-									>
-										<UsStockDetailPanel
-											quote={
-												quote
-											}
-											isLoading={
-												isLoadingQuote
-											}
-										/>
-									</TabPanel>
-								</TabPanels>
-							</Tabs>
-						</CardBody>
-					</Card>
-
-					<Grid
-						templateColumns={{
-							base: "1fr",
-							xl: "1fr 1fr",
-						}}
-						gap="5"
-						mb="5"
-					>
-						<Card>
-							<CardBody>
-								<Heading
-									size="sm"
-									mb="3"
-								>
-									투자 지표
-								</Heading>
-
-								<SimpleGrid
-									columns={2}
-									spacing="4"
-								>
-									<Stat>
-										<StatLabel>
-											전일 종가
-										</StatLabel>
-										<StatNumber fontSize="lg">
-											{formatUsdOrDash(
-												quote?.previousClose,
-											)}
-										</StatNumber>
-									</Stat>
-
-									<Stat>
-										<StatLabel>
-											거래량
-										</StatLabel>
-										<StatNumber fontSize="lg">
-											{numberFormat.format(
-												quote?.volume ??
-													0,
-											)}
-										</StatNumber>
-									</Stat>
-
-									<Stat>
-										<StatLabel>
-											52주 최고
-										</StatLabel>
-										<StatNumber fontSize="lg">
-											{formatUsdOrDash(
-												quote?.fiftyTwoWeekHigh,
-											)}
-										</StatNumber>
-									</Stat>
-
-									<Stat>
-										<StatLabel>
-											52주 최저
-										</StatLabel>
-										<StatNumber fontSize="lg">
-											{formatUsdOrDash(
-												quote?.fiftyTwoWeekLow,
-											)}
-										</StatNumber>
-									</Stat>
-
-									{quote?.assetType !==
-										"ETF" && (
-										<>
-											<Stat>
-												<StatLabel>
-													BPS
-												</StatLabel>
-												<StatNumber fontSize="lg">
-													{formatUsdOrDash(
-														quote?.bps,
-													)}
-												</StatNumber>
-											</Stat>
-
-											<Stat>
-												<StatLabel>
-													상장주식수
-												</StatLabel>
-												<StatNumber fontSize="lg">
-													{Number(
-														quote?.sharesOutstanding ??
-															0,
-													) > 0
-														? numberFormat.format(
-																Number(
-																	quote?.sharesOutstanding,
-																),
-															)
-														: "-"}
-												</StatNumber>
-											</Stat>
-										</>
-									)}
-								</SimpleGrid>
-							</CardBody>
-						</Card>
-
-						<Card>
-							<CardBody>
-								<UsPriceHistoryTable
-									data={
-										chartData
-									}
-								/>
-							</CardBody>
-						</Card>
-					</Grid>
-
-					<Card mt="5">
-						<CardHeader pb="0">
-							<Flex align="center">
-								<Box>
-									<Heading size="md">
-										모의투자 주문
-									</Heading>
-									<Text
-										mt="1"
-										fontSize="sm"
-										color="gray.500"
-									>
-										미국 주식·ETF 시장가/지정가 매수·매도 주문을 실행합니다.
+				<CardBody px={{ base: 5, lg: 7 }} py={{ base: 5, lg: 6 }}>
+					{isLoadingQuote || !quote ? (
+						<Flex h="126px" align="center" justify="center">
+							<Spinner color="brand.500" />
+						</Flex>
+					) : (
+						<Flex
+							align={{ base: "stretch", lg: "center" }}
+							direction={{ base: "column", lg: "row" }}
+							gap={{ base: 5, lg: 8 }}
+						>
+							<Box minW={{ lg: "290px" }}>
+								<Flex align="center" gap="2" wrap="wrap">
+									<Text fontSize="12px" color="app.subtleText" fontWeight="700">
+										{quote.symbol} · {quote.market}
 									</Text>
-								</Box>
-
-								<Spacer />
-
-								<Button
-									size="sm"
-									variant="outline"
-									onClick={() =>
-										void checkPending()
-									}
-								>
-									미체결 확인
-								</Button>
-							</Flex>
-						</CardHeader>
-
-						<CardBody>
-							<Box
-								mb="5"
-								p="4"
-								borderWidth="1px"
-								borderRadius="12px"
-								borderColor={
-									marketStatus?.isOpen
-										? "green.200"
-										: "orange.200"
-								}
-								bg={
-									marketStatus?.isOpen
-										? "green.50"
-										: "orange.50"
-								}
-							>
-								<Flex
-									align={{
-										base: "flex-start",
-										md: "center",
-									}}
-									direction={{
-										base: "column",
-										md: "row",
-									}}
-									gap="2"
-								>
-									<Badge
-										colorScheme={
-											marketStatus?.isOpen
-												? "green"
-												: "orange"
-										}
-										fontSize="sm"
-										px="3"
-										py="1"
-										borderRadius="full"
-									>
-										{marketStatus?.isOpen
-											? "정규장 운영 중"
-											: "정규장 마감"}
+									<Badge bg="#F5EFE7" color="app.subtleText">
+										{quote.assetType === "ETF" ? "ETF" : "주식"}
 									</Badge>
-
-									<Box>
-										<Text fontWeight="900">
-											{marketStatus?.message ??
-												"미국시장 상태를 확인하고 있습니다."}
-										</Text>
-
-										<Text
-											fontSize="xs"
-											color="gray.600"
-										>
-											뉴욕시간{" "}
-											{marketStatus?.localDate ??
-												"-"}{" "}
-											{marketStatus?.localTime ??
-												"-"}
-											{" · "}
-											정규장{" "}
-											{marketStatus?.openTime ??
-												"09:30"}
-											~
-											{marketStatus?.closeTime ??
-												"16:00"}{" "}
-											ET
-										</Text>
-									</Box>
+								</Flex>
+								<Heading mt="1" size="lg" letterSpacing="-0.035em">{quote.name}</Heading>
+								<Flex mt="3" align="baseline" gap="3" wrap="wrap">
+									<Heading size="xl" letterSpacing="-0.04em">{usd.format(quote.price)}</Heading>
+									<Text color={isUp ? "red.500" : "blue.500"} fontWeight="900">
+										{isUp ? "▲" : "▼"} {usd.format(Math.abs(quote.changePrice))} ({quote.changeRate.toFixed(2)}%)
+									</Text>
 								</Flex>
 							</Box>
 
-							<SimpleGrid
-								columns={{
-									base: 1,
-									md: 4,
-								}}
-								spacing="4"
-								mb="5"
-							>
-								<Stat>
-									<StatLabel>
-										보유 현금
-									</StatLabel>
-									<StatNumber fontSize="lg">
-										{usd.format(
-											account?.cash ??
-												0,
-										)}
-									</StatNumber>
-								</Stat>
+							<Box display={{ base: "none", lg: "block" }} w="1px" h="76px" bg="app.borderSoft" />
 
-								<Stat>
-									<StatLabel>
-										주문 가능 금액
-									</StatLabel>
-									<StatNumber fontSize="lg">
-										{usd.format(
-											account?.availableCash ??
-												0,
-										)}
-									</StatNumber>
-								</Stat>
-
-								<Stat>
-									<StatLabel>
-										예약 금액
-									</StatLabel>
-									<StatNumber fontSize="lg">
-										{usd.format(
-											account?.reservedCash ??
-												0,
-										)}
-									</StatNumber>
-								</Stat>
-
-								<Stat>
-									<StatLabel>
-										선택 종목 보유수량
-									</StatLabel>
-									<StatNumber fontSize="lg">
-										{numberFormat.format(
-											selectedHolding?.quantity ??
-												0,
-										)}
-										주
-									</StatNumber>
-								</Stat>
+							<SimpleGrid columns={{ base: 2, md: 4 }} spacing={{ base: 4, xl: 7 }} flex="1">
+								{[
+									["전일 종가", usd.format(quote.previousClose)],
+									["52주 최고", formatUsdOrDash(quote.fiftyTwoWeekHigh)],
+									["52주 최저", formatUsdOrDash(quote.fiftyTwoWeekLow)],
+									["거래량", numberFormat.format(quote.volume)],
+								].map(([label, value]) => (
+									<Box key={label}>
+										<Text fontSize="12px" color="app.subtleText" fontWeight="700">{label}</Text>
+										<Text mt="1.5" fontSize={{ base: "15px", xl: "17px" }} fontWeight="900">{value}</Text>
+									</Box>
+								))}
 							</SimpleGrid>
+						</Flex>
+					)}
+				</CardBody>
+			</Card>
 
-							<Flex
-								gap="3"
-								wrap="wrap"
-								align="center"
-							>
-								<HStack>
-									<Button
-										size="sm"
-										colorScheme={
-											orderType ===
-											"MARKET"
-												? "blue"
-												: "gray"
-										}
-										variant={
-											orderType ===
-											"MARKET"
-												? "solid"
-												: "outline"
-										}
-										onClick={() =>
-											setOrderType(
-												"MARKET",
-											)
-										}
-										isDisabled={
-											isMarketClosed
-										}
-									>
-										시장가
-									</Button>
-
-									<Button
-										size="sm"
-										colorScheme={
-											orderType ===
-											"LIMIT"
-												? "blue"
-												: "gray"
-										}
-										variant={
-											orderType ===
-											"LIMIT"
-												? "solid"
-												: "outline"
-										}
-										onClick={() =>
-											setOrderType(
-												"LIMIT",
-											)
-										}
-									>
-										지정가
-									</Button>
-								</HStack>
-
-								<NumberInput
-									value={
-										quantity
-									}
-									min={1}
-									maxW="140px"
-									onChange={(
-										_,
-										value,
-									) =>
-										setQuantity(
-											Number.isNaN(
-												value,
-											)
-												? 1
-												: Math.max(
-														1,
-														Math.floor(
-															value,
-														),
-													),
-										)
-									}
-									isDisabled={
-										!quote
-									}
-								>
-									<NumberInputField placeholder="수량" />
-								</NumberInput>
-
-								{orderType ===
-									"LIMIT" && (
-									<NumberInput
-										value={
-											limitPrice ||
-											""
-										}
-										min={0.01}
-										step={0.01}
-										precision={2}
-										maxW="180px"
-										onChange={(
-											_,
-											value,
-										) =>
-											setLimitPrice(
-												Number.isNaN(
-													value,
-												)
-													? 0
-													: value,
-											)
-										}
-										isDisabled={
-											!quote
-										}
-									>
-										<NumberInputField placeholder="지정가" />
-									</NumberInput>
-								)}
-
-								<Button
-									colorScheme="red"
-									onClick={() =>
-										void submitOrder(
-											"BUY",
-										)
-									}
-									isLoading={
-										isSubmitting
-									}
-									isDisabled={
-										!quote ||
-										isMarketOrderBlocked
-									}
-								>
-									{orderType ===
-										"LIMIT" &&
-									isMarketClosed
-										? "예약 매수"
-										: "매수"}
-								</Button>
-
-								<Button
-									colorScheme="blue"
-									onClick={() =>
-										void submitOrder(
-											"SELL",
-										)
-									}
-									isLoading={
-										isSubmitting
-									}
-									isDisabled={
-										!quote ||
-										isMarketOrderBlocked
-									}
-								>
-									{orderType ===
-										"LIMIT" &&
-									isMarketClosed
-										? "예약 매도"
-										: "매도"}
-								</Button>
-
-								<Button
-									size="sm"
-									colorScheme="green"
-									onClick={() =>
-										void topUpAccount()
-									}
-									isLoading={
-										isToppingUp
-									}
-									loadingText="충전 중"
-								>
-									$1,000 충전
-								</Button>
-
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() =>
-										void resetAccount()
-									}
-									isDisabled={
-										isLoadingTrading
-									}
-								>
-									계좌 초기화
-								</Button>
-							</Flex>
-
-							<Text
-								mt="3"
-								fontSize="sm"
-								color="gray.500"
-							>
-								※ 시장가 주문은 미국 정규장 중에만 가능합니다. 지정가 주문은 장 마감 후에도 예약되며 다음 정규장 중 가격 조건을 충족하면 자동 체결됩니다.
-							</Text>
-						</CardBody>
-					</Card>
-
-					<Card mt="5">
+			<Grid
+				templateColumns={{ base: "1fr", "2xl": "minmax(0, 1fr) 382px" }}
+				gap="5"
+				alignItems="start"
+			>
+				<GridItem minW="0">
+					<Card borderColor="app.borderSoft" boxShadow="0 8px 24px rgba(73, 52, 30, 0.05)" overflow="hidden">
 						<CardHeader pb="0">
-							<Heading size="md">
-								주문 / 체결 내역
-							</Heading>
+							<Flex align={{ base: "stretch", lg: "center" }} direction={{ base: "column", lg: "row" }} gap="4">
+								<Box>
+									<Heading size="md">차트</Heading>
+									<Text mt="1" fontSize="11px" color="app.subtleText">
+										현재 선택: {chartPeriod === "1m" ? "1개월" : chartPeriod === "6m" ? "6개월" : "1년"}
+									</Text>
+								</Box>
+								<Spacer />
+								<HStack spacing="2" wrap="wrap">
+									{([[
+										"1개월", "1m",
+									], ["6개월", "6m"], ["1년", "1y"]] as const).map(([label, period]) => {
+										const active = chartPeriod === period;
+										return (
+											<Button
+												key={period}
+												size="sm"
+												h="32px"
+												px="3"
+												fontSize="11px"
+												fontWeight="800"
+												variant="outline"
+												borderColor={active ? "brand.500" : "app.borderSoft"}
+												bg={active ? "orange.50" : "white"}
+												color={active ? "brand.600" : "app.subtleText"}
+												onClick={() => {
+													setChartPeriod(period);
+													void loadChart(selectedSymbol, selectedExchange, period);
+												}}
+											>
+												{label}
+											</Button>
+										);
+									})}
+								</HStack>
+							</Flex>
 						</CardHeader>
-
-						<CardBody overflowX="auto">
-							<Table size="sm">
-								<Thead>
-									<Tr>
-										<Th>시간</Th>
-										<Th>구분</Th>
-										<Th>주문유형</Th>
-										<Th>상태</Th>
-										<Th>종목</Th>
-										<Th isNumeric>
-											수량
-										</Th>
-										<Th isNumeric>
-											주문가
-										</Th>
-										<Th isNumeric>
-											체결가
-										</Th>
-										<Th isNumeric>
-											실현손익
-										</Th>
-										<Th>관리</Th>
-									</Tr>
-								</Thead>
-
-								<Tbody>
-									{orders.map(
-										(order) => (
-											<Tr
-												key={
-													order._id
-												}
-											>
-												<Td>
-													{formatDateTime(
-														order.createdAt,
-													)}
-												</Td>
-
-												<Td>
-													<Badge
-														colorScheme={
-															order.side ===
-															"BUY"
-																? "red"
-																: "blue"
-														}
-													>
-														{sideLabel[
-															order.side
-														]}
-													</Badge>
-												</Td>
-
-												<Td>
-													{order.orderType ===
-													"MARKET"
-														? "시장가"
-														: "지정가"}
-												</Td>
-
-												<Td>
-													<Badge
-														colorScheme={
-															statusColor[
-																order.status
-															]
-														}
-													>
-														{statusLabel[
-															order.status
-														]}
-													</Badge>
-												</Td>
-
-												<Td>
-													{order.name}
-													(
-													{order.symbol}
-													)
-												</Td>
-
-												<Td isNumeric>
-													{numberFormat.format(
-														order.quantity,
-													)}
-												</Td>
-
-												<Td isNumeric>
-													{usd.format(
-														Number(
-															order.limitPrice ??
-																order.orderPrice ??
-																0,
-														),
-													)}
-												</Td>
-
-												<Td isNumeric>
-													{order.executedPrice
-														? usd.format(
-																order.executedPrice,
-															)
-														: "-"}
-												</Td>
-
-												<Td
-													isNumeric
-													color={
-														order.realizedProfit >
-														0
-															? "red.500"
-															: order.realizedProfit <
-																  0
-																? "blue.500"
-																: "gray.700"
-													}
-												>
-													{order.realizedProfit
-														? usd.format(
-																order.realizedProfit,
-															)
-														: "-"}
-												</Td>
-
-												<Td>
-													{order.status ===
-													"PENDING" ? (
-														<Button
-															size="xs"
-															variant="outline"
-															onClick={() =>
-																void cancelOrder(
-																	order._id,
-																)
-															}
-														>
-															취소
-														</Button>
-													) : (
-														"-"
-													)}
-												</Td>
-											</Tr>
-										),
-									)}
-
-									{orders.length ===
-										0 && (
-										<Tr>
-											<Td
-												colSpan={
-													10
-												}
-											>
-												<Text color="gray.500">
-													아직 주문 내역이 없습니다.
-												</Text>
-											</Td>
-										</Tr>
-									)}
-								</Tbody>
-							</Table>
+						<CardBody pt="4">
+							{isLoadingChart ? (
+								<Flex h="540px" align="center" justify="center"><Spinner color="brand.500" /></Flex>
+							) : (
+								<UsCandlestickChart data={chartData} height={540} />
+							)}
 						</CardBody>
 					</Card>
 				</GridItem>
 
-				<GridItem>
-					<Card mb="5">
-						<CardHeader pb="0">
-							<Heading size="md">
-								종목 검색
-							</Heading>
-						</CardHeader>
-
-						<CardBody>
-							<Stack>
-								<HStack>
-									<Input
-										value={
-											searchQuery
-										}
-										onChange={(
-											event,
-										) =>
-											setSearchQuery(
-												event.target
-													.value,
-											)
-										}
-										onKeyDown={(
-											event,
-										) => {
-											if (
-												event.key ===
-												"Enter"
-											) {
-												void searchStocks();
-											}
-										}}
-										placeholder="기업명·ETF 또는 티커"
-									/>
-
-									<Button
-										onClick={() =>
-											void searchStocks()
-										}
-										isLoading={
-											isSearching
-										}
-									>
-										검색
-									</Button>
-								</HStack>
-
-								<Stack spacing="2">
-									{searchResults.map(
-										(item) => (
-											<Box
-												key={`${item.exchange}-${item.symbol}`}
-												p="3"
-												borderWidth="1px"
-												borderRadius="lg"
-												cursor="pointer"
-												_hover={{
-													bg: "gray.50",
-												}}
-												onClick={() =>
-													void selectStock(
-														item,
-													)
-												}
-											>
-												<Flex align="center">
-													<Box>
-														<Text fontWeight="800">
-															{item.name}
-														</Text>
-
-														<Text
-															fontSize="sm"
-															color="gray.500"
-														>
-															{item.symbol}
-															{" · "}
-															{item.market}
-														</Text>
-													</Box>
-
-													<Spacer />
-
-													<Badge
-														colorScheme={
-															item.assetType ===
-															"ETF"
-																? "teal"
-																: "blue"
-														}
-													>
-														{item.assetType ===
-														"ETF"
-															? "ETF"
-															: "주식"}
-													</Badge>
-												</Flex>
-											</Box>
-										),
-									)}
-								</Stack>
-							</Stack>
-						</CardBody>
-					</Card>
-
-					<Card mb="5">
-						<CardHeader pb="0">
+				<GridItem minW="0">
+					<Card position={{ "2xl": "sticky" }} top={{ "2xl": "102px" }} borderColor="app.borderSoft" boxShadow="0 8px 24px rgba(73, 52, 30, 0.05)">
+						<CardHeader pb="3" borderBottomWidth="1px" borderColor="app.borderSoft">
 							<Flex align="center">
-								<Heading size="md">
-									보유 종목
-								</Heading>
-
+								<Box>
+									<Heading size="md">주문</Heading>
+									<Text mt="1" fontSize="11px" color="app.subtleText">{quote?.name ?? "종목"} 매수·매도</Text>
+								</Box>
 								<Spacer />
-
-								<Button
-									size="sm"
-									variant="outline"
-									onClick={() =>
-										void loadTradingData(
-											true,
-										)
-									}
-									isLoading={
-										isLoadingTrading
-									}
-								>
-									평가금액 갱신
-								</Button>
+								<Badge colorScheme={marketStatus?.isOpen ? "green" : "orange"} borderRadius="full">
+									{marketStatus?.isOpen ? "장 운영 중" : "장 마감"}
+								</Badge>
 							</Flex>
 						</CardHeader>
-
 						<CardBody>
-							<Stack spacing="3">
-								{portfolio?.holdings.map(
-									(holding) => (
-										<Box
-											key={`${holding.exchange}-${holding.symbol}`}
-											p="3"
-											borderWidth="1px"
-											borderRadius="lg"
-											cursor="pointer"
-											_hover={{
-												bg: "gray.50",
-											}}
-											onClick={() =>
-												void selectStock(
-													{
-														symbol:
-															holding.symbol,
-														name:
-															holding.name,
-														shortname:
-															holding.name,
-														longname:
-															holding.name,
-														exchange:
-															holding.exchange,
-														exchDisp:
-															holding.market,
-														market:
-															holding.market,
-														currency:
-															"USD",
-														assetType:
-															"STOCK",
-														tradable:
-															true,
-													},
-												)
-											}
+							<SimpleGrid columns={3} spacing="0" mb="4" borderWidth="1px" borderColor="app.borderSoft" borderRadius="8px" overflow="hidden">
+								{([[
+									"BUY", "매수",
+								], ["SELL", "매도"], ["MANAGE", "정정/취소"]] as const).map(([mode, label]) => {
+									const active = orderPanelMode === mode;
+									const activeColor = mode === "BUY" ? "#F26438" : mode === "SELL" ? "#4679C8" : "#3C352E";
+									return (
+										<Button
+											key={mode}
+											h="38px"
+											borderRadius="0"
+											borderRightWidth={mode === "MANAGE" ? "0" : "1px"}
+											borderColor="app.borderSoft"
+											bg={active ? activeColor : "white"}
+											color={active ? "white" : "app.text"}
+											fontSize="12px"
+											onClick={() => setOrderPanelMode(mode)}
 										>
-											<Flex align="center">
-												<Box>
-													<Text fontWeight="800">
-														{holding.name}
-													</Text>
+											{label}
+										</Button>
+									);
+								})}
+							</SimpleGrid>
 
-													<Text
-														fontSize="sm"
-														color="gray.500"
-													>
-														{holding.symbol}
-														{" · "}
-														{numberFormat.format(
-															holding.quantity,
-														)}
-														주
-													</Text>
-												</Box>
-
-												<Spacer />
-
-												<Text
-													fontWeight="800"
-													color={
-														holding.profitLoss >=
-														0
-															? "red.500"
-															: "blue.500"
-													}
-												>
-													{holding.profitLossRate.toFixed(
-														2,
-													)}
-													%
-												</Text>
+							{orderPanelMode === "MANAGE" ? (
+								<Box>
+									<Flex align="center" mb="3">
+										<Text fontSize="12px" fontWeight="900">현재 종목 미체결 주문</Text>
+										<Spacer />
+										<Button size="xs" variant="ghost" onClick={() => void checkPending()}>새로고침</Button>
+									</Flex>
+									<Stack spacing="2" maxH="430px" overflowY="auto">
+										{pendingOrders.map((order) => (
+											<Box key={order._id} p="3" borderWidth="1px" borderColor="app.borderSoft" borderRadius="9px" bg="#FFFCF8">
+												<Flex align="center" gap="2">
+													<Badge colorScheme={order.side === "BUY" ? "red" : "blue"}>{sideLabel[order.side]}</Badge>
+													<Text fontSize="11px" color="app.subtleText">지정가</Text>
+													<Spacer />
+													<Text fontSize="11px" color="app.subtleText">{formatDateTime(order.createdAt)}</Text>
+												</Flex>
+												<Flex mt="2" justify="space-between" fontSize="12px">
+													<Text>{numberFormat.format(order.quantity)}주</Text>
+													<Text fontWeight="900">{usd.format(Number(order.limitPrice ?? order.orderPrice ?? 0))}</Text>
+												</Flex>
+												<SimpleGrid mt="3" columns={2} spacing="2">
+													<Button size="xs" variant="outline" onClick={() => prepareUsOrderCorrection(order)}>정정</Button>
+													<Button size="xs" colorScheme="red" variant="outline" onClick={() => void cancelOrder(order._id)}>취소</Button>
+												</SimpleGrid>
+											</Box>
+										))}
+										{pendingOrders.length === 0 && (
+											<Flex minH="180px" align="center" justify="center" borderWidth="1px" borderColor="app.borderSoft" borderRadius="9px">
+												<Text fontSize="12px" color="app.subtleText">미체결 주문이 없습니다.</Text>
 											</Flex>
-
-											<Text
-												mt="2"
-												fontSize="sm"
-												color="gray.600"
-											>
-												평균{" "}
-												{usd.format(
-													holding.avgPrice,
-												)}
-												{" · "}
-												현재{" "}
-												{usd.format(
-													holding.currentPrice,
-												)}
-											</Text>
+										)}
+									</Stack>
+								</Box>
+							) : (
+								<>
+									<SimpleGrid columns={2} spacing="3" mb="4">
+										<Box p="3" borderRadius="10px" bg="#FAF7F2">
+											<Text fontSize="10px" color="app.subtleText">주문 가능 금액</Text>
+											<Text mt="1" fontSize="14px" fontWeight="900">{usd.format(account?.availableCash ?? 0)}</Text>
 										</Box>
-									),
-								)}
+										<Box p="3" borderRadius="10px" bg="#FAF7F2">
+											<Text fontSize="10px" color="app.subtleText">보유수량</Text>
+											<Text mt="1" fontSize="14px" fontWeight="900">{numberFormat.format(selectedHolding?.quantity ?? 0)}주</Text>
+										</Box>
+									</SimpleGrid>
 
-								{(!portfolio?.holdings ||
-									portfolio.holdings
-										.length ===
-										0) && (
-									<Text color="gray.500">
-										아직 보유 종목이 없습니다.
-									</Text>
-								)}
-							</Stack>
+									<SimpleGrid columns={2} spacing="2" mb="4">
+										<Button h="38px" bg={orderType === "MARKET" ? "#3C352E" : "white"} color={orderType === "MARKET" ? "white" : "app.text"} borderWidth="1px" borderColor="app.borderSoft" onClick={() => setOrderType("MARKET")} isDisabled={isMarketClosed}>시장가</Button>
+										<Button h="38px" bg={orderType === "LIMIT" ? "#3C352E" : "white"} color={orderType === "LIMIT" ? "white" : "app.text"} borderWidth="1px" borderColor="app.borderSoft" onClick={() => { setOrderType("LIMIT"); if (limitPrice <= 0 && quote?.price) setLimitPrice(quote.price); }}>지정가</Button>
+									</SimpleGrid>
+
+									<Box mb="3">
+										<Text mb="1.5" fontSize="11px" fontWeight="800">주문 가격</Text>
+										<Grid templateColumns="42px minmax(0, 1fr) 42px" borderWidth="1px" borderColor="app.borderSoft" borderRadius="8px" overflow="hidden">
+											<Button h="42px" minW="0" borderRadius="0" variant="ghost" borderRightWidth="1px" borderColor="app.borderSoft" isDisabled={orderType === "MARKET" || !quote} onClick={() => setLimitPrice((price) => Math.max(0.01, Number(((price || quote?.price || 0) - 0.01).toFixed(2))))}>−</Button>
+											<NumberInput value={orderType === "MARKET" ? quote?.price ?? 0 : limitPrice} min={0.01} step={0.01} precision={2} onChange={(_, value) => orderType === "LIMIT" && setLimitPrice(Number.isNaN(value) ? 0 : value)} isReadOnly={orderType === "MARKET"} isDisabled={!quote}>
+												<NumberInputField h="42px" border="0" borderRadius="0" textAlign="center" fontWeight="900" px="4px" />
+											</NumberInput>
+											<Button h="42px" minW="0" borderRadius="0" variant="ghost" borderLeftWidth="1px" borderColor="app.borderSoft" isDisabled={orderType === "MARKET" || !quote} onClick={() => setLimitPrice((price) => Number(((price || quote?.price || 0) + 0.01).toFixed(2)))}>＋</Button>
+										</Grid>
+										<Flex mt="1.5" align="center">
+											<Text fontSize="10px" color="app.subtleText">가격 단위 $0.01</Text>
+											<Spacer />
+											<Button size="xs" variant="ghost" color="brand.600" onClick={() => quote?.price && setLimitPrice(quote.price)} isDisabled={!quote || orderType === "MARKET"}>현재가</Button>
+										</Flex>
+									</Box>
+
+									<Box>
+										<Text mb="1.5" fontSize="11px" fontWeight="800">주문 수량</Text>
+										<Grid templateColumns="42px minmax(0, 1fr) 42px" borderWidth="1px" borderColor="app.borderSoft" borderRadius="8px" overflow="hidden">
+											<Button h="42px" minW="0" borderRadius="0" variant="ghost" borderRightWidth="1px" borderColor="app.borderSoft" onClick={() => setQuantity((value) => Math.max(1, value - 1))} isDisabled={!quote}>−</Button>
+											<NumberInput value={quantity} min={1} onChange={(_, value) => setQuantity(Number.isNaN(value) ? 1 : Math.max(1, Math.floor(value)))} isDisabled={!quote}>
+												<NumberInputField h="42px" border="0" borderRadius="0" textAlign="center" fontWeight="900" px="4px" />
+											</NumberInput>
+											<Button h="42px" minW="0" borderRadius="0" variant="ghost" borderLeftWidth="1px" borderColor="app.borderSoft" onClick={() => setQuantity((value) => value + 1)} isDisabled={!quote}>＋</Button>
+										</Grid>
+										<SimpleGrid columns={4} spacing="2" mt="2">
+											{[10, 50, 100].map((value) => <Button key={value} size="xs" variant="outline" borderColor="app.borderSoft" onClick={() => setQuantity(value)}>{value}</Button>)}
+											<Button size="xs" variant="outline" borderColor="app.borderSoft" onClick={() => setQuantity(maximumQuantity)}>최대</Button>
+										</SimpleGrid>
+									</Box>
+
+									<Flex mt="4" justify="space-between" align="center">
+										<Text fontSize="11px" color="app.subtleText">예상 총 금액</Text>
+										<Text fontWeight="900">{usd.format(effectivePrice * quantity)}</Text>
+									</Flex>
+
+									<Button
+										mt="5"
+										w="100%"
+										h="50px"
+										bg={orderPanelMode === "BUY" ? "#F26438" : "#4679C8"}
+										color="white"
+										onClick={() => void submitOrder(orderPanelMode)}
+										isLoading={isSubmitting}
+										isDisabled={!quote || isMarketOrderBlocked}
+									>
+										{orderType === "LIMIT" && isMarketClosed ? "예약 " : ""}
+										{orderPanelMode === "BUY" ? "매수 주문하기" : "매도 주문하기"}
+									</Button>
+
+									<Divider my="4" />
+									<Flex gap="2">
+										<Button size="xs" variant="outline" onClick={() => void checkPending()}>미체결 확인</Button>
+										<Button size="xs" variant="outline" onClick={() => void topUpAccount()} isLoading={isToppingUp}>$1,000 충전</Button>
+									</Flex>
+								</>
+							)}
 						</CardBody>
 					</Card>
 				</GridItem>
 			</Grid>
+
+			<Grid mt="5" templateColumns={{ base: "1fr", md: "repeat(3, minmax(0, 1fr))" }} gap="5">
+				<UsDetailSelectorCard title="호가" description="미국 종목 매도·매수 잔량" selected={detailSection === "orderbook"} onClick={() => { setDetailSection("orderbook"); void loadUsOrderBook(selectedSymbol, selectedExchange); }}>
+					<Stack spacing="7px">
+						{(usOrderBook?.levels ?? []).slice(0, 4).map((level) => (
+							<Grid key={level.level} templateColumns="1fr 1fr 1fr" gap="2">
+								<Text fontSize="10px" color="#F05B45">{level.askPrice ? usd.format(level.askPrice) : "-"}</Text>
+								<Text textAlign="center" fontSize="10px" fontWeight="800">{numberFormat.format(level.askVolume + level.bidVolume)}</Text>
+								<Text textAlign="right" fontSize="10px" color="#2F67D8">{level.bidPrice ? usd.format(level.bidPrice) : "-"}</Text>
+							</Grid>
+						))}
+					</Stack>
+					{(usOrderBook?.levels?.length ?? 0) === 0 && <Text mt="12px" fontSize="10px" color="app.subtleText">호가 데이터 없음</Text>}
+				</UsDetailSelectorCard>
+
+				<UsDetailSelectorCard title="체결" description="미국 종목 실시간 시장 체결" selected={detailSection === "executions"} onClick={() => { setDetailSection("executions"); void loadUsExecutions(selectedSymbol, selectedExchange); }}>
+					<Grid templateColumns="1fr 1fr 1fr" gap="2" mb="8px">
+						<Text fontSize="10px" color="app.subtleText">시간</Text>
+						<Text textAlign="center" fontSize="10px" color="app.subtleText">체결가</Text>
+						<Text textAlign="right" fontSize="10px" color="app.subtleText">수량</Text>
+					</Grid>
+					{(usExecutions?.items ?? []).slice(0, 4).map((item, index) => (
+						<Grid key={`${item.time}-${index}`} templateColumns="1fr 1fr 1fr" gap="2" py="4px">
+							<Text fontSize="10px" color="app.subtleText">{item.time}</Text>
+							<Text textAlign="center" fontSize="10px" fontWeight="800" color={item.direction === "UP" ? "#F05B45" : item.direction === "DOWN" ? "#2F67D8" : "app.text"}>{usd.format(item.price)}</Text>
+							<Text textAlign="right" fontSize="10px" color="app.subtleText">{numberFormat.format(item.quantity)}</Text>
+						</Grid>
+					))}
+					{(usExecutions?.items?.length ?? 0) === 0 && <Text mt="8px" fontSize="10px" color="app.subtleText">체결 데이터 없음</Text>}
+				</UsDetailSelectorCard>
+
+				<UsDetailSelectorCard title="정보" description="기업·ETF 핵심 정보" selected={detailSection === "information"} onClick={() => setDetailSection("information")}>
+					<Stack spacing="0">
+						{[
+							["종목", quote?.name ?? "-"],
+							["시장", quote?.market ?? "-"],
+							["PER", formatRatio(quote?.per)],
+							["PBR", formatRatio(quote?.pbr)],
+						].map(([label, value], index) => (
+							<Flex key={label} py="7px" borderBottomWidth={index === 3 ? "0" : "1px"} borderColor="#F1E8DE">
+								<Text fontSize="11px" color="app.subtleText">{label}</Text>
+								<Spacer />
+								<Text fontSize="11px" fontWeight="800">{value}</Text>
+							</Flex>
+						))}
+					</Stack>
+				</UsDetailSelectorCard>
+			</Grid>
+
+			<Card mt="5" borderColor="app.borderSoft" boxShadow="0 8px 24px rgba(73, 52, 30, 0.04)">
+				<CardHeader pb="3">
+					<Flex align="center" w="100%">
+						<Box>
+						<Heading size="sm">
+							{detailSection === "orderbook" ? "호가 · 수급 현황" : detailSection === "executions" ? "실시간 체결" : "종목 상세 정보"}
+						</Heading>
+						<Text mt="1" fontSize="11px" color="app.subtleText">
+							{detailSection === "information" ? "현재 종목의 기업 정보와 재무지표를 확인합니다." : detailSection === "orderbook" ? "KIS 해외주식 현재가 1호가를 표시합니다." : "KIS 해외주식 체결추이를 10초 간격으로 갱신합니다."}
+						</Text>
+						</Box>
+						<Spacer />
+						{detailSection !== "information" && (
+							<Button size="xs" variant="outline" onClick={() => detailSection === "orderbook" ? void loadUsOrderBook(selectedSymbol, selectedExchange) : void loadUsExecutions(selectedSymbol, selectedExchange)} isLoading={detailSection === "orderbook" ? isLoadingUsOrderBook : isLoadingUsExecutions}>새로고침</Button>
+						)}
+					</Flex>
+				</CardHeader>
+				<CardBody pt="0">
+					{detailSection === "orderbook" && <UsOrderBookPanel data={usOrderBook} isLoading={isLoadingUsOrderBook} />}
+					{detailSection === "executions" && <UsExecutionPanel data={usExecutions} isLoading={isLoadingUsExecutions} />}
+					{detailSection === "information" && <UsStockDetailPanel quote={quote} isLoading={isLoadingQuote} />}
+				</CardBody>
+			</Card>
 		</Box>
 	);
+
 }

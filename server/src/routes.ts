@@ -157,11 +157,6 @@ router.post(
 	tradingController.enableSalaryFunding,
 );
 
-router.post("/api/trading/orders", tradingController.postOrder);
-router.post("/api/trading/orders/:orderId/cancel", tradingController.cancelOrder);
-router.post("/api/trading/orders/check-pending", tradingController.checkPending);
-router.post("/api/trading/reset", tradingController.resetDemo);
-
 router.post("/api/ai/stock-assistant", aiController.stockAssistant);
 router.post(
 	"/api/ai/asset-advice",

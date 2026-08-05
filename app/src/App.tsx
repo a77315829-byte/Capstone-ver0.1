@@ -1,111 +1,29 @@
-import { useEffect, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import Navbar from "./components/Navbar";
-import Exchange from "./pages/Exchange";
-import Scenario from "./pages/Scenario";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import StockView from "./pages/StockView";
-import NotFound from "./pages/NotFound";
-import api from "./services/api.service";
+import { Navigate, Route, Routes } from "react-router-dom";
+
+import AppLayout from "./layouts/AppLayout";
 import tokens from "./services/tokens.service";
+
+import Community from "./pages/Community";
+import CommunityPostDetail from "./pages/CommunityPostDetail";
+import CommunityWrite from "./pages/CommunityWrite";
+import Exchange from "./pages/Exchange";
+import FinanceLearning from "./pages/FinanceLearning";
+import Login from "./pages/Login";
+import MarketSimulator from "./pages/MarketSimulator";
+import MyPage from "./pages/MyPage";
+import RealtimeNews from "./pages/RealtimeNews";
+import NotFound from "./pages/NotFound";
+import SalaryCalculator from "./pages/SalaryCalculator";
+import Scenario from "./pages/Scenario";
 import ScenarioChapter from "./pages/ScenarioChapter";
 import ScenarioPlay from "./pages/ScenarioPlay";
-import MyPage from "./pages/MyPage";
-import SalaryCalculator from "./pages/SalaryCalculator";
-import FinanceLearning from "./pages/FinanceLearning";
-import Community from "./pages/Community";
-import CommunityWrite from "./pages/CommunityWrite";
-import CommunityPostDetail from "./pages/CommunityPostDetail";
-
-interface OnboardingStatus {
-	militaryProfileConfigured: boolean;
-	salaryPlanConfigured: boolean;
-	nextRoute: string;
-}
+import Signup from "./pages/Signup";
+import StockView from "./pages/StockView";
 
 function EntryRoute() {
-	const [nextRoute, setNextRoute] =
-		useState<string | null>(null);
-	const [loadFailed, setLoadFailed] =
-		useState(false);
-
-	useEffect(() => {
-		if (!tokens.isAuthenticated()) {
-			setNextRoute("/login");
-			return;
-		}
-
-		let cancelled = false;
-
-		api
-			.get<OnboardingStatus>(
-				"/user/onboarding-status",
-			)
-			.then((response) => {
-				if (cancelled) {
-					return;
-				}
-
-				setNextRoute(
-					response.data
-						.militaryProfileConfigured
-						? "/salary"
-						: "/mypage",
-				);
-			})
-			.catch((error) => {
-				if (cancelled) {
-					return;
-				}
-
-				if (
-					error?.response?.status === 401
-				) {
-					tokens.clearToken();
-					setNextRoute("/login");
-					return;
-				}
-
-				setLoadFailed(true);
-			});
-
-		return () => {
-			cancelled = true;
-		};
-	}, []);
-
-	if (loadFailed) {
-		return (
-			<div
-				style={{
-					padding: "48px 24px",
-					textAlign: "center",
-				}}
-			>
-				초기 설정 상태를 확인하지 못했습니다.
-				<br />
-				페이지를 새로고침해 주세요.
-			</div>
-		);
-	}
-
-	if (!nextRoute) {
-		return (
-			<div
-				style={{
-					padding: "48px 24px",
-					textAlign: "center",
-				}}
-			>
-				초기 설정 상태를 확인하고 있습니다.
-			</div>
-		);
-	}
-
 	return (
 		<Navigate
-			to={nextRoute}
+			to={tokens.isAuthenticated() ? "/scenario" : "/login"}
 			replace
 		/>
 	);
@@ -113,26 +31,42 @@ function EntryRoute() {
 
 function App() {
 	return (
-		<>
-			<Navbar />
+		<Routes>
+			<Route path="/login" element={<Login />} />
+			<Route path="/signup" element={<Signup />} />
 
-			<Routes>
+			<Route element={<AppLayout />}>
+				<Route path="/" element={<EntryRoute />} />
+
+				<Route path="/mypage" element={<MyPage />} />
+
+				<Route path="/scenario" element={<Scenario />} />
 				<Route
-					path="/"
-					element={<EntryRoute />}
+					path="/scenario/chapter/:chapterId"
+					element={<ScenarioChapter />}
+				/>
+				<Route
+					path="/scenario/play/:scenarioId"
+					element={<ScenarioPlay />}
 				/>
 
 				<Route path="/exchange" element={<Exchange />} />
-				{/* 해커톤 버전에서는 사용하지 않음
-				<Route path="/scenario" element={<Scenario />} />
-				<Route path="/scenario/chapter/:chapterId" element={<ScenarioChapter />} />
-				<Route path="/scenario/play/:scenarioId" element={<ScenarioPlay />} />
-				*/}
-
 				<Route path="/stocks/:symbol" element={<StockView />} />
+				<Route path="/simulator" element={<MarketSimulator />} />
+				<Route path="/news" element={<RealtimeNews />} />
 
-				<Route path="/login" element={<Login />} />
-				<Route path="/signup" element={<Signup />} />
+				<Route path="/learn" element={<FinanceLearning />} />
+				<Route path="/learning" element={<FinanceLearning />} />
+				<Route path="/finance-learning" element={<FinanceLearning />} />
+				<Route path="/dictionary" element={<FinanceLearning />} />
+				<Route path="/quiz" element={<FinanceLearning />} />
+
+				{/*
+				 * 기존 군 해커톤 기능은 서버 및 DB 호환성 보존을 위해
+				 * 라우트만 임시 유지합니다. 새 사이드바에는 노출하지 않습니다.
+				 */}
+				<Route path="/salary" element={<SalaryCalculator />} />
+				<Route path="/salary-planner" element={<SalaryCalculator />} />
 				<Route path="/community" element={<Community />} />
 				<Route path="/community/write" element={<CommunityWrite />} />
 				<Route
@@ -141,57 +75,8 @@ function App() {
 				/>
 
 				<Route path="*" element={<NotFound />} />
-				<Route path="/mypage" element={<MyPage />} />
-				<Route path="/salary" element={<SalaryCalculator />} />
-
-				<Route
-					path="/salary-planner"
-					element={
-						<SalaryCalculator />
-					}
-				/>
-
-				<Route
-					path="/learn"
-					element={
-						<FinanceLearning />
-					}
-				/>
-
-				<Route
-					path="/learning"
-					element={
-						<FinanceLearning />
-					}
-				/>
-
-				<Route
-					path="/finance-learning"
-					element={
-						<FinanceLearning />
-					}
-				/>
-
-				<Route
-					path="/dictionary"
-					element={
-						<FinanceLearning />
-					}
-				/>
-
-				<Route
-					path="/quiz"
-					element={
-						<FinanceLearning />
-					}
-				/>
-
-				<Route
-					path="*"
-					element={<NotFound />}
-				/>
-			</Routes>
-		</>
+			</Route>
+		</Routes>
 	);
 }
 

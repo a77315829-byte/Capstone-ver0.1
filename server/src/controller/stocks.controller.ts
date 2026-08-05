@@ -5,8 +5,11 @@ import { fetchOrderBookData } from "../utils/requests";
 import {
 	fetchStockData,
 	fetchHistoricalStockData,
+	fetchDomesticExecutionData,
+	fetchDomesticInvestorTrend,
 	normalizeStockSymbol,
 	searchStocks,
+	InvestorTrendPeriod,
 } from "../utils/requests";
 import { ITransaction } from "../models/transaction.model";
 import { IPosition } from "../models/position.model";
@@ -75,6 +78,44 @@ const sendError = (
 		message,
 		...extra,
 	});
+};
+
+
+const getExecutions = async (req: Request, res: Response) => {
+	const symbol = normalizeStockSymbol(req.params.symbol || "");
+	const limit = Math.min(Math.max(Number(req.query.limit || 30), 1), 100);
+
+	if (!symbol) {
+		return res.status(400).json({ success: false, error: "종목 코드가 필요합니다." });
+	}
+
+	try {
+		const data = await fetchDomesticExecutionData(symbol, limit);
+		return res.status(200).json({ success: true, data });
+	} catch (error) {
+		console.error(`getExecutions error: ${symbol}`, error);
+		return sendError(res, error, "실시간 체결 정보를 불러오지 못했습니다.", { symbol });
+	}
+};
+
+const getInvestors = async (req: Request, res: Response) => {
+	const symbol = normalizeStockSymbol(req.params.symbol || "");
+	const requestedPeriod = String(req.query.period || "1d");
+	const period: InvestorTrendPeriod = ["1d", "5d", "30d", "60d"].includes(requestedPeriod)
+		? (requestedPeriod as InvestorTrendPeriod)
+		: "1d";
+
+	if (!symbol) {
+		return res.status(400).json({ success: false, error: "종목 코드가 필요합니다." });
+	}
+
+	try {
+		const data = await fetchDomesticInvestorTrend(symbol, period);
+		return res.status(200).json({ success: true, data });
+	} catch (error) {
+		console.error(`getInvestors error: ${symbol}`, error);
+		return sendError(res, error, "투자자별 매매동향을 불러오지 못했습니다.", { symbol, period });
+	}
 };
 
 const getInfo = async (req: Request, res: Response) => {
@@ -360,6 +401,8 @@ export default {
 	getHistorical,
 	getDetail,
 	getOrderBook,
+	getExecutions,
+	getInvestors,
 	buyStock,
 	sellStock,
 	search,

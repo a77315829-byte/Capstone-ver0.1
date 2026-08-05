@@ -112,6 +112,7 @@ type SimulationResult = {
 
 type Props = {
 	stock: StockLike | null;
+	displayMode?: "floating" | "page";
 };
 
 const inputTypeOptions: { value: InputTypeHint; label: string }[] = [
@@ -613,7 +614,10 @@ function ResultView({ result }: { result: SimulationResult }) {
 	);
 }
 
-export default function MarketSimulatorPanel({ stock }: Props) {
+export default function MarketSimulatorPanel({
+	stock,
+	displayMode = "floating",
+}: Props) {
 	const { isOpen, onOpen, onClose } = useDisclosure();
 	const toast = useToast();
 
@@ -690,40 +694,7 @@ export default function MarketSimulatorPanel({ stock }: Props) {
 		}
 	};
 
-	return (
-		<>
-			<Portal>
-				<Button
-					position="fixed"
-					right={{ base: "20px", md: "32px" }}
-					bottom={{ base: "72px", md: "88px" }}
-					zIndex="popover"
-					borderRadius="full"
-					colorScheme="purple"
-					boxShadow="lg"
-					onClick={onOpen}
-				>
-					시장 반응 시뮬레이터
-				</Button>
-			</Portal>
-
-			<Modal isOpen={isOpen} onClose={onClose} size="6xl">
-				<ModalOverlay />
-				<ModalContent maxW="1180px" h="86vh">
-					<ModalHeader borderBottomWidth="1px">
-						<Flex align="center">
-							<Box>
-								<Heading size="md">시장 반응 시뮬레이터</Heading>
-								<Text fontSize="sm" color="gray.500" mt="1">
-									입력한 뉴스/이벤트에 대한 시장 반응 성향을 분석합니다.
-								</Text>
-							</Box>
-							<Box flex="1" />
-							<CloseButton onClick={onClose} />
-						</Flex>
-					</ModalHeader>
-
-					<ModalBody overflowY="auto" py="5" bg="gray.50">
+	const simulatorBody = (
 						<Grid templateColumns={{ base: "1fr", xl: "360px 1fr" }} gap="5">
 							{/* 왼쪽: 입력 영역 */}
 							<GridItem>
@@ -819,6 +790,47 @@ export default function MarketSimulatorPanel({ stock }: Props) {
 								)}
 							</GridItem>
 						</Grid>
+	);
+
+	if (displayMode === "page") {
+		return simulatorBody;
+	}
+
+	return (
+		<>
+			<Portal>
+				<Button
+					position="fixed"
+					right={{ base: "20px", md: "32px" }}
+					bottom={{ base: "72px", md: "88px" }}
+					zIndex="popover"
+					borderRadius="full"
+					colorScheme="purple"
+					boxShadow="lg"
+					onClick={onOpen}
+				>
+					시장 반응 시뮬레이터
+				</Button>
+			</Portal>
+
+			<Modal isOpen={isOpen} onClose={onClose} size="6xl">
+				<ModalOverlay />
+				<ModalContent maxW="1180px" h="86vh">
+					<ModalHeader borderBottomWidth="1px">
+						<Flex align="center">
+							<Box>
+								<Heading size="md">시장 반응 시뮬레이터</Heading>
+								<Text fontSize="sm" color="gray.500" mt="1">
+									입력한 뉴스/이벤트에 대한 시장 반응 성향을 분석합니다.
+								</Text>
+							</Box>
+							<Box flex="1" />
+							<CloseButton onClick={onClose} />
+						</Flex>
+					</ModalHeader>
+
+					<ModalBody overflowY="auto" py="5" bg="gray.50">
+						{simulatorBody}
 					</ModalBody>
 				</ModalContent>
 			</Modal>

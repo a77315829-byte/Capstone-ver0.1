@@ -17,17 +17,48 @@ import {
 } from "react-router-dom";
 
 import DomesticExchange from "./DomesticExchange";
-import FloatingNewsDrawer from "../components/FloatingNewsDrawer";
 import UsMarketPanel from "../components/UsMarketPanel";
 
 type MarketView =
 	| "KR"
 	| "US";
 
-export interface SelectedNewsStock {
+export interface SelectedExchangeStock {
 	symbol: string;
 	name: string;
 	market: string;
+}
+
+const SELECTED_STOCK_STORAGE_KEY =
+	"antitude:selectedStock";
+
+function getDefaultStock(
+	market: MarketView,
+): SelectedExchangeStock {
+	return market === "US"
+		? {
+			symbol: "NVDA",
+			name: "엔비디아",
+			market: "NASDAQ",
+		}
+		: {
+			symbol: "005930",
+			name: "삼성전자",
+			market: "KOSPI",
+		};
+}
+
+function rememberSelectedStock(
+	stock: SelectedExchangeStock,
+) {
+	try {
+		sessionStorage.setItem(
+			SELECTED_STOCK_STORAGE_KEY,
+			JSON.stringify(stock),
+		);
+	} catch {
+		// 브라우저 저장소를 사용할 수 없어도 거래 화면은 계속 동작합니다.
+	}
 }
 
 export default function Exchange() {
@@ -36,7 +67,7 @@ export default function Exchange() {
 		setSearchParams,
 	] = useSearchParams();
 
-	const queryMarket =
+	const queryMarket: MarketView =
 		searchParams
 			.get("market")
 			?.toUpperCase() === "US"
@@ -51,31 +82,13 @@ export default function Exchange() {
 			queryMarket,
 		);
 
-	const [
-		selectedNewsStock,
-		setSelectedNewsStock,
-	] =
-		useState<SelectedNewsStock>(
-			queryMarket === "US"
-				? {
-						symbol: "NVDA",
-						name: "엔비디아",
-						market: "NASDAQ",
-					}
-				: {
-						symbol: "005930",
-						name: "삼성전자",
-						market: "KOSPI",
-					},
-		);
-
 	const handleSelectedStockChange =
 		useCallback(
 			(
 				stock:
-					SelectedNewsStock,
+					SelectedExchangeStock,
 			) => {
-				setSelectedNewsStock(
+				rememberSelectedStock(
 					stock,
 				);
 			},
@@ -86,6 +99,12 @@ export default function Exchange() {
 		setMarketView(
 			queryMarket,
 		);
+
+		rememberSelectedStock(
+			getDefaultStock(
+				queryMarket,
+			),
+		);
 	}, [queryMarket]);
 
 	const changeMarket = (
@@ -93,18 +112,10 @@ export default function Exchange() {
 	) => {
 		setMarketView(market);
 
-		setSelectedNewsStock(
-			market === "US"
-				? {
-						symbol: "NVDA",
-						name: "엔비디아",
-						market: "NASDAQ",
-					}
-				: {
-						symbol: "005930",
-						name: "삼성전자",
-						market: "KOSPI",
-					},
+		rememberSelectedStock(
+			getDefaultStock(
+				market,
+			),
 		);
 
 		setSearchParams({
@@ -115,7 +126,7 @@ export default function Exchange() {
 	return (
 		<Box
 			minH="100vh"
-			bg="gray.50"
+			bg="app.background"
 		>
 			<Flex
 				position="sticky"
@@ -137,9 +148,9 @@ export default function Exchange() {
 					md: "row",
 				}}
 				gap="3"
-				bg="white"
+				bg="app.background"
 				borderBottomWidth="1px"
-				borderColor="gray.200"
+				borderColor="app.borderSoft"
 			>
 				<Box>
 					<Text
@@ -149,7 +160,7 @@ export default function Exchange() {
 					</Text>
 					<Text
 						fontSize="xs"
-						color="gray.500"
+						color="gray.600"
 					>
 						선택한 시장의 데이터만
 						불러와 속도 저하를
@@ -166,13 +177,39 @@ export default function Exchange() {
 					size="sm"
 				>
 					<Button
-						colorScheme="blue"
-						variant={
+						bg={
 							marketView ===
-							"KR"
-								? "solid"
-								: "outline"
+								"KR"
+								? "brand.500"
+								: "white"
 						}
+						color={
+							marketView ===
+								"KR"
+								? "white"
+								: "brand.500"
+						}
+						borderWidth="1px"
+						borderColor="brand.500"
+						fontWeight="800"
+						_hover={{
+							bg:
+								marketView ===
+									"KR"
+									? "brand.500"
+									: "#FFF1E8",
+						}}
+						_active={{
+							bg:
+								marketView ===
+									"KR"
+									? "brand.500"
+									: "#FFE4D4",
+						}}
+						_focusVisible={{
+							boxShadow:
+								"0 0 0 3px rgba(255, 99, 56, 0.22)",
+						}}
 						onClick={() =>
 							changeMarket(
 								"KR",
@@ -183,13 +220,39 @@ export default function Exchange() {
 					</Button>
 
 					<Button
-						colorScheme="blue"
-						variant={
+						bg={
 							marketView ===
-							"US"
-								? "solid"
-								: "outline"
+								"US"
+								? "brand.500"
+								: "white"
 						}
+						color={
+							marketView ===
+								"US"
+								? "white"
+								: "brand.500"
+						}
+						borderWidth="1px"
+						borderColor="brand.500"
+						fontWeight="800"
+						_hover={{
+							bg:
+								marketView ===
+									"US"
+									? "brand.500"
+									: "#FFF1E8",
+						}}
+						_active={{
+							bg:
+								marketView ===
+									"US"
+									? "brand.500"
+									: "#FFE4D4",
+						}}
+						_focusVisible={{
+							boxShadow:
+								"0 0 0 3px rgba(255, 99, 56, 0.22)",
+						}}
 						onClick={() =>
 							changeMarket(
 								"US",
@@ -214,18 +277,6 @@ export default function Exchange() {
 					}
 				/>
 			)}
-
-			<FloatingNewsDrawer
-				symbol={
-					selectedNewsStock.symbol
-				}
-				name={
-					selectedNewsStock.name
-				}
-				market={
-					selectedNewsStock.market
-				}
-			/>
 		</Box>
 	);
 }
