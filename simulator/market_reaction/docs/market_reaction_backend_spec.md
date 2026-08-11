@@ -681,3 +681,24 @@ def chat_json(system: str, user: str, schema: dict,
 8. `POST /simulate`가 `test_fixtures.json`의 E2E 테스트를 통과할 때까지 반복.
 9. 시세/보유상태는 `test_fixtures.json`의 `stock_stub_data`, `user_holding_stub_data` 사용.
 10. **프론트엔드·차트는 건드리지 않는다. 출력 JSON 정확성만 목표.**
+
+## 20. RAG (참고문서 검색)
+
+- **목적**: `external_context` 판단 근거로 종목별 IR/실적발표 자료(DART)와 미국 종목 공시(SEC
+  EDGAR)를 검색해 LLM 프롬프트에 참고 자료로 제공한다. 직접 매수/매도 추천이나 가격 예측에는
+  사용하지 않는다.
+- **오프라인 인덱싱 / 런타임 검색 분리**: `scripts/build_rag_index.py`(수동 실행, 네트워크 필요)가
+  인덱스를 만들고, `app/services/document_retrieval.py`(런타임)는 만들어진 인덱스 파일만 읽는다.
+  런타임 서비스는 `DART_API_KEY` 를 사용하지 않는다.
+- **대상 종목**: 한국 20종목(DART, `scripts/build_rag_index.py:KR_STOCKS`), 미국 20종목(SEC
+  EDGAR, `scripts/build_rag_index.py:US_TICKERS`). 그 외 종목은 검색 결과가 항상 빈 리스트다.
+- **문서 유형(`RagSource.source_type`)**: `dart_periodic`(사업/분기/반기보고서),
+  `dart_material`(수시공시), `edgar_10k`, `edgar_10q`, `edgar_8k`, `edgar_other`.
+- **검색 계약**: `retrieve_relevant_documents(stock_code, query_text)` 은 항상
+  `{title, source_type, published_at, content}` 형태의 dict 목록을 반환하며, 실패 시
+  (지원하지 않는 종목/인덱스 없음/임베딩 모델·차원 불일치/임베딩 호출 실패) 예외 없이 빈
+  리스트를 반환한다.
+- **선택 기준**: 종목별 인덱스에서 top-5 후보를 유사도 순으로 가져온 뒤, 누적 글자수가
+  4000자를 넘기기 전까지만 프롬프트에 포함한다.
+- **메타 반영**: 사용된 근거 자료는 `meta.rag_sources` 에 제목/유형/발행일로 남는다(없으면
+  빈 리스트, `db_save_status` 와 무관하게 매 요청 새로 계산됨).

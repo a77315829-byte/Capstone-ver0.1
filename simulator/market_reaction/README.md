@@ -27,6 +27,7 @@ simulator/market_reaction/
 │   │   ├── integrator.py        # StandardInput 통합
 │   │   ├── agents.py            # 5개 에이전트 병렬 실행 (LLM/fallback)
 │   │   ├── critic.py            # 5개 에이전트 결과 정합성 검토 (LLM/fallback)
+│   │   ├── chunking.py          # RAG 문서 구조 기반 청킹
 │   │   ├── pressure.py          # 시장 압력 계산 (순수 함수)
 │   │   ├── sentiment.py         # 시장 분위기 산출 (순수 함수)
 │   │   ├── confidence.py        # 분석 신뢰도 계산 (순수 함수)
@@ -35,7 +36,13 @@ simulator/market_reaction/
 │   └── services/
 │       ├── llm_client.py           # Ollama /api/chat 비동기 client
 │       ├── stock_data.py           # 시세 stub + 실시간 시세 병합
-│       └── document_retrieval.py   # 종목별 IR/실적발표 자료 검색 (RAG MVP)
+│       ├── document_retrieval.py   # 종목별 참고문서 검색 (RAG, 런타임)
+│       ├── embeddings.py           # Ollama 임베딩 client
+│       ├── rag_index.py            # FAISS 인덱스/메타데이터/매니페스트 I/O
+│       ├── dart_source.py          # DART 공시 수집/정규화
+│       └── edgar_source.py         # SEC EDGAR 공시 수집/정규화
+├── scripts/
+│   └── build_rag_index.py   # RAG 인덱스 빌드 스크립트 (수동 실행)
 ├── tests/                   # pytest (오프라인 fallback 경로 포함)
 ├── docs/                    # 백엔드/프롬프트/fallback 명세, 테스트 픽스처
 ├── requirements.txt
@@ -68,6 +75,9 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
   | `OLLAMA_TIMEOUT_SECONDS` | `120` | LLM 호출 timeout |
   | `OLLAMA_MAX_RETRIES` | `1` | LLM 호출 재시도 횟수 |
   | `OLLAMA_TEMPERATURE` | `0.3` | LLM 기본 temperature |
+  | `DART_API_KEY` | (없음) | DART Open API 키(`scripts/build_rag_index.py` 전용, 런타임 서비스는 미사용) |
+  | `RAG_INDEX_DIR` | `data/rag_index` | RAG 인덱스/메타데이터/매니페스트 저장 경로 |
+  | `OLLAMA_EMBEDDING_MODEL` | `nomic-embed-text` | RAG 문서/질의 임베딩에 사용할 Ollama 모델명 |
 
 > `API_HOST` / `API_PORT` 는 설정값으로 보관될 뿐, 실제 바인딩은 위 `uvicorn` 명령의
 > `--host` / `--port` 인자로 결정됩니다.
@@ -297,10 +307,23 @@ LLM 호출 단계는 **validator(1) + 외부 맥락(1) + 에이전트(5) + criti
 - **시세: stub + 선택적 실시간**: `stock_data.py` 는 기본적으로 stub 을 반환하지만, Node backend(KIS 연동)가
   실시간 현재가/등락률(+가능하면 거래량 추세/시가총액)을 전달하면 필드별로 덮어써서
   `data_source: "external_api"`, `is_realtime: true` 로 표시합니다. 전달이 없거나 실패하면 stub 으로 폴백합니다.
-- **RAG(MVP)**: `external_context` 생성 전에 지원 종목(005930, 000660)에 한해 `document_retrieval.py` 가
-  IR/실적발표 자료를 도메인 키워드 중복도로 검색해 LLM 프롬프트에 참고 자료로 포함합니다. 지원하지 않는
-  종목이거나 겹치는 키워드가 없으면 빈 리스트를 반환하며(예외 없음), 이 경우 기존 방식과 동일하게 동작합니다.
-  사용된 근거 자료는 `meta.rag_sources` 에 제목/유형/발행일로 남습니다.
+- **RAG**: `external_context` 생성 전에 `document_retrieval.py` 가 해당 종목의 FAISS 인덱스에서
+  질의와 유사한 문서 청크를 검색해 LLM 프롬프트에 참고 자료로 포함합니다. 인덱스는 한국 20종목(DART
+  공시)·미국 20종목(SEC EDGAR 공시)을 오프라인 배치 스크립트(`scripts/build_rag_index.py`)로 미리
+  수집·청킹·Ollama 로컬 임베딩(`nomic-embed-text`)해 만들며, 런타임은 이 인덱스를 읽기만 합니다.
+  지원 종목이 아니거나, 인덱스/매니페스트가 없거나, 임베딩 모델·차원이 맞지 않거나, 임베딩 호출이
+  실패하면 예외 없이 빈 리스트를 반환합니다(이 경우 기존 방식과 동일하게 동작). 검색 결과는 유사도
+  순으로 누적 글자수 4000자 예산 내에서만 포함됩니다. 사용된 근거 자료는 `meta.rag_sources` 에
+  제목/유형/발행일로 남습니다.
+
+  최초 실행 전 인덱스가 없으면 RAG 는 항상 빈 결과를 반환합니다(서비스 자체는 정상 동작). 인덱스를
+  만들려면 `.env` 에 `DART_API_KEY` 를 설정하고, Ollama 에 임베딩 모델을 받은 뒤
+  (`ollama pull nomic-embed-text`) 아래를 실행하세요:
+
+  ```bash
+  cd simulator/market_reaction
+  python -m scripts.build_rag_index
+  ```
 - **메타 반영**:
   - `meta.fallback_modules` 에 fallback 처리된 모듈명이 기록됩니다.
     (`validator`, `external_context`, `agent:<type>`, `critic`, `summary`)
@@ -371,3 +394,8 @@ Node(Express) 백엔드가 프론트엔드 요청을 받아 이 Python 서비스
   없거나 실패하면 그대로 stub 으로 폴백합니다(`get_stock_context()`).
 - **오프라인 테스트**: 새 LLM 모듈을 추가하면 `conftest.py` 의 `offline` fixture 로 fallback 경로
   테스트를 함께 추가하세요. Ollama 없이도 `pytest tests` 가 통과해야 합니다.
+- **RAG 인덱스는 생성물**: `data/rag_index/` 하위 파일(FAISS 인덱스, `rag_metadata.json`,
+  `rag_manifest.json`)은 `.gitignore` 처리되어 있으며 저장소에 커밋하지 않습니다.
+  `scripts/build_rag_index.py` 는 `DART_API_KEY` 와 네트워크가 필요해 자동 테스트 대상이
+  아니며, DART/EDGAR API 응답 형식이 바뀌면(특히 DART document.xml 의 XML 구조) 수동으로
+  재확인이 필요합니다.
