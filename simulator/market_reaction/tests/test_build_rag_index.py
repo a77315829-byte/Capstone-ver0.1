@@ -1,7 +1,7 @@
 """build_rag_index.py 의 순수 로직 테스트 (네트워크 호출 제외)."""
 
 from app.services.dart_source import DART_HEADING_PATTERN
-from scripts.build_rag_index import MIN_CHUNK_CHARS, _document_to_chunks
+from scripts.build_rag_index import MIN_CHUNK_CHARS, _document_to_chunks, _is_degenerate
 
 
 def test_document_to_chunks_splits_by_section():
@@ -41,5 +41,37 @@ def test_document_to_chunks_drops_chunks_shorter_than_min_chars():
     """MIN_CHUNK_CHARS 미만인 청크는 (임베딩 유사도 편향을 피하기 위해) 버려진다."""
     document = {"content": "너무 짧은 본문."}
     assert len(document["content"]) < MIN_CHUNK_CHARS
+    chunks = _document_to_chunks(document, DART_HEADING_PATTERN)
+    assert chunks == []
+
+
+def test_is_degenerate_detects_repeated_lines():
+    text = "\n".join(["채무 등은 리스부채가 포함된 금액입니다."] * 10)
+    assert _is_degenerate(text) is True
+
+
+def test_is_degenerate_allows_mostly_unique_lines():
+    text = "\n".join(
+        [
+            "회사의 명칭은 삼성전자주식회사입니다.",
+            "본사는 경기도 수원시에 위치합니다.",
+            "설립일은 1969년 1월 13일입니다.",
+        ]
+    )
+    assert _is_degenerate(text) is False
+
+
+def test_is_degenerate_ignores_short_texts():
+    """줄이 적으면(3줄 미만) 반복 여부와 무관하게 퇴화 텍스트로 보지 않는다."""
+    text = "같은 문장입니다.\n같은 문장입니다."
+    assert _is_degenerate(text) is False
+
+
+def test_document_to_chunks_drops_degenerate_repeated_lines():
+    """표를 텍스트로 펼치면서 같은 각주가 줄마다 반복된 청크는 버려진다."""
+    document = {
+        "content": "I. 재무에 관한 사항\n"
+        + "\n".join(["채무 등은 리스부채가 포함된 금액입니다."] * 10)
+    }
     chunks = _document_to_chunks(document, DART_HEADING_PATTERN)
     assert chunks == []

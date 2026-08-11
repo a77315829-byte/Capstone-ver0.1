@@ -13,6 +13,7 @@ DART(한국 20종목)/SEC EDGAR(미국 20종목) 공시를 수집·정규화·�
 from __future__ import annotations
 
 import asyncio
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -40,21 +41,47 @@ US_TICKERS = [
 
 
 MIN_CHUNK_CHARS = 100
+_DEGENERATE_MIN_LINES = 3
+_DEGENERATE_UNIQUE_RATIO = 0.5
+
+
+def _is_degenerate(text: str) -> bool:
+    """표를 텍스트로 펼치면서 같은 각주/문구가 줄마다 반복된 "퇴화된" 텍스트인지 판별한다.
+
+    예: "종속기업 채권에 대하여 인식된 손실충당금은 없습니다..." 같은 각주가 표 행마다
+    반복돼 한 청크 안에 동일 문장이 수십 번 들어가는 경우(실측: 전체 청크의 17%가
+    이런 식으로 반복됨). 이런 텍스트는 임베딩 공간에서 다양한 질의와 두루 유사도가
+    높게 나오는 "hub"가 되어 검색 결과를 오염시킨다(실측: 무관한 질의 4개에 매번
+    똑같은 반복 청크가 1~2위로 나옴). 줄 단위로 봐서 서로 다른 줄의 비율이 낮으면
+    (기본: 3줄 이상이면서 그중 절반 미만이 서로 다르면) 퇴화된 텍스트로 간주한다.
+    """
+    lines = [line.strip() for line in text.split("\n") if line.strip()]
+    if len(lines) < _DEGENERATE_MIN_LINES:
+        return False
+    return len(set(lines)) / len(lines) < _DEGENERATE_UNIQUE_RATIO
 
 
 def _document_to_chunks(document: dict, heading_pattern: str) -> List[str]:
     """정규화된 문서 하나(document['content'])를 청크 텍스트 목록으로 나눈다.
 
-    MIN_CHUNK_CHARS 미만인 청크는 버린다. nomic-embed-text 임베딩은 아주 짧은
-    텍스트(안건 목록 한 줄, "선임되었습니다" 같은 문장 조각 등)에 코사인 유사도를
-    비정상적으로 높게 주는 경향이 있어(실측: 무관한 9~66자 청크가 0.87~0.95, 실제
-    관련 있는 1200자 청크가 0.72), 검색 결과가 짧고 무의미한 조각들로 뒤덮이는 문제가
-    있었다. 짧은 청크를 애초에 인덱싱하지 않으면 이 편향을 피할 수 있다.
+    MIN_CHUNK_CHARS 미만인 청크와 _is_degenerate 인 청크는 버린다. nomic-embed-text
+    임베딩은 아주 짧은 텍스트(안건 목록 한 줄, "선임되었습니다" 같은 문장 조각 등)에
+    코사인 유사도를 비정상적으로 높게 주는 경향이 있어(실측: 무관한 9~66자 청크가
+    0.87~0.95, 실제 관련 있는 1200자 청크가 0.72) 검색 결과가 짧고 무의미한 조각들로
+    뒤덮이는 문제가 있었고, 반복 텍스트(_is_degenerate)도 같은 이유로 검색 결과를
+    오염시켰다. 둘 다 애초에 인덱싱하지 않으면 이 편향을 피할 수 있다.
+
+    퇴화된 문단은 split_into_chunks 로 최종 청크를 만들기 전, 문단(빈 줄 구분) 단위로
+    먼저 걸러낸다 — 그렇지 않으면 짧은 반복 문단이 주변의 정상적인 문단과 함께
+    하나의 청크로 뭉쳐져 최종 청크 단위 판정에서는 "반복 비율"이 희석돼 걸러지지
+    않는 경우가 있었다(실측 확인).
     """
     chunk_texts: List[str] = []
     for _heading, body in split_into_sections(document["content"], heading_pattern):
-        for chunk in split_into_chunks(body, DEFAULT_MAX_CHARS):
-            if len(chunk) >= MIN_CHUNK_CHARS:
+        paragraphs = [p for p in re.split(r"\n\s*\n", body.strip()) if p.strip()]
+        clean_body = "\n\n".join(p for p in paragraphs if not _is_degenerate(p))
+        for chunk in split_into_chunks(clean_body, DEFAULT_MAX_CHARS):
+            if len(chunk) >= MIN_CHUNK_CHARS and not _is_degenerate(chunk):
                 chunk_texts.append(chunk)
     return chunk_texts
 
