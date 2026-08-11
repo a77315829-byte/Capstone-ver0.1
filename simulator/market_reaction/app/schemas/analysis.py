@@ -318,7 +318,10 @@ class RagSource(BaseModel):
 
     title: str = Field(description="문서 제목")
     source_type: str = Field(
-        description="문서 유형. 허용값: earnings_call, ir_material, press_release"
+        description=(
+            "문서 유형. 허용값: dart_periodic, dart_material, "
+            "edgar_10k, edgar_10q, edgar_8k, edgar_other"
+        )
     )
     published_at: str = Field(description="문서 발행일(YYYY-MM-DD)")
 

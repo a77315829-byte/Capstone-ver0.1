@@ -2,8 +2,8 @@
 
 가능하면 LLM(llm_client.chat_json)으로 ExternalContext 를 생성하고,
 실패하면 fallback_external_context 로 대체한다. 실제 뉴스 API 는 호출하지 않으며
-사용자 입력/선택 종목/input_type_hint 와, 지원 종목에 한해 검색된 IR/실적발표 자료
-(document_retrieval.py, RAG MVP)를 사용한다. 검색은 실패해도 예외를 던지지 않으며
+사용자 입력/선택 종목/input_type_hint 와, DART/SEC EDGAR 공시를 기반으로 검색된
+참고 자료(document_retrieval.py, RAG)를 사용한다. 검색은 실패해도 예외를 던지지 않으며
 결과가 없으면 기존과 동일하게 동작한다.
 """
 
@@ -65,10 +65,10 @@ _SCHEMA = {
 }
 
 
-def _retrieve_documents_safe(stock_code: str, query_text: str) -> List[dict]:
+async def _retrieve_documents_safe(stock_code: str, query_text: str) -> List[dict]:
     """검색 실패는 삼키고 빈 리스트를 반환한다(RAG 는 항상 optional)."""
     try:
-        return retrieve_relevant_documents(stock_code, query_text)
+        return await retrieve_relevant_documents(stock_code, query_text)
     except Exception:
         return []
 
@@ -115,7 +115,7 @@ async def analyze_external_context(
         if isinstance(request.input_type_hint, InputType)
         else "unknown"
     )
-    documents = _retrieve_documents_safe(request.selected_stock.code, request.input_text)
+    documents = await _retrieve_documents_safe(request.selected_stock.code, request.input_text)
     rag_sources = [
         RagSource(
             title=doc["title"],
