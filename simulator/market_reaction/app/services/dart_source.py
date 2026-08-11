@@ -8,11 +8,13 @@ pytest 로 검증한다. fetch_corp_code_map/fetch_dart_documents 는 실제 DAR
 from __future__ import annotations
 
 import zipfile
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from typing import Dict, List, TypedDict
 from xml.etree import ElementTree
 
 import httpx
+from bs4 import BeautifulSoup
 
 from ..config import settings
 
@@ -44,9 +46,14 @@ def _report_source_type(report_nm: str) -> str:
 
 
 def _strip_xml_tags(xml_bytes: bytes) -> str:
-    """DART document.xml 응답(ZIP 내부 XML)에서 텍스트만 추출한다."""
-    root = ElementTree.fromstring(xml_bytes)
-    return "".join(root.itertext())
+    """DART document.xml 응답(ZIP 내부 XML)에서 텍스트만 추출한다.
+
+    DART document.xml은 이스케이프 안 된 '&' 등을 포함해 엄밀한 XML이 아닌 경우가 있어
+    strict 파서(ElementTree)가 실패할 수 있다. EDGAR HTML 파싱과 동일하게 관대한
+    파서(BeautifulSoup)를 사용한다.
+    """
+    soup = BeautifulSoup(xml_bytes, "html.parser")
+    return soup.get_text()
 
 
 def normalize_dart_document(
@@ -84,12 +91,20 @@ async def fetch_corp_code_map() -> Dict[str, str]:
 
 
 async def _fetch_filing_list(corp_code: str) -> List[dict]:
-    """DART list.json 으로 종목의 최근 정기공시 목록을 가져온다."""
+    """DART list.json 으로 종목의 최근 정기공시 목록을 가져온다.
+
+    bgn_de/end_de 를 생략하면 DART API 가 기본 조회 기간을 매우 좁게 잡아
+    (status 013, 조회된 데이타가 없습니다) 결과가 항상 비어버리므로, 최근 3년을
+    명시적으로 지정한다.
+    """
+    today = datetime.now(timezone.utc)
     url = "https://opendart.fss.or.kr/api/list.json"
     params = {
         "crtfc_key": settings.dart_api_key,
         "corp_code": corp_code,
         "pblntf_ty": "A",
+        "bgn_de": (today - timedelta(days=365 * 3)).strftime("%Y%m%d"),
+        "end_de": today.strftime("%Y%m%d"),
         "page_count": "5",
     }
     async with httpx.AsyncClient(timeout=httpx.Timeout(30)) as client:
