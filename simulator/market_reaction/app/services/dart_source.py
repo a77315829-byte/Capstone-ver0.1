@@ -24,7 +24,11 @@ from ..config import settings
 # html.parser(관대한 파서)를 의도적으로 사용한다. bs4가 매번 띄우는 안내성 경고를 끈다.
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
-DART_HEADING_PATTERN = r"(?m)^\s*(?:[IVX]+\.|[0-9]+\.)\s+\S"
+# DART 사업/분기/반기보고서는 "I. 회사의 개요" ~ "XII. 상세표" 처럼 로마숫자로 대목차를 매긴다.
+# 아라비아 숫자("1.", "2.")까지 포함하면 본문 곳곳(안건 목록, 규정 나열, 각주 등)의
+# 번호 매기기까지 전부 "섹션"으로 오인식해 문서 하나가 수백~수천 개 조각으로 과분할된다
+# (실제 삼성전자 사업보고서 샘플로 검증: 아라비아 숫자 포함 시 821개, 로마숫자만이면 12개=실제 대목차 수).
+DART_HEADING_PATTERN = r"(?m)^\s*[IVX]+\.\s+\S"
 
 _PERIODIC_KEYWORDS = ("사업보고서", "분기보고서", "반기보고서")
 
