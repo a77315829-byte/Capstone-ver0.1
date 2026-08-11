@@ -9,6 +9,7 @@ SEC 는 자동화된 요청에 식별 가능한 User-Agent 헤더를 요구한�
 
 from __future__ import annotations
 
+import asyncio
 from typing import Dict, List, TypedDict
 
 import httpx
@@ -93,26 +94,29 @@ async def _fetch_recent_filings(cik: str) -> List[dict]:
 
 
 async def fetch_edgar_documents(ticker: str, cik: str) -> List[NormalizedDocument]:
-    """ticker 의 최근 10-K/10-Q/8-K(최대 3건)를 조회해 정규화된 문서 목록으로 반환한다."""
+    """ticker 의 최근 10-K/10-Q/8-K(최대 3건)를 동시에 조회해 정규화된 문서 목록으로 반환한다.
+
+    최대 3건만 받으므로 동시 요청도 최대 3개다(SEC 정책상 초당 10건 제한에 여유있게 안전).
+    """
     filings = await _fetch_recent_filings(cik)
-    documents: List[NormalizedDocument] = []
     headers = {"User-Agent": _USER_AGENT}
+
+    async def _fetch_one(client: httpx.AsyncClient, filing: dict) -> NormalizedDocument:
+        accession_nodash = filing["accessionNumber"].replace("-", "")
+        doc_url = (
+            f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/"
+            f"{accession_nodash}/{filing['primaryDocument']}"
+        )
+        resp = await client.get(doc_url)
+        resp.raise_for_status()
+        return normalize_edgar_document(
+            ticker=ticker,
+            form=filing["form"],
+            filing_date=filing["filingDate"],
+            url=doc_url,
+            html=resp.text,
+        )
+
     async with httpx.AsyncClient(timeout=httpx.Timeout(30), headers=headers) as client:
-        for filing in filings[:3]:
-            accession_nodash = filing["accessionNumber"].replace("-", "")
-            doc_url = (
-                f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/"
-                f"{accession_nodash}/{filing['primaryDocument']}"
-            )
-            resp = await client.get(doc_url)
-            resp.raise_for_status()
-            documents.append(
-                normalize_edgar_document(
-                    ticker=ticker,
-                    form=filing["form"],
-                    filing_date=filing["filingDate"],
-                    url=doc_url,
-                    html=resp.text,
-                )
-            )
-    return documents
+        documents = await asyncio.gather(*(_fetch_one(client, f) for f in filings[:3]))
+    return list(documents)

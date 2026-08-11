@@ -48,74 +48,107 @@ def _document_to_chunks(document: dict, heading_pattern: str) -> List[str]:
 
 
 async def _collect_documents() -> List[Tuple[dict, str]]:
-    """(정규화된 문서, 해당 소스의 heading_pattern) 목록을 수집한다."""
+    """(정규화된 문서, 해당 소스의 heading_pattern) 목록을 수집한다.
+
+    진행 상황을 종목 단위로 즉시 출력한다(flush=True — stdout이 파일로 리다이렉트되면
+    버퍼링돼서 flush 없이는 프로세스가 끝날 때까지 아무것도 안 보일 수 있다).
+    """
     documents: List[Tuple[dict, str]] = []
 
     corp_code_map = await fetch_corp_code_map()
-    for stock_code in KR_STOCKS:
+    for i, stock_code in enumerate(KR_STOCKS, 1):
         corp_code = corp_code_map.get(stock_code)
         if not corp_code:
-            print(f"[skip] DART corp_code not found for {stock_code}")
+            print(f"[DART {i}/{len(KR_STOCKS)}] {stock_code}: corp_code 없음, skip", flush=True)
             continue
-        for doc in await fetch_dart_documents(stock_code, corp_code):
+        docs = await fetch_dart_documents(stock_code, corp_code)
+        print(f"[DART {i}/{len(KR_STOCKS)}] {stock_code}: 공시 {len(docs)}건 수집", flush=True)
+        for doc in docs:
             documents.append((doc, DART_HEADING_PATTERN))
 
     ticker_cik_map = await fetch_ticker_cik_map()
-    for ticker in US_TICKERS:
+    for i, ticker in enumerate(US_TICKERS, 1):
         cik = ticker_cik_map.get(ticker)
         if not cik:
-            print(f"[skip] EDGAR CIK not found for {ticker}")
+            print(f"[EDGAR {i}/{len(US_TICKERS)}] {ticker}: CIK 없음, skip", flush=True)
             continue
-        for doc in await fetch_edgar_documents(ticker, cik):
+        docs = await fetch_edgar_documents(ticker, cik)
+        print(f"[EDGAR {i}/{len(US_TICKERS)}] {ticker}: 공시 {len(docs)}건 수집", flush=True)
+        for doc in docs:
             documents.append((doc, EDGAR_HEADING_PATTERN))
 
     return documents
 
 
+_EMBED_CONCURRENCY = 8
+
+
+async def _embed_texts(texts: List[str]) -> List[List[float]]:
+    """청크 텍스트 목록을 동시에(최대 _EMBED_CONCURRENCY개) 임베딩한다.
+
+    Ollama는 로컬 호출이라 서버 부하 걱정 없이 동시성을 높일 수 있다. 반환 순서는
+    입력 순서와 동일하게 보존된다(vector_id 매핑에 필요).
+    """
+    semaphore = asyncio.Semaphore(_EMBED_CONCURRENCY)
+
+    async def _one(text: str) -> List[float]:
+        async with semaphore:
+            return await embed_text(text)
+
+    return list(await asyncio.gather(*(_one(t) for t in texts)))
+
+
 async def build_index() -> None:
     documents = await _collect_documents()
+    dart_doc_count = sum(1 for doc, _ in documents if doc["market"] == "KR")
+    edgar_doc_count = len(documents) - dart_doc_count
+    print(f"문서 수집 완료: {len(documents)}건. 종목별 청킹+임베딩 시작...", flush=True)
 
-    chunks_by_stock: Dict[str, List[rag_index.Chunk]] = {}
-    vectors_by_stock: Dict[str, List[List[float]]] = {}
-    dart_doc_count = edgar_doc_count = 0
-
+    documents_by_stock: Dict[str, List[Tuple[dict, str]]] = {}
     for document, heading_pattern in documents:
-        stock_code = document["stock_code"]
-        if document["market"] == "KR":
-            dart_doc_count += 1
-        else:
-            edgar_doc_count += 1
-
-        chunks_by_stock.setdefault(stock_code, [])
-        vectors_by_stock.setdefault(stock_code, [])
-
-        for text in _document_to_chunks(document, heading_pattern):
-            vector = await embed_text(text)
-            vector_id = len(vectors_by_stock[stock_code])
-            chunks_by_stock[stock_code].append(
-                rag_index.Chunk(
-                    chunk_id=f"{stock_code}:{vector_id}",
-                    vector_id=vector_id,
-                    stock_code=stock_code,
-                    title=document["title"],
-                    source_type=document["source_type"],
-                    published_at=document["published_at"],
-                    url=document["url"],
-                    text=text,
-                )
-            )
-            vectors_by_stock[stock_code].append(vector)
+        documents_by_stock.setdefault(document["stock_code"], []).append(
+            (document, heading_pattern)
+        )
 
     index_dir = Path(settings.rag_index_dir)
     index_dir.mkdir(parents=True, exist_ok=True)
 
+    chunks_by_stock: Dict[str, List[rag_index.Chunk]] = {}
     embedding_dim = 0
-    for stock_code, vectors in vectors_by_stock.items():
-        if not vectors:
-            continue
-        embedding_dim = len(vectors[0])
-        index = rag_index.build_index(vectors)
-        rag_index.save_index(index, index_dir / f"{stock_code}.faiss")
+    total_chunks_done = 0
+
+    for stock_code, stock_documents in documents_by_stock.items():
+        chunk_texts: List[str] = []
+        chunk_documents: List[dict] = []
+        for document, heading_pattern in stock_documents:
+            for text in _document_to_chunks(document, heading_pattern):
+                chunk_texts.append(text)
+                chunk_documents.append(document)
+
+        vectors = await _embed_texts(chunk_texts)
+        if vectors:
+            embedding_dim = len(vectors[0])
+            index = rag_index.build_index(vectors)
+            rag_index.save_index(index, index_dir / f"{stock_code}.faiss")
+
+        chunks_by_stock[stock_code] = [
+            rag_index.Chunk(
+                chunk_id=f"{stock_code}:{vector_id}",
+                vector_id=vector_id,
+                stock_code=stock_code,
+                title=document["title"],
+                source_type=document["source_type"],
+                published_at=document["published_at"],
+                url=document["url"],
+                text=text,
+            )
+            for vector_id, (text, document) in enumerate(zip(chunk_texts, chunk_documents))
+        ]
+        total_chunks_done += len(chunk_texts)
+        print(
+            f"[임베딩] {stock_code}: {len(chunk_texts)}청크 완료 (누적 {total_chunks_done})",
+            flush=True,
+        )
 
     rag_index.save_metadata(chunks_by_stock, index_dir / "rag_metadata.json")
     rag_index.save_manifest(
@@ -131,7 +164,7 @@ async def build_index() -> None:
         },
     )
     total_chunks = sum(len(c) for c in chunks_by_stock.values())
-    print(f"인덱스 생성 완료: {len(chunks_by_stock)}개 종목, {total_chunks}개 청크")
+    print(f"인덱스 생성 완료: {len(chunks_by_stock)}개 종목, {total_chunks}개 청크", flush=True)
 
 
 if __name__ == "__main__":

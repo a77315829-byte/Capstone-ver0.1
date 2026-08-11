@@ -7,11 +7,12 @@ pytest 로 검증한다. fetch_corp_code_map/fetch_dart_documents 는 실제 DAR
 
 from __future__ import annotations
 
+import asyncio
 import warnings
 import zipfile
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
-from typing import Dict, List, TypedDict
+from typing import Dict, List, Optional, TypedDict
 from xml.etree import ElementTree
 
 import httpx
@@ -137,21 +138,30 @@ async def _fetch_filing_text(rcept_no: str) -> str:
     return "\n\n".join(texts)
 
 
+_DART_DOWNLOAD_CONCURRENCY = 3
+
+
 async def fetch_dart_documents(stock_code: str, corp_code: str) -> List[NormalizedDocument]:
-    """stock_code 의 최근 DART 정기공시를 조회해 정규화된 문서 목록으로 반환한다."""
+    """stock_code 의 최근 DART 정기공시를 동시에(최대 3건씩) 조회해 정규화된 문서 목록으로 반환한다.
+
+    DART는 SEC처럼 공식 문서화된 속도 제한이 없어, 대용량 응답(문서당 수백KB~수MB)임을
+    감안해 보수적으로 동시 3건까지만 요청한다.
+    """
     filings = await _fetch_filing_list(corp_code)
-    documents: List[NormalizedDocument] = []
-    for filing in filings:
-        raw_text = await _fetch_filing_text(filing["rcept_no"])
+    semaphore = asyncio.Semaphore(_DART_DOWNLOAD_CONCURRENCY)
+
+    async def _fetch_one(filing: dict) -> Optional[NormalizedDocument]:
+        async with semaphore:
+            raw_text = await _fetch_filing_text(filing["rcept_no"])
         if not raw_text:
-            continue
-        documents.append(
-            normalize_dart_document(
-                stock_code=stock_code,
-                report_nm=filing["report_nm"],
-                rcept_no=filing["rcept_no"],
-                rcept_dt=filing["rcept_dt"],
-                raw_text=raw_text,
-            )
+            return None
+        return normalize_dart_document(
+            stock_code=stock_code,
+            report_nm=filing["report_nm"],
+            rcept_no=filing["rcept_no"],
+            rcept_dt=filing["rcept_dt"],
+            raw_text=raw_text,
         )
-    return documents
+
+    results = await asyncio.gather(*(_fetch_one(f) for f in filings))
+    return [doc for doc in results if doc is not None]
