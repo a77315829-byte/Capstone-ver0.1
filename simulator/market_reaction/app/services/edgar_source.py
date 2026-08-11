@@ -14,7 +14,7 @@ from typing import Dict, List, TypedDict
 import httpx
 from bs4 import BeautifulSoup
 
-_USER_AGENT = "market-reaction-rag (research use; contact via project repo)"
+_USER_AGENT = "market-reaction-rag capstone project admin@example.com"
 
 EDGAR_HEADING_PATTERN = r"(?im)^\s*item\s+\d+[a-z]?\.?\s+\S"
 
