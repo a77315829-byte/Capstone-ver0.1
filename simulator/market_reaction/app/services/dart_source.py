@@ -7,6 +7,7 @@ pytest 로 검증한다. fetch_corp_code_map/fetch_dart_documents 는 실제 DAR
 
 from __future__ import annotations
 
+import warnings
 import zipfile
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
@@ -14,9 +15,13 @@ from typing import Dict, List, TypedDict
 from xml.etree import ElementTree
 
 import httpx
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
 from ..config import settings
+
+# DART document.xml은 진짜 XML이지만 이스케이프 안 된 '&' 등으로 strict 파싱이 깨져
+# html.parser(관대한 파서)를 의도적으로 사용한다. bs4가 매번 띄우는 안내성 경고를 끈다.
+warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
 DART_HEADING_PATTERN = r"(?m)^\s*(?:[IVX]+\.|[0-9]+\.)\s+\S"
 
