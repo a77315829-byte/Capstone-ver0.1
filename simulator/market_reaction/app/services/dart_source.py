@@ -114,12 +114,19 @@ async def _fetch_filing_list(corp_code: str) -> List[dict]:
 
 
 async def _fetch_filing_text(rcept_no: str) -> str:
-    """DART document.xml(ZIP)을 내려받아 안의 XML 파일들에서 텍스트만 추출한다."""
+    """DART document.xml(ZIP)을 내려받아 안의 XML 파일들에서 텍스트만 추출한다.
+
+    일부 공시는 rcept_no가 유효해도 첨부 문서가 없어 DART가 zip 대신
+    "파일이 존재하지 않습니다"(status 014) 같은 에러 XML을 반환한다. 이 경우
+    빈 문자열을 반환해 해당 필링만 건너뛰도록 한다(전체 배치 실패 방지).
+    """
     url = "https://opendart.fss.or.kr/api/document.xml"
     params = {"crtfc_key": settings.dart_api_key, "rcept_no": rcept_no}
     async with httpx.AsyncClient(timeout=httpx.Timeout(30)) as client:
         resp = await client.get(url, params=params)
     resp.raise_for_status()
+    if not resp.content.startswith(b"PK"):
+        return ""
     with zipfile.ZipFile(BytesIO(resp.content)) as zf:
         texts = [_strip_xml_tags(zf.read(name)) for name in zf.namelist()]
     return "\n\n".join(texts)
@@ -131,6 +138,8 @@ async def fetch_dart_documents(stock_code: str, corp_code: str) -> List[Normaliz
     documents: List[NormalizedDocument] = []
     for filing in filings:
         raw_text = await _fetch_filing_text(filing["rcept_no"])
+        if not raw_text:
+            continue
         documents.append(
             normalize_dart_document(
                 stock_code=stock_code,
