@@ -4,7 +4,8 @@
 생성하고, 실패 시 해당 에이전트만 build_fallback_agent_output 으로 대체한다.
 전체 Ollama 실패 시에도 항상 5개 AgentOutput 을 반환한다.
 
-base_weight 는 LLM 이 결정하지 않고 코드 상수로 주입한다.
+base_weight 는 LLM 이 결정하지 않고 코드 상수로 주입한다(event_type 별 표는
+fallback.py:EVENT_BASE_WEIGHTS 에 중앙화, LLM 은 이 표의 선택에 관여하지 않는다).
 사용자 보유 상태/평균 매입가/손익 상태는 프롬프트에 포함하지 않는다.
 """
 
@@ -29,8 +30,8 @@ from ..services.llm_client import (
 from .fallback import (
     AGENT_NAME_KO,
     AGENT_ORDER,
-    BASE_WEIGHTS,
     build_fallback_agent_output,
+    get_base_weights,
 )
 
 _DIRECTION_KO = {
@@ -118,7 +119,7 @@ def _build_user_prompt(si: StandardInput) -> str:
     )
 
 
-def _to_agent_output(agent_type: AgentType, parsed: dict) -> AgentOutput:
+def _to_agent_output(agent_type: AgentType, parsed: dict, event_type: str) -> AgentOutput:
     direction = ReactionDirection(parsed["reaction_direction"])
     strength = ReactionStrength(parsed["reaction_strength"])
     relevance = InputRelevance(parsed["input_relevance"])
@@ -137,7 +138,7 @@ def _to_agent_output(agent_type: AgentType, parsed: dict) -> AgentOutput:
         reaction_direction_ko=_DIRECTION_KO[direction],
         reaction_strength=strength,
         reaction_strength_ko=_STRENGTH_KO[strength],
-        base_weight=BASE_WEIGHTS[agent_type],
+        base_weight=get_base_weights(event_type)[agent_type],
         input_relevance=relevance,
         key_reasons=key_reasons,
         comment=comment,
@@ -156,12 +157,13 @@ async def run_agent(
             user=_build_user_prompt(standard_input),
             schema=_SCHEMA,
         )
-        return _to_agent_output(agent_type, parsed), []
+        return _to_agent_output(agent_type, parsed, standard_input.event_type), []
     except Exception:
         fallback = build_fallback_agent_output(
             agent_type,
             standard_input.impact_direction,
             standard_input.price_reflection_level,
+            standard_input.event_type,
         )
         return fallback, [f"agent:{agent_type.value}"]
 

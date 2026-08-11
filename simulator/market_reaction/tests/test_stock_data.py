@@ -70,6 +70,21 @@ def test_get_stock_context_with_external_data_uses_realtime_price():
     # 산업/이름은 stub 매핑을 그대로 사용
     assert ctx.industry == "반도체"
     assert ctx.name == "삼성전자"
+    # volume_trend/market_cap_trillion 을 안 주면 stub 값을 유지한다
+    assert ctx.volume_trend == "increasing"
+    assert ctx.market_cap_trillion == 470.0
+
+
+def test_get_stock_context_overrides_volume_trend_and_market_cap_when_given():
+    external = ExternalStockData(
+        current_price=81000,
+        daily_change_rate=3.1,
+        volume_trend="decreasing",
+        market_cap_trillion=490.5,
+    )
+    ctx = get_stock_context(SelectedStock(code="005930", name="삼성전자"), external)
+    assert ctx.volume_trend == "decreasing"
+    assert ctx.market_cap_trillion == 490.5
 
 
 def test_get_stock_context_falls_back_to_stub_when_price_missing():

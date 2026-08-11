@@ -1,10 +1,9 @@
 """시세 stub / 실시간 시세 병합.
 
 기본은 고정 stub 데이터이며, 외부 API 호출을 하지 않는다.
-Node backend(KIS 연동)가 실시간 현재가/등락률을 SimulationRequest.stock_data 로 전달하면
-그 값으로 current_price/daily_change_rate 를 덮어쓰고 data_source="external_api",
-is_realtime=True 로 표시한다. volume_trend/market_cap_trillion 은 Node 에서 아직
-신뢰할 만한 값을 계산하지 않으므로 stub 값을 그대로 사용한다(알려진 한계).
+Node backend(KIS 연동)가 SimulationRequest.stock_data 로 실시간 값을 전달하면
+필드별로 있는 값만 stub 위에 덮어쓰고 data_source="external_api", is_realtime=True 로
+표시한다(예: KIS 가 시가총액을 못 주면 volume_trend/market_cap_trillion 은 stub 값 유지).
 """
 
 from __future__ import annotations
@@ -91,12 +90,16 @@ def get_stock_context(
     if external is None or external.current_price is None:
         return stub
 
-    return stub.model_copy(
-        update={
-            "current_price": external.current_price,
-            "daily_change_rate": external.daily_change_rate,
-            "data_source": DataSource.EXTERNAL_API,
-            "is_realtime": True,
-            "observed_at": external.observed_at or datetime.now(timezone.utc),
-        }
-    )
+    update = {
+        "current_price": external.current_price,
+        "daily_change_rate": external.daily_change_rate,
+        "data_source": DataSource.EXTERNAL_API,
+        "is_realtime": True,
+        "observed_at": external.observed_at or datetime.now(timezone.utc),
+    }
+    if external.volume_trend is not None:
+        update["volume_trend"] = external.volume_trend
+    if external.market_cap_trillion is not None:
+        update["market_cap_trillion"] = external.market_cap_trillion
+
+    return stub.model_copy(update=update)

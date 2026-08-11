@@ -42,6 +42,104 @@ BASE_WEIGHTS: Dict[AgentType, float] = {
     AgentType.LONG_TERM_INVESTOR: 0.15,
 }
 
+# 이벤트 유형별 base_weight 표(docs/market_reaction_backend_spec.md 섹션 10).
+# 각 표는 항상 합계 1.00. 목록에 없는 event_type("other" 포함)은 BASE_WEIGHTS(기본표)를 쓴다.
+# 값은 각 유형이 어느 투자자군의 판단 기준과 더 관련 있는지에 대한 단순한 휴리스틱이며,
+# 실증 데이터로 보정된 값은 아니다.
+EVENT_BASE_WEIGHTS: Dict[str, Dict[AgentType, float]] = {
+    # 실적 → 기관/외국인이 펀더멘털에 가장 민감
+    "earnings": {
+        AgentType.INDIVIDUAL_INVESTOR: 0.15,
+        AgentType.INSTITUTIONAL_INVESTOR: 0.30,
+        AgentType.FOREIGN_INVESTOR: 0.25,
+        AgentType.SHORT_TERM_INVESTOR: 0.15,
+        AgentType.LONG_TERM_INVESTOR: 0.15,
+    },
+    # 신제품 → 개인/단기 투자자가 화제성·모멘텀에 민감
+    "new_product": {
+        AgentType.INDIVIDUAL_INVESTOR: 0.25,
+        AgentType.INSTITUTIONAL_INVESTOR: 0.20,
+        AgentType.FOREIGN_INVESTOR: 0.20,
+        AgentType.SHORT_TERM_INVESTOR: 0.20,
+        AgentType.LONG_TERM_INVESTOR: 0.15,
+    },
+    # 규제 → 기관/장기 투자자가 리스크에 민감
+    "regulation": {
+        AgentType.INDIVIDUAL_INVESTOR: 0.15,
+        AgentType.INSTITUTIONAL_INVESTOR: 0.30,
+        AgentType.FOREIGN_INVESTOR: 0.20,
+        AgentType.SHORT_TERM_INVESTOR: 0.15,
+        AgentType.LONG_TERM_INVESTOR: 0.20,
+    },
+    # 산업 수요 증가/감소 → 개인/단기 투자자가 화제성에 민감(방향과 무관하게 동일 표)
+    "industry_demand_increase": {
+        AgentType.INDIVIDUAL_INVESTOR: 0.22,
+        AgentType.INSTITUTIONAL_INVESTOR: 0.23,
+        AgentType.FOREIGN_INVESTOR: 0.20,
+        AgentType.SHORT_TERM_INVESTOR: 0.20,
+        AgentType.LONG_TERM_INVESTOR: 0.15,
+    },
+    "industry_demand_decrease": {
+        AgentType.INDIVIDUAL_INVESTOR: 0.22,
+        AgentType.INSTITUTIONAL_INVESTOR: 0.23,
+        AgentType.FOREIGN_INVESTOR: 0.20,
+        AgentType.SHORT_TERM_INVESTOR: 0.20,
+        AgentType.LONG_TERM_INVESTOR: 0.15,
+    },
+    # 금리/환율 → 외국인 투자자가 가장 민감(글로벌 자금 흐름/환위험)
+    "interest_rate_change": {
+        AgentType.INDIVIDUAL_INVESTOR: 0.15,
+        AgentType.INSTITUTIONAL_INVESTOR: 0.20,
+        AgentType.FOREIGN_INVESTOR: 0.35,
+        AgentType.SHORT_TERM_INVESTOR: 0.15,
+        AgentType.LONG_TERM_INVESTOR: 0.15,
+    },
+    "exchange_rate_change": {
+        AgentType.INDIVIDUAL_INVESTOR: 0.15,
+        AgentType.INSTITUTIONAL_INVESTOR: 0.20,
+        AgentType.FOREIGN_INVESTOR: 0.35,
+        AgentType.SHORT_TERM_INVESTOR: 0.15,
+        AgentType.LONG_TERM_INVESTOR: 0.15,
+    },
+    # 공급망 → 기관/장기 투자자가 구조적 이슈로 인식
+    "supply_chain": {
+        AgentType.INDIVIDUAL_INVESTOR: 0.15,
+        AgentType.INSTITUTIONAL_INVESTOR: 0.25,
+        AgentType.FOREIGN_INVESTOR: 0.25,
+        AgentType.SHORT_TERM_INVESTOR: 0.15,
+        AgentType.LONG_TERM_INVESTOR: 0.20,
+    },
+    # 경쟁 구도 → 기관/장기 투자자가 경쟁력 변화에 민감
+    "competition": {
+        AgentType.INDIVIDUAL_INVESTOR: 0.18,
+        AgentType.INSTITUTIONAL_INVESTOR: 0.25,
+        AgentType.FOREIGN_INVESTOR: 0.22,
+        AgentType.SHORT_TERM_INVESTOR: 0.15,
+        AgentType.LONG_TERM_INVESTOR: 0.20,
+    },
+    # 경영진 변경 → 기관/외국인이 지배구조 리스크에 민감
+    "management_change": {
+        AgentType.INDIVIDUAL_INVESTOR: 0.15,
+        AgentType.INSTITUTIONAL_INVESTOR: 0.28,
+        AgentType.FOREIGN_INVESTOR: 0.27,
+        AgentType.SHORT_TERM_INVESTOR: 0.15,
+        AgentType.LONG_TERM_INVESTOR: 0.15,
+    },
+    # 제휴/파트너십 → 개인/단기 투자자가 모멘텀에 민감
+    "partnership": {
+        AgentType.INDIVIDUAL_INVESTOR: 0.22,
+        AgentType.INSTITUTIONAL_INVESTOR: 0.23,
+        AgentType.FOREIGN_INVESTOR: 0.20,
+        AgentType.SHORT_TERM_INVESTOR: 0.20,
+        AgentType.LONG_TERM_INVESTOR: 0.15,
+    },
+}
+
+
+def get_base_weights(event_type: Optional[str]) -> Dict[AgentType, float]:
+    """event_type 에 맞는 base_weight 표를 반환한다. 없으면 기본표(BASE_WEIGHTS)."""
+    return EVENT_BASE_WEIGHTS.get(event_type or "", BASE_WEIGHTS)
+
 # fallback 및 응답 구성 순서(고정)
 AGENT_ORDER: List[AgentType] = [
     AgentType.INDIVIDUAL_INVESTOR,
@@ -77,8 +175,8 @@ _IMPACT_DIRECTION_KO: Dict[ImpactDirection, str] = {
     ImpactDirection.NEUTRAL: "중립적",
 }
 
-# 거절 사유 코드 / 안내문
-_REASON = {
+# 거절 사유 코드 / 안내문 (validator.py 의 LLM 경로에서도 재사용)
+REASON_MESSAGES = {
     Classification.DIRECT_ADVICE: (
         "DIRECT_ADVICE_REQUEST",
         "본 기능은 직접적인 매수·매도 추천을 제공하지 않습니다.",
@@ -113,7 +211,8 @@ def _is_high_reflection(price_reflection_level: Optional[str]) -> bool:
 # =========================================================================
 
 # 시장 반응 질문은 허용. 사용자의 투자 행동을 직접 결정해 달라는 요청만 거절.
-_ADVICE_KEYWORDS = [
+# validator.py 도 명시적 키워드 fast-path(길이 검증보다 우선)로 재사용한다.
+ADVICE_KEYWORDS = [
     "지금 사야", "지금 팔아야", "매수해도", "매도해도", "매수할까", "매도할까",
     "추천해", "매수 추천", "매도 추천", "지금 들어가야", "지금 나와야",
     "사도 되", "팔아도 되",
@@ -136,7 +235,7 @@ def fallback_classify_input(
         return _rejected(Classification.UNANALYZABLE)
 
     # 2) 직접 투자 행동 추천 요청(명시적 키워드는 길이보다 우선 판정)
-    if any(kw in text for kw in _ADVICE_KEYWORDS):
+    if any(kw in text for kw in ADVICE_KEYWORDS):
         return _rejected(Classification.DIRECT_ADVICE)
 
     # 3) 너무 짧음/불명확: 10자 미만
@@ -157,7 +256,7 @@ def fallback_classify_input(
 
 
 def _rejected(classification: Classification) -> InputClassificationResult:
-    reason_code, message = _REASON[classification]
+    reason_code, message = REASON_MESSAGES[classification]
     return InputClassificationResult(
         classification=classification,
         input_type=InputType.UNKNOWN,
@@ -480,6 +579,7 @@ def build_fallback_agent_output(
     agent_type: AgentType,
     impact_direction: Union[ImpactDirection, str],
     price_reflection_level: Optional[str] = "medium",
+    event_type: Optional[str] = None,
 ) -> AgentOutput:
     """단일 에이전트의 fallback 반응을 생성한다."""
     direction = _coerce_direction(impact_direction)
@@ -509,7 +609,7 @@ def build_fallback_agent_output(
         reaction_direction_ko=_DIRECTION_KO[reaction_direction],
         reaction_strength=reaction_strength,
         reaction_strength_ko=_STRENGTH_KO[reaction_strength],
-        base_weight=BASE_WEIGHTS[agent_type],
+        base_weight=get_base_weights(event_type)[agent_type],
         input_relevance=input_relevance,
         key_reasons=key_reasons,
         comment=comment,
@@ -520,10 +620,11 @@ def build_fallback_agent_output(
 def build_all_fallback_agent_outputs(
     impact_direction: Union[ImpactDirection, str],
     price_reflection_level: Optional[str] = "medium",
+    event_type: Optional[str] = None,
 ) -> List[AgentOutput]:
     """5개 에이전트 fallback 반응을 고정 순서로 반환한다."""
     return [
-        build_fallback_agent_output(agent_type, impact_direction, price_reflection_level)
+        build_fallback_agent_output(agent_type, impact_direction, price_reflection_level, event_type)
         for agent_type in AGENT_ORDER
     ]
 

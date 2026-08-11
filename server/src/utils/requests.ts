@@ -696,6 +696,8 @@ export const fetchStockData = async (symbol: string): Promise<any> => {
 			high: parseNumber(quote.stck_hgpr),
 			low: parseNumber(quote.stck_lwpr),
 			volume: parseNumber(quote.acml_vol),
+			// 전일 거래량 대비 비율(%). 100 = 전일과 동일 페이스.
+			volumeVsPrevDayRate: parseNumber(quote.prdy_vrss_vol_rate) || null,
 
 			listedShares:
 				parseNumber(

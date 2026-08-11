@@ -232,6 +232,22 @@ class RealtimeContext(BaseModel):
     )
 
 
+class ConsistencyReview(BaseModel):
+    """5개 에이전트 반응에 대한 critic 검토 결과(critic.py).
+
+    단순 의견 불일치(투자자 관점 차이로 자연스러운 것)와 실제 논리적/인과적 모순을
+    구분한다. consistency_score: 1.0(완전 일치) ~ 0.0(강한 모순).
+    """
+
+    consistency_score: float = Field(description="정합성 점수(0.0~1.0)")
+    conflicts: List[str] = Field(
+        default_factory=list, description="실제 논리적/인과적 모순 목록(없으면 빈 리스트)"
+    )
+    uncertainty_factors: List[str] = Field(
+        default_factory=list, description="critic 이 추가로 식별한 불확실성 요인"
+    )
+
+
 class StandardInput(BaseModel):
     """에이전트 공통 표준 입력(integrator 산출물).
 
@@ -297,6 +313,16 @@ class AnalysisConfidence(BaseModel):
     explanation: str = Field(description="신뢰도 설명")
 
 
+class RagSource(BaseModel):
+    """external_context 판단에 근거로 사용된 IR/실적발표 자료 출처(RAG, document_retrieval.py)."""
+
+    title: str = Field(description="문서 제목")
+    source_type: str = Field(
+        description="문서 유형. 허용값: earnings_call, ir_material, press_release"
+    )
+    published_at: str = Field(description="문서 발행일(YYYY-MM-DD)")
+
+
 class SimulationMeta(BaseModel):
     """응답 메타데이터(LLM/시세/저장 상태)."""
 
@@ -308,3 +334,7 @@ class SimulationMeta(BaseModel):
     )
     stock_data_source: DataSource = Field(description="시세 데이터 출처")
     db_save_status: DbSaveStatus = Field(description="결과 저장 상태")
+    rag_sources: List[RagSource] = Field(
+        default_factory=list,
+        description="external_context 판단에 사용된 IR/실적발표 자료(없으면 빈 리스트)",
+    )

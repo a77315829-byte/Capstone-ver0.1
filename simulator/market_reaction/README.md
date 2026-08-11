@@ -21,19 +21,21 @@ simulator/market_reaction/
 │   ├── api/routes.py        # POST /simulate, GET /simulations/{id}
 │   ├── schemas/             # 요청/응답/분석 단계 데이터 계약 (Pydantic)
 │   ├── core/                # 분석 로직 (LLM + fallback)
-│   │   ├── validator.py         # 입력값 적합성 분류
-│   │   ├── external_context.py  # 외부 시장 맥락 분석 (LLM/fallback)
+│   │   ├── validator.py         # 입력값 적합성 분류 (형식: rule-based, 의미: LLM/fallback)
+│   │   ├── external_context.py  # 외부 시장 맥락 분석 (LLM/fallback, RAG 근거 자료 주입)
 │   │   ├── realtime_context.py  # 실시간 맥락 분석 (rule-based)
 │   │   ├── integrator.py        # StandardInput 통합
 │   │   ├── agents.py            # 5개 에이전트 병렬 실행 (LLM/fallback)
+│   │   ├── critic.py            # 5개 에이전트 결과 정합성 검토 (LLM/fallback)
 │   │   ├── pressure.py          # 시장 압력 계산 (순수 함수)
 │   │   ├── sentiment.py         # 시장 분위기 산출 (순수 함수)
 │   │   ├── confidence.py        # 분석 신뢰도 계산 (순수 함수)
 │   │   ├── summary.py           # 종합 해설 생성 (LLM/fallback)
 │   │   └── fallback.py          # LLM 없이 동작하는 deterministic 대체 로직
 │   └── services/
-│       ├── llm_client.py    # Ollama /api/chat 비동기 client
-│       └── stock_data.py    # 시세 stub (외부 시세 API 미연동)
+│       ├── llm_client.py           # Ollama /api/chat 비동기 client
+│       ├── stock_data.py           # 시세 stub + 실시간 시세 병합
+│       └── document_retrieval.py   # 종목별 IR/실적발표 자료 검색 (RAG MVP)
 ├── tests/                   # pytest (오프라인 fallback 경로 포함)
 ├── docs/                    # 백엔드/프롬프트/fallback 명세, 테스트 픽스처
 ├── requirements.txt
@@ -191,7 +193,7 @@ stateless 서비스이므로 **501 Not Implemented** 를 반환합니다. 결과
     "score": 0.305,
     "grade": "low",
     "grade_ko": "낮음",
-    "explanation": "분석 신뢰도는 '낮음' 수준입니다. 현재 시세가 stub 데이터라 데이터 완전성 점수가 낮게 반영되었습니다. 7개 모듈이 fallback으로 처리되어 일부 감점되었습니다. 이 값은 입력 정보의 구체성과 분석 일관성 등을 종합한 참고 지표이며, 실제 시장 예측의 정확도를 보장하지 않습니다."
+    "explanation": "분석 신뢰도는 '낮음' 수준입니다. 현재 시세가 stub 데이터라 데이터 완전성 점수가 낮게 반영되었습니다. 9개 모듈이 fallback으로 처리되어 일부 감점되었습니다. 이 값은 입력 정보의 구체성과 분석 일관성 등을 종합한 참고 지표이며, 실제 시장 예측의 정확도를 보장하지 않습니다."
   },
   "uncertainty_factors": [
     "LLM 분석 미수행으로 상세 불확실성 미평가",
@@ -220,16 +222,19 @@ stateless 서비스이므로 **501 Not Implemented** 를 반환합니다. 결과
     "llm_status": "fallback",
     "fallback_used": true,
     "fallback_modules": [
+      "validator",
       "external_context",
       "agent:individual_investor",
       "agent:institutional_investor",
       "agent:foreign_investor",
       "agent:short_term_investor",
       "agent:long_term_investor",
+      "critic",
       "summary"
     ],
     "stock_data_source": "stub",
-    "db_save_status": "not_used"
+    "db_save_status": "not_used",
+    "rag_sources": []
   },
   "created_at": "2026-06-07T00:00:00Z"
 }
@@ -244,11 +249,13 @@ stateless 서비스이므로 **501 Not Implemented** 를 반환합니다. 결과
 - `input_relevance`: `low` / `normal` / `high` (압력 계산 시 0.8 / 1.0 / 1.2 로 환산)
 - `market_sentiment.code`: `very_positive` / `positive` / `neutral` / `negative` / `very_negative` / `uncertain`
 - `analysis_confidence.grade`: `high`(≥0.75) / `medium`(≥0.50) / `low`
-- `meta.llm_status`: `ok`(fallback 0개) / `partial_failure`(1~6개) / `fallback`(7개 전부)
+- `meta.llm_status`: `ok`(fallback 0개) / `partial_failure`(1~8개) / `fallback`(9개 전부)
 - `meta.db_save_status`: 항상 `not_used`
 
-> 시장 압력의 5개 에이전트 고정 가중치(`base_weight`)는 코드 상수입니다:
-> 개인 0.20 · 기관 0.25 · 외국인 0.25 · 단기 0.15 · 장기 0.15.
+> 시장 압력의 5개 에이전트 가중치(`base_weight`)는 `event_type` 별 코드 상수 표(`fallback.py:EVENT_BASE_WEIGHTS`)에서
+> 조회합니다(항상 합계 1.00). 기본표(그 외 event_type)는 개인 0.20 · 기관 0.25 · 외국인 0.25 · 단기 0.15 · 장기 0.15이며,
+> 예를 들어 `interest_rate_change`/`exchange_rate_change`는 외국인 투자자 가중치가 0.35로 올라갑니다.
+> 전체 표는 `docs/market_reaction_backend_spec.md` 섹션 10 참고. LLM은 이 표의 선택에 관여하지 않습니다.
 > 사용자 보유 상태/평균 매입가/손익 상태는 에이전트 판단과 압력 계산에 **사용하지 않습니다.**
 
 ### 거절 응답 (422)
@@ -277,19 +284,27 @@ stateless 서비스이므로 **501 Not Implemented** 를 반환합니다. 결과
 
 ## Fallback 정책
 
-LLM 호출 단계는 **외부 맥락(1) + 에이전트(5) + 종합 해설(1) = 총 7개** 입니다.
+LLM 호출 단계는 **validator(1) + 외부 맥락(1) + 에이전트(5) + critic(1) + 종합 해설(1) = 총 9개** 입니다.
 
 - **모듈 단위 격리**: 한 단계의 LLM 호출/파싱/검증이 실패하면 **그 모듈만** `app/core/fallback.py`
-  의 deterministic 로직으로 대체되고, 나머지는 LLM 결과를 유지합니다.
-  (에이전트는 5개 중 일부만 실패하면 해당 에이전트만 fallback)
-- **항상 완주**: Ollama 가 완전히 꺼져 있어도 7개 모듈 전부 fallback 으로 채워 **200** 을 반환합니다.
-- **입력 검증은 별도**: 현재 `validator.py` 는 LLM 분류를 쓰지 않고 항상 rule-based(`fallback_classify_input`)
-  로 동작합니다. 입력이 부적합하면 fallback 이전 단계에서 **422** 로 거절합니다.
-- **시세는 stub 고정**: `stock_data.py` 는 외부 시세 API 를 호출하지 않고 stub 데이터만 반환합니다.
-  (`data_source: "stub"`, `is_realtime: false`) 그래서 신뢰도에서 데이터 완전성이 항상 낮게 반영됩니다.
+  (validator/critic 은 각각 `fallback_classify_input`/`_fallback_consistency`)의 deterministic 로직으로
+  대체되고, 나머지는 LLM 결과를 유지합니다. (에이전트는 5개 중 일부만 실패하면 해당 에이전트만 fallback)
+- **항상 완주**: Ollama 가 완전히 꺼져 있어도 9개 모듈 전부 fallback 으로 채워 **200** 을 반환합니다.
+- **입력 검증은 hybrid**: `validator.py` 는 빈 입력/반복 문자/자모 나열/너무 짧음 같은 형식 검증은
+  rule-based 로 즉시 처리하고, 직접·완곡 매수/매도 추천 요청 여부·시장 관련성 같은 의미 판단은 LLM 으로
+  분류합니다. LLM 실패 시에만 `fallback_classify_input`(rule-based) 전체로 대체합니다. 입력이 부적합하면
+  fallback 이전 단계에서 **422** 로 거절합니다.
+- **시세: stub + 선택적 실시간**: `stock_data.py` 는 기본적으로 stub 을 반환하지만, Node backend(KIS 연동)가
+  실시간 현재가/등락률(+가능하면 거래량 추세/시가총액)을 전달하면 필드별로 덮어써서
+  `data_source: "external_api"`, `is_realtime: true` 로 표시합니다. 전달이 없거나 실패하면 stub 으로 폴백합니다.
+- **RAG(MVP)**: `external_context` 생성 전에 지원 종목(005930, 000660)에 한해 `document_retrieval.py` 가
+  IR/실적발표 자료를 도메인 키워드 중복도로 검색해 LLM 프롬프트에 참고 자료로 포함합니다. 지원하지 않는
+  종목이거나 겹치는 키워드가 없으면 빈 리스트를 반환하며(예외 없음), 이 경우 기존 방식과 동일하게 동작합니다.
+  사용된 근거 자료는 `meta.rag_sources` 에 제목/유형/발행일로 남습니다.
 - **메타 반영**:
-  - `meta.fallback_modules` 에 fallback 처리된 모듈명이 기록됩니다. (`external_context`, `agent:<type>`, `summary`)
-  - `meta.llm_status`: 0개 → `ok`, 1~6개 → `partial_failure`, 7개 전부 → `fallback`.
+  - `meta.fallback_modules` 에 fallback 처리된 모듈명이 기록됩니다.
+    (`validator`, `external_context`, `agent:<type>`, `critic`, `summary`)
+  - `meta.llm_status`: 0개 → `ok`, 1~8개 → `partial_failure`, 9개 전부 → `fallback`.
   - 분석 신뢰도는 **fallback 모듈 1개당 -0.05**, **stub 시세 사용 시 -0.10** 감점됩니다.
 - **순수 계산은 fallback 무관**: 시장 압력/분위기/신뢰도(`pressure`/`sentiment`/`confidence`)는
   LLM 을 쓰지 않는 순수 함수이며, 에이전트 출력(LLM 또는 fallback)을 입력으로 동일하게 동작합니다.
@@ -347,9 +362,12 @@ Node(Express) 백엔드가 프론트엔드 요청을 받아 이 Python 서비스
 - **enum 은 `schemas/analysis.py` 에 중앙화**: 순환 import 를 피하기 위해 enum 은 이 파일에서만 정의하고
   다른 schema 모듈이 import 합니다.
 - **에이전트는 항상 5개, 고정 순서**: `AGENT_ORDER`(개인→기관→외국인→단기→장기) 를 유지하고
-  `base_weight` 는 LLM 이 아니라 코드 상수(`BASE_WEIGHTS`)로 주입합니다.
-- **시세 stub**: 실제 시세 API 연동 전 단계입니다. stub 종목은 `005930`(삼성전자), `000660`(SK하이닉스)
-  이며 그 외는 default stub 을 사용합니다. 실연동 시 `stock_data.py` 와 `data_source`/`is_realtime`/
-  `observed_at` 표기를 함께 갱신하세요.
+  `base_weight` 는 LLM 이 아니라 코드 상수(`fallback.py:get_base_weights(event_type)`)로 주입합니다.
+  event_type 별 표는 항상 합계 1.00 이며, 새 event_type 을 추가하면 `EVENT_BASE_WEIGHTS` 와
+  `docs/market_reaction_backend_spec.md` 섹션 10 을 함께 갱신하세요.
+- **시세: stub + 선택적 실시간**: `stock_data.py` 는 기본적으로 stub 데이터를 반환하지만, Node backend(KIS
+  연동)가 `SimulationRequest.stock_data` 로 실시간 현재가/등락률(+ 가능하면 거래량 추세/시가총액)을 전달하면
+  필드별로 stub 위에 덮어써서 `data_source="external_api"`, `is_realtime=True` 로 표시합니다. Node 호출이
+  없거나 실패하면 그대로 stub 으로 폴백합니다(`get_stock_context()`).
 - **오프라인 테스트**: 새 LLM 모듈을 추가하면 `conftest.py` 의 `offline` fixture 로 fallback 경로
   테스트를 함께 추가하세요. Ollama 없이도 `pytest tests` 가 통과해야 합니다.

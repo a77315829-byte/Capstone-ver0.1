@@ -20,12 +20,17 @@ class SelectedStock(BaseModel):
 class ExternalStockData(BaseModel):
     """Node backend(KIS 연동)가 전달하는 실시간 시세.
 
-    volume_trend/market_cap 은 포함하지 않는다(Node 에서 신뢰할 만한 값을 아직 계산하지 않음).
-    이 필드가 없거나 current_price 가 없으면 stub 시세로 대체한다.
+    필드별로 있는 값만 stub 위에 덮어쓴다. current_price 가 없으면 전체를 stub 으로 대체한다.
     """
 
     current_price: Optional[int] = Field(default=None, description="현재가")
     daily_change_rate: Optional[float] = Field(default=None, description="등락률(%)")
+    volume_trend: Optional[str] = Field(
+        default=None, description="거래량 추세. 허용값: increasing, stable, decreasing"
+    )
+    market_cap_trillion: Optional[float] = Field(
+        default=None, description="시가총액(조원)"
+    )
     observed_at: Optional[datetime] = Field(default=None, description="시세 관측 시각")
 
 

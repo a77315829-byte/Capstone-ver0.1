@@ -77,3 +77,8 @@ Thumbs.db
 
 server/.kis-token-cache.json
 simulator/.venv311/
+
+# -------------------------
+# Personal study notes (not shared)
+# -------------------------
+docs/ANTITUDE-학습가이드.md

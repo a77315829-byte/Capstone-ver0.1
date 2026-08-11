@@ -26,6 +26,14 @@ const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
 	});
 };
 
+// KIS prdy_vrss_vol_rate(전일 거래량 대비 비율, %) 를 거래량 추세로 단순 구간화한다.
+const volumeTrendFromRate = (rate: number | null | undefined): string | null => {
+	if (typeof rate !== "number" || !Number.isFinite(rate)) return null;
+	if (rate >= 120) return "increasing";
+	if (rate <= 80) return "decreasing";
+	return "stable";
+};
+
 const fetchRealtimeStockData = async (code: string | undefined) => {
 	if (!code) return null;
 
@@ -37,6 +45,12 @@ const fetchRealtimeStockData = async (code: string | undefined) => {
 		return {
 			current_price: quote.price,
 			daily_change_rate: quote.changeRate,
+			// KIS hts_avls 는 억원 단위이므로 조원으로 환산(1조 = 10000억).
+			market_cap_trillion:
+				typeof quote.marketCap === "number" && quote.marketCap > 0
+					? quote.marketCap / 10000
+					: null,
+			volume_trend: volumeTrendFromRate(quote.volumeVsPrevDayRate),
 			observed_at: quote.fetchedAt,
 		};
 	} catch (error: any) {

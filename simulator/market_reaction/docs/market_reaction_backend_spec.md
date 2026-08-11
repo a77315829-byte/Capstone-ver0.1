@@ -283,15 +283,39 @@ Stub 시세는 실제 실시간 시세처럼 반환하지 않는다. Stub 사용
 
 5개 에이전트. 각 에이전트는 StandardInput을 받아 **자기 관점**으로 반응 생성.
 
-| agent_type | 관점 | 판단 기준 | base_weight |
-|---|---|---|---|
-| `individual_investor` | 화제성/투자심리 | 테마성, 뉴스 주목도, 대중 관심, 단기 기대감 | **0.20** |
-| `institutional_investor` | 실적/가치평가 | 실적 개선, 밸류에이션, 리스크, 포트폴리오 | **0.25** |
-| `foreign_investor` | 글로벌 투자흐름 | 환율, 금리, 글로벌 산업흐름, 외국인 수급 | **0.25** |
-| `short_term_investor` | 모멘텀/변동성 | 뉴스 반응속도, 거래량, 단기 흐름, 변동성 | **0.15** |
-| `long_term_investor` | 장기 성장성 | 산업 지속성, 경쟁력, 재무 안정성, 장기 실적 | **0.15** |
+| agent_type | 관점 | 판단 기준 |
+|---|---|---|
+| `individual_investor` | 화제성/투자심리 | 테마성, 뉴스 주목도, 대중 관심, 단기 기대감 |
+| `institutional_investor` | 실적/가치평가 | 실적 개선, 밸류에이션, 리스크, 포트폴리오 |
+| `foreign_investor` | 글로벌 투자흐름 | 환율, 금리, 글로벌 산업흐름, 외국인 수급 |
+| `short_term_investor` | 모멘텀/변동성 | 뉴스 반응속도, 거래량, 단기 흐름, 변동성 |
+| `long_term_investor` | 장기 성장성 | 산업 지속성, 경쟁력, 재무 안정성, 장기 실적 |
 
-> base_weight 합 = 1.00. 이 값들은 상수로 `pressure.py`에 정의.
+### base_weight — event_type 별 표
+
+`base_weight`는 LLM 이 아니라 **event_type 별 코드 상수 표**로 주입한다(`fallback.py:EVENT_BASE_WEIGHTS`,
+`get_base_weights(event_type)`). 어느 표를 쓰든 **5개 값의 합은 항상 1.00**이다. `event_type` 이
+아래 표에 없거나(`other` 포함) 판별 불가하면 **기본표**를 쓴다.
+
+| event_type | individual | institutional | foreign | short_term | long_term | 근거 |
+|---|---|---|---|---|---|---|
+| 기본표(그 외 전부 / `other`) | 0.20 | 0.25 | 0.25 | 0.15 | 0.15 | — |
+| `earnings` | 0.15 | 0.30 | 0.25 | 0.15 | 0.15 | 기관/외국인이 펀더멘털에 민감 |
+| `new_product` | 0.25 | 0.20 | 0.20 | 0.20 | 0.15 | 개인/단기가 화제성·모멘텀에 민감 |
+| `regulation` | 0.15 | 0.30 | 0.20 | 0.15 | 0.20 | 기관/장기가 리스크에 민감 |
+| `industry_demand_increase` | 0.22 | 0.23 | 0.20 | 0.20 | 0.15 | 개인/단기가 화제성에 민감(방향 무관 동일 표) |
+| `industry_demand_decrease` | 0.22 | 0.23 | 0.20 | 0.20 | 0.15 | 위와 동일 |
+| `interest_rate_change` | 0.15 | 0.20 | 0.35 | 0.15 | 0.15 | 외국인이 글로벌 자금흐름/환위험에 가장 민감 |
+| `exchange_rate_change` | 0.15 | 0.20 | 0.35 | 0.15 | 0.15 | 위와 동일 |
+| `supply_chain` | 0.15 | 0.25 | 0.25 | 0.15 | 0.20 | 기관/장기가 구조적 이슈로 인식 |
+| `competition` | 0.18 | 0.25 | 0.22 | 0.15 | 0.20 | 기관/장기가 경쟁력 변화에 민감 |
+| `management_change` | 0.15 | 0.28 | 0.27 | 0.15 | 0.15 | 기관/외국인이 지배구조 리스크에 민감 |
+| `partnership` | 0.22 | 0.23 | 0.20 | 0.20 | 0.15 | 개인/단기가 모멘텀에 민감 |
+
+> 이 표의 값은 각 event_type이 어느 투자자군의 판단 기준과 더 관련 있는지에 대한 **단순한 휴리스틱**이며,
+> 실증 데이터로 보정된 값이 아니다. LLM은 이 표의 선택(어느 event_type의 표를 쓸지 결정하는 것)에
+> 관여하지 않는다 — event_type 자체는 `external_context` 단계(LLM 또는 rule-based fallback)에서
+> 결정되고, base_weight 표 조회는 그 이후 순수 코드 로직이다.
 
 ### 에이전트 출력 모델 (섹션 11)
 
@@ -300,7 +324,7 @@ class AgentOutput(BaseModel):
     agent_type: str
     reaction_direction: Literal["buy", "sell", "hold"]
     reaction_strength: Literal["low", "medium", "high"]
-    base_weight: float          # 위 표의 고정 가중치
+    base_weight: float          # event_type 별 표(위)에서 조회한 고정 가중치
     input_relevance: float      # 0.8 / 1.0 / 1.2 (섹션 12.5)
     key_reasons: list[str]
     comment: str

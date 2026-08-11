@@ -2,15 +2,18 @@
 
 가능하면 LLM(llm_client.chat_json)으로 ExternalContext 를 생성하고,
 실패하면 fallback_external_context 로 대체한다. 실제 뉴스 API 는 호출하지 않으며
-사용자 입력/선택 종목/input_type_hint 만 사용한다.
+사용자 입력/선택 종목/input_type_hint 와, 지원 종목에 한해 검색된 IR/실적발표 자료
+(document_retrieval.py, RAG MVP)를 사용한다. 검색은 실패해도 예외를 던지지 않으며
+결과가 없으면 기존과 동일하게 동작한다.
 """
 
 from __future__ import annotations
 
 from typing import List, Tuple
 
-from ..schemas.analysis import ExternalContext, InputType
+from ..schemas.analysis import ExternalContext, InputType, RagSource
 from ..schemas.request import SimulationRequest
+from ..services.document_retrieval import retrieve_relevant_documents
 from ..services.llm_client import (
     PROMPT_INJECTION_GUARD,
     chat_json,
@@ -62,12 +65,35 @@ _SCHEMA = {
 }
 
 
-def _build_user_prompt(request: SimulationRequest, industry: str, input_type: str) -> str:
+def _retrieve_documents_safe(stock_code: str, query_text: str) -> List[dict]:
+    """검색 실패는 삼키고 빈 리스트를 반환한다(RAG 는 항상 optional)."""
+    try:
+        return retrieve_relevant_documents(stock_code, query_text)
+    except Exception:
+        return []
+
+
+def _format_reference_docs(documents: List[dict]) -> str:
+    if not documents:
+        return ""
+    lines = [
+        f"- [{doc['published_at']}] {doc['title']}: {doc['content']}" for doc in documents
+    ]
+    return (
+        "\n\nReference IR/earnings materials for this stock (background context, "
+        "not user input):\n" + "\n".join(lines)
+    )
+
+
+def _build_user_prompt(
+    request: SimulationRequest, industry: str, input_type: str, documents: List[dict]
+) -> str:
     return (
         f"Stock: {request.selected_stock.name}\n"
         f"Industry: {industry}\n"
         f"Input type: {input_type}\n"
-        f"Content:\n{wrap_user_content(request.input_text)}\n\n"
+        f"Content:\n{wrap_user_content(request.input_text)}"
+        f"{_format_reference_docs(documents)}\n\n"
         "Analyze the market impact of this information."
     )
 
@@ -81,26 +107,35 @@ def _ensure_uncertainty(ext: ExternalContext) -> ExternalContext:
 
 async def analyze_external_context(
     request: SimulationRequest,
-) -> Tuple[ExternalContext, List[str]]:
-    """ExternalContext 와 fallback_modules 목록을 반환한다."""
+) -> Tuple[ExternalContext, List[str], List[RagSource]]:
+    """ExternalContext, fallback_modules, rag_sources(검색된 근거 자료) 를 반환한다."""
     industry = get_stock_context_stub(request.selected_stock).industry
     input_type = (
         request.input_type_hint.value
         if isinstance(request.input_type_hint, InputType)
         else "unknown"
     )
+    documents = _retrieve_documents_safe(request.selected_stock.code, request.input_text)
+    rag_sources = [
+        RagSource(
+            title=doc["title"],
+            source_type=doc["source_type"],
+            published_at=doc["published_at"],
+        )
+        for doc in documents
+    ]
 
     try:
         parsed = await chat_json(
             system=_SYSTEM,
-            user=_build_user_prompt(request, industry, input_type),
+            user=_build_user_prompt(request, industry, input_type, documents),
             schema=_SCHEMA,
             response_model=ExternalContext,
         )
         ext = ExternalContext(**parsed)
-        return _ensure_uncertainty(ext), []
+        return _ensure_uncertainty(ext), [], rag_sources
     except Exception:
         ext = fallback_external_context(
             request.selected_stock.name, request.input_text, input_type
         )
-        return _ensure_uncertainty(ext), ["external_context"]
+        return _ensure_uncertainty(ext), ["external_context"], rag_sources

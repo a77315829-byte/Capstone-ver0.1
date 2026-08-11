@@ -18,6 +18,7 @@ from .core.confidence import (
     score_input_specificity,
     score_uncertainty,
 )
+from .core.critic import review_agent_consistency
 from .core.external_context import analyze_external_context
 from .core.integrator import build_standard_input
 from .core.pressure import calculate_market_pressure
@@ -32,7 +33,6 @@ from .schemas.analysis import (
     ImpactDirection,
     ImpactStrength,
     LlmStatus,
-    RealtimeContext,
     SimulationMeta,
     StandardInput,
     TimeHorizon,
@@ -41,8 +41,8 @@ from .schemas.request import SimulationRequest
 from .schemas.response import ImpactAnalysis, SimulationResponse
 from .services.stock_data import get_stock_context
 
-# LLM 호출 단계 총 개수: external_context(1) + agents(5) + summary(1) = 7
-_TOTAL_LLM_MODULES = 7
+# LLM 호출 단계 총 개수: validator(1) + external_context(1) + agents(5) + critic(1) + summary(1) = 9
+_TOTAL_LLM_MODULES = 9
 
 _IMPACT_DIRECTION_KO = {
     ImpactDirection.POSITIVE: "긍정",
@@ -83,16 +83,14 @@ def _stock_relevance(request: SimulationRequest) -> float:
     return 1.0 if request.selected_stock.name in request.input_text else 0.7
 
 
-def _analysis_consistency(
-    external: ExternalContext, realtime: RealtimeContext
-) -> float:
-    # 긍정 영향인데 가격이 이미 크게 반영됐으면 약한 충돌로 본다.
-    if (
-        external.impact_direction == ImpactDirection.POSITIVE
-        and realtime.price_reflection_level == "high"
-    ):
-        return 0.6
-    return 1.0
+def _data_completeness(request: SimulationRequest) -> float:
+    """spec 섹션 13: 실제 데이터 완전 1.0, 일부 누락 0.6, stub 사용 0.3."""
+    sd = request.stock_data
+    if sd is None or sd.current_price is None:
+        return 0.3
+    if sd.volume_trend is not None and sd.market_cap_trillion is not None:
+        return 1.0
+    return 0.6
 
 
 def _key_keywords(external: ExternalContext) -> List[str]:
@@ -117,17 +115,17 @@ async def run_market_reaction_simulation(
     request: SimulationRequest,
 ) -> SimulationResponse:
     # 1) 입력 검증
-    classification = validate_simulation_input(request)
+    classification, fb_validator = await validate_simulation_input(request)
     if not is_valid(classification):
         raise SimulationRejectedError(
             reason_code=classification.reason_code or "UNANALYZABLE",
             message=classification.message or "분석할 수 없는 입력입니다.",
         )
 
-    fallback_modules: List[str] = []
+    fallback_modules: List[str] = list(fb_validator)
 
-    # 2) 외부 시장 맥락 분석
-    external_context, fb_external = await analyze_external_context(request)
+    # 2) 외부 시장 맥락 분석(+ 지원 종목이면 IR/실적발표 자료 검색, RAG MVP)
+    external_context, fb_external, rag_sources = await analyze_external_context(request)
     fallback_modules.extend(fb_external)
 
     # 3) 실시간 모의투자 맥락 분석(request.stock_data 있으면 실시간 시세, 없으면 stub)
@@ -138,9 +136,22 @@ async def run_market_reaction_simulation(
     standard_input = build_standard_input(request, external_context, realtime_context)
     uncertainty_factors = standard_input.uncertainty_factors
 
-    # 5) 5개 에이전트 실행
+    # 5) 5개 에이전트 실행(기존과 동일하게 병렬)
     agent_outputs, fb_agents = await run_all_agents(standard_input)
     fallback_modules.extend(fb_agents)
+
+    # 5b) 정합성 critic — 5개 결과가 모두 나온 뒤 1회 호출.
+    # 실패 시 fallback(_fallback_consistency, 기존 규칙과 동일)로 대체.
+    consistency_review, fb_critic = await review_agent_consistency(standard_input, agent_outputs)
+    fallback_modules.extend(fb_critic)
+    if consistency_review.conflicts or consistency_review.uncertainty_factors:
+        uncertainty_factors = list(
+            dict.fromkeys(
+                uncertainty_factors
+                + consistency_review.conflicts
+                + consistency_review.uncertainty_factors
+            )
+        )
 
     # 6) 시장 압력 / 분위기
     market_pressure = calculate_market_pressure(agent_outputs)
@@ -154,15 +165,12 @@ async def run_market_reaction_simulation(
     fallback_modules.extend(fb_summary)
 
     # 8) 분석 신뢰도(전체 fallback 개수 + stub 감점 반영)
-    # 시세 stub: data_completeness=0.3. 실시간 시세(가격/등락률만 실측, volume_trend/시총은
-    # 여전히 stub 유래)는 "일부 누락"으로 간주해 0.6 을 적용한다(spec 섹션 13).
     uses_stub_stock_data = current_stock.data_source == DataSource.STUB
-    data_completeness = 0.3 if uses_stub_stock_data else 0.6
     analysis_confidence = calculate_analysis_confidence(
         input_specificity=score_input_specificity(request.input_text),
         stock_relevance=_stock_relevance(request),
-        data_completeness=data_completeness,
-        analysis_consistency=_analysis_consistency(external_context, realtime_context),
+        data_completeness=_data_completeness(request),
+        analysis_consistency=consistency_review.consistency_score,
         uncertainty_score=score_uncertainty(len(uncertainty_factors)),
         fallback_modules_count=len(fallback_modules),
         uses_stub_stock_data=uses_stub_stock_data,
@@ -177,6 +185,7 @@ async def run_market_reaction_simulation(
         fallback_modules=fallback_modules,
         stock_data_source=current_stock.data_source,
         db_save_status=DbSaveStatus.NOT_USED,
+        rag_sources=rag_sources,
     )
 
     return SimulationResponse(

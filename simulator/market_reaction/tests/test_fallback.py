@@ -8,12 +8,15 @@ import pytest
 from app.core.confidence import calculate_analysis_confidence  # noqa: F401 (참조용)
 from app.core.fallback import (
     AGENT_ORDER,
+    BASE_WEIGHTS,
+    EVENT_BASE_WEIGHTS,
     build_all_fallback_agent_outputs,
     build_fallback_agent_output,
     fallback_agent_focus,
     fallback_classify_input,
     fallback_external_context,
     fallback_summary,
+    get_base_weights,
 )
 from app.core.pressure import calculate_market_pressure
 from app.core.sentiment import determine_market_sentiment
@@ -145,6 +148,38 @@ def test_agent_focus_high_reflection_adds_items():
     # 선반영 관련 표현 포함
     joined = " ".join(high["institutional_investor"] + high["individual_investor"])
     assert "선반영" in joined or "추격 매수" in joined
+
+
+# ---------------------------------------------------------------------------
+# 8b. get_base_weights / EVENT_BASE_WEIGHTS
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("event_type", list(EVENT_BASE_WEIGHTS.keys()))
+def test_event_base_weights_sum_to_one(event_type):
+    table = EVENT_BASE_WEIGHTS[event_type]
+    assert set(table.keys()) == set(AgentType)
+    assert sum(table.values()) == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("event_type", [None, "", "other", "unknown_event_type"])
+def test_get_base_weights_falls_back_to_default(event_type):
+    assert get_base_weights(event_type) == BASE_WEIGHTS
+
+
+def test_get_base_weights_returns_event_specific_table():
+    assert get_base_weights("earnings") == EVENT_BASE_WEIGHTS["earnings"]
+    assert get_base_weights("earnings") != BASE_WEIGHTS
+
+
+def test_build_fallback_agent_output_uses_event_specific_weight():
+    default_out = build_fallback_agent_output(
+        AgentType.FOREIGN_INVESTOR, ImpactDirection.POSITIVE, "medium"
+    )
+    fx_out = build_fallback_agent_output(
+        AgentType.FOREIGN_INVESTOR, ImpactDirection.POSITIVE, "medium", "interest_rate_change"
+    )
+    assert default_out.base_weight == BASE_WEIGHTS[AgentType.FOREIGN_INVESTOR]
+    assert fx_out.base_weight == EVENT_BASE_WEIGHTS["interest_rate_change"][AgentType.FOREIGN_INVESTOR]
+    assert fx_out.base_weight > default_out.base_weight
 
 
 # ---------------------------------------------------------------------------
