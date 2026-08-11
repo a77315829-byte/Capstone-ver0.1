@@ -14,6 +14,11 @@ python-dotenv==1.0.1
 # HTTP client (Ollama 비동기 호출용)
 httpx==0.28.1
 
+# RAG (문서 임베딩/벡터 검색)
+faiss-cpu==1.9.0
+numpy==1.26.4
+beautifulsoup4==4.12.3
+
 # Testing
 pytest==8.3.4
 pytest-asyncio==0.25.0

@@ -47,6 +47,7 @@ simulator/__pycache__/
 simulator/agent-training/__pycache__/
 simulator/scripts/__pycache__/
 simulator/simulator/__pycache__/
+simulator/market_reaction/data/
 
 # 필요하면 raw/labeled도 제외 가능
 # simulator/data/raw/
