@@ -39,11 +39,23 @@ US_TICKERS = [
 ]
 
 
+MIN_CHUNK_CHARS = 100
+
+
 def _document_to_chunks(document: dict, heading_pattern: str) -> List[str]:
-    """정규화된 문서 하나(document['content'])를 청크 텍스트 목록으로 나눈다."""
+    """정규화된 문서 하나(document['content'])를 청크 텍스트 목록으로 나눈다.
+
+    MIN_CHUNK_CHARS 미만인 청크는 버린다. nomic-embed-text 임베딩은 아주 짧은
+    텍스트(안건 목록 한 줄, "선임되었습니다" 같은 문장 조각 등)에 코사인 유사도를
+    비정상적으로 높게 주는 경향이 있어(실측: 무관한 9~66자 청크가 0.87~0.95, 실제
+    관련 있는 1200자 청크가 0.72), 검색 결과가 짧고 무의미한 조각들로 뒤덮이는 문제가
+    있었다. 짧은 청크를 애초에 인덱싱하지 않으면 이 편향을 피할 수 있다.
+    """
     chunk_texts: List[str] = []
     for _heading, body in split_into_sections(document["content"], heading_pattern):
-        chunk_texts.extend(split_into_chunks(body, DEFAULT_MAX_CHARS))
+        for chunk in split_into_chunks(body, DEFAULT_MAX_CHARS):
+            if len(chunk) >= MIN_CHUNK_CHARS:
+                chunk_texts.append(chunk)
     return chunk_texts
 
 

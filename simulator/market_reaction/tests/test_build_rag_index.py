@@ -1,14 +1,14 @@
 """build_rag_index.py 의 순수 로직 테스트 (네트워크 호출 제외)."""
 
 from app.services.dart_source import DART_HEADING_PATTERN
-from scripts.build_rag_index import _document_to_chunks
+from scripts.build_rag_index import MIN_CHUNK_CHARS, _document_to_chunks
 
 
 def test_document_to_chunks_splits_by_section():
     document = {
         "content": (
-            "I. 회사의 개요\n회사 개요 본문입니다.\n\n"
-            "II. 사업의 내용\n사업 내용 본문입니다."
+            "I. 회사의 개요\n" + "회사 개요 본문입니다. " * 10 + "\n\n"
+            "II. 사업의 내용\n" + "사업 내용 본문입니다. " * 10
         )
     }
     chunks = _document_to_chunks(document, DART_HEADING_PATTERN)
@@ -24,6 +24,7 @@ def test_document_to_chunks_ignores_arabic_numbered_list_items():
             "I. 회사의 개요\n"
             "1. 사회공헌 기부금 출연의 건\n"
             "2. 삼성디스플레이와 차입계약 연장의 건\n"
+            + "이사회는 위 안건들을 심의하여 원안대로 가결하였습니다. " * 3
         )
     }
     chunks = _document_to_chunks(document, DART_HEADING_PATTERN)
@@ -31,6 +32,14 @@ def test_document_to_chunks_ignores_arabic_numbered_list_items():
 
 
 def test_document_to_chunks_no_heading_returns_single_chunk():
-    document = {"content": "짧은 본문 하나."}
+    document = {"content": "짧은 본문입니다. " * 20}
     chunks = _document_to_chunks(document, DART_HEADING_PATTERN)
-    assert chunks == ["짧은 본문 하나."]
+    assert chunks == [document["content"].strip()]
+
+
+def test_document_to_chunks_drops_chunks_shorter_than_min_chars():
+    """MIN_CHUNK_CHARS 미만인 청크는 (임베딩 유사도 편향을 피하기 위해) 버려진다."""
+    document = {"content": "너무 짧은 본문."}
+    assert len(document["content"]) < MIN_CHUNK_CHARS
+    chunks = _document_to_chunks(document, DART_HEADING_PATTERN)
+    assert chunks == []
