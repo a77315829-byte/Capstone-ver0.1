@@ -7,4 +7,4 @@ def test_rag_settings_defaults():
     s = Settings(_env_file=None)
     assert s.dart_api_key == ""
     assert s.rag_index_dir == "data/rag_index"
-    assert s.ollama_embedding_model == "nomic-embed-text"
+    assert s.ollama_embedding_model == "bge-m3"

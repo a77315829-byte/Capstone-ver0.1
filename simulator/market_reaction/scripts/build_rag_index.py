@@ -4,7 +4,7 @@ DART(한국 20종목)/SEC EDGAR(미국 20종목) 공시를 수집·정규화·�
 종목별 FAISS 인덱스와 공용 메타데이터/매니페스트를 settings.rag_index_dir 밑에 생성한다.
 
 사전 준비: .env 에 DART_API_KEY 설정, Ollama 실행(임베딩 모델 pull 되어 있어야 함:
-`ollama pull nomic-embed-text`).
+`ollama pull bge-m3`).
 
 실행 (simulator/market_reaction 디렉터리에서):
     python -m scripts.build_rag_index
@@ -64,12 +64,14 @@ def _is_degenerate(text: str) -> bool:
 def _document_to_chunks(document: dict, heading_pattern: str) -> List[str]:
     """정규화된 문서 하나(document['content'])를 청크 텍스트 목록으로 나눈다.
 
-    MIN_CHUNK_CHARS 미만인 청크와 _is_degenerate 인 청크는 버린다. nomic-embed-text
-    임베딩은 아주 짧은 텍스트(안건 목록 한 줄, "선임되었습니다" 같은 문장 조각 등)에
-    코사인 유사도를 비정상적으로 높게 주는 경향이 있어(실측: 무관한 9~66자 청크가
-    0.87~0.95, 실제 관련 있는 1200자 청크가 0.72) 검색 결과가 짧고 무의미한 조각들로
-    뒤덮이는 문제가 있었고, 반복 텍스트(_is_degenerate)도 같은 이유로 검색 결과를
-    오염시켰다. 둘 다 애초에 인덱싱하지 않으면 이 편향을 피할 수 있다.
+    MIN_CHUNK_CHARS 미만인 청크와 _is_degenerate 인 청크는 버린다. 임베딩 모델 실험 중
+    (nomic-embed-text 기준) 아주 짧은 텍스트(안건 목록 한 줄, "선임되었습니다" 같은
+    문장 조각 등)에 코사인 유사도를 비정상적으로 높게 주는 경향을 실측으로 확인했다
+    (무관한 9~66자 청크가 0.87~0.95, 실제 관련 있는 1200자 청크가 0.72) — 검색 결과가
+    짧고 무의미한 조각들로 뒤덮이는 문제가 있었고, 반복 텍스트(_is_degenerate)도 같은
+    이유로 검색 결과를 오염시켰다(실측: 전체 청크의 17%). 현재 기본 임베딩 모델은
+    bge-m3 로 교체했지만, 이 필터들은 모델에 관계없이 유효한 청크 품질 안전장치라
+    유지한다.
 
     퇴화된 문단은 split_into_chunks 로 최종 청크를 만들기 전, 문단(빈 줄 구분) 단위로
     먼저 걸러낸다 — 그렇지 않으면 짧은 반복 문단이 주변의 정상적인 문단과 함께

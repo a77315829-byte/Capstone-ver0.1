@@ -77,7 +77,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
   | `OLLAMA_TEMPERATURE` | `0.3` | LLM 기본 temperature |
   | `DART_API_KEY` | (없음) | DART Open API 키(`scripts/build_rag_index.py` 전용, 런타임 서비스는 미사용) |
   | `RAG_INDEX_DIR` | `data/rag_index` | RAG 인덱스/메타데이터/매니페스트 저장 경로 |
-  | `OLLAMA_EMBEDDING_MODEL` | `nomic-embed-text` | RAG 문서/질의 임베딩에 사용할 Ollama 모델명 |
+  | `OLLAMA_EMBEDDING_MODEL` | `bge-m3` | RAG 문서/질의 임베딩에 사용할 Ollama 모델명(다국어, 한국어 성능 우수) |
 
 > `API_HOST` / `API_PORT` 는 설정값으로 보관될 뿐, 실제 바인딩은 위 `uvicorn` 명령의
 > `--host` / `--port` 인자로 결정됩니다.
@@ -310,7 +310,7 @@ LLM 호출 단계는 **validator(1) + 외부 맥락(1) + 에이전트(5) + criti
 - **RAG**: `external_context` 생성 전에 `document_retrieval.py` 가 해당 종목의 FAISS 인덱스에서
   질의와 유사한 문서 청크를 검색해 LLM 프롬프트에 참고 자료로 포함합니다. 인덱스는 한국 20종목(DART
   공시)·미국 20종목(SEC EDGAR 공시)을 오프라인 배치 스크립트(`scripts/build_rag_index.py`)로 미리
-  수집·청킹·Ollama 로컬 임베딩(`nomic-embed-text`)해 만들며, 런타임은 이 인덱스를 읽기만 합니다.
+  수집·청킹·Ollama 로컬 임베딩(`bge-m3`)해 만들며, 런타임은 이 인덱스를 읽기만 합니다.
   지원 종목이 아니거나, 인덱스/매니페스트가 없거나, 임베딩 모델·차원이 맞지 않거나, 임베딩 호출이
   실패하면 예외 없이 빈 리스트를 반환합니다(이 경우 기존 방식과 동일하게 동작). 검색 결과는 유사도
   순으로 누적 글자수 4000자 예산 내에서만 포함됩니다. 사용된 근거 자료는 `meta.rag_sources` 에
@@ -318,7 +318,7 @@ LLM 호출 단계는 **validator(1) + 외부 맥락(1) + 에이전트(5) + criti
 
   최초 실행 전 인덱스가 없으면 RAG 는 항상 빈 결과를 반환합니다(서비스 자체는 정상 동작). 인덱스를
   만들려면 `.env` 에 `DART_API_KEY` 를 설정하고, Ollama 에 임베딩 모델을 받은 뒤
-  (`ollama pull nomic-embed-text`) 아래를 실행하세요:
+  (`ollama pull bge-m3`) 아래를 실행하세요:
 
   ```bash
   cd simulator/market_reaction

@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     # RAG (문서 검색) — dart_api_key 는 scripts/build_rag_index.py 전용, 런타임 서비스는 사용 안 함
     dart_api_key: str = ""
     rag_index_dir: str = "data/rag_index"
-    ollama_embedding_model: str = "nomic-embed-text"
+    ollama_embedding_model: str = "bge-m3"
 
     model_config = SettingsConfigDict(
         env_file=".env",
