@@ -16,6 +16,7 @@ docs/superpowers/specs/2026-08-14-market-reaction-rag-mongodb-design.md 참고.
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 from datetime import datetime, timezone
 from typing import Dict, List, Tuple
@@ -31,6 +32,8 @@ from app.services.edgar_source import (
 )
 from app.services.embeddings import embed_text
 from app.services.mongo_client import get_database
+
+logger = logging.getLogger(__name__)
 
 KR_STOCKS = [
     "005930", "000660", "373220", "207940", "005380", "000270", "068270", "005490",
@@ -162,12 +165,24 @@ async def _rebuild_stock(
       3. 새 청크 insert
       4. manifest 를 new_version 으로 upsert (이 시점부터 런타임이 새 버전을 봄)
       5. 구버전(< new_version) 청크 정리
+
+    새로 만든 청크가 0개인데 이전(prev_version)에 정상 데이터가 있었다면, 그 데이터를
+    지우지 않고 그대로 둔 채 반환한다(예: 업스트림 HTML/XML 형식이 바뀌어 이번 실행에서
+    모든 청크가 필터링된 경우, 기존에 잘 동작하던 데이터를 빈 데이터로 덮어쓰지 않기 위함).
+    prev_version 이 0(첫 빌드)이면 잃을 게 없으므로 기존대로 진행한다.
     """
     manifest = await repository.get_manifest(stock_code)
     prev_version = manifest["rag_version"] if manifest else 0
     new_version = prev_version + 1
 
     await repository.delete_chunks_at_version(stock_code, new_version)
+
+    if not chunk_texts and prev_version > 0:
+        logger.warning(
+            "RAG rebuild for %s produced 0 chunks; keeping existing rag_version=%d untouched",
+            stock_code, prev_version,
+        )
+        return 0
 
     chunks = [
         rag_index.Chunk(

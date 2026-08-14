@@ -160,3 +160,28 @@ async def test_rebuild_stock_handles_no_chunks():
     assert count == 0
     assert repo.manifests["005930"]["rag_version"] == 1
     assert repo.manifests["005930"]["chunk_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_rebuild_stock_keeps_existing_data_when_new_run_yields_zero_chunks():
+    """업스트림 형식이 바뀌어 이번 실행에서 청크가 0개가 되더라도, 이전에 정상 빌드된
+    데이터(rag_version=1)를 지우면 안 된다."""
+    repo = FakeRagRepository()
+    good_chunk = Chunk(
+        chunk_id="005930:1:0", stock_code="005930", title="t", source_type="dart_periodic",
+        published_at="2026-07-01", url="http://x", text="정상청크", embedding=[1.0, 0.0],
+        rag_version=1,
+    )
+    repo.chunks[good_chunk.chunk_id] = good_chunk
+    repo.manifests["005930"] = {
+        "stock_code": "005930", "rag_version": 1, "embedding_model": "bge-m3",
+        "embedding_dimension": 2, "chunk_count": 1, "built_at": "2026-08-01T00:00:00+00:00",
+    }
+
+    count = await build_rag_index._rebuild_stock(repo, "005930", [], [], [], "bge-m3")
+
+    assert count == 0
+    assert repo.manifests["005930"]["rag_version"] == 1
+    remaining = [c for c in repo.chunks.values() if c.stock_code == "005930"]
+    assert len(remaining) == 1
+    assert remaining[0].text == "정상청크"
