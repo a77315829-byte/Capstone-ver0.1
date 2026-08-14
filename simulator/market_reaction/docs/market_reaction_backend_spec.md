@@ -688,16 +688,20 @@ def chat_json(system: str, user: str, schema: dict,
   EDGAR)를 검색해 LLM 프롬프트에 참고 자료로 제공한다. 직접 매수/매도 추천이나 가격 예측에는
   사용하지 않는다.
 - **오프라인 인덱싱 / 런타임 검색 분리**: `scripts/build_rag_index.py`(수동 실행, 네트워크 필요)가
-  인덱스를 만들고, `app/services/document_retrieval.py`(런타임)는 만들어진 인덱스 파일만 읽는다.
-  런타임 서비스는 `DART_API_KEY` 를 사용하지 않는다.
+  DART/EDGAR 공시를 수집·청킹·임베딩해 MongoDB(`rag_chunks`/`rag_manifest` 컬렉션, `RagRepository`
+  를 통해 접근)에 저장한다. 런타임의 `app/services/document_retrieval.py`는 `FaissVectorStore`
+  (종목별 lazy-loading 인메모리 검색 캐시)를 통해 이 MongoDB 데이터를 읽는다 — 캐시 miss(해당
+  종목을 아직 캐시에 올린 적 없음) 시에만 MongoDB 를 읽어 FAISS 인덱스를 메모리에 만들고, 캐시
+  hit 이면 MongoDB 접근 없이 캐시된 인덱스만 쓴다. 런타임 서비스는 `DART_API_KEY` 를 사용하지
+  않는다.
 - **대상 종목**: 한국 20종목(DART, `scripts/build_rag_index.py:KR_STOCKS`), 미국 20종목(SEC
   EDGAR, `scripts/build_rag_index.py:US_TICKERS`). 그 외 종목은 검색 결과가 항상 빈 리스트다.
 - **문서 유형(`RagSource.source_type`)**: `dart_periodic`(사업/분기/반기보고서),
   `dart_material`(수시공시), `edgar_10k`, `edgar_10q`, `edgar_8k`, `edgar_other`.
 - **검색 계약**: `retrieve_relevant_documents(stock_code, query_text)` 은 항상
-  `{title, source_type, published_at, content}` 형태의 dict 목록을 반환하며, 실패 시
-  (지원하지 않는 종목/인덱스 없음/임베딩 모델·차원 불일치/임베딩 호출 실패) 예외 없이 빈
-  리스트를 반환한다.
+  `{title, source_type, published_at, content}` 형태의 dict 목록을 반환하며, 다음 경우 예외 없이
+  빈 리스트를 반환한다: 해당 종목의 MongoDB 데이터 없음(지원하지 않는 종목 포함), 임베딩
+  모델·차원 불일치, MongoDB 연결/조회 실패, 임베딩 호출 실패.
 - **선택 기준**: 종목별 인덱스에서 top-5 후보를 유사도 순으로 가져온 뒤, 누적 글자수가
   4000자를 넘기기 전까지만 프롬프트에 포함한다.
 - **메타 반영**: 사용된 근거 자료는 `meta.rag_sources` 에 제목/유형/발행일로 남는다(없으면
