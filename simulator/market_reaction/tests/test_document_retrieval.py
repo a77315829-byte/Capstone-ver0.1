@@ -170,3 +170,20 @@ async def test_repository_failure_returns_empty(monkeypatch):
     monkeypatch.setattr(document_retrieval, "embed_text", _embed)
     docs = await document_retrieval.retrieve_relevant_documents("005930", "삼성전자 실적")
     assert docs == []
+
+
+@pytest.mark.asyncio
+async def test_mongo_config_error_returns_empty(monkeypatch):
+    from app.services.mongo_client import MongoConfigError
+
+    async def _embed(_text):
+        return [1.0, 0.0]
+
+    def _raise_config_error():
+        raise MongoConfigError("STOTRA_MONGODB_* settings not configured")
+
+    # Monkeypatch get_database to raise MongoConfigError (don't inject _store)
+    monkeypatch.setattr(document_retrieval, "get_database", _raise_config_error)
+    monkeypatch.setattr(document_retrieval, "embed_text", _embed)
+    docs = await document_retrieval.retrieve_relevant_documents("005930", "삼성전자 실적")
+    assert docs == []

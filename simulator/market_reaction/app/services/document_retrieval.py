@@ -16,7 +16,7 @@ from typing import List, Optional
 
 from ..config import settings
 from .embeddings import EmbeddingError, embed_text
-from .mongo_client import get_database
+from .mongo_client import MongoConfigError, get_database
 from .rag_repository import RagRepository
 from .vector_store import FaissVectorStore
 
@@ -54,7 +54,13 @@ async def retrieve_relevant_documents(stock_code: str, query_text: str) -> List[
         logger.warning("RAG query embedding failed: %s", exc)
         return []
 
-    chunks = await _get_store().search(stock_code, query_vector, _TOP_K)
+    try:
+        store = _get_store()
+    except MongoConfigError as exc:
+        logger.warning("RAG store initialization failed: %s", exc)
+        return []
+
+    chunks = await store.search(stock_code, query_vector, _TOP_K)
 
     selected: List[dict] = []
     used_chars = 0
