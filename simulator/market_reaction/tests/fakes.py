@@ -35,6 +35,9 @@ class FakeRagRepository:
 
     async def insert_chunks(self, chunks: List[Chunk]) -> None:
         for c in chunks:
+            if c.chunk_id in self.chunks:
+                raise ValueError(f"duplicate chunk_id: {c.chunk_id}")
+        for c in chunks:
             self.chunks[c.chunk_id] = c
 
     async def upsert_manifest(

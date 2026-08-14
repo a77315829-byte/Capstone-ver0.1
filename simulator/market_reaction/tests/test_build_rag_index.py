@@ -138,6 +138,22 @@ async def test_rebuild_stock_cleans_up_orphaned_chunks_from_failed_attempt():
 
 
 @pytest.mark.asyncio
+async def test_fake_repo_insert_chunks_raises_on_duplicate_chunk_id():
+    """FakeRagRepository 는 실제 Mongo insert_many 의 _id 중복 시 DuplicateKeyError 동작을
+    흉내낸다(조용한 덮어쓰기 금지) — delete_chunks_at_version 을 건너뛰면 이 fake 로도
+    잡혀야 한다."""
+    repo = FakeRagRepository()
+    chunk = Chunk(
+        chunk_id="005930:1:0", stock_code="005930", title="t", source_type="dart_periodic",
+        published_at="2026-07-01", url="http://x", text="본문", embedding=[1.0, 0.0],
+        rag_version=1,
+    )
+    await repo.insert_chunks([chunk])
+    with pytest.raises(ValueError):
+        await repo.insert_chunks([chunk])
+
+
+@pytest.mark.asyncio
 async def test_rebuild_stock_handles_no_chunks():
     repo = FakeRagRepository()
     count = await build_rag_index._rebuild_stock(repo, "005930", [], [], [], "bge-m3")
