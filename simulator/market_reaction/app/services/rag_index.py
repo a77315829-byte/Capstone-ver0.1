@@ -1,16 +1,15 @@
-"""FAISS 인덱스 / 청크 메타데이터 / 매니페스트 저장·로드 (RAG 인덱스 I/O).
+"""FAISS 인덱스 빌드용 자료구조/유틸.
 
-scripts/build_rag_index.py(빌드)와 app/services/document_retrieval.py(런타임 검색)가
-공용으로 사용한다. 임베딩 벡터는 코사인 유사도 검색을 위해 항상 L2 정규화해서 인덱스에
-넣고, 검색 쿼리 벡터도 동일하게 정규화한다.
+scripts/build_rag_index.py(빌드 — 임베딩 결과를 Chunk 로 다뤄 MongoDB 에 저장)와
+app/services/vector_store.py(런타임 — MongoDB 에서 읽어온 청크로 FAISS 인덱스를 메모리에
+만듦)가 공용으로 사용한다. 임베딩 벡터는 코사인 유사도 검색을 위해 항상 L2 정규화해서
+인덱스에 넣고, 검색 쿼리 벡터도 동일하게 정규화한다.
 """
 
 from __future__ import annotations
 
-import json
-from dataclasses import asdict, dataclass
-from pathlib import Path
-from typing import Dict, List, Tuple
+from dataclasses import dataclass
+from typing import List, Tuple
 
 import faiss
 import numpy as np
@@ -18,16 +17,17 @@ import numpy as np
 
 @dataclass
 class Chunk:
-    """청크 하나의 메타데이터. vector_id 는 해당 청크가 삽입된 FAISS 인덱스의 row 번호다."""
+    """청크 하나의 메타데이터. MongoDB `rag_chunks` 컬렉션 문서 1건과 대응한다."""
 
     chunk_id: str
-    vector_id: int
     stock_code: str
     title: str
     source_type: str
     published_at: str
     url: str
     text: str
+    embedding: List[float]
+    rag_version: int
 
 
 def _normalize(vectors: np.ndarray) -> np.ndarray:
@@ -38,7 +38,7 @@ def _normalize(vectors: np.ndarray) -> np.ndarray:
 
 
 def build_index(vectors: List[List[float]]) -> faiss.Index:
-    """벡터 목록으로 FAISS IndexFlatIP 를 만든다. 삽입 순서가 그대로 vector_id 가 된다."""
+    """벡터 목록으로 FAISS IndexFlatIP 를 만든다. 삽입 순서가 곧 검색 결과의 행 번호가 된다."""
     if not vectors:
         return faiss.IndexFlatIP(1)
     arr = _normalize(np.array(vectors, dtype="float32"))
@@ -47,47 +47,11 @@ def build_index(vectors: List[List[float]]) -> faiss.Index:
     return index
 
 
-def save_index(index: faiss.Index, path: Path) -> None:
-    faiss.write_index(index, str(path))
-
-
-def load_index(path: Path) -> faiss.Index:
-    return faiss.read_index(str(path))
-
-
 def search(index: faiss.Index, query_vector: List[float], top_k: int) -> List[Tuple[int, float]]:
-    """(vector_id, score) 목록을 유사도 높은 순으로 반환한다. 인덱스가 비어 있으면 빈 리스트."""
+    """(row, score) 목록을 유사도 높은 순으로 반환한다. 인덱스가 비어 있으면 빈 리스트."""
     if index.ntotal == 0:
         return []
     q = _normalize(np.array([query_vector], dtype="float32"))
     k = min(top_k, index.ntotal)
     scores, ids = index.search(q, k)
     return [(int(i), float(s)) for i, s in zip(ids[0], scores[0]) if i != -1]
-
-
-def save_metadata(chunks_by_stock: Dict[str, List[Chunk]], path: Path) -> None:
-    """stock_code -> [chunk...] 형태로 저장한다."""
-    data = {
-        stock_code: [asdict(c) for c in chunks] for stock_code, chunks in chunks_by_stock.items()
-    }
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def load_metadata(path: Path) -> Dict[str, List[dict]]:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def save_manifest(
-    path: Path, *, embedding_model: str, embedding_dim: int, created_at: str, counts: dict
-) -> None:
-    manifest = {
-        "created_at": created_at,
-        "embedding_model": embedding_model,
-        "embedding_dim": embedding_dim,
-        "counts": counts,
-    }
-    path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def load_manifest(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
