@@ -1,54 +1,46 @@
-"""document_retrieval.py 테스트 (FAISS 인덱스 기반 런타임 검색)."""
+"""document_retrieval.py 테스트 (FaissVectorStore 기반 런타임 검색)."""
 
 import pytest
 
-from app.services import document_retrieval, rag_index
+from app.services import document_retrieval
+from app.services.rag_index import Chunk
+from app.services.vector_store import FaissVectorStore
+from tests.fakes import FakeRagRepository
 
 
 @pytest.fixture(autouse=True)
-def _reset(monkeypatch, tmp_path):
-    """각 테스트마다 모듈 캐시를 비우고 rag_index_dir 를 tmp_path 로 돌린다."""
+def _reset(monkeypatch):
     document_retrieval._reset_cache()
-    monkeypatch.setattr(document_retrieval.settings, "rag_index_dir", str(tmp_path))
-    monkeypatch.setattr(document_retrieval.settings, "ollama_embedding_model", "nomic-embed-text")
-    yield tmp_path
+    monkeypatch.setattr(document_retrieval.settings, "ollama_embedding_model", "bge-m3")
+    yield
     document_retrieval._reset_cache()
 
 
-def _write_fixture_index(index_dir, stock_code="005930", embedding_dim=2):
-    """005930 종목에 청크 2개짜리 인덱스를 만든다.
+def _inject_store(repo):
+    document_retrieval._store = FaissVectorStore(repo)
 
-    벡터 [1,0] 은 chunk0(가까움), [0,1] 은 chunk1(멂) 에 대응한다.
-    """
-    chunks = {
-        stock_code: [
-            rag_index.Chunk(
-                chunk_id=f"{stock_code}:0", vector_id=0, stock_code=stock_code,
-                title="삼성전자 2026년 2분기 실적발표", source_type="dart_periodic",
-                published_at="2026-07-24", url="http://x", text="가" * 100,
-            ),
-            rag_index.Chunk(
-                chunk_id=f"{stock_code}:1", vector_id=1, stock_code=stock_code,
-                title="삼성전자 IR 자료", source_type="dart_material",
-                published_at="2026-06-10", url="http://y", text="나" * 100,
-            ),
-        ]
+
+def _seed(repo, stock_code, chunk_specs, embedding_model="bge-m3"):
+    """chunk_specs: [(chunk_kwargs, vector), ...]. chunk_kwargs 는 title/source_type/
+    published_at/url/text."""
+    for i, (chunk_kwargs, vector) in enumerate(chunk_specs):
+        chunk = Chunk(
+            chunk_id=f"{stock_code}:1:{i}", stock_code=stock_code, embedding=vector,
+            rag_version=1, **chunk_kwargs,
+        )
+        repo.chunks[chunk.chunk_id] = chunk
+    repo.manifests[stock_code] = {
+        "stock_code": stock_code, "rag_version": 1, "embedding_model": embedding_model,
+        "embedding_dimension": len(chunk_specs[0][1]), "chunk_count": len(chunk_specs),
+        "built_at": "2026-08-14T00:00:00+00:00",
     }
-    vectors = [[1.0, 0.0], [0.0, 1.0]]
-    index = rag_index.build_index(vectors)
-    rag_index.save_index(index, index_dir / f"{stock_code}.faiss")
-    rag_index.save_metadata(chunks, index_dir / "rag_metadata.json")
-    rag_index.save_manifest(
-        index_dir / "rag_manifest.json",
-        embedding_model="nomic-embed-text",
-        embedding_dim=embedding_dim,
-        created_at="2026-08-11T00:00:00+00:00",
-        counts={"stocks": 1, "chunks": 2},
-    )
 
 
 @pytest.mark.asyncio
-async def test_no_index_files_returns_empty(_reset, monkeypatch):
+async def test_no_data_returns_empty(monkeypatch):
+    repo = FakeRagRepository()
+    _inject_store(repo)
+
     async def _embed(_text):
         return [1.0, 0.0]
 
@@ -58,8 +50,13 @@ async def test_no_index_files_returns_empty(_reset, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_unsupported_stock_returns_empty(_reset, monkeypatch):
-    _write_fixture_index(_reset)
+async def test_unsupported_stock_returns_empty(monkeypatch):
+    repo = FakeRagRepository()
+    _seed(repo, "005930", [
+        ({"title": "t", "source_type": "dart_periodic", "published_at": "2026-07-24",
+          "url": "http://x", "text": "가" * 100}, [1.0, 0.0]),
+    ])
+    _inject_store(repo)
 
     async def _embed(_text):
         return [1.0, 0.0]
@@ -70,11 +67,18 @@ async def test_unsupported_stock_returns_empty(_reset, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_returns_nearest_chunk_first(_reset, monkeypatch):
-    _write_fixture_index(_reset)
+async def test_returns_nearest_chunk_first(monkeypatch):
+    repo = FakeRagRepository()
+    _seed(repo, "005930", [
+        ({"title": "삼성전자 2026년 2분기 실적발표", "source_type": "dart_periodic",
+          "published_at": "2026-07-24", "url": "http://x", "text": "가" * 100}, [1.0, 0.0]),
+        ({"title": "삼성전자 IR 자료", "source_type": "dart_material",
+          "published_at": "2026-06-10", "url": "http://y", "text": "나" * 100}, [0.0, 1.0]),
+    ])
+    _inject_store(repo)
 
     async def _embed(_text):
-        return [1.0, 0.0]  # chunk0 과 정확히 같은 방향
+        return [1.0, 0.0]
 
     monkeypatch.setattr(document_retrieval, "embed_text", _embed)
     docs = await document_retrieval.retrieve_relevant_documents("005930", "삼성전자 실적")
@@ -84,49 +88,33 @@ async def test_returns_nearest_chunk_first(_reset, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_budget_cuts_off_before_exceeding(_reset, monkeypatch):
-    index_dir = _reset
-    chunks = {
-        "005930": [
-            rag_index.Chunk(
-                chunk_id="005930:0", vector_id=0, stock_code="005930", title="문서1",
-                source_type="dart_periodic", published_at="2026-07-24", url="http://x",
-                text="가" * 3000,
-            ),
-            rag_index.Chunk(
-                chunk_id="005930:1", vector_id=1, stock_code="005930", title="문서2",
-                source_type="dart_periodic", published_at="2026-06-10", url="http://y",
-                text="나" * 1500,
-            ),
-        ]
-    }
-    vectors = [[1.0, 0.0], [0.9, 0.1]]
-    index = rag_index.build_index(vectors)
-    rag_index.save_index(index, index_dir / "005930.faiss")
-    rag_index.save_metadata(chunks, index_dir / "rag_metadata.json")
-    rag_index.save_manifest(
-        index_dir / "rag_manifest.json",
-        embedding_model="nomic-embed-text",
-        embedding_dim=2,
-        created_at="2026-08-11T00:00:00+00:00",
-        counts={"stocks": 1, "chunks": 2},
-    )
+async def test_budget_cuts_off_before_exceeding(monkeypatch):
+    repo = FakeRagRepository()
+    _seed(repo, "005930", [
+        ({"title": "문서1", "source_type": "dart_periodic", "published_at": "2026-07-24",
+          "url": "http://x", "text": "가" * 3000}, [1.0, 0.0]),
+        ({"title": "문서2", "source_type": "dart_periodic", "published_at": "2026-06-10",
+          "url": "http://y", "text": "나" * 1500}, [0.9, 0.1]),
+    ])
+    _inject_store(repo)
 
     async def _embed(_text):
         return [1.0, 0.0]
 
     monkeypatch.setattr(document_retrieval, "embed_text", _embed)
     docs = await document_retrieval.retrieve_relevant_documents("005930", "질문")
-    # 첫 청크(3000자)는 예산(4000자) 내라 포함, 둘째 청크(1500자)를 더하면
-    # 4500자로 예산을 넘기므로 제외되어야 한다.
     assert len(docs) == 1
     assert docs[0]["title"] == "문서1"
 
 
 @pytest.mark.asyncio
-async def test_manifest_model_mismatch_returns_empty(_reset, monkeypatch):
-    _write_fixture_index(_reset)
-    monkeypatch.setattr(document_retrieval.settings, "ollama_embedding_model", "다른모델")
+async def test_manifest_model_mismatch_returns_empty(monkeypatch):
+    repo = FakeRagRepository()
+    _seed(repo, "005930", [
+        ({"title": "t", "source_type": "dart_periodic", "published_at": "2026-07-24",
+          "url": "http://x", "text": "가" * 100}, [1.0, 0.0]),
+    ], embedding_model="다른모델")
+    _inject_store(repo)
 
     async def _embed(_text):
         return [1.0, 0.0]
@@ -137,11 +125,16 @@ async def test_manifest_model_mismatch_returns_empty(_reset, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_manifest_dim_mismatch_returns_empty(_reset, monkeypatch):
-    _write_fixture_index(_reset, embedding_dim=2)
+async def test_query_embedding_dim_mismatch_returns_empty(monkeypatch):
+    repo = FakeRagRepository()
+    _seed(repo, "005930", [
+        ({"title": "t", "source_type": "dart_periodic", "published_at": "2026-07-24",
+          "url": "http://x", "text": "가" * 100}, [1.0, 0.0]),
+    ])
+    _inject_store(repo)
 
     async def _embed(_text):
-        return [1.0, 0.0, 0.0]  # 매니페스트(2차원)와 다른 3차원
+        return [1.0, 0.0, 0.0]  # manifest(2차원)와 다른 3차원
 
     monkeypatch.setattr(document_retrieval, "embed_text", _embed)
     docs = await document_retrieval.retrieve_relevant_documents("005930", "삼성전자 실적")
@@ -149,12 +142,31 @@ async def test_manifest_dim_mismatch_returns_empty(_reset, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_embedding_failure_returns_empty(_reset, monkeypatch):
-    _write_fixture_index(_reset)
+async def test_embedding_failure_returns_empty(monkeypatch):
+    repo = FakeRagRepository()
+    _seed(repo, "005930", [
+        ({"title": "t", "source_type": "dart_periodic", "published_at": "2026-07-24",
+          "url": "http://x", "text": "가" * 100}, [1.0, 0.0]),
+    ])
+    _inject_store(repo)
 
     async def _raise(_text):
         raise document_retrieval.EmbeddingError("boom")
 
     monkeypatch.setattr(document_retrieval, "embed_text", _raise)
+    docs = await document_retrieval.retrieve_relevant_documents("005930", "삼성전자 실적")
+    assert docs == []
+
+
+@pytest.mark.asyncio
+async def test_repository_failure_returns_empty(monkeypatch):
+    repo = FakeRagRepository()
+    repo.fail_reads = True
+    _inject_store(repo)
+
+    async def _embed(_text):
+        return [1.0, 0.0]
+
+    monkeypatch.setattr(document_retrieval, "embed_text", _embed)
     docs = await document_retrieval.retrieve_relevant_documents("005930", "삼성전자 실적")
     assert docs == []
