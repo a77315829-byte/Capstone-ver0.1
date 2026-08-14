@@ -38,7 +38,10 @@ simulator/market_reaction/
 │       ├── stock_data.py           # 시세 stub + 실시간 시세 병합
 │       ├── document_retrieval.py   # 종목별 참고문서 검색 (RAG, 런타임)
 │       ├── embeddings.py           # Ollama 임베딩 client
-│       ├── rag_index.py            # FAISS 인덱스/메타데이터/매니페스트 I/O
+│       ├── rag_index.py            # FAISS 인덱스 빌드용 자료구조/유틸(Chunk, build_index, search)
+│       ├── rag_repository.py       # MongoDB(rag_chunks/rag_manifest) 접근
+│       ├── vector_store.py         # 종목별 FAISS 인덱스 lazy-loading 캐시(VectorStore/FaissVectorStore)
+│       ├── mongo_client.py         # MongoDB 연결(server 와 같은 Atlas 클러스터/DB)
 │       ├── dart_source.py          # DART 공시 수집/정규화
 │       └── edgar_source.py         # SEC EDGAR 공시 수집/정규화
 ├── scripts/
@@ -76,7 +79,9 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
   | `OLLAMA_MAX_RETRIES` | `1` | LLM 호출 재시도 횟수 |
   | `OLLAMA_TEMPERATURE` | `0.3` | LLM 기본 temperature |
   | `DART_API_KEY` | (없음) | DART Open API 키(`scripts/build_rag_index.py` 전용, 런타임 서비스는 미사용) |
-  | `RAG_INDEX_DIR` | `data/rag_index` | RAG 인덱스/메타데이터/매니페스트 저장 경로 |
+  | `STOTRA_MONGODB_USERNAME` / `_PASSWORD` / `_CLUSTER` | (없음) | RAG 데이터가 저장된 MongoDB Atlas 클러스터(server 와 동일 클러스터 값 사용 가능) |
+  | `MONGO_DB_NAME` | (없음) | 위 클러스터의 DB 이름(server 와 동일 DB, `rag_chunks`/`rag_manifest` 컬렉션만 추가로 사용) |
+  | `RAG_MAX_CACHED_STOCKS` | (제한 없음) | 런타임에 FAISS 캐시로 동시에 들고 있을 최대 종목 수(LRU). 비우면 무제한 |
   | `OLLAMA_EMBEDDING_MODEL` | `bge-m3` | RAG 문서/질의 임베딩에 사용할 Ollama 모델명(다국어, 한국어 성능 우수) |
 
 > `API_HOST` / `API_PORT` 는 설정값으로 보관될 뿐, 실제 바인딩은 위 `uvicorn` 명령의
@@ -307,18 +312,26 @@ LLM 호출 단계는 **validator(1) + 외부 맥락(1) + 에이전트(5) + criti
 - **시세: stub + 선택적 실시간**: `stock_data.py` 는 기본적으로 stub 을 반환하지만, Node backend(KIS 연동)가
   실시간 현재가/등락률(+가능하면 거래량 추세/시가총액)을 전달하면 필드별로 덮어써서
   `data_source: "external_api"`, `is_realtime: true` 로 표시합니다. 전달이 없거나 실패하면 stub 으로 폴백합니다.
-- **RAG**: `external_context` 생성 전에 `document_retrieval.py` 가 해당 종목의 FAISS 인덱스에서
-  질의와 유사한 문서 청크를 검색해 LLM 프롬프트에 참고 자료로 포함합니다. 인덱스는 한국 20종목(DART
-  공시)·미국 20종목(SEC EDGAR 공시)을 오프라인 배치 스크립트(`scripts/build_rag_index.py`)로 미리
-  수집·청킹·Ollama 로컬 임베딩(`bge-m3`)해 만들며, 런타임은 이 인덱스를 읽기만 합니다.
-  지원 종목이 아니거나, 인덱스/매니페스트가 없거나, 임베딩 모델·차원이 맞지 않거나, 임베딩 호출이
-  실패하면 예외 없이 빈 리스트를 반환합니다(이 경우 기존 방식과 동일하게 동작). 검색 결과는 유사도
-  순으로 누적 글자수 4000자 예산 내에서만 포함됩니다. 사용된 근거 자료는 `meta.rag_sources` 에
-  제목/유형/발행일로 남습니다.
+- **RAG**: `external_context` 생성 전에 `document_retrieval.py` 가 `FaissVectorStore` 로 해당
+  종목의 질의와 유사한 문서 청크를 검색해 LLM 프롬프트에 참고 자료로 포함합니다. 원본 데이터(청크
+  텍스트+임베딩)는 MongoDB(`rag_chunks`/`rag_manifest` 컬렉션, `server` 와 같은 Atlas 클러스터)에
+  있고, FAISS 인덱스는 종목이 처음 검색될 때만 그 데이터를 읽어 메모리에 만드는 **검색 캐시**일
+  뿐입니다(로컬 디스크에 아무 것도 쓰지 않습니다). 인덱스는 한국 20종목(DART 공시)·미국 20종목
+  (SEC EDGAR 공시)을 오프라인 배치 스크립트(`scripts/build_rag_index.py`)로 미리 수집·청킹·Ollama
+  로컬 임베딩(`bge-m3`)해 MongoDB 에 저장합니다.
+  지원 종목이 아니거나, MongoDB 에 데이터가 없거나, 임베딩 모델·차원이 맞지 않거나, MongoDB/임베딩
+  호출이 실패하면 예외 없이 빈 리스트를 반환합니다(이 경우 기존 방식과 동일하게 동작). 검색 결과는
+  유사도 순으로 누적 글자수 4000자 예산 내에서만 포함됩니다. 사용된 근거 자료는 `meta.rag_sources`
+  에 제목/유형/발행일로 남습니다.
 
-  최초 실행 전 인덱스가 없으면 RAG 는 항상 빈 결과를 반환합니다(서비스 자체는 정상 동작). 인덱스를
-  만들려면 `.env` 에 `DART_API_KEY` 를 설정하고, Ollama 에 임베딩 모델을 받은 뒤
-  (`ollama pull bge-m3`) 아래를 실행하세요:
+  MongoDB 재조회는 종목별 cache miss 시에만 일어나고, 요청마다 일어나지 않습니다. 빌드 스크립트를
+  재실행해 MongoDB 의 `rag_version` 이 바뀌어도 이미 떠 있는 서비스는 재시작하거나
+  `FaissVectorStore.invalidate()` 를 수동 호출하기 전까지는 자동으로 반영하지 않습니다.
+
+  최초 실행 전 MongoDB 에 데이터가 없으면 RAG 는 항상 빈 결과를 반환합니다(서비스 자체는 정상
+  동작). 인덱스를 만들려면 `.env` 에 `DART_API_KEY`, `STOTRA_MONGODB_USERNAME/PASSWORD/CLUSTER`,
+  `MONGO_DB_NAME` 을 설정하고, Ollama 에 임베딩 모델을 받은 뒤(`ollama pull bge-m3`) 아래를
+  실행하세요:
 
   ```bash
   cd simulator/market_reaction
@@ -394,8 +407,8 @@ Node(Express) 백엔드가 프론트엔드 요청을 받아 이 Python 서비스
   없거나 실패하면 그대로 stub 으로 폴백합니다(`get_stock_context()`).
 - **오프라인 테스트**: 새 LLM 모듈을 추가하면 `conftest.py` 의 `offline` fixture 로 fallback 경로
   테스트를 함께 추가하세요. Ollama 없이도 `pytest tests` 가 통과해야 합니다.
-- **RAG 인덱스는 생성물**: `data/rag_index/` 하위 파일(FAISS 인덱스, `rag_metadata.json`,
-  `rag_manifest.json`)은 `.gitignore` 처리되어 있으며 저장소에 커밋하지 않습니다.
-  `scripts/build_rag_index.py` 는 `DART_API_KEY` 와 네트워크가 필요해 자동 테스트 대상이
-  아니며, DART/EDGAR API 응답 형식이 바뀌면(특히 DART document.xml 의 XML 구조) 수동으로
-  재확인이 필요합니다.
+- **RAG 데이터는 MongoDB 가 source of truth**: `data/rag_index/` 로컬 파일은 더 이상 생성되지
+  않습니다(과거 버전이 남아 있다면 삭제해도 됩니다). FAISS 는 런타임 검색 캐시일 뿐이며 영속
+  저장소가 아닙니다. `scripts/build_rag_index.py` 는 `DART_API_KEY`·MongoDB 접속 정보와
+  네트워크가 필요해 자동 테스트 대상이 아니며, DART/EDGAR API 응답 형식이 바뀌면(특히 DART
+  document.xml 의 XML 구조) 수동으로 재확인이 필요합니다.
