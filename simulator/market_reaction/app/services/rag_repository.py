@@ -55,3 +55,54 @@ class RagRepository:
             )
             for d in docs
         ]
+
+    async def insert_chunks(self, chunks: List[Chunk]) -> None:
+        if not chunks:
+            return
+        docs = [
+            {
+                "_id": c.chunk_id,
+                "stock_code": c.stock_code,
+                "rag_version": c.rag_version,
+                "title": c.title,
+                "source_type": c.source_type,
+                "published_at": c.published_at,
+                "url": c.url,
+                "text": c.text,
+                "embedding": c.embedding,
+            }
+            for c in chunks
+        ]
+        await self._chunks.insert_many(docs)
+
+    async def upsert_manifest(
+        self,
+        *,
+        stock_code: str,
+        rag_version: int,
+        embedding_model: str,
+        embedding_dimension: int,
+        chunk_count: int,
+        built_at: str,
+    ) -> None:
+        await self._manifest.replace_one(
+            {"_id": stock_code},
+            {
+                "_id": stock_code,
+                "stock_code": stock_code,
+                "rag_version": rag_version,
+                "embedding_model": embedding_model,
+                "embedding_dimension": embedding_dimension,
+                "chunk_count": chunk_count,
+                "built_at": built_at,
+            },
+            upsert=True,
+        )
+
+    async def delete_chunks_at_version(self, stock_code: str, rag_version: int) -> None:
+        await self._chunks.delete_many({"stock_code": stock_code, "rag_version": rag_version})
+
+    async def delete_old_chunks(self, stock_code: str, new_version: int) -> None:
+        await self._chunks.delete_many(
+            {"stock_code": stock_code, "rag_version": {"$lt": new_version}}
+        )

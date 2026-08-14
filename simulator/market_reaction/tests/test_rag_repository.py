@@ -19,6 +19,8 @@ class _FakeChunksCollection:
     def __init__(self, docs=None, fail=False):
         self.docs = docs or []
         self.fail = fail
+        self.inserted = None
+        self.deleted_filters = []
 
     def find(self, query):
         if self.fail:
@@ -36,16 +38,32 @@ class _FakeChunksCollection:
                 return False
         return True
 
+    async def insert_many(self, docs):
+        if self.fail:
+            raise PyMongoError("boom")
+        self.inserted = docs
+
+    async def delete_many(self, query):
+        if self.fail:
+            raise PyMongoError("boom")
+        self.deleted_filters.append(query)
+
 
 class _FakeManifestCollection:
     def __init__(self, doc=None, fail=False):
         self.doc = doc
         self.fail = fail
+        self.replaced = None
 
     async def find_one(self, query):
         if self.fail:
             raise PyMongoError("boom")
         return self.doc
+
+    async def replace_one(self, filter_, doc, upsert=False):
+        if self.fail:
+            raise PyMongoError("boom")
+        self.replaced = (filter_, doc, upsert)
 
 
 class _FakeDatabase:
@@ -112,3 +130,79 @@ async def test_get_chunks_raises_repository_error_on_query_failure():
     repo = RagRepository(db)
     with pytest.raises(RagRepositoryError):
         await repo.get_chunks("005930", 1)
+
+
+def _sample_chunk(chunk_id="005930:1:0", rag_version=1):
+    return Chunk(
+        chunk_id=chunk_id, stock_code="005930", title="t", source_type="dart_periodic",
+        published_at="2026-07-01", url="http://x", text="본문", embedding=[0.1, 0.2],
+        rag_version=rag_version,
+    )
+
+
+@pytest.mark.asyncio
+async def test_insert_chunks_writes_expected_documents():
+    chunks_col = _FakeChunksCollection()
+    db = _FakeDatabase(chunks_col, _FakeManifestCollection())
+    repo = RagRepository(db)
+    await repo.insert_chunks([_sample_chunk()])
+    assert chunks_col.inserted == [{
+        "_id": "005930:1:0", "stock_code": "005930", "rag_version": 1, "title": "t",
+        "source_type": "dart_periodic", "published_at": "2026-07-01", "url": "http://x",
+        "text": "본문", "embedding": [0.1, 0.2],
+    }]
+
+
+@pytest.mark.asyncio
+async def test_insert_chunks_propagates_mongo_error():
+    chunks_col = _FakeChunksCollection(fail=True)
+    db = _FakeDatabase(chunks_col, _FakeManifestCollection())
+    repo = RagRepository(db)
+    with pytest.raises(PyMongoError):
+        await repo.insert_chunks([_sample_chunk()])
+
+
+@pytest.mark.asyncio
+async def test_upsert_manifest_calls_replace_one_with_upsert_true():
+    manifest_col = _FakeManifestCollection()
+    db = _FakeDatabase(_FakeChunksCollection(), manifest_col)
+    repo = RagRepository(db)
+    await repo.upsert_manifest(
+        stock_code="005930", rag_version=1, embedding_model="bge-m3",
+        embedding_dimension=1024, chunk_count=10, built_at="2026-08-14T00:00:00+00:00",
+    )
+    filter_, doc, upsert = manifest_col.replaced
+    assert filter_ == {"_id": "005930"}
+    assert doc["rag_version"] == 1
+    assert doc["chunk_count"] == 10
+    assert upsert is True
+
+
+@pytest.mark.asyncio
+async def test_upsert_manifest_propagates_mongo_error():
+    manifest_col = _FakeManifestCollection(fail=True)
+    db = _FakeDatabase(_FakeChunksCollection(), manifest_col)
+    repo = RagRepository(db)
+    with pytest.raises(PyMongoError):
+        await repo.upsert_manifest(
+            stock_code="005930", rag_version=1, embedding_model="bge-m3",
+            embedding_dimension=1024, chunk_count=10, built_at="2026-08-14T00:00:00+00:00",
+        )
+
+
+@pytest.mark.asyncio
+async def test_delete_chunks_at_version_uses_exact_version_filter():
+    chunks_col = _FakeChunksCollection()
+    db = _FakeDatabase(chunks_col, _FakeManifestCollection())
+    repo = RagRepository(db)
+    await repo.delete_chunks_at_version("005930", 2)
+    assert chunks_col.deleted_filters == [{"stock_code": "005930", "rag_version": 2}]
+
+
+@pytest.mark.asyncio
+async def test_delete_old_chunks_uses_lt_filter():
+    chunks_col = _FakeChunksCollection()
+    db = _FakeDatabase(chunks_col, _FakeManifestCollection())
+    repo = RagRepository(db)
+    await repo.delete_old_chunks("005930", 3)
+    assert chunks_col.deleted_filters == [{"stock_code": "005930", "rag_version": {"$lt": 3}}]
