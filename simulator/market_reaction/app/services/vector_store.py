@@ -58,7 +58,8 @@ class FaissVectorStore:
             entry = await self._load(stock_code)
             if entry is None:
                 return []
-        self._cache.move_to_end(stock_code)
+        if stock_code in self._cache:
+            self._cache.move_to_end(stock_code)
 
         if len(query_embedding) != entry.embedding_dim:
             logger.warning(

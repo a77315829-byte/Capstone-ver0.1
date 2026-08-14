@@ -92,6 +92,19 @@ async def test_query_embedding_dim_mismatch_returns_empty():
 
 
 @pytest.mark.asyncio
+async def test_max_cached_stocks_zero_does_not_raise():
+    """max_cached_stocks=0 이면 load 직후 바로 evict 돼서 캐시가 비는데, 그 뒤 move_to_end
+    호출이 KeyError 를 던지면 안 된다(never-raises 설계 의도 유지)."""
+    repo = FakeRagRepository()
+    _seed(repo, "005930", 1, [[1.0, 0.0]])
+    store = FaissVectorStore(repo, max_cached_stocks=0)
+
+    hits = await store.search("005930", [1.0, 0.0], top_k=1)
+
+    assert hits[0].chunk_id == "005930:1:0"
+
+
+@pytest.mark.asyncio
 async def test_max_cached_stocks_evicts_least_recently_used():
     repo = FakeRagRepository()
     _seed(repo, "AAA", 1, [[1.0, 0.0]])
