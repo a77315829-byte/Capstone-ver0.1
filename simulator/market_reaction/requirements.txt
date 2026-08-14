@@ -19,6 +19,10 @@ faiss-cpu==1.9.0
 numpy==1.26.4
 beautifulsoup4==4.12.3
 
+# MongoDB (RAG 저장소 — 빌드 스크립트 + 런타임 둘 다 사용, Motor 는 deprecated/EOL 이라 안 씀)
+# dnspython 은 pymongo 4.17 기준 별도 extra 없이 기본 의존성으로 포함되어 mongodb+srv:// 를 바로 지원한다
+pymongo==4.17.0
+
 # Testing
 pytest==8.3.4
 pytest-asyncio==0.25.0

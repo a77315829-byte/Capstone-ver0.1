@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     rag_index_dir: str = "data/rag_index"
     ollama_embedding_model: str = "bge-m3"
 
+    # MongoDB (RAG 저장소). server/.env 의 STOTRA_MONGODB_* 와 같은 값을 쓰면 같은 Atlas
+    # 클러스터/DB 를 공유한다 — 새 컬렉션(rag_chunks/rag_manifest)만 추가된다.
+    stotra_mongodb_username: str = ""
+    stotra_mongodb_password: str = ""
+    stotra_mongodb_cluster: str = ""
+    mongo_db_name: str = ""
+    rag_max_cached_stocks: int | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
