@@ -6,6 +6,7 @@ pydantic-settings 기반. `.env` 가 있으면 읽고, 없어도 기본값으로
 
 from __future__ import annotations
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,6 +41,14 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    @field_validator("rag_max_cached_stocks", mode="before")
+    @classmethod
+    def parse_optional_int(cls, v: str | int | None) -> int | None:
+        """빈 문자열을 None으로 변환 (선택적 정수 필드용)."""
+        if v == "" or v is None:
+            return None
+        return int(v)
 
 
 settings = Settings()
