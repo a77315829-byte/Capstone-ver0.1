@@ -44,5 +44,5 @@ def get_database() -> AsyncDatabase:
     if not settings.mongo_db_name:
         raise MongoConfigError("MONGO_DB_NAME 이 설정되지 않았습니다.")
     if _client is None:
-        _client = AsyncMongoClient(_build_uri())
+        _client = AsyncMongoClient(_build_uri(), serverSelectionTimeoutMS=3000)
     return _client[settings.mongo_db_name]
