@@ -24,7 +24,6 @@ class Settings(BaseSettings):
 
     # RAG (문서 검색) — dart_api_key 는 scripts/build_rag_index.py 전용, 런타임 서비스는 사용 안 함
     dart_api_key: str = ""
-    rag_index_dir: str = "data/rag_index"
     ollama_embedding_model: str = "bge-m3"
 
     # MongoDB (RAG 저장소). server/.env 의 STOTRA_MONGODB_* 와 같은 값을 쓰면 같은 Atlas

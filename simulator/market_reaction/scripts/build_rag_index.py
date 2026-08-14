@@ -1,10 +1,13 @@
 """RAG 인덱스 빌드 스크립트 (수동 실행 전용).
 
-DART(한국 20종목)/SEC EDGAR(미국 20종목) 공시를 수집·정규화·청킹·임베딩해
-종목별 FAISS 인덱스와 공용 메타데이터/매니페스트를 settings.rag_index_dir 밑에 생성한다.
+DART(한국 20종목)/SEC EDGAR(미국 20종목) 공시를 수집·정규화·청킹·임베딩해 MongoDB
+(`rag_chunks`/`rag_manifest` 컬렉션)에 저장한다. 종목마다 restart-safe versioned rebuild
+절차를 따른다 — "idempotent"(재실행해도 항상 같은 결과)가 아니라, 재실행마다 rag_version 이
+증가하며 중간에 실패해도 재실행하면 중복/깨짐 없이 새 상태로 수렴한다는 뜻이다. 자세한 절차는
+docs/superpowers/specs/2026-08-14-market-reaction-rag-mongodb-design.md 참고.
 
-사전 준비: .env 에 DART_API_KEY 설정, Ollama 실행(임베딩 모델 pull 되어 있어야 함:
-`ollama pull bge-m3`).
+사전 준비: .env 에 DART_API_KEY, STOTRA_MONGODB_USERNAME/PASSWORD/CLUSTER, MONGO_DB_NAME
+설정, Ollama 실행(임베딩 모델 pull 되어 있어야 함: `ollama pull bge-m3`).
 
 실행 (simulator/market_reaction 디렉터리에서):
     python -m scripts.build_rag_index
@@ -15,12 +18,11 @@ from __future__ import annotations
 import asyncio
 import re
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Dict, List, Tuple
 
 from app.config import settings
 from app.core.chunking import DEFAULT_MAX_CHARS, split_into_chunks, split_into_sections
-from app.services import rag_index
+from app.services import rag_index, rag_repository
 from app.services.dart_source import DART_HEADING_PATTERN, fetch_corp_code_map, fetch_dart_documents
 from app.services.edgar_source import (
     EDGAR_HEADING_PATTERN,
@@ -28,6 +30,7 @@ from app.services.edgar_source import (
     fetch_ticker_cik_map,
 )
 from app.services.embeddings import embed_text
+from app.services.mongo_client import get_database
 
 KR_STOCKS = [
     "005930", "000660", "373220", "207940", "005380", "000270", "068270", "005490",
@@ -128,7 +131,7 @@ async def _embed_texts(texts: List[str]) -> List[List[float]]:
     """청크 텍스트 목록을 동시에(최대 _EMBED_CONCURRENCY개) 임베딩한다.
 
     Ollama는 로컬 호출이라 서버 부하 걱정 없이 동시성을 높일 수 있다. 반환 순서는
-    입력 순서와 동일하게 보존된다(vector_id 매핑에 필요).
+    입력 순서와 동일하게 보존된다.
     """
     semaphore = asyncio.Semaphore(_EMBED_CONCURRENCY)
 
@@ -139,10 +142,64 @@ async def _embed_texts(texts: List[str]) -> List[List[float]]:
     return list(await asyncio.gather(*(_one(t) for t in texts)))
 
 
+async def _rebuild_stock(
+    repository: rag_repository.RagRepository,
+    stock_code: str,
+    chunk_texts: List[str],
+    vectors: List[List[float]],
+    chunk_documents: List[dict],
+    embedding_model: str,
+) -> int:
+    """restart-safe versioned rebuild. 종목 하나를 새 rag_version 으로 통째로 교체하고,
+    성공하면 manifest 를 갱신한 뒤 구버전 청크를 정리한다. 반환값은 이번에 저장된 청크 수.
+
+    idempotent(재실행해도 항상 동일한 최종 상태로 수렴)가 아니라 restart-safe(중간에 죽어도
+    재실행하면 중복/깨짐 없이 새 상태로 수렴)다 — rag_version 은 재실행마다 계속 증가한다.
+
+    순서:
+      1. 현재 manifest 로 new_version 결정
+      2. 이전 시도가 이 new_version 으로 insert 하다 죽어서 남긴 잔여 청크 정리
+      3. 새 청크 insert
+      4. manifest 를 new_version 으로 upsert (이 시점부터 런타임이 새 버전을 봄)
+      5. 구버전(< new_version) 청크 정리
+    """
+    manifest = await repository.get_manifest(stock_code)
+    prev_version = manifest["rag_version"] if manifest else 0
+    new_version = prev_version + 1
+
+    await repository.delete_chunks_at_version(stock_code, new_version)
+
+    chunks = [
+        rag_index.Chunk(
+            chunk_id=f"{stock_code}:{new_version}:{i}",
+            stock_code=stock_code,
+            title=document["title"],
+            source_type=document["source_type"],
+            published_at=document["published_at"],
+            url=document["url"],
+            text=text,
+            embedding=vector,
+            rag_version=new_version,
+        )
+        for i, (text, vector, document) in enumerate(zip(chunk_texts, vectors, chunk_documents))
+    ]
+    await repository.insert_chunks(chunks)
+
+    await repository.upsert_manifest(
+        stock_code=stock_code,
+        rag_version=new_version,
+        embedding_model=embedding_model,
+        embedding_dimension=len(vectors[0]) if vectors else 0,
+        chunk_count=len(chunks),
+        built_at=datetime.now(timezone.utc).isoformat(),
+    )
+
+    await repository.delete_old_chunks(stock_code, new_version)
+    return len(chunks)
+
+
 async def build_index() -> None:
     documents = await _collect_documents()
-    dart_doc_count = sum(1 for doc, _ in documents if doc["market"] == "KR")
-    edgar_doc_count = len(documents) - dart_doc_count
     print(f"문서 수집 완료: {len(documents)}건. 종목별 청킹+임베딩 시작...", flush=True)
 
     documents_by_stock: Dict[str, List[Tuple[dict, str]]] = {}
@@ -151,14 +208,10 @@ async def build_index() -> None:
             (document, heading_pattern)
         )
 
-    index_dir = Path(settings.rag_index_dir)
-    index_dir.mkdir(parents=True, exist_ok=True)
+    repository = rag_repository.RagRepository(get_database())
 
-    chunks_by_stock: Dict[str, List[rag_index.Chunk]] = {}
-    embedding_dim = 0
     total_chunks_done = 0
-
-    for stock_code, stock_documents in documents_by_stock.items():
+    for i, (stock_code, stock_documents) in enumerate(documents_by_stock.items(), 1):
         chunk_texts: List[str] = []
         chunk_documents: List[dict] = []
         for document, heading_pattern in stock_documents:
@@ -167,45 +220,21 @@ async def build_index() -> None:
                 chunk_documents.append(document)
 
         vectors = await _embed_texts(chunk_texts)
-        if vectors:
-            embedding_dim = len(vectors[0])
-            index = rag_index.build_index(vectors)
-            rag_index.save_index(index, index_dir / f"{stock_code}.faiss")
-
-        chunks_by_stock[stock_code] = [
-            rag_index.Chunk(
-                chunk_id=f"{stock_code}:{vector_id}",
-                vector_id=vector_id,
-                stock_code=stock_code,
-                title=document["title"],
-                source_type=document["source_type"],
-                published_at=document["published_at"],
-                url=document["url"],
-                text=text,
-            )
-            for vector_id, (text, document) in enumerate(zip(chunk_texts, chunk_documents))
-        ]
-        total_chunks_done += len(chunk_texts)
+        chunk_count = await _rebuild_stock(
+            repository, stock_code, chunk_texts, vectors, chunk_documents,
+            settings.ollama_embedding_model,
+        )
+        total_chunks_done += chunk_count
         print(
-            f"[임베딩] {stock_code}: {len(chunk_texts)}청크 완료 (누적 {total_chunks_done})",
+            f"[Mongo 저장 {i}/{len(documents_by_stock)}] {stock_code}: {chunk_count}청크 완료 "
+            f"(누적 {total_chunks_done})",
             flush=True,
         )
 
-    rag_index.save_metadata(chunks_by_stock, index_dir / "rag_metadata.json")
-    rag_index.save_manifest(
-        index_dir / "rag_manifest.json",
-        embedding_model=settings.ollama_embedding_model,
-        embedding_dim=embedding_dim,
-        created_at=datetime.now(timezone.utc).isoformat(),
-        counts={
-            "dart_documents": dart_doc_count,
-            "edgar_documents": edgar_doc_count,
-            "stocks": len(chunks_by_stock),
-            "chunks": sum(len(c) for c in chunks_by_stock.values()),
-        },
+    print(
+        f"인덱스 생성 완료: {len(documents_by_stock)}개 종목, {total_chunks_done}개 청크",
+        flush=True,
     )
-    total_chunks = sum(len(c) for c in chunks_by_stock.values())
-    print(f"인덱스 생성 완료: {len(chunks_by_stock)}개 종목, {total_chunks}개 청크", flush=True)
 
 
 if __name__ == "__main__":
