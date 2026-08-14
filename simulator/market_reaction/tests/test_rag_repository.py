@@ -21,6 +21,7 @@ class _FakeChunksCollection:
         self.fail = fail
         self.inserted = None
         self.deleted_filters = []
+        self.created_indexes = []
 
     def find(self, query):
         if self.fail:
@@ -48,12 +49,16 @@ class _FakeChunksCollection:
             raise PyMongoError("boom")
         self.deleted_filters.append(query)
 
+    async def create_index(self, keys, **kwargs):
+        self.created_indexes.append((keys, kwargs))
+
 
 class _FakeManifestCollection:
     def __init__(self, doc=None, fail=False):
         self.doc = doc
         self.fail = fail
         self.replaced = None
+        self.created_indexes = []
 
     async def find_one(self, query):
         if self.fail:
@@ -65,6 +70,9 @@ class _FakeManifestCollection:
             raise PyMongoError("boom")
         self.replaced = (filter_, doc, upsert)
 
+    async def create_index(self, keys, **kwargs):
+        self.created_indexes.append((keys, kwargs))
+
 
 class _FakeDatabase:
     def __init__(self, chunks_collection, manifest_collection):
@@ -72,6 +80,17 @@ class _FakeDatabase:
 
     def __getitem__(self, name):
         return self._collections[name]
+
+
+@pytest.mark.asyncio
+async def test_ensure_indexes_creates_expected_indexes_on_both_collections():
+    chunks_col = _FakeChunksCollection()
+    manifest_col = _FakeManifestCollection()
+    db = _FakeDatabase(chunks_col, manifest_col)
+    repo = RagRepository(db)
+    await repo.ensure_indexes()
+    assert chunks_col.created_indexes == [([("stock_code", 1), ("rag_version", 1)], {})]
+    assert manifest_col.created_indexes == [("stock_code", {"unique": True})]
 
 
 @pytest.mark.asyncio

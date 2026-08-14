@@ -209,6 +209,7 @@ async def build_index() -> None:
         )
 
     repository = rag_repository.RagRepository(get_database())
+    await repository.ensure_indexes()
 
     total_chunks_done = 0
     for i, (stock_code, stock_documents) in enumerate(documents_by_stock.items(), 1):

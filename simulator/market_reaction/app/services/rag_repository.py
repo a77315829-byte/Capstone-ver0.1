@@ -25,6 +25,11 @@ class RagRepository:
         self._chunks = database["rag_chunks"]
         self._manifest = database["rag_manifest"]
 
+    async def ensure_indexes(self) -> None:
+        """rag_chunks/rag_manifest 인덱스를 생성한다(이미 있으면 no-op, 반복 호출 안전)."""
+        await self._chunks.create_index([("stock_code", 1), ("rag_version", 1)])
+        await self._manifest.create_index("stock_code", unique=True)
+
     async def get_manifest(self, stock_code: str) -> Optional[dict]:
         try:
             return await self._manifest.find_one({"_id": stock_code})
