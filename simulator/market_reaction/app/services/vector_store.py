@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 from collections import OrderedDict
+from dataclasses import replace
 from typing import List, Optional, Protocol
 
 from ..config import settings
@@ -94,6 +95,10 @@ class FaissVectorStore:
 
         vectors = [c.embedding for c in chunks]
         index = rag_index.build_index(vectors)
+        # FAISS 인덱스가 이미 float32 사본을 들고 있으므로, 캐시에 올리는 Chunk 에서는
+        # embedding 을 비워 중복 보관하지 않는다(원본 리스트는 건드리지 않고 새로 만든다 —
+        # 이 리스트를 넘긴 호출부가 같은 Chunk 객체를 다른 용도로 들고 있을 수 있음).
+        chunks = [replace(c, embedding=[]) for c in chunks]
         entry = _CacheEntry(
             index=index, chunks=chunks, rag_version=manifest["rag_version"],
             embedding_dim=manifest["embedding_dimension"],

@@ -42,6 +42,20 @@ async def test_cache_miss_then_hit_calls_repository_once():
 
 
 @pytest.mark.asyncio
+async def test_cached_chunk_embedding_is_cleared_after_index_build():
+    """FAISS 가 이미 벡터를 들고 있으므로, 캐시된 Chunk 는 embedding 을 들고 있지 않아야
+    한다(메모리 절약). 원본 repo 에 저장된 Chunk 는 건드리지 않는다."""
+    repo = FakeRagRepository()
+    _seed(repo, "005930", 1, [[1.0, 0.0], [0.0, 1.0]])
+    store = FaissVectorStore(repo)
+
+    hits = await store.search("005930", [1.0, 0.0], top_k=1)
+
+    assert hits[0].embedding == []
+    assert repo.chunks["005930:1:0"].embedding == [1.0, 0.0]
+
+
+@pytest.mark.asyncio
 async def test_unknown_stock_returns_empty_without_error():
     repo = FakeRagRepository()
     store = FaissVectorStore(repo)
