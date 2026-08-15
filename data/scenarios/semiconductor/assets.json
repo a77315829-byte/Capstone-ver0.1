@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "scenario_id": "semiconductor",
+  "exchange": "KRX",
+  "currency": "KRW",
+  "assets": [
+    {"asset_id":"000660","name":"SK하이닉스","market":"KOSPI","asset_type":"stock","industry_label":"메모리 반도체","description":"DRAM과 NAND를 생산하는 메모리 반도체 기업","display_order":1,"is_active":true},
+    {"asset_id":"005930","name":"삼성전자","market":"KOSPI","asset_type":"stock","industry_label":"종합 반도체·전자","description":"반도체, 모바일, 가전 사업을 운영하는 종합 전자기업","display_order":2,"is_active":true},
+    {"asset_id":"042700","name":"한미반도체","market":"KOSPI","asset_type":"stock","industry_label":"반도체 장비","description":"반도체 조립과 후공정 장비를 생산하는 기업","display_order":3,"is_active":true},
+    {"asset_id":"091160","name":"KODEX 반도체","market":"KOSPI","asset_type":"etf","industry_label":"반도체 ETF","description":"국내 반도체 업종에 분산 투자하는 ETF","display_order":4,"is_active":true},
+    {"asset_id":"089030","name":"테크윙","market":"KOSDAQ","asset_type":"stock","industry_label":"반도체 장비","description":"반도체 검사와 테스트 공정용 장비를 생산하는 기업","display_order":5,"is_active":true},
+    {"asset_id":"095340","name":"ISC","market":"KOSDAQ","asset_type":"stock","industry_label":"반도체 부품","description":"반도체 검사에 사용되는 테스트 소켓을 생산하는 기업","display_order":6,"is_active":true},
+    {"asset_id":"403870","name":"HPSP","market":"KOSDAQ","asset_type":"stock","industry_label":"반도체 장비","description":"반도체 제조공정용 고압 열처리 장비를 생산하는 기업","display_order":7,"is_active":true},
+    {"asset_id":"240810","name":"원익IPS","market":"KOSDAQ","asset_type":"stock","industry_label":"반도체 장비","description":"반도체와 디스플레이 제조공정 장비를 생산하는 기업","display_order":8,"is_active":true},
+    {"asset_id":"067310","name":"하나마이크론","market":"KOSDAQ","asset_type":"stock","industry_label":"반도체 후공정","description":"반도체 패키징과 테스트 서비스를 제공하는 기업","display_order":9,"is_active":true},
+    {"asset_id":"036930","name":"주성엔지니어링","market":"KOSDAQ","asset_type":"stock","industry_label":"반도체 장비","description":"반도체와 디스플레이 제조공정 장비를 생산하는 기업","display_order":10,"is_active":true},
+    {"asset_id":"039030","name":"이오테크닉스","market":"KOSDAQ","asset_type":"stock","industry_label":"반도체 장비","description":"레이저 기반 반도체 가공장비를 생산하는 기업","display_order":11,"is_active":true},
+    {"asset_id":"007660","name":"이수페타시스","market":"KOSPI","asset_type":"stock","industry_label":"전자부품","description":"AI 서버 등에 사용되는 고다층 인쇄회로기판을 생산하는 기업","display_order":12,"is_active":true},
+    {"asset_id":"399720","name":"가온칩스","market":"KOSDAQ","asset_type":"stock","industry_label":"시스템반도체","description":"시스템반도체 설계와 양산을 지원하는 디자인 솔루션 기업","display_order":13,"is_active":true},
+    {"asset_id":"080220","name":"제주반도체","market":"KOSDAQ","asset_type":"stock","industry_label":"메모리 반도체","description":"모바일과 IoT 기기용 저전력 메모리를 공급하는 기업","display_order":14,"is_active":true},
+    {"asset_id":"035420","name":"NAVER","market":"KOSPI","asset_type":"stock","industry_label":"인터넷·AI","description":"검색, 커머스, 콘텐츠와 인공지능 서비스를 운영하는 플랫폼 기업","display_order":15,"is_active":true},
+    {"asset_id":"005380","name":"현대차","market":"KOSPI","asset_type":"stock","industry_label":"자동차","description":"승용차와 상용차를 생산하는 자동차 제조기업","display_order":16,"is_active":true},
+    {"asset_id":"373220","name":"LG에너지솔루션","market":"KOSPI","asset_type":"stock","industry_label":"이차전지","description":"전기차와 에너지저장장치용 배터리를 생산하는 기업","display_order":17,"is_active":true},
+    {"asset_id":"105560","name":"KB금융","market":"KOSPI","asset_type":"stock","industry_label":"금융","description":"은행, 증권, 보험 사업을 보유한 금융지주회사","display_order":18,"is_active":true},
+    {"asset_id":"069500","name":"KODEX 200","market":"KOSPI","asset_type":"etf","industry_label":"시장지수 ETF","description":"KOSPI 200 지수를 추종하는 국내 주식형 ETF","display_order":19,"is_active":true},
+    {"asset_id":"132030","name":"KODEX 골드선물(H)","market":"KOSPI","asset_type":"etf","industry_label":"원자재 ETF","description":"금 선물 가격을 추종하는 환헤지형 원자재 ETF","display_order":20,"is_active":true}
+  ]
+}

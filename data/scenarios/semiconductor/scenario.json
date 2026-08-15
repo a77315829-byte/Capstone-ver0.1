@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "scenario_id": "semiconductor",
+  "version": 1,
+  "title": "AI 반도체 랠리 — 좋은 뉴스에 올라타는 법",
+  "description": "AI 반도체 붐 속에서 호재가 이미 반영됐는지까지 판단하는 6턴 시나리오",
+  "total_turns": 6,
+  "difficulty": "중",
+  "display_order": 1,
+  "is_published": true,
+  "simulation": {
+    "timezone": "Asia/Seoul",
+    "currency": "KRW",
+    "initial_cash": 10000000,
+    "execution_price_basis": "close",
+    "valuation_price_basis": "close",
+    "order_unit": 1,
+    "fees_enabled": false,
+    "short_selling_enabled": false
+  },
+  "turn_schedule": [
+    {"turn_no": 1, "market_date": "2024-02-02", "next_market_date": "2024-02-22"},
+    {"turn_no": 2, "market_date": "2024-02-22", "next_market_date": "2024-03-19"},
+    {"turn_no": 3, "market_date": "2024-03-19", "next_market_date": "2024-04-19"},
+    {"turn_no": 4, "market_date": "2024-04-19", "next_market_date": "2024-05-23"},
+    {"turn_no": 5, "market_date": "2024-05-23", "next_market_date": "2024-07-01"},
+    {"turn_no": 6, "market_date": "2024-07-01", "next_market_date": null}
+  ],
+  "final_valuation": {
+    "market_date": "2024-07-19",
+    "has_decision": false,
+    "has_scoring": false,
+    "description": "턴 6 주문을 반영한 보유자산을 종가로 재평가해 최종 수익률을 확정한다."
+  },
+  "asset_ids": [
+    "000660", "005930", "042700", "091160", "089030",
+    "095340", "403870", "240810", "067310", "036930",
+    "039030", "007660", "399720", "080220", "035420",
+    "005380", "373220", "105560", "069500", "132030"
+  ],
+  "default_asset_id": "000660",
+  "benchmark_asset_id": "069500",
+  "learning_points": [
+    "뉴스의 직접 수혜 종목과 관련 있어 보이는 함정 종목 구분하기",
+    "호재가 이미 주가에 반영됐는지 판단하기",
+    "호재와 밸류에이션 부담을 함께 고려하는 균형 잡힌 판단"
+  ]
+}
