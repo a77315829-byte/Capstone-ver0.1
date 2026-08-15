@@ -1,0 +1,84 @@
+{
+  "scenario_id": "semiconductor",
+  "turn_no": 4,
+  "turn_title": "금리 인하 지연 우려, 기술주 조정",
+  "turn_context": "미국 금리 인하가 예상보다 지연될 것이라는 우려가 커지며 성장주·기술주가 조정을 받기 시작했다. 그동안 오르던 반도체도 흔들린다. 처음 나오는 하락 신호로, 악재를 냉정하게 보되 패닉하지 않는 균형이 필요한 국면.",
+
+  "questions_used": ["Q30", "Q11", "Q17", "Q19", "Q33", "Q39"],
+
+  "answer_rules": {
+    "Q30": {
+      "metric": "M1",
+      "good": ["금리", "유동성"],
+      "trap": ["원자재 가격", "무역 환경"],
+      "note": "이번 조정의 핵심은 금리·유동성. 금리를 안 보고 엉뚱한 거시 요인을 짚으면 핵심 악재를 놓친 것(함정)."
+    },
+    "Q11": {
+      "metric": "M2",
+      "good": ["직접 영향", "복합 영향"],
+      "trap": ["간접 영향"],
+      "note": "금리는 성장주(반도체) 밸류에이션에 직접 타격. '간접 영향'으로 축소하면 악재의 크기를 과소평가(함정)."
+    },
+    "Q17": {
+      "metric": "M3",
+      "good": ["보통", "높음"],
+      "trap": ["매우 낮음"],
+      "note": "금리 이슈는 단기에 끝나지 않을 수 있음. 장기화 가능성을 '매우 낮음'으로 보면 낙관 편향(함정)."
+    },
+    "Q19": {
+      "metric": "M3",
+      "good": ["충분한 현금", "양호한 재무", "분산 효과"],
+      "trap": ["완화 요인 없음"],
+      "note": "금리 악재가 있어도 현금 여력, 기업의 양호한 재무, 포트폴리오 분산은 충격을 완화한다. 완화 요인이 전혀 없다고 보면 패닉 대응으로 기울기 쉽다."
+    },
+    "Q33": {
+      "metric": "M4",
+      "good": ["현금 충분", "일부 보유"],
+      "trap": ["추가 투자 없음"],
+      "note": "악재 국면엔 현금 여력이 방어력. '현금 충분/일부'가 적절. 근데 '추가 투자 없음'(현금 0)이면 방어 못 함."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "금리 악재를 인정하면서 패닉하지 않고 비중 조절·일부 방어의 균형을 보이면 고득점. '망했다 다 팔자'는 공포거나 '괜찮겠지'는 안일이면 감점."
+    }
+  },
+
+  "factors": [
+    {"factor_id": "INTEREST_RATE", "importance": "상", "direction": "악재", "note": "이번 조정의 핵심. 금리 지연이 성장주 밸류 타격"},
+    {"factor_id": "LIQUIDITY", "importance": "상", "direction": "악재", "note": "금리 높으면 유동성 위축"},
+    {"factor_id": "TECH_CORRECTION", "importance": "상", "direction": "악재", "note": "기술주 전반 조정(놓치면 안 됨)"},
+    {"factor_id": "HBM_DEMAND", "importance": "중", "direction": "호재", "note": "반도체 펀더멘털은 여전(완화 요인)"},
+    {"factor_id": "PANIC_SELLING", "importance": "상관없음", "direction": "중립", "note": "공포에 휩쓸린 전량 매도는 근거 아님(함정)"},
+    {"factor_id": "COMMODITY", "importance": "하", "direction": "중립", "note": "이 턴 핵심 아님"}
+  ],
+
+  "assets": [
+    {"asset_id": "000660", "relevance": "높음", "is_trap": false, "reason": "조정 대상. 펀더멘털은 있으나 금리에 취약"},
+    {"asset_id": "005930", "relevance": "높음", "is_trap": false, "reason": "조정 대상"},
+    {"asset_id": "091160", "relevance": "중간", "is_trap": false, "reason": "섹터 전반 조정"},
+    {"asset_id": "132030", "relevance": "중간", "is_trap": false, "reason": "악재 국면 방어 자산으로는 일부 의미"},
+    {"asset_id": "080220", "relevance": "중간", "is_trap": true, "reason": "조정에 더 크게 흔들리는데 '싸졌다'고 저가매수 유혹(함정)"},
+    {"asset_id": "005380", "relevance": "낮음", "is_trap": false, "reason": "무관"}
+  ],
+
+  "traps": [
+    {"trap_id": "TRAP_ACTION_BUY", "kind": "action", "target": "악재 국면 큰 매수", "explanation": "금리 악재 조정 중인데 '싸졌다'고 크게 매수하면 떨어지는 칼날을 잡는 격."},
+    {"trap_id": "TRAP_ACTION_PANIC", "kind": "action", "target": "전량 매도", "explanation": "조정을 못 견디고 전량 매도하면 패닉 셀. 펀더멘털이 남아있으면 과잉 반응."},
+    {"trap_id": "TRAP_FACTOR_IGNORE", "kind": "factor", "target": "금리 안 봄", "explanation": "이번 조정의 핵심인 금리를 안 보고 낙관하면 악재를 놓친 것."}
+  ],
+
+  "ai_baseline": {
+    "action_summary": "일부 비중 축소로 방어, 현금 확보. 전량 매도(패닉)나 저가매수(칼날잡기)는 자제.",
+    "rationale": "금리 악재로 조정이 시작됐으니 방어가 필요하나, 반도체 펀더멘털(HBM 수요)은 남아있어 전량 매도는 과잉. 일부 축소로 위험을 줄이고 현금을 확보하며 상황을 지켜보는 것이 적절."
+  },
+
+  "action_rule": {
+    "max_single_weight": 30,
+    "good_cash_min": 40,
+    "trap_assets": ["080220"],
+    "core_assets": [],
+    "expected_action_score": [-2.0, 0],
+    "note": "금리 악재 조정 국면. 관망~매도(방어)가 적정. 큰 매수는 악재 무시, 전량 매도는 패닉. 현금 40%↑ 확보 적절."
+  }
+}

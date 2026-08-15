@@ -1,0 +1,76 @@
+{
+  "scenario_id": "semiconductor",
+  "turn_no": 6,
+  "turn_title": "투자 지속 발표, 선별적 반등",
+  "turn_context": "과열 논란과 조정을 거친 뒤, 주요 기업들이 AI 투자를 지속하겠다고 발표하며 시장이 안정을 찾고 선별적으로 반등하기 시작했다. 무차별 상승이 아니라 펀더멘털이 탄탄한 종목 위주로 오르는 국면. 옥석을 가려 선별적으로 다시 참여할 때.",
+  "questions_used": ["Q1", "Q9", "Q24", "Q21", "Q36", "Q39"],
+  "answer_rules": {
+    "Q1": {
+      "metric": "M1",
+      "good": ["실적", "시장 수급", "공급망"],
+      "trap": ["투자 심리", "규제 변화"],
+      "note": "이번엔 펀더멘털(실적·수급·공급망)로 옥석을 가리는 국면. '투자 심리'만 좇으면 또 분위기 매매(함정). 실체 있는 종목을 골라야."
+    },
+    "Q9": {
+      "metric": "M2",
+      "good": ["특정 업종", "연관 업종"],
+      "trap": ["시장 전체"],
+      "note": "선별적 반등이라 특정·연관 업종에 국한. '시장 전체'가 다 오른다고 보면 무차별 낙관(함정). 옥석 가리기가 핵심."
+    },
+    "Q24": {
+      "metric": "M2",
+      "good": ["개선"],
+      "trap": ["영향 제한적", "매우 개선"],
+      "note": "AI 투자 지속은 펀더멘털이 강한 관련 기업의 실적 개선 요인이다. 영향이 없다고 보거나 모든 종목의 실적이 매우 크게 개선된다고 보는 해석은 선별 반등의 의미를 놓친 것이다."
+    },
+    "Q21": {
+      "metric": "M3",
+      "good": ["높음"],
+      "trap": ["매우 낮음", "매우 높음"],
+      "note": "AI 투자 지속과 시장 안정으로 회복 가능성은 높지만, 선별 반등이며 재조정 위험도 남아 있다. 회복 가능성을 매우 낮게 보거나 매우 높다고 단정하면 한쪽으로 치우친 판단이다."
+    },
+    "Q36": {
+      "metric": "M4",
+      "good": ["일부 대응", "단계적 대응"],
+      "trap": ["전량 대응", "매우 제한적"],
+      "note": "선별 재진입 국면이라 일부·단계적 매수가 적절. '전량 대응'은 과욕, '매우 제한적'(거의 안 함)은 기회 놓침."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "펀더멘털로 옥석을 가려 선별적으로 재진입하는 논리면 고득점. '무조건 다 오른다'는 무차별 낙관이면 감점."
+    }
+  },
+  "factors": [
+    {"factor_id": "AI_INVEST_CONTINUE", "importance": "상", "direction": "호재", "note": "AI 투자 지속 발표. 반등의 근거"},
+    {"factor_id": "FUNDAMENTAL_SELECT", "importance": "상", "direction": "호재", "note": "펀더멘털 탄탄한 종목 위주 선별 반등(핵심)"},
+    {"factor_id": "MARKET_STABILIZE", "importance": "중", "direction": "호재", "note": "시장 안정화"},
+    {"factor_id": "RE_CORRECTION", "importance": "중", "direction": "악재", "note": "반등 후 재조정 가능성(놓치기 쉬움)"},
+    {"factor_id": "INDISCRIMINATE_BUY", "importance": "상관없음", "direction": "중립", "note": "'다 오른다'는 무차별 낙관은 근거 아님(함정)"}
+  ],
+  "assets": [
+    {"asset_id": "000660", "relevance": "매우높음", "is_trap": false, "reason": "HBM 펀더멘털 탄탄. 선별 반등 대표 수혜"},
+    {"asset_id": "005930", "relevance": "높음", "is_trap": false, "reason": "실적 기반 반등 대상"},
+    {"asset_id": "091160", "relevance": "높음", "is_trap": false, "reason": "선별 반등엔 개별주가 나을 수 있으나 분산도 유효"},
+    {"asset_id": "080220", "relevance": "중간", "is_trap": true, "reason": "펀더멘털 약한데 분위기로 묶여 오름. 선별 국면엔 옥이 아니라 돌(함정)"},
+    {"asset_id": "005380", "relevance": "낮음", "is_trap": false, "reason": "무관"},
+    {"asset_id": "132030", "relevance": "낮음", "is_trap": false, "reason": "반등 국면엔 방어자산 비중 축소"}
+  ],
+  "traps": [
+    {"trap_id": "TRAP_ASSET_WEAK", "kind": "asset", "target": "080220", "explanation": "선별 반등 국면에서 펀더멘털 약한 종목을 '다 오른다'며 사면 옥석 못 가린 것."},
+    {"trap_id": "TRAP_FACTOR_ALL", "kind": "factor", "target": "시장 전체 낙관", "explanation": "선별 반등인데 '시장 전체가 다 오른다'고 보면 무차별 낙관."},
+    {"trap_id": "TRAP_ACTION_ALLIN", "kind": "action", "target": "전량 대응", "explanation": "반등 초입에 전량 매수는 재조정 위험 무시. 단계적 재진입이 적절."}
+  ],
+  "ai_baseline": {
+    "action_summary": "펀더멘털 탄탄한 핵심주(SK하이닉스 등) 위주로 일부·단계적 재진입. 무차별 매수나 약한 종목 추격은 자제.",
+    "rationale": "AI 투자 지속으로 선별적 반등이 시작됐으니 펀더멘털 강한 종목에 단계적으로 다시 참여하는 것이 적절. 다만 재조정 가능성이 남아있어 전량 매수는 성급하고, 펀더멘털 약한 종목 추격은 옥석을 못 가린 것."
+  },
+  "action_rule": {
+    "max_single_weight": 40,
+    "good_cash_min": 20,
+    "trap_assets": ["080220"],
+    "core_assets": ["000660", "005930", "091160"],
+    "expected_action_score": [0, 1.5],
+    "note": "선별 반등 국면. 관망~일부매수(단계적 재진입)가 적정. 전량 매수는 성급, 방어(매도)는 기회 놓침. 펀더멘털 핵심주 가점, 약한 함정주 감점."
+  }
+}

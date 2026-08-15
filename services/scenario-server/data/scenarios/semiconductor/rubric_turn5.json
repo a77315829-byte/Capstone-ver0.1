@@ -1,0 +1,76 @@
+{
+  "scenario_id": "semiconductor",
+  "turn_no": 5,
+  "turn_title": "단기 과열 논란, 변동성 확대",
+  "turn_context": "4턴 조정 이후 반도체가 다시 반등했으나, 단기 급등으로 '과열됐다'는 논란이 커지고 변동성이 확대됐다. 밸류에이션 부담이 정점. 외부 악재가 아니라 내부 과열이 문제라, 차익 실현·비중 축소로 위험을 관리할 국면.",
+  "questions_used": ["Q1", "Q29", "Q17", "Q15", "Q37", "Q39"],
+  "answer_rules": {
+    "Q1": {
+      "metric": "M1",
+      "good": ["가격 수준", "시장 수급", "투자 심리"],
+      "trap": ["실적", "재무상태"],
+      "note": "이번 핵심은 과열·밸류(가격 수준)와 수급·심리. 지금은 실적이 문제가 아니라 '너무 올랐다'는 게 핵심. 실적을 근거로 더 사려는 건 과열 국면 오판(함정)."
+    },
+    "Q29": {
+      "metric": "M2",
+      "good": ["매우 고평가", "고평가"],
+      "trap": ["저평가", "매우 저평가"],
+      "note": "단기 급등으로 고평가 부담이 핵심. '저평가'로 보면 과열을 못 본 것(함정). 고평가 인식이 차익 실현의 근거."
+    },
+    "Q17": {
+      "metric": "M3",
+      "good": ["보통", "높음"],
+      "trap": ["매우 낮음"],
+      "note": "변동성·조정 위험이 큰 국면. 위험을 '매우 낮음'으로 보면 과열 속 낙관 편향(함정)."
+    },
+    "Q15": {
+      "metric": "M3",
+      "good": ["큼"],
+      "trap": ["매우 작음"],
+      "note": "고평가와 변동성이 함께 커진 상태라 조정이 발생하면 손실 규모가 클 수 있다. 손실을 매우 작게 보면 과열 위험을 과소평가한 것이다."
+    },
+    "Q37": {
+      "metric": "M4",
+      "good": ["보통", "낮음"],
+      "trap": ["매우 높음"],
+      "note": "과열·변동성 국면에서 '매우 높은 확신'은 위험. 불확실성을 인정하는 신중한 확신(보통/낮음)이 적절."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "과열·고평가를 인정하고 차익 실현·비중 축소의 논리를 펴면 고득점. '더 오른다 계속 홀딩'은 과열 무시, '공포에 전량 매도'는 과잉이면 감점."
+    }
+  },
+  "factors": [
+    {"factor_id": "OVERVALUATION", "importance": "상", "direction": "악재", "note": "단기 급등으로 밸류 정점. 이번 핵심 위험"},
+    {"factor_id": "VOLATILITY", "importance": "상", "direction": "악재", "note": "변동성 확대. 급락 위험"},
+    {"factor_id": "PROFIT_TAKING", "importance": "중", "direction": "중립", "note": "차익 실현 수요. 적절한 대응 방향"},
+    {"factor_id": "HBM_DEMAND", "importance": "중", "direction": "호재", "note": "펀더멘털은 여전(완화 요인, 전량 매도는 과잉)"},
+    {"factor_id": "GREED_SENTIMENT", "importance": "상관없음", "direction": "중립", "note": "'더 오른다'는 탐욕은 근거 아님(함정)"}
+  ],
+  "assets": [
+    {"asset_id": "000660", "relevance": "높음", "is_trap": false, "reason": "차익 실현 대상. 많이 오른 상태"},
+    {"asset_id": "005930", "relevance": "높음", "is_trap": false, "reason": "차익 실현 대상"},
+    {"asset_id": "091160", "relevance": "중간", "is_trap": false, "reason": "섹터 전반 과열"},
+    {"asset_id": "080220", "relevance": "중간", "is_trap": true, "reason": "가장 과열된 종목. '더 간다'며 추가 매수 유혹(함정)"},
+    {"asset_id": "132030", "relevance": "중간", "is_trap": false, "reason": "과열 회피처로 일부 의미"},
+    {"asset_id": "005380", "relevance": "낮음", "is_trap": false, "reason": "무관"}
+  ],
+  "traps": [
+    {"trap_id": "TRAP_ACTION_HOLD_ALL", "kind": "action", "target": "과열 무시 홀딩/추가매수", "explanation": "과열·고평가 국면에서 차익 실현 없이 계속 들고 가거나 더 사면 고점 물릴 위험."},
+    {"trap_id": "TRAP_ACTION_PANIC", "kind": "action", "target": "전량 매도", "explanation": "펀더멘털이 남아있는데 과열 논란만으로 전량 매도는 과잉. 일부 차익 실현이 적절."},
+    {"trap_id": "TRAP_FACTOR_UNDERVALUE", "kind": "factor", "target": "저평가로 오판", "explanation": "단기 급등한 상태를 '저평가'로 보면 과열을 완전히 놓친 것."}
+  ],
+  "ai_baseline": {
+    "action_summary": "일부 차익 실현으로 비중 축소, 현금 확보. 추가 매수(탐욕)나 전량 매도(공포)는 자제.",
+    "rationale": "단기 과열로 밸류 부담이 정점이라 일부 차익 실현이 적절하나, 반도체 펀더멘털은 남아있어 전량 매도는 과잉. 비중을 줄여 위험을 관리하며 변동성에 대비하는 것이 균형."
+  },
+  "action_rule": {
+    "max_single_weight": 25,
+    "good_cash_min": 45,
+    "trap_assets": ["080220"],
+    "core_assets": [],
+    "expected_action_score": [-2.0, -0.5],
+    "note": "단기 과열 국면. 일부매도~매도(차익 실현)가 적정. 추가 매수는 탐욕, 전량 매도는 과잉. 현금 45%↑ 확보 적절."
+  }
+}

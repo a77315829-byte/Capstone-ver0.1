@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "scenario_id": "semiconductor",
+  "scenario_version": 1,
+  "turns": [
+    {
+      "turn_no": 1,
+      "market_date": "2024-02-02",
+      "next_market_date": "2024-02-22",
+      "title": "AI 서버 투자 확대",
+      "phase": "기대 형성",
+      "summary": "미국 빅테크의 AI 인프라 투자 확대 계획이 국내 반도체 업종의 기대를 높였다.",
+      "market_state": {
+        "sentiment": "긍정",
+        "sentiment_score": 72,
+        "sector_state": "반도체 강세 기대",
+        "indices": [],
+        "indicators": [],
+        "risk_factors": ["실적 확인 전 기대가 빠르게 반영될 가능성", "AI 관련 종목의 무차별 상승 가능성"]
+      },
+      "news": [
+        {"news_id":"SEM-T1-N01","published_at":"2024-02-02T08:00:00+09:00","title":"Meta, AI 인프라 투자 확대 계획 제시","summary":"Meta가 AI 연구와 제품 개발을 지원하기 위한 서버 및 데이터센터 투자를 확대할 계획을 밝혔다.","source_name":"Meta Investor Relations","source_url":"https://investor.atmeta.com/investor-news/press-release-details/2024/Meta-Reports-Fourth-Quarter-and-Full-Year-2023-Results-Initiates-Quarterly-Dividend/default.aspx","related_assets":["000660","005930"],"importance":"high","display_order":1}
+      ]
+    },
+    {
+      "turn_no": 2,
+      "market_date": "2024-02-22",
+      "next_market_date": "2024-03-19",
+      "title": "엔비디아 실적 호조와 관련주 급등",
+      "phase": "호재 확인·추격매수 경계",
+      "summary": "엔비디아의 데이터센터 매출 급증으로 AI 반도체 수요가 확인됐지만 국내 관련주 가격도 빠르게 상승했다.",
+      "market_state": {
+        "sentiment": "매우 긍정",
+        "sentiment_score": 86,
+        "sector_state": "반도체 급등",
+        "indices": [],
+        "indicators": [],
+        "risk_factors": ["실적 호재의 당일 가격 반영", "단기 급등 이후 변동성 확대"]
+      },
+      "news": [
+        {"news_id":"SEM-T2-N01","published_at":"2024-02-22T06:00:00+09:00","title":"NVIDIA, 데이터센터 매출 급증 발표","summary":"NVIDIA가 분기 매출과 데이터센터 매출의 큰 폭 성장을 발표하며 AI 가속기 수요를 확인했다.","source_name":"NVIDIA Investor Relations","source_url":"https://investor.nvidia.com/news/press-release-details/2024/NVIDIA-Announces-Financial-Results-for-Fourth-Quarter-and-Fiscal-2024/","related_assets":["000660","005930","042700"],"importance":"high","display_order":1}
+      ]
+    },
+    {
+      "turn_no": 3,
+      "market_date": "2024-03-19",
+      "next_market_date": "2024-04-19",
+      "title": "HBM3E 양산 시작",
+      "phase": "직접 수혜주 선별",
+      "summary": "SK하이닉스가 HBM3E 양산을 시작하면서 HBM 공급망의 실질적 수혜 여부가 중요해졌다.",
+      "market_state": {
+        "sentiment": "긍정",
+        "sentiment_score": 78,
+        "sector_state": "HBM 공급망 강세",
+        "indices": [],
+        "indicators": [],
+        "risk_factors": ["HBM 직접 수혜와 단순 AI 테마 혼동", "기대 선반영과 밸류에이션 부담"]
+      },
+      "news": [
+        {"news_id":"SEM-T3-N01","published_at":"2024-03-19T09:00:00+09:00","title":"SK하이닉스, HBM3E 양산 개시","summary":"SK하이닉스가 HBM3E 양산을 시작하고 고객 공급을 진행한다고 발표했다.","source_name":"SK hynix Newsroom","source_url":"https://news.skhynix.com/en/sk-hynix-begins-volume-production-of-industry-first-hbm3e/","related_assets":["000660","042700","091160"],"importance":"high","display_order":1}
+      ]
+    },
+    {
+      "turn_no": 4,
+      "market_date": "2024-04-19",
+      "next_market_date": "2024-05-23",
+      "title": "금리 인하 지연 우려와 기술주 조정",
+      "phase": "조정·위험관리",
+      "summary": "미국 물가와 금리 부담, 지정학적 불안, 기존 상승분의 과열 부담이 겹치며 반도체주가 조정받았다.",
+      "market_state": {
+        "sentiment": "경계",
+        "sentiment_score": 34,
+        "sector_state": "반도체 조정",
+        "indices": [],
+        "indicators": [],
+        "risk_factors": ["금리 인하 기대 후퇴", "지정학적 불안", "기술주 과열 해소"]
+      },
+      "news": [
+        {"news_id":"SEM-T4-N01","published_at":"2024-04-10T21:30:00+09:00","title":"미국 3월 소비자물가 상승률 예상 상회","summary":"미국 소비자물가 상승으로 조기 금리 인하 기대가 약화되며 성장주 할인율 부담이 커졌다.","source_name":"U.S. Bureau of Labor Statistics","source_url":"https://www.bls.gov/news.release/archives/cpi_04102024.htm","related_assets":["091160","069500"],"importance":"high","display_order":1}
+      ]
+    },
+    {
+      "turn_no": 5,
+      "market_date": "2024-05-23",
+      "next_market_date": "2024-07-01",
+      "title": "강한 실적과 단기 과열 부담",
+      "phase": "차익실현·비중관리",
+      "summary": "엔비디아의 강한 실적으로 AI 수요는 재확인됐지만 주요 수혜주의 신고가와 높은 변동성도 함께 나타났다.",
+      "market_state": {
+        "sentiment": "탐욕 경계",
+        "sentiment_score": 82,
+        "sector_state": "반도체 신고가권",
+        "indices": [],
+        "indicators": [],
+        "risk_factors": ["신고가 추격매수", "포트폴리오 집중", "차익실현 매물"]
+      },
+      "news": [
+        {"news_id":"SEM-T5-N01","published_at":"2024-05-23T06:00:00+09:00","title":"NVIDIA, AI 수요 기반 실적 성장 지속","summary":"NVIDIA가 다시 큰 폭의 매출 성장을 발표하며 AI 인프라 수요를 확인했다.","source_name":"NVIDIA Investor Relations","source_url":"https://investor.nvidia.com/news/press-release-details/2024/NVIDIA-Announces-Financial-Results-for-First-Quarter-Fiscal-2025/default.aspx","related_assets":["000660","005930","042700"],"importance":"high","display_order":1}
+      ]
+    },
+    {
+      "turn_no": 6,
+      "market_date": "2024-07-01",
+      "next_market_date": null,
+      "title": "대규모 투자 지속과 선별적 재진입",
+      "phase": "선별 반등",
+      "summary": "SK그룹의 AI·반도체 투자 계획으로 장기 수요 기대가 유지됐지만 실적과 경쟁력을 갖춘 종목 선별이 중요해졌다.",
+      "market_state": {
+        "sentiment": "선별적 긍정",
+        "sentiment_score": 68,
+        "sector_state": "핵심 종목 중심 반등",
+        "indices": [],
+        "indicators": [],
+        "risk_factors": ["반도체 전 종목의 무차별 매수", "반등 이후 재조정", "약한 테마주의 동반 상승"]
+      },
+      "news": [
+        {"news_id":"SEM-T6-N01","published_at":"2024-07-01T08:00:00+09:00","title":"SK그룹, AI·반도체 중심 투자 확대","summary":"SK그룹이 AI와 반도체를 중심으로 투자 재원을 확보하고 SK하이닉스의 장기 반도체 투자를 추진한다고 밝혔다.","source_name":"Reuters","source_url":"https://www.reuters.com/technology/south-koreas-sk-hynix-invest-75-bln-by-2028-ai-chips-2024-06-30/","related_assets":["000660","042700","091160"],"importance":"high","display_order":1}
+      ]
+    }
+  ]
+}

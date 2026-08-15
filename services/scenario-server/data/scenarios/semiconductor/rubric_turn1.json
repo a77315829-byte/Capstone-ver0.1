@@ -1,0 +1,84 @@
+{
+  "scenario_id": "semiconductor",
+  "turn_no": 1,
+  "turn_title": "AI 서버 투자 확대 발표",
+  "turn_context": "대형 IT 기업들이 AI 서버에 대규모 투자를 하겠다고 발표. 기대감이 형성되는 초기 단계로, 아직 실적이나 구체적 성과는 나오지 않았다. 주가는 이제 막 반응하기 시작. 기대가 실현될지 불확실한 상황.",
+
+  "questions_used": ["Q1", "Q4", "Q18", "Q38", "Q36", "Q39"],
+
+  "answer_rules": {
+    "Q1": {
+      "metric": "M1",
+      "good": ["시장 수급", "투자 심리", "경쟁 구도"],
+      "trap": ["실적", "재무상태", "현금흐름"],
+      "note": "아직 실적이 안 나온 기대 단계. 수급·심리·산업 구도가 핵심. '실적/재무'를 근거로 보는 건 성급함(함정)."
+    },
+    "Q4": {
+      "metric": "M2",
+      "good": ["일부 새로운 정보", "기존 예상과 유사"],
+      "trap": ["완전히 새로운 정보"],
+      "note": "AI 투자 기대는 이미 시장에 어느 정도 알려진 흐름. '완전히 새로운 정보'로 과대평가하면 기대 과열(함정)."
+    },
+    "Q18": {
+      "metric": "M3",
+      "good": ["정보 부족", "영향 기간 불명"],
+      "trap": ["피해 규모 불명", "정책 대응 불명"],
+      "note": "아직 실적이나 구체적 성과가 없어 정보가 부족하고 기대의 지속 기간도 불명확하다. 피해 규모나 정책 대응은 이번 기대 형성 국면의 핵심 불확실성이 아니다."
+    },
+    "Q38": {
+      "metric": "M4",
+      "good": ["실적 발표", "공식 발표", "가격 흐름"],
+      "trap": ["추가 뉴스"],
+      "note": "기대 단계에선 실적·공식 발표 등 실체를 확인하며 지켜보는 것이 핵심(미래 관망). 근거 없는 '추가 뉴스'만 좇으면 소문에 흔들림(함정)."
+    },
+    "Q36": {
+      "metric": "M4",
+      "good": ["매우 제한적", "일부 대응", "단계적 대응"],
+      "trap": ["전량 대응", "대부분 대응"],
+      "note": "실체 없는 기대 단계라 소량·관망이 적절. 기대만으로 '전량/대부분 대응'은 성급한 몰빵(함정)."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "기대의 근거와 그 불확실성을 함께 언급하며 신중한 태도가 보이면 고득점. '무조건 오른다'는 낙관만이면 감점."
+    }
+  },
+
+  "factors": [
+    {"factor_id": "AI_INVEST_EXPECT", "importance": "상", "direction": "호재", "note": "AI 서버 투자 기대. 이번 턴 핵심이나 아직 기대 단계"},
+    {"factor_id": "MARKET_SENTIMENT", "importance": "상", "direction": "호재", "note": "투자 심리·수급이 초기 주가를 움직임"},
+    {"factor_id": "EXPECT_UNCERTAIN", "importance": "중", "direction": "악재", "note": "기대가 실현 안 될 불확실성(놓치기 쉬움)"},
+    {"factor_id": "EARNINGS_NOW", "importance": "상관없음", "direction": "중립", "note": "아직 실적 없음. 실적 근거는 이 턴에 부적절(함정)"},
+    {"factor_id": "INTEREST_RATE", "importance": "하", "direction": "악재", "note": "이 턴 핵심 아님"}
+  ],
+
+  "assets": [
+    {"asset_id": "000660", "relevance": "높음", "is_trap": false, "reason": "AI 서버 수혜 기대주(메모리)"},
+    {"asset_id": "005930", "relevance": "높음", "is_trap": false, "reason": "AI 인프라 관련"},
+    {"asset_id": "091160", "relevance": "매우높음", "is_trap": false, "reason": "기대 초기엔 개별주보다 섹터 분산이 적절"},
+    {"asset_id": "080220", "relevance": "중간", "is_trap": true, "reason": "AI로 묶이나 서버 투자 직접 수혜는 아님"},
+    {"asset_id": "005380", "relevance": "낮음", "is_trap": false, "reason": "무관"},
+    {"asset_id": "132030", "relevance": "낮음", "is_trap": false, "reason": "무관"}
+  ],
+
+  "traps": [
+    {"trap_id": "TRAP_FACTOR_EARNINGS", "kind": "factor", "target": "실적/재무", "explanation": "아직 실적이 안 나온 기대 단계인데 실적을 근거로 삼는 건 성급하다."},
+    {"trap_id": "TRAP_ACTION_ALLIN", "kind": "action", "target": "전량/대부분 대응", "explanation": "실체 없는 기대만으로 큰 비중을 싣는 것은 위험. 초기엔 소량·분산이 적절."},
+    {"trap_id": "TRAP_INFO_NEW", "kind": "info", "target": "완전히 새로운 정보", "explanation": "AI 투자 기대는 이미 알려진 흐름. 과도하게 새로운 정보로 보면 기대 과열."}
+  ],
+
+  "ai_baseline": {
+    "action_summary": "반도체ETF 또는 대표주를 소량 분산 매수, 현금 넉넉히 유지",
+    "rationale": "AI 투자 기대는 긍정적이나 아직 실체(실적)가 없어 불확실. 초기엔 소량·분산으로 참여하고 실적 확인을 기다리는 것이 적절."
+  },
+
+  "action_rule": {
+    "max_single_weight": 25,
+    "good_cash_min": 50,
+    "trap_assets": ["080220"],
+    "core_assets": ["091160", "000660", "005930"],
+    "expected_intensity": "매우 제한적/일부",
+    "expected_action_score": [0, 1.0],
+    "note": "..."
+  }
+}

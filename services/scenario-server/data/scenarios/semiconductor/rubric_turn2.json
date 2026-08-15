@@ -1,0 +1,84 @@
+{
+  "scenario_id": "semiconductor",
+  "turn_no": 2,
+  "turn_title": "엔비디아 실적 호조, 관련주 급등",
+  "turn_context": "엔비디아가 예상을 뛰어넘는 실적을 발표하며 AI 반도체 관련주가 일제히 급등했다. 1턴의 기대가 실적으로 확인된 셈. 다만 주가는 이미 크게 뛰어오른 직후로, 지금 뒤늦게 뛰어드는 추격매수의 위험이 큰 국면이다.",
+
+  "questions_used": ["Q1", "Q7", "Q10", "Q16", "Q31", "Q39"],
+
+  "answer_rules": {
+    "Q1": {
+      "metric": "M1",
+      "good": ["실적", "시장 수급", "가격 수준"],
+      "trap": ["투자 심리", "규제 변화"],
+      "note": "이번엔 실적으로 확인된 급등. 실적·수급·가격 수준이 핵심. '투자 심리(남들이 사니까)'만 좇으면 추격매수 심리(함정)."
+    },
+    "Q7": {
+      "metric": "M2",
+      "good": ["보통", "강함"],
+      "trap": ["매우 강함"],
+      "note": "실적 호재는 강하나, 이미 급등에 반영됨. '매우 강함'으로 더 오를 것만 보면 추격 과열(함정)."
+    },
+    "Q10": {
+      "metric": "M2",
+      "good": ["수급 변화", "심리 변화"],
+      "trap": ["정책 변화", "경로 불명확"],
+      "note": "호실적 발표 직후 국내 관련주의 급등은 수급 유입과 투자 심리 개선을 통해 전달된다. 정책 변화나 불명확한 경로로 해석하면 이번 상승의 전달 구조를 놓친 것이다."
+    },
+    "Q31": {
+      "metric": "M4",
+      "good": ["미보유", "소액 보유", "보통 비중"],
+      "trap": ["집중 보유", "높은 비중"],
+      "note": "급등 직후 추격매수 경계 국면. 이미 '높은/집중 보유'인데 더 담으려는 성향은 추격매수 위험(함정). 소액·보통이 적절."
+    },
+    "Q16": {
+      "metric": "M3",
+      "good": ["보통", "높음"],
+      "trap": ["매우 낮음"],
+      "note": "급등 후 조정·변동 위험이 실재. 확산·조정 가능성을 '매우 낮음'으로 보면 낙관 편향(함정)."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "급등을 인정하되 추격의 위험을 함께 언급하며 절제된 태도면 고득점. '지금이라도 사야 한다'는 FOMO 논리면 감점."
+    }
+  },
+
+  "factors": [
+    {"factor_id": "NVIDIA_EARNINGS", "importance": "상", "direction": "호재", "note": "엔비디아 실적이 AI 수요를 실증. 이번 급등의 근거"},
+    {"factor_id": "PRICE_SURGE", "importance": "상", "direction": "악재", "note": "이미 급등 → 추격매수 시 고점 매수 위험(놓치면 안 됨)"},
+    {"factor_id": "SUPPLY_DEMAND", "importance": "중", "direction": "중립", "note": "외국인·기관 수급이 계속 유입되나"},
+    {"factor_id": "FOMO_SENTIMENT", "importance": "상관없음", "direction": "중립", "note": "'남들이 사니까'는 근거 아님. 심리만 좇는 건 함정"},
+    {"factor_id": "REGULATION", "importance": "하", "direction": "악재", "note": "이 턴 핵심 아님"}
+  ],
+
+  "assets": [
+    {"asset_id": "000660", "relevance": "높음", "is_trap": false, "reason": "실적 수혜 관련. 단 이미 급등"},
+    {"asset_id": "005930", "relevance": "높음", "is_trap": false, "reason": "관련주. 이미 급등"},
+    {"asset_id": "091160", "relevance": "매우높음", "is_trap": false, "reason": "급등장에선 개별주 추격보다 분산이 안전"},
+    {"asset_id": "080220", "relevance": "중간", "is_trap": true, "reason": "가장 크게 급등해 눈에 띄나, 실적 직접 수혜는 아니고 추격 위험 큼"},
+    {"asset_id": "005380", "relevance": "낮음", "is_trap": false, "reason": "무관"},
+    {"asset_id": "132030", "relevance": "낮음", "is_trap": false, "reason": "무관"}
+  ],
+
+  "traps": [
+    {"trap_id": "TRAP_ACTION_CHASE", "kind": "action", "target": "높은/집중 보유에서 추가 매수", "explanation": "급등 직후 이미 많이 보유한 상태에서 더 담는 것은 고점 추격매수 위험."},
+    {"trap_id": "TRAP_FACTOR_FOMO", "kind": "factor", "target": "투자 심리", "explanation": "'남들이 사니까 나도'라는 심리만으로 판단하면 FOMO 추격매수에 빠진다."},
+    {"trap_id": "TRAP_ASSET_SURGE", "kind": "asset", "target": "080220", "explanation": "가장 크게 급등해 눈길을 끌지만, 실적 직접 수혜가 아니고 추격 위험이 가장 크다."}
+  ],
+
+  "ai_baseline": {
+    "action_summary": "이미 보유 중이면 유지·관망, 신규는 소량 분산. 급등 추격은 자제.",
+    "rationale": "실적으로 호재가 확인됐으나 이미 급등한 직후라 추격매수는 고점 매수 위험. 보유분은 유지하되 뒤늦은 큰 비중 추격은 피하고, 조정을 기다리는 것이 적절."
+  },
+
+  "action_rule": {
+    "max_single_weight": 30,
+    "good_cash_min": 40,
+    "trap_assets": ["080220"],
+    "core_assets": ["091160"],
+    "expected_intensity": "매우 제한적/일부",
+    "expected_action_score": [-0.5, 1.0],
+    "note": "..."
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "scenario_id": "semiconductor",
+  "turn_no": 3,
+  "turn_title": "HBM 공급 부족",
+  "turn_context": "1턴 AI 서버 투자 확대(기대), 2턴 엔비디아 실적 호조(급등)로 반도체가 이미 꽤 오른 상태. 이번 뉴스: HBM 수요 급증·공급 부족으로 메모리 가격 상승 전망. 호재지만 밸류·과열 부담 누적.",
+
+  "questions_used": ["Q1", "Q5", "Q6", "Q13", "Q36", "Q39"],
+
+  "answer_rules": {
+    "Q1": {
+      "metric": "M1",
+      "good": ["시장 수급", "가격 수준", "공급망"],
+      "trap": ["금리", "환율", "원자재"],
+      "note": "이번 핵심은 HBM 수요·메모리 가격(공급망·가격 수준·수급). 금리·환율은 이 턴 핵심 아님(함정)."
+    },
+    "Q5": {
+      "metric": "M2",
+      "good": ["일부 반영", "대부분 반영"],
+      "trap": ["미반영"],
+      "note": "이미 2턴 올라 선반영 상태. '미반영'은 선반영을 못 본 것(감점). '과도하게 반영'은 부분 인정."
+    },
+    "Q6": {
+      "metric": "M2",
+      "good": ["긍정적", "영향 제한적"],
+      "trap": ["매우 긍정적"],
+      "note": "호재는 맞으나 이미 상승·부담 있어 '매우 긍정적'은 과열 해석(감점). 균형 잡힌 '긍정적/제한적'이 좋음."
+    },
+    "Q13": {
+      "metric": "M3",
+      "good": ["변동성 확대", "수급 악화", "심리 위축"],
+      "trap": [],
+      "note": "급등 후라 변동성·과열이 핵심 위험. 위험을 하나도 안 고르면 M3 감점(호재만 봄)."
+    },
+    "Q36": {
+      "metric": "M4",
+      "good": ["일부 대응", "단계적 대응", "절반 대응"],
+      "trap": ["전량 대응", "대부분 대응"],
+      "note": "이미 상승+밸류부담 → 분할/단계적이 정답. '전량/대부분 대응'은 추격매수(감점)."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "호재(HBM 수요)와 부담(밸류·과열)을 양쪽 다 언급하며 논리가 일관되면 고득점. 호재만 단선적이면 감점. (LLM이 채점)"
+    }
+  },
+
+  "factors": [
+    {"factor_id": "HBM_DEMAND",    "importance": "상", "direction": "호재", "note": "이번 뉴스 핵심. 메모리 수요가 공급 초과"},
+    {"factor_id": "MEMORY_PRICE",  "importance": "상", "direction": "호재", "note": "HBM 부족 → 메모리 판가 상승"},
+    {"factor_id": "VALUATION",     "importance": "상", "direction": "악재", "note": "이미 2턴 상승 → 고평가 부담(놓치면 안 됨)"},
+    {"factor_id": "OVERHEATING",   "importance": "중", "direction": "악재", "note": "급등 후 추격매수 위험"},
+    {"factor_id": "FOREIGN_FLOW",  "importance": "중", "direction": "중립", "note": "외국인이 계속 사나 차익실현하나"},
+    {"factor_id": "INTEREST_RATE", "importance": "하", "direction": "악재", "note": "성장주 부담(이 턴 핵심 아님, 4턴에서 부각)"},
+    {"factor_id": "GOLD_SAFE",     "importance": "상관없음", "direction": "중립", "note": "위험선호 국면, 관련 약함(함정)"}
+  ],
+
+  "assets": [
+    {"asset_id": "000660",  "relevance": "매우높음", "is_trap": false, "reason": "HBM 직접 수혜(메모리 대표)"},
+    {"asset_id": "005930",   "relevance": "높음",     "is_trap": false, "reason": "메모리 업황·HBM 관련"},
+    {"asset_id": "091160",  "relevance": "높음",     "is_trap": false, "reason": "섹터 전체 수혜(리스크 분산)"},
+    {"asset_id": "080220","relevance": "중간",     "is_trap": true,  "reason": "AI 테마로 묶이나 이번 HBM(메모리) 뉴스의 직접 수혜는 아님"},
+    {"asset_id": "005380",   "relevance": "낮음",     "is_trap": false, "reason": "이번 뉴스와 직접 관련 없음"},
+    {"asset_id": "132030",  "relevance": "낮음",     "is_trap": false, "reason": "무관"}
+  ],
+
+  "traps": [
+    {"trap_id": "TRAP_FACTOR_GOLD", "kind": "factor", "target": "금리/환율/원자재", "explanation": "이번 턴은 HBM 메모리 이슈. 금리·환율 등 거시요인은 이 턴 핵심이 아님."},
+    {"trap_id": "TRAP_ASSET_AISW",  "kind": "asset",  "target": "080220", "explanation": "AI 반도체로 묶여 관련돼 보이나, 이번 뉴스는 메모리(HBM) 공급 이슈라 직접 수혜는 SK하이닉스·삼성전자."},
+    {"trap_id": "TRAP_ACTION_CHASE","kind": "action", "target": "전량/대부분 대응", "explanation": "이미 상승+밸류부담 상태에서 강한 추격매수는 위험. 분할/단계적 대응이 적절."}
+  ],
+
+  "ai_baseline": {
+    "action_summary": "SK하이닉스 또는 반도체ETF를 분할·소량 매수, 현금 일부 유지",
+    "rationale": "HBM 수요·메모리 가격 상승은 호재이나 이미 2턴 상승해 밸류·과열 부담. 호재와 부담을 양쪽 다 반영해 비중을 조절하는 것이 적절."
+  },
+
+  "action_rule": {
+    "max_single_weight": 40,
+    "good_cash_min": 20,
+    "trap_assets": ["080220"],
+    "core_assets": ["000660", "005930", "091160"],
+    "expected_intensity": "일부/단계적",
+    "expected_action_score": [0, 1.5],
+    "note": "이미 상승+밸류부담. 한 종목 40% 초과는 몰빵, 현금 20%↓는 위험 과다. 함정주 매수 감점, 핵심주 적정 비중 가점."
+  }
+}
