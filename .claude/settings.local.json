@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\".venv/Scripts/python.exe\" -m uvicorn app.main:app --port 8000)",
+      "Bash(curl -s http://127.0.0.1:8000/health)",
+      "Bash(curl -s http://127.0.0.1:8000/judgment/TEST005930)",
+      "Bash(curl -s \"http://127.0.0.1:8000/judgment/TEST005930/history\")",
+      "Bash(jobs -l)",
+      "PowerShell(netsh interface ipv4 show excludedportrange protocol=tcp)",
+      "Bash(rm -f /tmp/uvicorn.log)",
+      "Bash(python -m pytest tests/ -q)",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/ -q)",
+      "Bash(./.venv/Scripts/python.exe -c ' *)",
+      "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 ./.venv/Scripts/python.exe -c ' *)",
+      "Bash(LLM_PROVIDER=ollama OPENAI_API_KEY='' ./.venv/Scripts/python.exe -c ' *)",
+      "Bash(curl -s http://localhost:11434/api/tags)",
+      "Bash(command -v ollama)",
+      "Bash(where ollama *)",
+      "Read(//c/Users/joosj/AppData/Local/Programs/**)",
+      "Bash(winget list *)",
+      "Bash(winget install *)",
+      "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 LLM_PROVIDER=ollama OLLAMA_MODEL=qwen2.5:1.5b ./.venv/Scripts/python.exe -c ' *)",
+      "Bash(JUDGE_SELL_THRESHOLD=50 JUDGE_HOLD_THRESHOLD=20 PYTHONUTF8=1 PYTHONIOENCODING=utf-8 ./.venv/Scripts/python.exe -c ' *)",
+      "Bash(.venv/Scripts/python -m pytest tests/ -v)",
+      "Bash(awk -F= '{print $1\"=\"}' .env)"
+    ]
+  }
+}
