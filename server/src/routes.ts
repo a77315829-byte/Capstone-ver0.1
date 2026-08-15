@@ -19,6 +19,7 @@ import usStocksController from "./controller/usStocks.controller";
 import usTradingController from "./controller/usTrading.controller";
 import salaryAiController from "./controller/salaryAi.controller";
 import onboardingController from "./controller/onboarding.controller";
+import axios from "axios";
 
 // Auth routes
 router.post(
@@ -81,6 +82,232 @@ router.get(
 	"/api/markets/KRX/status",
 	marketSessionController.getKrxStatus,
 );
+// ================================
+// Scenario Service
+// ================================
+
+router.get("/api/scenario-service/scenarios", async (req, res) => {
+	try {
+		const baseUrl =
+			process.env.SCENARIO_SERVICE_URL || "http://127.0.0.1:8001";
+
+		const response = await axios.get(`${baseUrl}/api/scenarios`);
+
+		return res.json(response.data);
+	} catch (error: any) {
+		console.error(
+			"Scenario Service request failed:",
+			error.response?.data || error.message,
+		);
+
+		return res.status(error.response?.status || 502).json(
+			error.response?.data || {
+				error: "Scenario Service 연결 실패",
+			},
+		);
+	}
+});
+
+const SCENARIO_SERVICE_URL =
+	process.env.SCENARIO_SERVICE_URL || "http://127.0.0.1:8001";
+
+const handleScenarioError = (res: any, error: any) => {
+	console.error(
+		"Scenario Service request failed:",
+		error.response?.data || error.message,
+	);
+
+	return res.status(error.response?.status || 502).json(
+		error.response?.data || {
+			error: "Scenario Service 연결 실패",
+		},
+	);
+};
+
+// 시나리오 서버 상태 확인
+router.get("/api/scenario-service/health", async (req, res) => {
+	try {
+		const response = await axios.get(`${SCENARIO_SERVICE_URL}/`);
+		return res.json(response.data);
+	} catch (error: any) {
+		return handleScenarioError(res, error);
+	}
+});
+
+// 시나리오 목록
+router.get("/api/scenario-service/scenarios", async (req, res) => {
+	try {
+		const response = await axios.get(
+			`${SCENARIO_SERVICE_URL}/api/scenarios`,
+		);
+
+		return res.json(response.data);
+	} catch (error: any) {
+		return handleScenarioError(res, error);
+	}
+});
+
+// 시나리오 플레이 세션 생성
+router.post(
+	"/api/scenario-service/scenarios/:scenarioId/sessions",
+	async (req, res) => {
+		try {
+			const response = await axios.post(
+				`${SCENARIO_SERVICE_URL}/api/scenarios/${req.params.scenarioId}/sessions`,
+				req.body,
+			);
+
+			return res.status(response.status).json(response.data);
+		} catch (error: any) {
+			return handleScenarioError(res, error);
+		}
+	},
+);
+
+// 현재 턴 조회
+router.get(
+	"/api/scenario-service/sessions/:sessionId/turn",
+	async (req, res) => {
+		try {
+			const response = await axios.get(
+				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/turn`,
+			);
+
+			return res.json(response.data);
+		} catch (error: any) {
+			return handleScenarioError(res, error);
+		}
+	},
+);
+
+// 종목 차트 조회
+router.get(
+	"/api/scenario-service/sessions/:sessionId/chart/:assetId",
+	async (req, res) => {
+		try {
+			const response = await axios.get(
+				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/chart/${req.params.assetId}`,
+				{
+					params: req.query,
+				},
+			);
+
+			return res.json(response.data);
+		} catch (error: any) {
+			return handleScenarioError(res, error);
+		}
+	},
+);
+
+// 매수 / 매도
+router.post(
+	"/api/scenario-service/sessions/:sessionId/orders",
+	async (req, res) => {
+		try {
+			const response = await axios.post(
+				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/orders`,
+				req.body,
+			);
+
+			return res.status(response.status).json(response.data);
+		} catch (error: any) {
+			return handleScenarioError(res, error);
+		}
+	},
+);
+
+// 턴 판단 제출
+router.post(
+	"/api/scenario-service/sessions/:sessionId/turn/submit",
+	async (req, res) => {
+		try {
+			const response = await axios.post(
+				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/turn/submit`,
+				req.body,
+			);
+
+			return res.json(response.data);
+		} catch (error: any) {
+			return handleScenarioError(res, error);
+		}
+	},
+);
+
+// 최종 결과 조회
+router.get(
+	"/api/scenario-service/sessions/:sessionId/result",
+	async (req, res) => {
+		try {
+			const response = await axios.get(
+				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/result`,
+			);
+
+			return res.json(response.data);
+		} catch (error: any) {
+			return handleScenarioError(res, error);
+		}
+	},
+);
+
+// 세션 최종 완료
+router.post(
+	"/api/scenario-service/sessions/:sessionId/finalize",
+	async (req, res) => {
+		try {
+			const response = await axios.post(
+				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/finalize`,
+			);
+
+			return res.json(response.data);
+		} catch (error: any) {
+			return handleScenarioError(res, error);
+		}
+	},
+);
+// ================================
+// AI Judgment Service
+// ================================
+
+router.get("/api/ai-judgment/health", async (req, res) => {
+	try {
+		const baseUrl =
+			process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8002";
+
+		const response = await axios.get(`${baseUrl}/health`);
+
+		return res.json(response.data);
+	} catch (error) {
+		console.error("AI Judgment health check failed:", error);
+
+		return res.status(502).json({
+			error: "AI Judgment Service 연결 실패",
+		});
+	}
+});
+router.get("/api/ai-judgment/:symbol", async (req, res) => {
+	try {
+		const baseUrl =
+			process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8002";
+
+		const response = await axios.get(
+			`${baseUrl}/judgment/${req.params.symbol}`,
+		);
+
+		return res.json(response.data);
+	} catch (error: any) {
+		console.error(
+			"AI Judgment request failed:",
+			error.response?.data || error.message,
+		);
+
+		return res.status(error.response?.status || 502).json(
+			error.response?.data || {
+				error: "AI Judgment Service 연결 실패",
+			},
+		);
+	}
+});
+
 // Stocks routes
 router.get("/api/stocks/search/:query", stocksController.search);
 router.get("/api/stocks/:symbol/info", stocksController.getInfo);

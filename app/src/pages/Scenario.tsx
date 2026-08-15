@@ -22,19 +22,20 @@ import {
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
-import api from "../services/api.service";
+import scenarioService from "../services/scenario.service";
+import tokens from "../services/tokens.service";
 
-type Chapter = {
-	chapterId: number;
-	chapterSlug: string;
-	chapterTitle: string;
-	chapterDescription: string;
-	coreAttitude: string;
-	learningGoal: string;
-	scenarioCount: number;
-	completedCount: number;
-	progressRate: number;
-	isLocked: boolean;
+
+
+type ScenarioApiItem = {
+	scenario_id: string;
+	version: number;
+	title: string;
+	description: string;
+	difficulty: string;
+	total_turns: number;
+	initial_cash: number;
+	learning_points: string[];
 };
 
 type ScenarioItem = {
@@ -302,57 +303,78 @@ export default function Scenario() {
 	const navigate = useNavigate();
 	const toast = useToast();
 
-	const [chapters, setChapters] = useState<Chapter[]>([]);
+
 	const [scenarios, setScenarios] = useState<ScenarioItem[]>([]);
 	const [selectedScenario, setSelectedScenario] = useState<ScenarioItem | null>(null);
 	const [selectedYear, setSelectedYear] = useState("전체");
 	const [selectedDifficulty, setSelectedDifficulty] = useState("전체");
 	const [isLoading, setIsLoading] = useState(false);
 	const [launchingScenario, setLaunchingScenario] = useState<ScenarioItem | null>(null);
+	const [launchSessionId, setLaunchSessionId] = useState<string | null>(null);
 	const [launchProgress, setLaunchProgress] = useState(0);
+	const [isStartingScenario, setIsStartingScenario] = useState(false);
 
-	const loadScenarios = async () => {
-		try {
-			setIsLoading(true);
+	const normalizeDifficulty = (
+	value: string,
+): ScenarioItem["difficulty"] => {
+	if (value === "쉬움" || value === "보통" || value === "어려움") {
+		return value;
+	}
 
-			const chapterRes = await api.get("/scenarios/chapters");
-			const chapterData = unwrapApiData<Chapter[]>(chapterRes.data);
-			const normalizedChapters = Array.isArray(chapterData) ? chapterData : [];
-			setChapters(normalizedChapters);
+	return "보통";
+};
 
-			const scenarioGroups = await Promise.all(
-				normalizedChapters.map(async (chapter) => {
-					try {
-						const response = await api.get(
-							`/scenarios/chapters/${chapter.chapterId}`,
-						);
-						const data = unwrapApiData<ScenarioItem[]>(response.data);
-						return Array.isArray(data) ? data : [];
-					} catch (error) {
-						console.error(
-							`챕터 ${chapter.chapterId} 시나리오 조회 실패`,
-							error,
-						);
-						return [];
-					}
-				}),
-			);
+const loadScenarios = async () => {
+	try {
+		setIsLoading(true);
 
-			const allScenarios = scenarioGroups.flat();
-			setScenarios(allScenarios);
-			setSelectedScenario(allScenarios[0] ?? null);
-		} catch (error) {
-			console.error(error);
-			toast({
-				title: "시나리오를 불러오지 못했습니다.",
-				description: "기존 시나리오 서버 연결 상태를 확인하세요.",
-				status: "error",
-				isClosable: true,
-			});
-		} finally {
-			setIsLoading(false);
-		}
-	};
+		const data = await scenarioService.getScenarios();
+
+		const apiScenarios: ScenarioApiItem[] = Array.isArray(data)
+			? data
+			: [];
+
+		const normalizedScenarios: ScenarioItem[] = apiScenarios.map(
+			(item) => ({
+				_id: item.scenario_id,
+
+				chapterId: 0,
+				chapterTitle: "과거 시나리오",
+
+				scenarioNo: item.scenario_id,
+				scenarioSlug: item.scenario_id,
+
+				title: item.title,
+				eventPeriod: "과거 데이터",
+				summary: item.description,
+
+				difficulty: normalizeDifficulty(item.difficulty),
+
+				estimatedMinutes: item.total_turns * 3,
+
+				keywords: [],
+				learningPoints: item.learning_points ?? [],
+
+				status: "NOT_STARTED",
+				completedStepCount: 0,
+			}),
+		);
+
+		setScenarios(normalizedScenarios);
+		setSelectedScenario(normalizedScenarios[0] ?? null);
+	} catch (error) {
+		console.error(error);
+
+		toast({
+			title: "시나리오를 불러오지 못했습니다.",
+			description: "새 시나리오 서버 연결 상태를 확인하세요.",
+			status: "error",
+			isClosable: true,
+		});
+	} finally {
+		setIsLoading(false);
+	}
+};
 
 	useEffect(() => {
 		void loadScenarios();
@@ -395,6 +417,42 @@ export default function Scenario() {
 		return (progressed.length > 0 ? progressed : scenarios).slice(0, 3);
 	}, [scenarios]);
 
+	const handleStartScenario = async (scenario: ScenarioItem) => {
+		if (isStartingScenario) return;
+
+		try {
+			setIsStartingScenario(true);
+
+			const userId = tokens.getUsername() || "USER-001";
+			const session = await scenarioService.createSession(
+				scenario.scenarioSlug,
+				userId,
+			);
+
+			if (!session?.session_id) {
+				throw new Error("시나리오 서버 응답에 session_id가 없습니다.");
+			}
+
+			setLaunchSessionId(session.session_id);
+			setLaunchProgress(0);
+			setLaunchingScenario(scenario);
+		} catch (error: any) {
+			console.error("시나리오 세션 생성 실패:", error);
+
+			toast({
+				title: "시나리오를 시작하지 못했습니다.",
+				description:
+					error?.response?.data?.message ||
+					error?.response?.data?.detail ||
+					"시나리오 세션 생성 중 오류가 발생했습니다.",
+				status: "error",
+				isClosable: true,
+			});
+		} finally {
+			setIsStartingScenario(false);
+		}
+	};
+
 	useEffect(() => {
 		if (!launchingScenario) return;
 
@@ -410,14 +468,18 @@ export default function Scenario() {
 	}, [launchingScenario]);
 
 	useEffect(() => {
-		if (!launchingScenario || launchProgress < 100) return;
+		if (!launchingScenario || !launchSessionId || launchProgress < 100) return;
 
 		const timeoutId = window.setTimeout(() => {
-			navigate(`/scenario/play/${launchingScenario.scenarioSlug}`);
+			navigate(
+				`/scenario/play/${launchingScenario.scenarioSlug}?sessionId=${encodeURIComponent(
+					launchSessionId,
+				)}`,
+			);
 		}, 250);
 
 		return () => window.clearTimeout(timeoutId);
-	}, [launchProgress, launchingScenario, navigate]);
+	}, [launchProgress, launchSessionId, launchingScenario, navigate]);
 
 	if (launchingScenario) {
 		return (
@@ -645,7 +707,9 @@ export default function Scenario() {
 										color="white"
 										fontSize="20px"
 										_hover={{ bg: "brand.600" }}
-										onClick={() => setLaunchingScenario(selectedScenario)}
+										onClick={() => void handleStartScenario(selectedScenario)}
+										isLoading={isStartingScenario}
+										loadingText="세션 생성 중"
 									>
 										시나리오 시작하기
 									</Button>
@@ -719,7 +783,7 @@ export default function Scenario() {
 													? "green.400"
 													: "brand.400"
 											}
-											onClick={() => setLaunchingScenario(scenario)}
+											onClick={() => void handleStartScenario(scenario)}
 										>
 											{scenario.status === "COMPLETED" ? "결과 보기" : "시작하기"}
 										</Button>
@@ -728,7 +792,7 @@ export default function Scenario() {
 							</Flex>
 						))}
 					</SimpleGrid>
-					{chapters.length > 0 && scenarios.length === 0 && !isLoading && (
+					{scenarios.length === 0 && !isLoading && (
 						<Text color="app.muted">등록된 시나리오가 없습니다.</Text>
 					)}
 				</CardBody>

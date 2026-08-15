@@ -68,7 +68,7 @@ def generate_json(
 
     required = set(required_keys)
 
-    genai.configure(api_key=config.GEMINI_API_KEY)
+
     required = set(required_keys)
     attempted: list[str] = []
 

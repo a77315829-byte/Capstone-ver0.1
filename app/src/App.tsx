@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import AppLayout from "./layouts/AppLayout";
+import AiJudgmentPage from "./pages/AiJudgment";
 import tokens from "./services/tokens.service";
 
 import Community from "./pages/Community";
@@ -51,6 +52,7 @@ function App() {
 				/>
 
 				<Route path="/exchange" element={<Exchange />} />
+				<Route path="/ai-judgment" element={<AiJudgmentPage />} />
 				<Route path="/stocks/:symbol" element={<StockView />} />
 				<Route path="/simulator" element={<MarketSimulator />} />
 				<Route path="/news" element={<RealtimeNews />} />

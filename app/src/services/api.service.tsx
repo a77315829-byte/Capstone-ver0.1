@@ -1,5 +1,6 @@
 import axios from "axios";
 import tokens from "./tokens.service";
+import api from "./api.service";
 
 const instance = axios.create({
 	baseURL: "/api",
@@ -22,3 +23,7 @@ instance.interceptors.request.use(
 );
 
 export default instance;
+export const getScenarios = async () => {
+	const response = await api.get("/scenario-service/scenarios");
+	return response.data;
+};

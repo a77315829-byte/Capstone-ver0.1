@@ -1,38 +1,204 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-	Badge,
 	Box,
 	Button,
-	Card,
-	CardBody,
-	CardHeader,
 	Checkbox,
 	Flex,
 	Grid,
 	GridItem,
 	Heading,
 	HStack,
-	NumberInput,
-	NumberInputField,
-	Progress,
+	Input,
+	InputGroup,
+	InputLeftElement,
+	Modal,
+	ModalBody,
+	ModalCloseButton,
+	ModalContent,
+	ModalFooter,
+	ModalHeader,
+	ModalOverlay,
+	Radio,
+	RadioGroup,
+	Select,
 	SimpleGrid,
-	Spacer,
+	Skeleton,
+	Spinner,
 	Stack,
-	Stat,
-	StatLabel,
-	StatNumber,
 	Text,
 	Textarea,
+	useDisclosure,
 	useToast,
 } from "@chakra-ui/react";
-import { useNavigate, useParams } from "react-router-dom";
-import api from "../services/api.service";
+import {
+	FiAlertTriangle,
+	FiArrowRight,
+	FiBookOpen,
+	FiCheck,
+	FiCheckCircle,
+	FiChevronDown,
+	FiInfo,
+	FiSearch,
+	FiShield,
+	FiTarget,
+} from "react-icons/fi";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
-type ScenarioAction = "BUY" | "SELL" | "HOLD";
-type ChartPeriod = "1m" | "10m" | "1h" | "1d" | "1w";
+import scenarioService from "../services/scenario.service";
 
-type ScenarioCandle = {
-	label: string;
+/* ============================================================================
+ * Types
+ * ========================================================================== */
+
+type OrderSide = "BUY" | "SELL";
+type ChartRange = "DAY" | "WEEK" | "MONTH" | "YEAR";
+type DataTab = "CHART" | "TRADES" | "ORDERBOOK" | "BROKERS";
+
+type SessionPublic = {
+	session_id: string;
+	user_id: string;
+	scenario_id: string;
+	scenario_version: number;
+	status: string;
+	current_turn: number;
+	started_at: string;
+	completed_at?: string | null;
+	final_evaluation_id?: string | null;
+};
+
+type ScenarioProgress = {
+	current_turn: number;
+	total_turns: number;
+	market_date: string;
+	next_market_date?: string | null;
+	final_valuation_date: string;
+};
+
+type ScenarioMeta = {
+	scenario_id: string;
+	title: string;
+	description: string;
+	difficulty: string;
+	learning_points: string[];
+};
+
+type TurnMeta = {
+	turn_no: number;
+	title: string;
+	phase?: string;
+	summary?: string;
+};
+
+type MarketMetric = {
+	kind?: string;
+	code?: string;
+	name?: string;
+	value?: number | string | null;
+	change_pct?: number | null;
+	unit?: string;
+	as_of_date?: string;
+};
+
+type MarketState = {
+	snapshot_id?: string;
+	scenario_id?: string;
+	scenario_version?: number;
+	turn_no?: number;
+	market_date?: string;
+	sentiment?: string;
+	sentiment_score?: number;
+	sector_state?: string;
+	indices?: MarketMetric[];
+	indicators?: MarketMetric[];
+	risk_factors?: string[];
+};
+
+type NewsItem = {
+	news_id: string;
+	published_at?: string;
+	title: string;
+	summary?: string;
+	source_name?: string;
+	source_url?: string;
+	related_assets?: string[];
+	importance?: string;
+	display_order?: number;
+};
+
+type AssetSummary = {
+	asset_id: string;
+	name: string;
+	market?: string;
+	asset_type?: string;
+	industry_label?: string;
+	current_price?: number | null;
+	previous_close?: number | null;
+	change?: number | null;
+	change_pct?: number | null;
+	volume?: number | null;
+	price_date?: string | null;
+	data_available?: boolean;
+};
+
+type PortfolioPosition = {
+	asset_id: string;
+	name: string;
+	industry_label?: string;
+	quantity: number;
+	avg_price: number;
+	current_price: number;
+	market_value: number;
+	unrealized_pnl: number;
+	realized_pnl?: number;
+	weight_pct?: number;
+};
+
+type PortfolioState = {
+	market_date: string;
+	cash: number;
+	cash_weight_pct: number;
+	position_value: number;
+	total_value: number;
+	profit_loss: number;
+	cumulative_return_pct: number;
+	positions: PortfolioPosition[];
+	realized_pnl_total?: number;
+	missing_price_assets?: string[];
+	data_complete?: boolean;
+	turn_base_value?: number;
+	turn_return_pct?: number;
+};
+
+type QuestionType = "single" | "multi" | "free";
+
+type QuestionItem = {
+	question_id: string;
+	category?: string;
+	metric?: string;
+	type: QuestionType;
+	max_select?: number;
+	text: string;
+	options?: string[];
+};
+
+type TurnView = {
+	session: SessionPublic;
+	progress?: ScenarioProgress;
+	scenario?: ScenarioMeta;
+	turn?: TurnMeta;
+	market_state?: MarketState | null;
+	news?: NewsItem[];
+	assets?: AssetSummary[];
+	default_asset_id?: string | null;
+	portfolio?: PortfolioState;
+	questions?: QuestionItem[];
+	result_ready?: boolean;
+	evaluation_id?: string | null;
+	finalizing?: boolean;
+};
+
+type ChartCandle = {
+	date: string;
 	open: number;
 	high: number;
 	low: number;
@@ -40,715 +206,2881 @@ type ScenarioCandle = {
 	volume: number;
 };
 
-type ScenarioStock = {
-	symbol: string;
-	name: string;
-	price: number;
-	changeRate: number;
-	volume: number;
-	sector?: string;
-	reason?: string;
-};
-
-type ScenarioStep = {
-	stepNumber: number;
-	title: string;
-	dateLabel: string;
-	marketInfo: {
-		indexFlow: string;
-		sectorFlow: string;
-		volatility: string;
-		volume: string;
+type ChartResponse = {
+	asset?: {
+		asset_id?: string;
+		name?: string;
+		market?: string;
+		asset_type?: string;
+		industry_label?: string;
 	};
-	stockInfo: ScenarioStock;
-	marketStocks?: ScenarioStock[];
-	newsCards: {
-		title: string;
-		summary: string;
-		publishedAt: string;
-		source: string;
-	}[];
-	eventInfo: string;
-	hint: string;
-	referenceDecision: ScenarioAction;
-	referenceReason: string;
+	end_date?: string;
+	candles?: ChartCandle[];
+	data_available?: boolean;
 };
 
-type ScenarioDecision = {
-	stepNumber: number;
-	action: ScenarioAction;
+type OrderRecord = {
+	order_id?: string;
+	session_id?: string;
+	user_id?: string;
+	scenario_id?: string;
+	turn_no?: number;
+	market_date?: string;
+	asset_id: string;
+	side: OrderSide;
 	quantity: number;
-	ratio: number;
-	tags: string[];
-	reason: string;
-	aiFeedback?: {
-		summary?: string;
-		alternative?: string;
-	};
+	execution_price: number;
+	amount: number;
+	realized_pnl?: number;
+	status?: string;
+	price_basis?: string;
+	created_at?: string;
 };
 
-type ScenarioDetail = {
-	scenario: {
-		_id: string;
-		chapterId: number;
-		chapterTitle: string;
-		scenarioNo: string;
-		scenarioSlug: string;
-		title: string;
-		eventPeriod: string;
-		summary: string;
-		background: string;
-		difficulty: string;
-		estimatedMinutes: number;
-		keywords: string[];
-		learningPoints: string[];
-		aiEvaluationPoints: string[];
-		expectedFeedback: string;
-		steps: ScenarioStep[];
-	};
-	decisions: ScenarioDecision[];
-	progress: {
-		completedStepCount: number;
-		totalStepCount: number;
-		isCompleted: boolean;
-	};
+type OrderResponse = {
+	order: OrderRecord;
+	portfolio: PortfolioState;
 };
 
-const unwrapApiData = <T,>(payload: any): T => payload?.data ?? payload;
-
-const won = new Intl.NumberFormat("ko-KR", {
-	style: "currency",
-	currency: "KRW",
-	maximumFractionDigits: 0,
-});
-
-const numberFormat = new Intl.NumberFormat("ko-KR");
-
-const actionLabel: Record<ScenarioAction, string> = {
-	BUY: "매수",
-	SELL: "매도",
-	HOLD: "관망",
+type AnswerValue = {
+	selected: string[];
+	text: string;
 };
 
-const actionColor: Record<ScenarioAction, string> = {
-	BUY: "red",
-	SELL: "blue",
-	HOLD: "gray",
+type ScenarioAnswer = {
+	question_id: string;
+	selected: string[];
+	text: string;
 };
 
-const tagOptions = [
-	"공포",
-	"변동성",
-	"저가 매수",
-	"추격매수",
-	"리스크 우려",
-	"장기 관점",
-	"뉴스 반영",
-	"거래량 증가",
-	"관망",
-	"비중 관리",
-];
-
-
-function buildScenarioStocks(
-	scenario: ScenarioDetail["scenario"],
-	step: ScenarioStep,
-): ScenarioStock[] {
-	const base = step.stockInfo;
-	const chapterId = scenario.chapterId;
-
-	const presets: Record<number, ScenarioStock[]> = {
-		1: [
-			{
-				symbol: "005930",
-				name: "삼성전자",
-				price: base.price,
-				changeRate: base.changeRate,
-				volume: base.volume,
-				sector: "반도체",
-				reason: "시장 대표 대형주",
-			},
-			{
-				symbol: "035420",
-				name: "NAVER",
-				price: Math.round(base.price * 0.74),
-				changeRate: -3.2,
-				volume: 3800000,
-				sector: "성장주",
-				reason: "급락장 성장주 변동성 확인",
-			},
-			{
-				symbol: "068270",
-				name: "셀트리온",
-				price: Math.round(base.price * 0.56),
-				changeRate: -1.4,
-				volume: 2100000,
-				sector: "바이오",
-				reason: "방어적 성격 비교",
-			},
-		],
-		2: [
-			{
-				symbol: "373220",
-				name: "LG에너지솔루션",
-				price: Math.round(base.price * 1.18),
-				changeRate: 7.8,
-				volume: 4200000,
-				sector: "2차전지",
-				reason: "테마 과열 대표 종목",
-			},
-			{
-				symbol: "247540",
-				name: "에코프로비엠",
-				price: Math.round(base.price * 0.94),
-				changeRate: 12.4,
-				volume: 5200000,
-				sector: "2차전지",
-				reason: "급등주 추격매수 판단",
-			},
-			{
-				symbol: "005930",
-				name: "삼성전자",
-				price: base.price,
-				changeRate: 1.1,
-				volume: base.volume,
-				sector: "반도체",
-				reason: "대형주 비교 대상",
-			},
-		],
-		3: [
-			{
-				symbol: "005930",
-				name: "삼성전자",
-				price: base.price,
-				changeRate: base.changeRate,
-				volume: base.volume,
-				sector: "반도체",
-				reason: "뉴스 영향 확인",
-			},
-			{
-				symbol: "000660",
-				name: "SK하이닉스",
-				price: Math.round(base.price * 0.82),
-				changeRate: -2.6,
-				volume: 6400000,
-				sector: "반도체",
-				reason: "같은 섹터 비교",
-			},
-			{
-				symbol: "055550",
-				name: "신한지주",
-				price: Math.round(base.price * 0.31),
-				changeRate: 1.8,
-				volume: 3100000,
-				sector: "금융",
-				reason: "금리 뉴스 영향 비교",
-			},
-		],
-		4: [
-			{
-				symbol: "035720",
-				name: "카카오",
-				price: Math.round(base.price * 0.45),
-				changeRate: -5.4,
-				volume: 4500000,
-				sector: "성장주",
-				reason: "손실 보유 판단",
-			},
-			{
-				symbol: "035420",
-				name: "NAVER",
-				price: Math.round(base.price * 0.73),
-				changeRate: -3.8,
-				volume: 3800000,
-				sector: "성장주",
-				reason: "조정장 비교",
-			},
-			{
-				symbol: "005930",
-				name: "삼성전자",
-				price: base.price,
-				changeRate: -1.0,
-				volume: base.volume,
-				sector: "대형주",
-				reason: "상대적 안정성 비교",
-			},
-		],
-		5: [
-			{
-				symbol: "005930",
-				name: "삼성전자",
-				price: base.price,
-				changeRate: 2.2,
-				volume: base.volume,
-				sector: "반도체",
-				reason: "회복장 대표 종목",
-			},
-			{
-				symbol: "000660",
-				name: "SK하이닉스",
-				price: Math.round(base.price * 0.85),
-				changeRate: 3.4,
-				volume: 6200000,
-				sector: "반도체",
-				reason: "업황 회복 민감주",
-			},
-			{
-				symbol: "005380",
-				name: "현대차",
-				price: Math.round(base.price * 1.15),
-				changeRate: 1.6,
-				volume: 1900000,
-				sector: "자동차",
-				reason: "경기 회복 비교",
-			},
-		],
-		6: [
-			{
-				symbol: "005930",
-				name: "삼성전자",
-				price: base.price,
-				changeRate: base.changeRate,
-				volume: base.volume,
-				sector: "대형주",
-				reason: "분산 포트폴리오 핵심",
-			},
-			{
-				symbol: "105560",
-				name: "KB금융",
-				price: Math.round(base.price * 0.43),
-				changeRate: 0.7,
-				volume: 2400000,
-				sector: "금융",
-				reason: "섹터 분산 대상",
-			},
-			{
-				symbol: "051910",
-				name: "LG화학",
-				price: Math.round(base.price * 1.06),
-				changeRate: -2.1,
-				volume: 1700000,
-				sector: "화학",
-				reason: "집중/분산 비교 대상",
-			},
-		],
-	};
-
-	return presets[chapterId] ?? [
-		{
-			...base,
-			sector: "대표 종목",
-			reason: "시나리오 기준 종목",
-		},
-	];
-}
-
-const chartPeriodOptions: { key: ChartPeriod; label: string }[] = [
-	{ key: "1m", label: "1분" },
-	{ key: "10m", label: "10분" },
-	{ key: "1h", label: "1시간" },
-	{ key: "1d", label: "1일" },
-	{ key: "1w", label: "1주" },
-];
-
-function buildCandles(stock: ScenarioStock, period: ChartPeriod): ScenarioCandle[] {
-	const config: Record<
-		ChartPeriod,
-		{ count: number; volatility: number; trendScale: number }
-	> = {
-		"1m": { count: 80, volatility: 0.006, trendScale: 0.55 },
-		"10m": { count: 72, volatility: 0.009, trendScale: 0.75 },
-		"1h": { count: 60, volatility: 0.013, trendScale: 1.0 },
-		"1d": { count: 48, volatility: 0.02, trendScale: 1.25 },
-		"1w": { count: 40, volatility: 0.035, trendScale: 1.7 },
-	};
-
-	const selected = config[period];
-	const base = stock.price || 100000;
-	const trend = (stock.changeRate / 100) * selected.trendScale;
-
-	let prevClose = base * (1 - trend * 0.45);
-
-	return Array.from({ length: selected.count }).map((_, index) => {
-		const wave =
-			Math.sin(index * 0.55 + stock.symbol.length) * selected.volatility;
-		const pulse =
-			Math.cos(index * 0.21 + stock.name.length) * selected.volatility * 0.7;
-		const drift = trend / selected.count;
-		const change = drift + wave + pulse;
-
-		const open = prevClose;
-		const close = Math.max(open * (1 + change), base * 0.55);
-
-		const high =
-			Math.max(open, close) *
-			(1 + selected.volatility * (1.2 + (index % 4) * 0.22));
-
-		const low =
-			Math.min(open, close) *
-			(1 - selected.volatility * (1.1 + (index % 3) * 0.18));
-
-		const volume =
-			stock.volume *
-			(0.35 +
-				((index % 9) + 1) * 0.05 +
-				Math.abs(change) * 18 +
-				(index > selected.count * 0.75 ? 0.25 : 0));
-
-		prevClose = close;
-
-		return {
-			label:
-				period === "1m"
-					? `${index + 1}분`
-					: period === "10m"
-						? `${(index + 1) * 10}분`
-						: period === "1h"
-							? `${index + 1}H`
-							: period === "1d"
-								? `${index + 1}일`
-								: `${index + 1}주`,
-			open: Math.round(open),
-			high: Math.round(high),
-			low: Math.round(low),
-			close: Math.round(close),
-			volume: Math.round(volume),
+type TurnSubmitResponse = {
+	session: SessionPublic;
+	turn_evaluation?: {
+		evaluation_id?: string;
+		turn_no?: number;
+		scorecard?: {
+			turn_score?: number;
+			metrics?: Array<{
+				metric?: string;
+				score?: number;
+				feedback?: string;
+			}>;
+			feedback?: unknown;
 		};
-	});
+	};
+	next_turn?: number | null;
+	final_evaluation?: FinalEvaluation | null;
+};
+
+type BehaviorPattern = {
+	pattern_code?: string;
+	label?: string;
+	classification?: string;
+	occurrence_count?: number;
+	evidence_turns?: number[];
+	confidence?: number;
+	explanation?: string;
+	recommendation?: string;
+};
+
+type FinalEvaluation = {
+	evaluation_id?: string;
+	user_id?: string;
+	session_id?: string;
+	scenario_id?: string;
+	scenario_version?: number;
+	completed_at?: string;
+	decision_evaluation?: {
+		overall_score?: number;
+		metric_averages?: Record<string, number>;
+		timeline?: Array<{
+			turn_no?: number;
+			turn_score?: number;
+			metrics?: Record<string, number>;
+		}>;
+	};
+	behavior_patterns?: BehaviorPattern[];
+	portfolio_analysis?: {
+		initial_value?: number;
+		final_value?: number;
+		profit_loss?: number;
+		cumulative_return_pct?: number;
+		benchmark_asset_id?: string | null;
+		benchmark_return_pct?: number | null;
+		excess_return_pct?: number | null;
+		max_drawdown_pct?: number;
+		turnover_pct?: number;
+		average_cash_weight_pct?: number;
+		maximum_asset_weight_pct?: number;
+		concentration_hhi?: number;
+		valuation_point_count?: number;
+		sector_exposure?: Array<{
+			sector?: string;
+			market_value?: number;
+			weight_pct?: number;
+		}>;
+		asset_contributions?: Array<{
+			asset_id?: string;
+			name?: string;
+			total_pnl?: number;
+			weight_pct?: number;
+		}>;
+	};
+	feedback?: {
+		summary?: string;
+		strengths?: string[];
+		improvements?: string[];
+		next_actions?: string[];
+	};
+};
+
+type TransitionInfo = {
+	turnNo: number;
+	currentDate: string;
+	nextTurn: number;
+	nextDate?: string | null;
+};
+
+/* ============================================================================
+ * Design tokens / helpers
+ * ========================================================================== */
+
+const UI = {
+	bg: "#FBF8F1",
+	surface: "#FFFDF9",
+	panel: "#FFFFFF",
+	border: "#E9CCAA",
+	borderStrong: "#E4B986",
+	orange: "#FF6822",
+	orangeDark: "#E75616",
+	orangeSoft: "#FFF0E7",
+	text: "#151515",
+	subtle: "#66625E",
+	muted: "#8C8780",
+	blue: "#1F47FF",
+	red: "#F01822",
+	green: "#376C45",
+	shadow: "0 8px 24px rgba(74, 45, 18, 0.08)",
+};
+
+const krw = new Intl.NumberFormat("ko-KR");
+const integer = new Intl.NumberFormat("ko-KR");
+
+const metricLabels: Record<string, string> = {
+	M1: "핵심 요인 식별",
+	M2: "정보 해석",
+	M3: "위험 인식",
+	M4: "행동 근거 합리성",
+	M5: "논리 일관성",
+	PORTFOLIO: "포트폴리오 관리",
+};
+
+function numberValue(value: unknown, fallback = 0): number {
+	if (typeof value === "number" && Number.isFinite(value)) {
+		return value;
+	}
+
+	const parsed = Number(value);
+	return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function ScenarioMiniChart({
-	stock,
-	period,
-	onPeriodChange,
-}: {
-	stock: ScenarioStock;
-	period: ChartPeriod;
-	onPeriodChange: (period: ChartPeriod) => void;
-}) {
-	const candles = useMemo(() => buildCandles(stock, period), [stock, period]);
+function formatPrice(value?: number | null): string {
+	if (value == null || !Number.isFinite(Number(value))) return "-";
+	return krw.format(Number(value));
+}
 
-	const fallbackCandle: ScenarioCandle = {
-		label: "기준",
-		open: stock.price || 100000,
-		high: stock.price || 100000,
-		low: stock.price || 100000,
-		close: stock.price || 100000,
-		volume: stock.volume || 0,
-	};
+function formatWon(value?: number | null): string {
+	if (value == null || !Number.isFinite(Number(value))) return "-";
+	return `${krw.format(Math.round(Number(value)))}원`;
+}
 
-	const first = candles[0] ?? fallbackCandle;
-	const last = candles[candles.length - 1] ?? fallbackCandle;
+function formatSignedWon(value?: number | null): string {
+	if (value == null || !Number.isFinite(Number(value))) return "-";
+	const n = Math.round(Number(value));
+	if (n > 0) return `+${krw.format(n)}`;
+	return krw.format(n);
+}
 
-	const prices = candles.flatMap((candle) => [
-		candle.open,
-		candle.high,
-		candle.low,
-		candle.close,
-	]);
+function formatPct(value?: number | null, digits = 2): string {
+	if (value == null || !Number.isFinite(Number(value))) return "-";
+	const n = Number(value);
+	return `${n > 0 ? "+" : ""}${n.toFixed(digits)}%`;
+}
 
-	const minPrice = Math.min(...prices, fallbackCandle.close);
-	const maxPrice = Math.max(...prices, fallbackCandle.close);
-	const priceRange = maxPrice - minPrice || 1;
+function formatDate(value?: string | null): string {
+	if (!value) return "-";
+	const normalized = value.slice(0, 10);
+	const [year, month, day] = normalized.split("-");
+	if (!year || !month || !day) return value;
+	return `${year}.${month}.${day}`;
+}
 
-	const maxVolume = Math.max(
-		...candles.map((candle) => candle.volume),
-		1,
+function formatShortDate(value?: string | null): string {
+	if (!value) return "-";
+	const normalized = value.slice(0, 10);
+	const [, month, day] = normalized.split("-");
+	if (!month || !day) return normalized;
+	return `${month}.${day}`;
+}
+
+function daysBetween(from?: string | null, to?: string | null): number | null {
+	if (!from || !to) return null;
+
+	const start = new Date(`${from.slice(0, 10)}T00:00:00`);
+	const end = new Date(`${to.slice(0, 10)}T00:00:00`);
+
+	if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+		return null;
+	}
+
+	return Math.max(
+		0,
+		Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
 	);
+}
 
-	const chartWidth = 920;
-	const chartHeight = 330;
-	const priceTop = 24;
-	const priceBottom = 238;
-	const volumeTop = 258;
-	const volumeBottom = 326;
-
-	const candleGap = chartWidth / Math.max(candles.length, 1);
-	const candleWidth = Math.max(Math.min(candleGap * 0.58, 11), 3);
-
-	const yPrice = (price: number) => {
-		return (
-			priceBottom -
-			((price - minPrice) / priceRange) * (priceBottom - priceTop)
-		);
-	};
-
-	const periodReturn =
-		first.close > 0 ? ((last.close - first.close) / first.close) * 100 : 0;
-
-	const selectedPeriodLabel =
-		chartPeriodOptions.find((item) => item.key === period)?.label ?? "";
+function errorMessage(error: any, fallback: string): string {
+	const payload = error?.response?.data;
 
 	return (
-		<Box h="430px" bg="white" borderRadius="xl" borderWidth="1px" p="4">
-			<Flex mb="3" align="center">
-				<Box>
-					<Heading size="sm">가격 차트</Heading>
-					<Text fontSize="sm" color="gray.500">
-						시나리오용 과거 흐름 · {selectedPeriodLabel}
-					</Text>
-				</Box>
+		payload?.message ||
+		payload?.detail ||
+		payload?.error?.message ||
+		payload?.error ||
+		error?.message ||
+		fallback
+	);
+}
 
-				<Spacer />
+function difficultyLabel(value?: string): string {
+	if (!value) return "-";
+	if (value === "상" || value.toLowerCase() === "hard") return "상급";
+	if (value === "하" || value.toLowerCase() === "easy") return "초급";
+	if (value === "중" || value.toLowerCase() === "medium") return "중급";
+	return value;
+}
 
-				<HStack spacing="1">
-					{chartPeriodOptions.map((item) => (
-						<Button
-							key={item.key}
-							size="xs"
-							colorScheme={period === item.key ? "blue" : "gray"}
-							variant={period === item.key ? "solid" : "outline"}
-							onClick={() => onPeriodChange(item.key)}
-						>
-							{item.label}
-						</Button>
-					))}
-				</HStack>
-			</Flex>
+function currentHoldingQuantity(
+	portfolio: PortfolioState | undefined,
+	assetId: string,
+): number {
+	return (
+		portfolio?.positions?.find((item) => item.asset_id === assetId)?.quantity ??
+		0
+	);
+}
 
-			<Flex mb="2" align="center">
-				<Text fontSize="2xl" fontWeight="900">
-					{won.format(last.close)}
-				</Text>
-				<Text
-					ml="3"
-					fontWeight="900"
-					color={periodReturn >= 0 ? "red.500" : "blue.500"}
-				>
-					{periodReturn > 0 ? "+" : ""}
-					{periodReturn.toFixed(2)}%
-				</Text>
-			</Flex>
+function extractMetricRows(evaluation?: FinalEvaluation | null) {
+	const values = evaluation?.decision_evaluation?.metric_averages ?? {};
 
-			<Box overflowX="auto">
-				<svg
-					width="100%"
-					height="330"
-					viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-				>
-					<rect width={chartWidth} height={chartHeight} fill="#F8FAFC" />
+	return ["M1", "M2", "M3", "M4", "M5"].map((key) => ({
+		key,
+		label: metricLabels[key] ?? key,
+		score: numberValue(values[key], 0),
+	}));
+}
 
-					{[0, 1, 2, 3, 4].map((line) => {
-						const y = priceTop + line * ((priceBottom - priceTop) / 4);
+/* ============================================================================
+ * Data transformation for chart
+ * ========================================================================== */
 
-						return (
-							<line
-								key={`grid-${line}`}
-								x1="0"
-								x2={chartWidth}
-								y1={y}
-								y2={y}
-								stroke="#E2E8F0"
-								strokeWidth="1"
-							/>
-						);
-					})}
+function aggregateCandles(
+	candles: ChartCandle[],
+	groupSize: number,
+): ChartCandle[] {
+	if (groupSize <= 1) return candles;
 
-					{candles.map((candle, index) => {
-						const x = index * candleGap + candleGap / 2;
-						const openY = yPrice(candle.open);
-						const closeY = yPrice(candle.close);
-						const highY = yPrice(candle.high);
-						const lowY = yPrice(candle.low);
+	const groups: ChartCandle[] = [];
 
-						const isUp = candle.close >= candle.open;
-						const color = isUp ? "#E53E3E" : "#3182CE";
-						const bodyY = Math.min(openY, closeY);
-						const bodyHeight = Math.max(Math.abs(closeY - openY), 2);
+	for (let index = 0; index < candles.length; index += groupSize) {
+		const block = candles.slice(index, index + groupSize);
+		if (!block.length) continue;
 
-						const volumeHeight =
-							(candle.volume / maxVolume) * (volumeBottom - volumeTop);
-						const volumeY = volumeBottom - volumeHeight;
+		const first = block[0]!;
+		const last = block[block.length - 1]!;
 
-						return (
-							<g key={`${candle.label}-${index}`}>
-								<rect
-									x={x - candleWidth / 2}
-									y={volumeY}
-									width={candleWidth}
-									height={volumeHeight}
-									fill={color}
-									opacity="0.35"
-								/>
+		groups.push({
+			date: last.date,
+			open: first.open,
+			high: Math.max(...block.map((item) => item.high)),
+			low: Math.min(...block.map((item) => item.low)),
+			close: last.close,
+			volume: block.reduce((sum, item) => sum + numberValue(item.volume), 0),
+		});
+	}
 
-								<line
-									x1={x}
-									x2={x}
-									y1={highY}
-									y2={lowY}
-									stroke={color}
-									strokeWidth="1.5"
-								/>
+	return groups;
+}
 
-								<rect
-									x={x - candleWidth / 2}
-									y={bodyY}
-									width={candleWidth}
-									height={bodyHeight}
-									fill={color}
-									rx="1"
-								/>
-							</g>
-						);
-					})}
+function candlesForRange(
+	candles: ChartCandle[],
+	range: ChartRange,
+): ChartCandle[] {
+	const valid = candles.filter(
+		(item) =>
+			Number.isFinite(item.open) &&
+			Number.isFinite(item.high) &&
+			Number.isFinite(item.low) &&
+			Number.isFinite(item.close),
+	);
 
-					<line
-						x1="0"
-						x2={chartWidth}
-						y1={yPrice(last.close)}
-						y2={yPrice(last.close)}
-						stroke="#718096"
-						strokeDasharray="4 4"
-						strokeWidth="1"
-					/>
-				</svg>
-			</Box>
+	if (range === "DAY") {
+		return valid.slice(-72);
+	}
 
-			<Flex mt="2" fontSize="sm" color="gray.500">
-				<Text>고가 {won.format(maxPrice)}</Text>
-				<Spacer />
-				<Text>저가 {won.format(minPrice)}</Text>
-			</Flex>
+	if (range === "WEEK") {
+		return aggregateCandles(valid, 5).slice(-60);
+	}
+
+	if (range === "MONTH") {
+		return aggregateCandles(valid, 20).slice(-48);
+	}
+
+	const group = Math.max(1, Math.ceil(valid.length / 60));
+	return aggregateCandles(valid, group).slice(-60);
+}
+
+/* ============================================================================
+ * Small UI pieces
+ * ========================================================================== */
+
+function Panel({
+	children,
+	...props
+}: React.ComponentProps<typeof Box>) {
+	return (
+		<Box
+			bg={UI.panel}
+			border="1px solid"
+			borderColor={UI.border}
+			borderRadius="10px"
+			{...props}
+		>
+			{children}
 		</Box>
 	);
 }
 
+function TinyLabel({ children }: { children: React.ReactNode }) {
+	return (
+		<Text
+			fontSize="11px"
+			lineHeight="1.2"
+			color={UI.muted}
+			fontWeight="500"
+		>
+			{children}
+		</Text>
+	);
+}
 
+function PriceChange({
+	value,
+	prefixWon = false,
+}: {
+	value?: number | null;
+	prefixWon?: boolean;
+}) {
+	const n = numberValue(value);
+	const color = n > 0 ? UI.red : n < 0 ? UI.blue : UI.subtle;
 
-export default function ScenarioPlay() {
-	const { scenarioId } = useParams();
-	const navigate = useNavigate();
-	const toast = useToast();
+	return (
+		<Text color={color} fontWeight="800">
+			{prefixWon ? formatSignedWon(value) : formatPct(value)}
+		</Text>
+	);
+}
 
-	const [detail, setDetail] = useState<ScenarioDetail | null>(null);
-	const [currentStepIndex, setCurrentStepIndex] = useState(0);
-	const [selectedStockIndex, setSelectedStockIndex] = useState(0);
-    const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("1d");
+function EmptyData({
+	title,
+	description,
+}: {
+	title: string;
+	description: string;
+}) {
+	return (
+		<Flex
+			minH="280px"
+			direction="column"
+			align="center"
+			justify="center"
+			textAlign="center"
+			px="24px"
+			color={UI.subtle}
+		>
+			<FiInfo size={24} color={UI.orange} />
+			<Text mt="12px" fontSize="14px" fontWeight="800" color={UI.text}>
+				{title}
+			</Text>
+			<Text mt="7px" fontSize="12px" lineHeight="1.7" maxW="430px">
+				{description}
+			</Text>
+		</Flex>
+	);
+}
 
-	const [action, setAction] = useState<ScenarioAction>("HOLD");
-	const [quantity, setQuantity] = useState(0);
-	const [ratio, setRatio] = useState(0);
-	const [tags, setTags] = useState<string[]>([]);
-	const [reason, setReason] = useState("");
-	const [lastFeedback, setLastFeedback] = useState<any>(null);
+/* ============================================================================
+ * Candlestick chart
+ * ========================================================================== */
 
-	const [isLoading, setIsLoading] = useState(false);
-	const [isSubmitting, setIsSubmitting] = useState(false);
+function CandlestickChart({
+	candles,
+	range,
+	isLoading,
+}: {
+	candles: ChartCandle[];
+	range: ChartRange;
+	isLoading: boolean;
+}) {
+	const view = useMemo(() => candlesForRange(candles, range), [candles, range]);
 
-	const scenario = detail?.scenario;
-	const steps = scenario?.steps ?? [];
-	const currentStep = steps[currentStepIndex];
+	if (isLoading) {
+		return <Skeleton h="340px" borderRadius="6px" />;
+	}
 
-	const scenarioStocks = useMemo(() => {
-		if (!scenario || !currentStep) return [];
-		if (currentStep.marketStocks && currentStep.marketStocks.length > 0) {
-			return currentStep.marketStocks;
-		}
-
-		return buildScenarioStocks(scenario, currentStep);
-	}, [scenario, currentStep]);
-
-	const selectedStock =
-		scenarioStocks[selectedStockIndex] ?? currentStep?.stockInfo ?? null;
-
-	const currentDecision = useMemo(() => {
-		if (!currentStep || !detail) return null;
-
+	if (!view.length) {
 		return (
-			detail.decisions.find(
-				(decision) => decision.stepNumber === currentStep.stepNumber,
-			) ?? null
+			<EmptyData
+				title="가격 데이터가 없습니다."
+				description="해당 시점까지 적재된 과거 일봉 데이터가 없습니다. 시나리오 서버의 가격 적재 상태를 확인해주세요."
+			/>
 		);
-	}, [detail, currentStep]);
+	}
 
-	const loadScenario = async () => {
-		try {
-			setIsLoading(true);
+	const width = 920;
+	const height = 350;
+	const chartLeft = 18;
+	const chartRight = 815;
+	const priceTop = 20;
+	const priceBottom = 280;
+	const volumeTop = 292;
+	const volumeBottom = 332;
 
-			const res = await api.get(`/scenarios/${scenarioId}`);
-			const data = unwrapApiData<ScenarioDetail>(res.data);
+	const lows = view.map((item) => item.low);
+	const highs = view.map((item) => item.high);
+	const minRaw = Math.min(...lows);
+	const maxRaw = Math.max(...highs);
+	const padding = Math.max(1, (maxRaw - minRaw) * 0.08);
+	const minPrice = minRaw - padding;
+	const maxPrice = maxRaw + padding;
+	const priceRange = Math.max(1, maxPrice - minPrice);
+	const maxVolume = Math.max(1, ...view.map((item) => item.volume));
 
-			setDetail(data);
+	const xGap = (chartRight - chartLeft) / Math.max(view.length, 1);
+	const bodyWidth = Math.max(3, Math.min(10, xGap * 0.56));
 
-			const nextIndex = Math.min(
-				data.progress.completedStepCount,
-				Math.max(data.scenario.steps.length - 1, 0),
-			);
+	const y = (price: number) =>
+		priceBottom -
+		((price - minPrice) / priceRange) * (priceBottom - priceTop);
 
-			setCurrentStepIndex(nextIndex);
-		} catch (error) {
-			console.error(error);
+	const last = view[view.length - 1]!;
+	const lastY = y(last.close);
 
-			toast({
-				title: "시나리오 상세를 불러오지 못했습니다.",
-				status: "error",
-				isClosable: true,
-			});
-		} finally {
-			setIsLoading(false);
-		}
+	const priceGuides = Array.from({ length: 6 }).map((_, index) => {
+		const ratio = index / 5;
+		const price = maxPrice - priceRange * ratio;
+		return {
+			price,
+			y: priceTop + (priceBottom - priceTop) * ratio,
+		};
+	});
+
+	const tickIndexes = Array.from(
+		new Set([
+			0,
+			Math.floor((view.length - 1) * 0.25),
+			Math.floor((view.length - 1) * 0.5),
+			Math.floor((view.length - 1) * 0.75),
+			view.length - 1,
+		]),
+	);
+
+	return (
+		<Box w="100%" overflow="hidden">
+			<svg
+				width="100%"
+				height="350"
+				viewBox={`0 0 ${width} ${height}`}
+				preserveAspectRatio="none"
+			>
+				<rect x="0" y="0" width={width} height={height} fill="#FFFFFF" />
+
+				{priceGuides.map((guide, index) => (
+					<g key={`guide-${index}`}>
+						<line
+							x1={chartLeft}
+							x2={chartRight}
+							y1={guide.y}
+							y2={guide.y}
+							stroke="#EEE9E2"
+							strokeWidth="1"
+						/>
+						<text
+							x={chartRight + 12}
+							y={guide.y + 4}
+							fontSize="10"
+							fill="#7A756E"
+						>
+							{integer.format(Math.round(guide.price))}
+						</text>
+					</g>
+				))}
+
+				{view.map((item, index) => {
+					const x = chartLeft + xGap * index + xGap / 2;
+					const openY = y(item.open);
+					const closeY = y(item.close);
+					const highY = y(item.high);
+					const lowY = y(item.low);
+					const up = item.close >= item.open;
+					const color = up ? "#F36A21" : "#386B45";
+					const bodyY = Math.min(openY, closeY);
+					const bodyH = Math.max(2.4, Math.abs(closeY - openY));
+					const volumeH =
+						(numberValue(item.volume) / maxVolume) *
+						(volumeBottom - volumeTop);
+
+					return (
+						<g key={`${item.date}-${index}`}>
+							<rect
+								x={x - bodyWidth / 2}
+								y={volumeBottom - volumeH}
+								width={bodyWidth}
+								height={volumeH}
+								fill="#C9C9C9"
+								opacity="0.65"
+							/>
+							<line
+								x1={x}
+								x2={x}
+								y1={highY}
+								y2={lowY}
+								stroke={color}
+								strokeWidth="1.5"
+							/>
+							<rect
+								x={x - bodyWidth / 2}
+								y={bodyY}
+								width={bodyWidth}
+								height={bodyH}
+								fill={color}
+							/>
+						</g>
+					);
+				})}
+
+				<line
+					x1={chartLeft}
+					x2={chartRight}
+					y1={lastY}
+					y2={lastY}
+					stroke={UI.orange}
+					strokeDasharray="4 3"
+					strokeWidth="1"
+					opacity="0.75"
+				/>
+
+				<rect
+					x={chartRight + 3}
+					y={Math.max(priceTop, Math.min(priceBottom - 21, lastY - 10))}
+					width="76"
+					height="21"
+					rx="6"
+					fill={UI.orange}
+				/>
+				<text
+					x={chartRight + 41}
+					y={Math.max(priceTop + 14, Math.min(priceBottom - 7, lastY + 4))}
+					fontSize="10"
+					textAnchor="middle"
+					fill="#FFFFFF"
+					fontWeight="700"
+				>
+					{integer.format(Math.round(last.close))}
+				</text>
+
+				<line
+					x1={chartLeft}
+					x2={chartRight}
+					y1={volumeBottom}
+					y2={volumeBottom}
+					stroke="#8E8A84"
+					strokeWidth="1"
+				/>
+
+				{tickIndexes.map((index) => {
+					const item = view[index];
+					if (!item) return null;
+					const x = chartLeft + xGap * index + xGap / 2;
+
+					return (
+						<text
+							key={`date-${index}`}
+							x={x}
+							y={347}
+							fontSize="9"
+							textAnchor="middle"
+							fill="#7A756E"
+						>
+							{formatShortDate(item.date)}
+						</text>
+					);
+				})}
+			</svg>
+		</Box>
+	);
+}
+
+/* ============================================================================
+ * Chart panel with screenshot tabs
+ * ========================================================================== */
+
+function ChartPanel({
+	chart,
+	isLoading,
+	activeTab,
+	onTabChange,
+	range,
+	onRangeChange,
+}: {
+	chart: ChartResponse | null;
+	isLoading: boolean;
+	activeTab: DataTab;
+	onTabChange: (tab: DataTab) => void;
+	range: ChartRange;
+	onRangeChange: (range: ChartRange) => void;
+}) {
+	const tabs: Array<{ key: DataTab; label: string }> = [
+		{ key: "CHART", label: "가격 차트" },
+		{ key: "TRADES", label: "체결" },
+		{ key: "ORDERBOOK", label: "호가" },
+		{ key: "BROKERS", label: "거래원" },
+	];
+
+	const ranges: Array<{ key: ChartRange; label: string }> = [
+		{ key: "DAY", label: "일" },
+		{ key: "WEEK", label: "주" },
+		{ key: "MONTH", label: "월" },
+		{ key: "YEAR", label: "년" },
+	];
+
+	return (
+		<Panel overflow="hidden">
+			<HStack
+				h="42px"
+				px="14px"
+				spacing="32px"
+				borderBottom="1px solid"
+				borderColor={UI.border}
+			>
+				{tabs.map((tab) => (
+					<Button
+						key={tab.key}
+						size="sm"
+						variant="ghost"
+						h="42px"
+						px="0"
+						borderRadius="0"
+						color={activeTab === tab.key ? UI.text : UI.subtle}
+						fontWeight={activeTab === tab.key ? "800" : "500"}
+						borderBottom={
+							activeTab === tab.key ? `2px solid ${UI.orange}` : "2px solid transparent"
+						}
+						_hover={{ bg: "transparent", color: UI.orange }}
+						onClick={() => onTabChange(tab.key)}
+					>
+						{tab.label}
+					</Button>
+				))}
+			</HStack>
+
+			{activeTab === "CHART" ? (
+				<Box px="12px" pt="14px" pb="8px">
+					<Flex
+						justify="flex-end"
+						align="center"
+						gap="8px"
+						mb="4px"
+						pr={{ base: "0", md: "36px" }}
+					>
+						<Select
+							size="xs"
+							w="58px"
+							border="0"
+							fontSize="11px"
+							value="1D"
+							onChange={() => undefined}
+							icon={<FiChevronDown />}
+						>
+							<option value="1D">1일</option>
+						</Select>
+
+						{ranges.map((item) => (
+							<Button
+								key={item.key}
+								size="xs"
+								minW="28px"
+								h="25px"
+								px="6px"
+								bg={range === item.key ? "#E6E3DF" : "transparent"}
+								color={range === item.key ? UI.text : UI.subtle}
+								_hover={{ bg: "#EFECE7" }}
+								onClick={() => onRangeChange(item.key)}
+							>
+								{item.label}
+							</Button>
+						))}
+					</Flex>
+
+					<CandlestickChart
+						candles={chart?.candles ?? []}
+						range={range}
+						isLoading={isLoading}
+					/>
+				</Box>
+			) : (
+				<EmptyData
+					title={
+						activeTab === "TRADES"
+							? "과거 체결 데이터 미지원"
+							: activeTab === "ORDERBOOK"
+								? "과거 호가 데이터 미지원"
+								: "과거 거래원 데이터 미지원"
+					}
+					description="현재 시나리오 서버는 실제 과거 일봉과 주문 체결 기능을 제공하지만 과거 호가·개별 체결·거래원 스냅샷은 포함하지 않습니다. 임의 데이터를 생성하지 않고 지원 가능한 데이터만 표시합니다."
+				/>
+			)}
+		</Panel>
+	);
+}
+
+/* ============================================================================
+ * Asset list / portfolio list
+ * ========================================================================== */
+
+function AssetList({
+	assets,
+	selectedAssetId,
+	onSelect,
+	search,
+	onSearchChange,
+	hasPositions,
+}: {
+	assets: AssetSummary[];
+	selectedAssetId: string;
+	onSelect: (assetId: string) => void;
+	search: string;
+	onSearchChange: (value: string) => void;
+	hasPositions: boolean;
+}) {
+	const filtered = useMemo(() => {
+		const keyword = search.trim().toLowerCase();
+
+		if (!keyword) return assets;
+
+		return assets.filter(
+			(item) =>
+				item.name.toLowerCase().includes(keyword) ||
+				item.asset_id.toLowerCase().includes(keyword),
+		);
+	}, [assets, search]);
+
+	return (
+		<Panel overflow="hidden">
+			<Box px="15px" pt="15px" pb="10px">
+				<Heading fontSize="15px" letterSpacing="-0.02em">
+					매매 가능 종목 ({assets.length})
+				</Heading>
+				<InputGroup size="sm" mt="11px">
+					<InputLeftElement pointerEvents="none">
+						<FiSearch color={UI.muted} />
+					</InputLeftElement>
+					<Input
+						value={search}
+						onChange={(event) => onSearchChange(event.target.value)}
+						placeholder="종목명 검색"
+						borderColor={UI.border}
+						borderRadius="8px"
+						_focusVisible={{
+							borderColor: UI.orange,
+							boxShadow: `0 0 0 1px ${UI.orange}`,
+						}}
+					/>
+				</InputGroup>
+			</Box>
+
+			<Grid
+				templateColumns="30px minmax(78px,1fr) 68px 58px"
+				px="10px"
+				py="7px"
+				fontSize="9px"
+				color={UI.muted}
+				borderBottom="1px solid"
+				borderColor={UI.border}
+			>
+				<Text textAlign="center">순위</Text>
+				<Text>종목명</Text>
+				<Text textAlign="right">현재가</Text>
+				<Text textAlign="right">등락률</Text>
+			</Grid>
+
+			<Box
+				maxH={hasPositions ? "372px" : "590px"}
+				overflowY="auto"
+				sx={{
+					"&::-webkit-scrollbar": { width: "6px" },
+					"&::-webkit-scrollbar-thumb": {
+						background: "#D7CEC5",
+						borderRadius: "20px",
+					},
+				}}
+			>
+				{filtered.map((asset, index) => {
+					const selected = selectedAssetId === asset.asset_id;
+					const change = numberValue(asset.change_pct);
+
+					return (
+						<Grid
+							key={asset.asset_id}
+							templateColumns="30px minmax(78px,1fr) 68px 58px"
+							alignItems="center"
+							px="10px"
+							minH="34px"
+							fontSize="10px"
+							cursor="pointer"
+							bg={selected ? "#FFF8F3" : "#FFFFFF"}
+							borderBottom="1px solid #F2ECE5"
+							boxShadow={
+								selected ? `inset 0 0 0 1px ${UI.orange}` : "none"
+							}
+							_hover={{ bg: "#FFF8F3" }}
+							onClick={() => onSelect(asset.asset_id)}
+						>
+							<Text textAlign="center" color={UI.subtle}>
+								{index + 1}
+							</Text>
+							<Text fontWeight={selected ? "800" : "600"} noOfLines={1}>
+								{asset.name}
+							</Text>
+							<Text textAlign="right" fontWeight="600">
+								{formatPrice(asset.current_price)}
+							</Text>
+							<Text
+								textAlign="right"
+								fontWeight="800"
+								color={change > 0 ? UI.red : change < 0 ? UI.blue : UI.subtle}
+							>
+								{formatPct(asset.change_pct)}
+							</Text>
+						</Grid>
+					);
+				})}
+
+				{filtered.length === 0 && (
+					<Flex minH="120px" align="center" justify="center">
+						<Text fontSize="12px" color={UI.muted}>
+							검색 결과가 없습니다.
+						</Text>
+					</Flex>
+				)}
+			</Box>
+		</Panel>
+	);
+}
+
+function HoldingsPanel({ portfolio }: { portfolio: PortfolioState }) {
+	const positions = portfolio.positions ?? [];
+
+	if (!positions.length) return null;
+
+	return (
+		<Panel
+			mt="12px"
+			px="10px"
+			py="12px"
+			overflow="hidden"
+			minW="0"
+			maxW="100%"
+		>
+			<Heading fontSize="13px" whiteSpace="nowrap">
+				내 보유 종목{" "}
+				<Text as="span" fontSize="9px" color={UI.subtle} fontWeight="500">
+					(현재 포트폴리오)
+				</Text>
+			</Heading>
+
+			<Grid
+				mt="12px"
+				templateColumns="minmax(0,1fr) 26px 46px 46px 42px"
+				fontSize="8px"
+				color={UI.muted}
+				columnGap="2px"
+				alignItems="center"
+				w="100%"
+				minW="0"
+			>
+				<Text minW="0" noOfLines={1}>종목명</Text>
+				<Text textAlign="right">수량</Text>
+				<Text textAlign="right">평균가</Text>
+				<Text textAlign="right">현재가</Text>
+				<Text textAlign="right">손익</Text>
+			</Grid>
+
+			<Box
+				mt="7px"
+				maxH="150px"
+				overflowY="auto"
+				overflowX="hidden"
+				pr="2px"
+				sx={{
+					"&::-webkit-scrollbar": { width: "4px" },
+					"&::-webkit-scrollbar-thumb": {
+						background: "#D7CEC5",
+						borderRadius: "20px",
+					},
+				}}
+			>
+				<Stack spacing="7px">
+					{positions.map((position) => {
+						const pnl = numberValue(position.unrealized_pnl);
+
+						return (
+							<Grid
+								key={position.asset_id}
+								templateColumns="minmax(0,1fr) 26px 46px 46px 42px"
+								fontSize="8px"
+								columnGap="2px"
+								alignItems="center"
+								w="100%"
+								minW="0"
+							>
+								<Text
+									fontWeight="700"
+									minW="0"
+									noOfLines={1}
+									title={position.name}
+								>
+									{position.name}
+								</Text>
+
+								<Text
+									textAlign="right"
+									whiteSpace="nowrap"
+									overflow="hidden"
+								>
+									{position.quantity}주
+								</Text>
+
+								<Text
+									textAlign="right"
+									whiteSpace="nowrap"
+									overflow="hidden"
+									title={formatPrice(position.avg_price)}
+								>
+									{formatPrice(position.avg_price)}
+								</Text>
+
+								<Text
+									textAlign="right"
+									whiteSpace="nowrap"
+									overflow="hidden"
+									title={formatPrice(position.current_price)}
+								>
+									{formatPrice(position.current_price)}
+								</Text>
+
+								<Text
+									textAlign="right"
+									fontWeight="800"
+									whiteSpace="nowrap"
+									overflow="hidden"
+									color={pnl > 0 ? UI.red : pnl < 0 ? UI.blue : UI.subtle}
+									title={formatSignedWon(pnl)}
+								>
+									{formatSignedWon(pnl)}
+								</Text>
+							</Grid>
+						);
+					})}
+				</Stack>
+			</Box>
+		</Panel>
+	);
+}
+
+/* ============================================================================
+ * Market / news cards
+ * ========================================================================== */
+
+function MarketInfoPanel({
+	market,
+	turn,
+}: {
+	market?: MarketState | null;
+	turn?: TurnMeta;
+}) {
+	const metrics = [
+		...(market?.indices ?? []),
+		...(market?.indicators ?? []),
+	].slice(0, 4);
+
+	return (
+		<Panel minH="228px" px="14px" py="14px">
+			<Heading fontSize="14px">시장 정보</Heading>
+			<Text mt="5px" fontSize="10px" color={UI.muted}>
+				거래소의 호가창 대신 당시 시장 맥락을 제공합니다.
+			</Text>
+
+			<Stack mt="15px" spacing="11px">
+				{turn?.phase && (
+					<Flex justify="space-between" gap="14px">
+						<Text fontSize="10px" color={UI.muted}>
+							시장 국면
+						</Text>
+						<Text fontSize="10px" fontWeight="800" textAlign="right">
+							{turn.phase}
+						</Text>
+					</Flex>
+				)}
+
+				{market?.sentiment && (
+					<Flex justify="space-between" gap="14px">
+						<Text fontSize="10px" color={UI.muted}>
+							시장 심리
+						</Text>
+						<Text fontSize="10px" fontWeight="800" textAlign="right">
+							{market.sentiment}
+							{market.sentiment_score != null
+								? ` · ${market.sentiment_score}/100`
+								: ""}
+						</Text>
+					</Flex>
+				)}
+
+				{market?.sector_state && (
+					<Flex justify="space-between" gap="14px">
+						<Text fontSize="10px" color={UI.muted}>
+							섹터 상태
+						</Text>
+						<Text fontSize="10px" fontWeight="800" textAlign="right">
+							{market.sector_state}
+						</Text>
+					</Flex>
+				)}
+
+				{metrics.map((metric, index) => (
+					<Flex key={`${metric.code ?? metric.name}-${index}`} justify="space-between">
+						<Text fontSize="10px" color={UI.muted}>
+							{metric.name ?? metric.code ?? "지표"}
+						</Text>
+						<Text fontSize="10px" fontWeight="800">
+							{metric.value ?? "-"} {metric.unit ?? ""}
+							{metric.change_pct != null
+								? ` (${formatPct(metric.change_pct)})`
+								: ""}
+						</Text>
+					</Flex>
+				))}
+
+				{(market?.risk_factors?.length ?? 0) > 0 && (
+					<Box pt="9px" borderTop="1px solid #EFE8E0">
+						<Text fontSize="10px" fontWeight="800">
+							주의할 위험
+						</Text>
+						{market!.risk_factors!.slice(0, 3).map((risk) => (
+							<Flex key={risk} gap="7px" mt="6px" align="flex-start">
+								<Box
+									mt="5px"
+									w="4px"
+									h="4px"
+									borderRadius="full"
+									bg={UI.orange}
+									flexShrink={0}
+								/>
+								<Text fontSize="10px" lineHeight="1.45" color={UI.subtle}>
+									{risk}
+								</Text>
+							</Flex>
+						))}
+					</Box>
+				)}
+			</Stack>
+		</Panel>
+	);
+}
+
+function NewsPanel({ news }: { news: NewsItem[] }) {
+	return (
+		<Panel minH="228px" px="14px" py="14px">
+			<Heading fontSize="14px">뉴스 및 이벤트</Heading>
+			<Text mt="5px" fontSize="10px" color={UI.muted}>
+				판단 시점에 제공되는 핵심 정보를 제공합니다.
+			</Text>
+
+			<Box
+				mt="11px"
+				maxH="174px"
+				overflowY="auto"
+				pr="4px"
+				sx={{
+					"&::-webkit-scrollbar": { width: "5px" },
+					"&::-webkit-scrollbar-thumb": {
+						background: "#D7CEC5",
+						borderRadius: "20px",
+					},
+				}}
+			>
+				{news.length ? (
+					<Stack spacing="9px">
+						{news.map((item) => (
+							<Box
+								key={item.news_id}
+								pb="9px"
+								borderBottom="1px solid #EFE8E0"
+							>
+								<Flex align="center" gap="8px">
+									<Text
+										fontSize="9px"
+										fontWeight="800"
+										color={UI.orange}
+										noOfLines={1}
+									>
+										{item.source_name ?? "뉴스"}
+									</Text>
+									<Text fontSize="9px" color={UI.muted}>
+										{formatDate(item.published_at)}
+									</Text>
+								</Flex>
+								<Text mt="4px" fontSize="11px" fontWeight="800" noOfLines={2}>
+									{item.title}
+								</Text>
+								{item.summary && (
+									<Text
+										mt="3px"
+										fontSize="9px"
+										lineHeight="1.45"
+										color={UI.subtle}
+										noOfLines={2}
+									>
+										{item.summary}
+									</Text>
+								)}
+							</Box>
+						))}
+					</Stack>
+				) : (
+					<Flex minH="130px" align="center" justify="center">
+						<Text fontSize="11px" color={UI.muted}>
+							현재 턴에 제공되는 뉴스가 없습니다.
+						</Text>
+					</Flex>
+				)}
+			</Box>
+		</Panel>
+	);
+}
+
+/* ============================================================================
+ * Order card
+ * ========================================================================== */
+
+function OrderPanel({
+	asset,
+	portfolio,
+	side,
+	onSideChange,
+	quantity,
+	onQuantityChange,
+	onOrder,
+	isOrdering,
+}: {
+	asset: AssetSummary | null;
+	portfolio?: PortfolioState;
+	side: OrderSide;
+	onSideChange: (side: OrderSide) => void;
+	quantity: number;
+	onQuantityChange: (quantity: number) => void;
+	onOrder: () => void;
+	isOrdering: boolean;
+}) {
+	const price = numberValue(asset?.current_price);
+	const holdingQty = asset
+		? currentHoldingQuantity(portfolio, asset.asset_id)
+		: 0;
+
+	const maxQuantity =
+		side === "BUY"
+			? price > 0
+				? Math.max(0, Math.floor(numberValue(portfolio?.cash) / price))
+				: 0
+			: holdingQty;
+
+	const expectedAmount = price * Math.max(0, quantity);
+
+	const quickSet = (value: number | "MAX") => {
+		const next = value === "MAX" ? maxQuantity : value;
+		onQuantityChange(Math.max(0, Math.min(next, maxQuantity || next)));
 	};
 
-	const syncFormFromDecision = () => {
-		if (!currentDecision) {
-			setAction("HOLD");
-			setQuantity(0);
-			setRatio(0);
-			setTags([]);
-			setReason("");
-			setLastFeedback(null);
-			return;
-		}
+	return (
+		<Panel px="14px" py="14px">
+			<Heading fontSize="15px">주문</Heading>
+			<Text mt="4px" fontSize="10px" color={UI.muted}>
+				거래할 종목을 선택하고 주문을 입력
+			</Text>
 
-		setAction(currentDecision.action);
-		setQuantity(currentDecision.quantity ?? 0);
-		setRatio(currentDecision.ratio ?? 0);
-		setTags(currentDecision.tags ?? []);
-		setReason(currentDecision.reason ?? "");
-		setLastFeedback({
-			reference: {
-				referenceDecision: currentStep?.referenceDecision,
-				referenceReason: currentStep?.referenceReason,
-				expectedFeedback: scenario?.expectedFeedback,
-				aiEvaluationPoints: scenario?.aiEvaluationPoints,
+			<Panel mt="14px" px="12px" py="13px" bg={UI.surface}>
+				{asset ? (
+					<>
+						<Flex align="baseline" gap="7px">
+							<Text fontSize="12px" fontWeight="800">
+								{asset.name}
+							</Text>
+							<Text fontSize="10px" color={UI.subtle}>
+								{asset.asset_id}
+							</Text>
+						</Flex>
+
+						<Flex mt="7px" align="center" gap="12px">
+							<Text fontSize="17px" fontWeight="900">
+								{formatPrice(asset.current_price)}
+							</Text>
+							<PriceChange value={asset.change_pct} />
+						</Flex>
+
+						<Text mt="8px" fontSize="9px" color={UI.subtle}>
+							{asset.industry_label || asset.market || "종목 정보"}
+						</Text>
+					</>
+				) : (
+					<Text fontSize="11px" color={UI.muted}>
+						종목을 선택하세요.
+					</Text>
+				)}
+			</Panel>
+
+			<SimpleGrid mt="14px" columns={2} spacing="7px">
+				<Button
+					h="36px"
+					fontSize="11px"
+					border="1px solid"
+					borderColor={side === "BUY" ? UI.orange : UI.border}
+					bg={side === "BUY" ? "#FFF7F2" : "#FFFFFF"}
+					color={side === "BUY" ? UI.orange : UI.text}
+					_hover={{ bg: "#FFF2EA" }}
+					onClick={() => onSideChange("BUY")}
+				>
+					매수
+				</Button>
+				<Button
+					h="36px"
+					fontSize="11px"
+					border="1px solid"
+					borderColor={side === "SELL" ? UI.orange : UI.border}
+					bg={side === "SELL" ? "#FFF7F2" : "#FFFFFF"}
+					color={side === "SELL" ? UI.orange : UI.text}
+					_hover={{ bg: "#FFF2EA" }}
+					onClick={() => onSideChange("SELL")}
+				>
+					매도
+				</Button>
+			</SimpleGrid>
+
+			<Text mt="19px" fontSize="11px" color={UI.subtle}>
+				주문 수량
+			</Text>
+
+			<Flex
+				mt="8px"
+				h="34px"
+				align="center"
+				justify="center"
+				border="1px solid"
+				borderColor={UI.border}
+				borderRadius="8px"
+				overflow="hidden"
+			>
+				<Input
+					type="number"
+					min={1}
+					value={quantity || ""}
+					onChange={(event) =>
+						onQuantityChange(
+							Math.max(0, Math.floor(numberValue(event.target.value))),
+						)
+					}
+					placeholder="0"
+					textAlign="center"
+					fontWeight="800"
+					fontSize="11px"
+					border="0"
+					_focusVisible={{ boxShadow: "none" }}
+				/>
+				<Text pr="12px" fontSize="10px" fontWeight="800">
+					주
+				</Text>
+			</Flex>
+
+			<SimpleGrid mt="7px" columns={4} spacing="7px">
+				{[
+					{ label: "10주", value: 10 },
+					{ label: "50주", value: 50 },
+					{ label: "100주", value: 100 },
+					{ label: "최대", value: "MAX" as const },
+				].map((item) => (
+					<Button
+						key={item.label}
+						size="xs"
+						h="31px"
+						fontSize="9px"
+						variant="outline"
+						borderColor={UI.border}
+						color={UI.subtle}
+						_hover={{ borderColor: UI.orange, color: UI.orange }}
+						onClick={() => quickSet(item.value)}
+					>
+						{item.label}
+					</Button>
+				))}
+			</SimpleGrid>
+
+			<Flex mt="23px" justify="space-between" align="center">
+				<Text fontSize="11px" color={UI.subtle}>
+					예상 금액
+				</Text>
+				<Text fontSize="15px" fontWeight="900">
+					{formatWon(expectedAmount)}
+				</Text>
+			</Flex>
+
+			<Text mt="8px" fontSize="9px" color={UI.muted} textAlign="right">
+				{side === "BUY"
+					? `주문 가능 ${integer.format(maxQuantity)}주 · 보유 현금 ${formatWon(
+							portfolio?.cash,
+						)}`
+					: `매도 가능 ${integer.format(holdingQty)}주`}
+			</Text>
+
+			<Button
+				mt="48px"
+				w="100%"
+				h="42px"
+				bg={UI.orange}
+				color="white"
+				fontSize="13px"
+				fontWeight="800"
+				_hover={{ bg: UI.orangeDark }}
+				isLoading={isOrdering}
+				loadingText="주문 처리 중"
+				isDisabled={
+					!asset ||
+					!asset.data_available ||
+					quantity <= 0 ||
+					quantity > maxQuantity
+				}
+				onClick={onOrder}
+			>
+				주문하기
+			</Button>
+
+			<Panel mt="42px" px="11px" py="11px" bg={UI.surface}>
+				<Flex gap="8px" align="flex-start">
+					<Box mt="2px" color={UI.orange}>
+						<FiCheckCircle size={14} />
+					</Box>
+					<Text fontSize="9px" lineHeight="1.6" color={UI.subtle}>
+						주문 확정 후 변경할 수 없으며,
+						<br />
+						다음 단계에서 근거 입력이 진행됩니다.
+					</Text>
+				</Flex>
+			</Panel>
+		</Panel>
+	);
+}
+
+/* ============================================================================
+ * Scenario mini info card
+ * ========================================================================== */
+
+function ScenarioMiniInfo({
+	progress,
+}: {
+	progress?: ScenarioProgress;
+}) {
+	const current = progress?.current_turn ?? 0;
+	const total = progress?.total_turns ?? 0;
+	const remaining = Math.max(0, total - current);
+	const delta = daysBetween(progress?.market_date, progress?.next_market_date);
+
+	return (
+		<Panel px="14px" py="14px">
+			<Heading fontSize="14px">시나리오 정보</Heading>
+
+			<Stack mt="15px" spacing="12px">
+				<Flex justify="space-between" gap="12px">
+					<Text fontSize="10px" color={UI.subtle}>
+						현재 시점
+					</Text>
+					<Text fontSize="10px">{formatDate(progress?.market_date)}</Text>
+				</Flex>
+
+				<Flex justify="space-between" gap="12px">
+					<Text fontSize="10px" color={UI.subtle}>
+						다음 시점
+					</Text>
+					<Text fontSize="10px" textAlign="right">
+						{progress?.next_market_date
+							? `${formatDate(progress.next_market_date)}${
+									delta != null ? ` (약 ${delta}일 후)` : ""
+								}`
+							: "최종 평가"}
+					</Text>
+				</Flex>
+
+				<Flex justify="space-between" gap="12px">
+					<Text fontSize="10px" color={UI.subtle}>
+						남은 TURN
+					</Text>
+					<Text fontSize="10px">
+						{remaining} / {total}
+					</Text>
+				</Flex>
+			</Stack>
+		</Panel>
+	);
+}
+
+/* ============================================================================
+ * Modals
+ * ========================================================================== */
+
+function OrderSuccessModal({
+	isOpen,
+	onClose,
+	order,
+	assetName,
+}: {
+	isOpen: boolean;
+	onClose: () => void;
+	order: OrderRecord | null;
+	assetName: string;
+}) {
+	if (!order) return null;
+
+	const buy = order.side === "BUY";
+
+	return (
+		<Modal isOpen={isOpen} onClose={onClose} isCentered size="sm">
+			<ModalOverlay bg="rgba(35, 31, 27, 0.42)" />
+			<ModalContent
+				bg={UI.surface}
+				borderRadius="10px"
+				boxShadow="0 18px 48px rgba(0,0,0,0.18)"
+				overflow="hidden"
+			>
+				<ModalCloseButton top="12px" right="12px" />
+				<ModalBody px="24px" pt="22px" pb="0">
+					<Flex justify="center">
+						<Flex
+							w="36px"
+							h="36px"
+							borderRadius="full"
+							border="2px solid"
+							borderColor={UI.orange}
+							align="center"
+							justify="center"
+							color={UI.orange}
+						>
+							<FiCheck size={19} />
+						</Flex>
+					</Flex>
+
+					<Heading
+						mt="18px"
+						fontSize="18px"
+						textAlign="center"
+						letterSpacing="-0.03em"
+					>
+						{buy ? "매수" : "매도"} 주문이 접수되었습니다!
+					</Heading>
+
+					<Panel mt="16px" px="16px" py="13px" bg="#FFFCF8">
+						<Stack spacing="7px">
+							<Flex justify="space-between">
+								<Text fontSize="10px" color={UI.subtle}>
+									종목명
+								</Text>
+								<Text fontSize="10px" fontWeight="800">
+									{assetName} ({order.asset_id})
+								</Text>
+							</Flex>
+							<Flex justify="space-between">
+								<Text fontSize="10px" color={UI.subtle}>
+									주문 구분
+								</Text>
+								<Text fontSize="10px" fontWeight="800">
+									{buy ? "매수" : "매도"}
+								</Text>
+							</Flex>
+							<Flex justify="space-between">
+								<Text fontSize="10px" color={UI.subtle}>
+									주문 수량
+								</Text>
+								<Text fontSize="10px" fontWeight="800">
+									{order.quantity}주
+								</Text>
+							</Flex>
+							<Flex justify="space-between">
+								<Text fontSize="10px" color={UI.subtle}>
+									체결 가격
+								</Text>
+								<Text fontSize="10px" fontWeight="800">
+									{formatWon(order.execution_price)}
+								</Text>
+							</Flex>
+							<Flex justify="space-between">
+								<Text fontSize="10px" color={UI.subtle}>
+									주문 금액
+								</Text>
+								<Text fontSize="10px" fontWeight="900">
+									{formatWon(order.amount)}
+								</Text>
+							</Flex>
+						</Stack>
+					</Panel>
+				</ModalBody>
+
+				<ModalFooter px="24px" pt="16px" pb="18px">
+					<Button
+						w="100%"
+						h="41px"
+						bg={UI.orange}
+						color="white"
+						fontWeight="800"
+						_hover={{ bg: UI.orangeDark }}
+						onClick={onClose}
+					>
+						확인
+					</Button>
+				</ModalFooter>
+			</ModalContent>
+		</Modal>
+	);
+}
+
+function ScenarioInfoModal({
+	isOpen,
+	onClose,
+	scenario,
+	progress,
+	portfolio,
+}: {
+	isOpen: boolean;
+	onClose: () => void;
+	scenario?: ScenarioMeta;
+	progress?: ScenarioProgress;
+	portfolio?: PortfolioState;
+}) {
+	const initialValue =
+		numberValue(portfolio?.total_value) - numberValue(portfolio?.profit_loss);
+
+	return (
+		<Modal isOpen={isOpen} onClose={onClose} isCentered size="lg">
+			<ModalOverlay bg="rgba(35, 31, 27, 0.42)" />
+			<ModalContent
+				bg={UI.surface}
+				borderRadius="10px"
+				maxW="520px"
+				maxH="92vh"
+				overflowY="auto"
+				boxShadow="0 18px 48px rgba(0,0,0,0.18)"
+			>
+				<ModalCloseButton top="13px" right="13px" />
+
+				<ModalBody px="24px" pt="24px" pb="0">
+					<Text
+						display="inline-block"
+						fontSize="9px"
+						fontWeight="800"
+						color={UI.orange}
+						bg={UI.orangeSoft}
+						px="8px"
+						py="4px"
+						borderRadius="6px"
+					>
+						선택한 시나리오
+					</Text>
+
+					<Heading mt="17px" fontSize="24px" letterSpacing="-0.04em">
+						{scenario?.title ?? "시나리오"}
+					</Heading>
+
+					<Text mt="15px" fontSize="12px" lineHeight="1.75" color={UI.subtle}>
+						{scenario?.description ??
+							"과거 시장의 실제 데이터와 이벤트를 바탕으로 투자 판단을 진행합니다."}
+					</Text>
+
+					<Panel mt="22px" px="15px" py="15px" bg="#FFFCF8">
+						<SimpleGrid columns={{ base: 1, md: 2 }} spacing="0">
+							<Box pr={{ base: 0, md: "20px" }}>
+								<Heading fontSize="13px">시나리오 개요</Heading>
+								<Text mt="11px" fontSize="10px" lineHeight="1.75" color={UI.subtle}>
+									{scenario?.description}
+								</Text>
+							</Box>
+
+							<Box
+								mt={{ base: "14px", md: 0 }}
+								pl={{ base: 0, md: "20px" }}
+								borderLeft={{ base: "0", md: "1px solid #EAD9C7" }}
+							>
+								<Stack spacing="13px">
+									<Flex justify="space-between" gap="15px">
+										<Text fontSize="9px" color={UI.muted}>
+											현재 날짜
+										</Text>
+										<Text fontSize="9px">{formatDate(progress?.market_date)}</Text>
+									</Flex>
+									<Flex justify="space-between" gap="15px">
+										<Text fontSize="9px" color={UI.muted}>
+											최종 평가일
+										</Text>
+										<Text fontSize="9px">
+											{formatDate(progress?.final_valuation_date)}
+										</Text>
+									</Flex>
+									<Flex justify="space-between" gap="15px">
+										<Text fontSize="9px" color={UI.muted}>
+											총 TURN
+										</Text>
+										<Text fontSize="9px">
+											{progress?.total_turns ?? "-"} TURN
+										</Text>
+									</Flex>
+									<Flex justify="space-between" gap="15px">
+										<Text fontSize="9px" color={UI.muted}>
+											초기 자산
+										</Text>
+										<Text fontSize="9px" color={UI.orange} fontWeight="800">
+											{initialValue > 0 ? formatWon(initialValue) : "-"}
+										</Text>
+									</Flex>
+									<Flex justify="space-between" gap="15px">
+										<Text fontSize="9px" color={UI.muted}>
+											난이도
+										</Text>
+										<Text fontSize="9px">{difficultyLabel(scenario?.difficulty)}</Text>
+									</Flex>
+								</Stack>
+							</Box>
+						</SimpleGrid>
+					</Panel>
+
+					<Panel mt="13px" px="15px" py="14px" bg="#FFFCF8">
+						<Heading fontSize="13px">시나리오 진행 방식</Heading>
+
+						<Stack mt="12px" spacing="12px">
+							{[
+								["1. 투자 판단", "제공된 시장 정보를 바탕으로 매수·매도·관망을 결정합니다."],
+								["2. 근거 입력", "현재 TURN의 질문에 답하고 판단 근거를 입력합니다."],
+								["3. AI 분석 및 결과", "서버 채점 결과를 누적해 최종 판단 리포트를 생성합니다."],
+								[
+									"4. 시간 이동",
+									"TURN 종료 후 다음 실제 과거 시점으로 이동하며, 보유 종목은 그대로 유지됩니다.",
+								],
+							].map(([title, body]) => (
+								<Box key={title}>
+									<Text fontSize="10px" fontWeight="800">
+										{title}
+									</Text>
+									<Text mt="3px" pl="10px" fontSize="9px" color={UI.subtle}>
+										{body}
+									</Text>
+								</Box>
+							))}
+						</Stack>
+					</Panel>
+
+					<Panel mt="13px" px="15px" py="13px" bg="#FFFCF8">
+						<Heading fontSize="12px">주의사항</Heading>
+						<Stack mt="8px" spacing="5px">
+							<Text fontSize="9px" color={UI.subtle}>
+								• 각 판단은 이전 턴의 결과에 영향을 받습니다.
+							</Text>
+							<Text fontSize="9px" color={UI.subtle}>
+								• 주문 확정 후에는 변경할 수 없으며, 다음 단계에서 근거 입력이 진행됩니다.
+							</Text>
+							<Text fontSize="9px" color={UI.subtle}>
+								• 실제 과거 시장 데이터를 기반으로 재구성된 학습용 시나리오입니다.
+							</Text>
+						</Stack>
+					</Panel>
+				</ModalBody>
+
+				<ModalFooter px="24px" pt="16px" pb="20px">
+					<Button
+						w="100%"
+						h="42px"
+						bg={UI.orange}
+						color="white"
+						fontSize="14px"
+						fontWeight="800"
+						_hover={{ bg: UI.orangeDark }}
+						onClick={onClose}
+					>
+						시나리오 계속하기
+					</Button>
+				</ModalFooter>
+			</ModalContent>
+		</Modal>
+	);
+}
+
+function TurnDecisionModal({
+	isOpen,
+	onClose,
+	questions,
+	answers,
+	onAnswersChange,
+	onSubmit,
+	isSubmitting,
+	progress,
+	recentOrder,
+	recentOrderAssetName,
+}: {
+	isOpen: boolean;
+	onClose: () => void;
+	questions: QuestionItem[];
+	answers: Record<string, AnswerValue>;
+	onAnswersChange: (answers: Record<string, AnswerValue>) => void;
+	onSubmit: () => void;
+	isSubmitting: boolean;
+	progress?: ScenarioProgress;
+	recentOrder?: OrderRecord | null;
+	recentOrderAssetName?: string;
+}) {
+	const updateText = (questionId: string, value: string) => {
+		onAnswersChange({
+			...answers,
+			[questionId]: {
+				selected: answers[questionId]?.selected ?? [],
+				text: value,
 			},
 		});
 	};
 
-	useEffect(() => {
-		loadScenario();
-	}, [scenarioId]);
-
-	useEffect(() => {
-		syncFormFromDecision();
-		setSelectedStockIndex(0);
-	}, [currentStepIndex, detail]);
-
-	const toggleTag = (tag: string) => {
-		setTags((prev) => {
-			if (prev.includes(tag)) {
-				return prev.filter((item) => item !== tag);
-			}
-
-			return [...prev, tag];
+	const selectSingle = (questionId: string, value: string) => {
+		onAnswersChange({
+			...answers,
+			[questionId]: {
+				selected: [value],
+				text: answers[questionId]?.text ?? "",
+			},
 		});
 	};
 
-	const submitDecision = async () => {
-		if (!scenario || !currentStep) return;
+	const toggleMulti = (question: QuestionItem, value: string) => {
+		const current = answers[question.question_id]?.selected ?? [];
+		const included = current.includes(value);
 
-		if (action !== "HOLD" && quantity <= 0 && ratio <= 0) {
+		let next = included
+			? current.filter((item) => item !== value)
+			: [...current, value];
+
+		if (
+			!included &&
+			question.max_select &&
+			next.length > question.max_select
+		) {
+			next = next.slice(next.length - question.max_select);
+		}
+
+		onAnswersChange({
+			...answers,
+			[question.question_id]: {
+				selected: next,
+				text: answers[question.question_id]?.text ?? "",
+			},
+		});
+	};
+
+	const choiceQuestions = questions.filter(
+		(question) => question.type !== "free",
+	);
+	const freeQuestions = questions.filter(
+		(question) => question.type === "free",
+	);
+
+	return (
+		<Modal
+			isOpen={isOpen}
+			onClose={isSubmitting ? () => undefined : onClose}
+			isCentered
+			size="3xl"
+		>
+			<ModalOverlay bg="rgba(35, 31, 27, 0.47)" />
+			<ModalContent
+				bg={UI.surface}
+				borderRadius="9px"
+				maxW={{ base: "94vw", md: "780px" }}
+				h={{ base: "92vh", md: "90vh" }}
+				maxH="920px"
+				overflow="hidden"
+				display="flex"
+				flexDirection="column"
+				boxShadow="0 18px 48px rgba(0,0,0,0.18)"
+			>
+				<ModalHeader px={{ base: "20px", md: "28px" }} pt="24px" pb="16px" flexShrink={0}>
+					<Flex justify="space-between" align="flex-start" pr="27px">
+						<Box>
+							<Heading
+								fontSize={{ base: "22px", md: "25px" }}
+								letterSpacing="-0.035em"
+								lineHeight="1.25"
+							>
+								TURN {progress?.current_turn ?? "-"} 종료 · 근거 입력
+							</Heading>
+
+							<Text
+								mt="7px"
+								fontSize={{ base: "13px", md: "14px" }}
+								color={UI.subtle}
+								fontWeight="500"
+							>
+								이번 TURN에 판단한 선택과 근거를 입력해주세요.
+							</Text>
+						</Box>
+
+						<Text
+							fontSize="10px"
+							color={UI.muted}
+							whiteSpace="nowrap"
+							pt="3px"
+						>
+							{questions.length}개 문항
+						</Text>
+					</Flex>
+				</ModalHeader>
+
+				<ModalCloseButton
+					top="13px"
+					right="12px"
+					isDisabled={isSubmitting}
+				/>
+
+				<ModalBody
+					px={{ base: "20px", md: "28px" }}
+					pb="18px"
+					flex="1"
+					minH="0"
+					overflowY="auto"
+					overflowX="hidden"
+					sx={{
+						"&::-webkit-scrollbar": { width: "8px" },
+						"&::-webkit-scrollbar-thumb": {
+							background: "#D7CEC5",
+							borderRadius: "20px",
+						},
+					}}
+				>
+					{/* 이번 TURN의 최근 매매 요약 */}
+					<Box mb="15px">
+						<Text fontSize="11px" fontWeight="800" mb="9px">
+							선택한 행동 요약
+						</Text>
+
+						<Panel
+							px="16px"
+							py="12px"
+							bg="#FFFCF8"
+							borderRadius="7px"
+						>
+							{recentOrder ? (
+								<Grid
+									templateColumns="minmax(0,1.25fr) 72px 64px 96px"
+									columnGap="12px"
+									alignItems="center"
+								>
+									<Box minW="0">
+										<Text fontSize="10px" color={UI.muted}>
+											종목명
+										</Text>
+										<Text
+											mt="3px"
+											fontSize="11px"
+											fontWeight="800"
+											noOfLines={1}
+										>
+											{recentOrderAssetName || recentOrder.asset_id}
+										</Text>
+										<Text fontSize="10px" color={UI.muted}>
+											{recentOrder.asset_id}
+										</Text>
+									</Box>
+
+									<Box>
+										<Text fontSize="9px" color={UI.muted}>
+											주문 유형
+										</Text>
+										<Text
+											mt="3px"
+											fontSize="11px"
+											fontWeight="800"
+											color={
+												recentOrder.side === "BUY"
+													? UI.red
+													: UI.blue
+											}
+										>
+											{recentOrder.side === "BUY" ? "매수" : "매도"}
+										</Text>
+									</Box>
+
+									<Box>
+										<Text fontSize="9px" color={UI.muted}>
+											주문 수량
+										</Text>
+										<Text mt="3px" fontSize="9px" fontWeight="800">
+											{recentOrder.quantity}주
+										</Text>
+									</Box>
+
+									<Box textAlign="right">
+										<Text fontSize="7px" color={UI.muted}>
+											주문 금액
+										</Text>
+										<Text mt="3px" fontSize="9px" fontWeight="800">
+											{formatWon(recentOrder.amount)}
+										</Text>
+									</Box>
+								</Grid>
+							) : (
+								<Text
+									fontSize="10px"
+									color={UI.subtle}
+									textAlign="center"
+									py="3px"
+								>
+									이번 TURN에서 체결한 주문이 없습니다.
+								</Text>
+							)}
+						</Panel>
+					</Box>
+
+					{/* 선택형 질문 */}
+					<Box>
+						<Text fontSize="11px" fontWeight="800" mb="8px">
+							선택형 행동 요약
+						</Text>
+
+						<Panel
+							bg="#FFFCF8"
+							borderRadius="7px"
+							overflow="hidden"
+						>
+							{choiceQuestions.map((question, index) => {
+								const answer = answers[question.question_id] ?? {
+									selected: [],
+									text: "",
+								};
+
+								return (
+									<Box
+										key={question.question_id}
+										px="16px"
+										py="14px"
+										borderBottom={
+											index < choiceQuestions.length - 1
+												? "1px solid #EFE4D8"
+												: "none"
+										}
+									>
+										<Flex
+											align="center"
+											justify="space-between"
+											gap="10px"
+										>
+											<Text
+												fontSize={{ base: "10px", md: "11px" }}
+												fontWeight="800"
+												lineHeight="1.45"
+												minW="0"
+											>
+												Q{index + 1}. {question.text}
+											</Text>
+
+											<Text
+												fontSize="9px"
+												color={UI.muted}
+												whiteSpace="nowrap"
+											>
+												{question.type === "multi"
+													? `복수 선택${
+															question.max_select
+																? ` · 최대 ${question.max_select}개`
+																: ""
+														}`
+													: "단일 선택"}
+											</Text>
+										</Flex>
+
+										<Flex
+											mt="10px"
+											gap="8px"
+											flexWrap="wrap"
+											alignItems="center"
+										>
+											{(question.options ?? []).map((option) => {
+												const selected =
+													answer.selected.includes(option);
+
+												return (
+													<Button
+														key={option}
+														h="32px"
+														minW="86px"
+														px="14px"
+														fontSize="11px"
+														fontWeight={selected ? "800" : "500"}
+														border="1px solid"
+														borderColor={
+															selected ? UI.orange : "#E6D4C2"
+														}
+														bg={
+															selected ? "#FFF1E8" : "#FFFFFF"
+														}
+														color={
+															selected ? UI.orange : UI.text
+														}
+														borderRadius="7px"
+														_hover={{
+															borderColor: UI.orange,
+															bg: "#FFF7F2",
+														}}
+														onClick={() => {
+															if (question.type === "single") {
+																selectSingle(
+																	question.question_id,
+																	option,
+																);
+															} else {
+																toggleMulti(question, option);
+															}
+														}}
+													>
+														{option}
+													</Button>
+												);
+											})}
+										</Flex>
+									</Box>
+								);
+							})}
+
+							{choiceQuestions.length === 0 && (
+								<Text
+									fontSize="9px"
+									color={UI.muted}
+									textAlign="center"
+									py="14px"
+								>
+									선택형 질문이 없습니다.
+								</Text>
+							)}
+						</Panel>
+					</Box>
+
+					{/* 자유 서술형 근거 입력 */}
+					<Box mt="18px">
+						<Text fontSize="11px" fontWeight="800" mb="9px">
+							근거 입력
+						</Text>
+
+						{freeQuestions.map((question) => {
+							const answer = answers[question.question_id] ?? {
+								selected: [],
+								text: "",
+							};
+
+							return (
+								<Box key={question.question_id} mb="9px">
+									<Text
+										mb="6px"
+										fontSize="10px"
+										color={UI.subtle}
+									>
+										{question.text}
+									</Text>
+
+									<Box position="relative">
+										<Textarea
+											minH="120px"
+											maxLength={500}
+											resize="none"
+											value={answer.text}
+											onChange={(event) =>
+												updateText(
+													question.question_id,
+													event.target.value,
+												)
+											}
+											placeholder="매매 판단을 내린 이유와 근거를 구체적으로 작성해주세요."
+											fontSize="11px"
+											lineHeight="1.7"
+											borderColor={UI.border}
+											bg="#FFFFFF"
+											pb="22px"
+											_focusVisible={{
+												borderColor: UI.orange,
+												boxShadow: `0 0 0 1px ${UI.orange}`,
+											}}
+										/>
+
+										<Text
+											position="absolute"
+											right="9px"
+											bottom="7px"
+											fontSize="9px"
+											color={UI.muted}
+										>
+											{answer.text.length} / 500
+										</Text>
+									</Box>
+								</Box>
+							);
+						})}
+
+						{freeQuestions.length === 0 && (
+							<Text fontSize="8px" color={UI.muted}>
+								현재 TURN에는 자유 서술형 질문이 없습니다.
+							</Text>
+						)}
+					</Box>
+
+					<Panel
+						mt="11px"
+						px="14px"
+						py="9px"
+						bg="#FFFBF6"
+						borderRadius="7px"
+					>
+						<Text fontSize="10px" fontWeight="800">
+							작성 팁
+						</Text>
+						<Text
+							mt="4px"
+							fontSize="10px"
+							lineHeight="1.7"
+							color={UI.subtle}
+						>
+							• 뉴스, 지표, 기업 실적, 시장 심리 등 판단에 사용한 근거를 구체적으로 작성해주세요.
+							<br />
+							• 추측보다는 화면에서 확인한 정보와 선택 이유를 중심으로 작성하는 것이 좋습니다.
+						</Text>
+					</Panel>
+				</ModalBody>
+
+				<ModalFooter
+					px={{ base: "20px", md: "28px" }}
+					py="16px"
+					borderTop="1px solid"
+					borderColor="#EEE5DB"
+					bg={UI.surface}
+					flexShrink={0}
+					boxShadow="0 -6px 14px rgba(65, 44, 24, 0.04)"
+				>
+					<Flex w="100%" justify="flex-end" gap="8px">
+						<Button
+							h="35px"
+							px="20px"
+							fontSize="11px"
+							bg="#E4E1DD"
+							color={UI.subtle}
+							_hover={{ bg: "#D8D4CF" }}
+							isDisabled={isSubmitting}
+							onClick={onClose}
+						>
+							취소
+						</Button>
+
+						<Button
+							h="35px"
+							px="28px"
+							fontSize="11px"
+							bg={UI.orange}
+							color="white"
+							fontWeight="800"
+							_hover={{ bg: UI.orangeDark }}
+							isLoading={isSubmitting}
+							loadingText="저장 중"
+							isDisabled={!questions.length}
+							onClick={onSubmit}
+						>
+							제출하기
+						</Button>
+					</Flex>
+				</ModalFooter>
+			</ModalContent>
+		</Modal>
+	);
+}
+
+function TurnSavedModal({
+	isOpen,
+	onClose,
+	info,
+}: {
+	isOpen: boolean;
+	onClose: () => void;
+	info: TransitionInfo | null;
+}) {
+	if (!info) return null;
+
+	return (
+		<Modal isOpen={isOpen} onClose={onClose} isCentered size="sm">
+			<ModalOverlay bg="rgba(35, 31, 27, 0.46)" />
+			<ModalContent bg={UI.surface} borderRadius="10px" overflow="hidden">
+				<ModalCloseButton top="12px" right="12px" />
+				<ModalBody px="24px" pt="22px" pb="0">
+					<Flex justify="center">
+						<Flex
+							w="36px"
+							h="36px"
+							borderRadius="full"
+							border="2px solid"
+							borderColor={UI.orange}
+							align="center"
+							justify="center"
+							color={UI.orange}
+						>
+							<FiCheck size={18} />
+						</Flex>
+					</Flex>
+
+					<Heading
+						mt="18px"
+						fontSize="18px"
+						textAlign="center"
+						letterSpacing="-0.03em"
+					>
+						TURN {info.turnNo} 기록이 저장되었습니다.
+					</Heading>
+
+					<Text
+						mt="12px"
+						fontSize="10px"
+						lineHeight="1.7"
+						textAlign="center"
+						color={UI.subtle}
+					>
+						입력한 투자 판단과 근거가 저장되었습니다.
+						<br />
+						다음 시장 시점으로 이동합니다.
+					</Text>
+
+					<Panel mt="16px" px="18px" py="15px" bg="#FFFCF8">
+						<Flex align="center" justify="center" gap="28px">
+							<Box textAlign="center">
+								<Text fontSize="13px" fontWeight="800">
+									{formatDate(info.currentDate)}
+								</Text>
+								<Text mt="3px" fontSize="8px" color={UI.muted}>
+									TURN {info.turnNo} 시작
+								</Text>
+							</Box>
+
+							<Box color={UI.orange}>
+								<FiArrowRight size={17} />
+							</Box>
+
+							<Box textAlign="center">
+								<Text fontSize="13px" fontWeight="800">
+									{formatDate(info.nextDate)}
+								</Text>
+								<Text mt="3px" fontSize="8px" color={UI.muted}>
+									TURN {info.nextTurn} 시작
+								</Text>
+							</Box>
+						</Flex>
+					</Panel>
+				</ModalBody>
+
+				<ModalFooter px="24px" pt="16px" pb="18px">
+					<Button
+						w="100%"
+						h="41px"
+						bg={UI.orange}
+						color="white"
+						fontWeight="800"
+						_hover={{ bg: UI.orangeDark }}
+						onClick={onClose}
+					>
+						확인
+					</Button>
+				</ModalFooter>
+			</ModalContent>
+		</Modal>
+	);
+}
+
+function MetricIcon({ metric }: { metric: string }) {
+	const common = { size: 29 };
+
+	if (metric === "M1") return <FiSearch {...common} color="#FF2D3D" />;
+	if (metric === "M2") return <FiBookOpen {...common} color="#FFB800" />;
+	if (metric === "M3") return <FiShield {...common} color="#27B65B" />;
+	if (metric === "M4") return <FiTarget {...common} color="#FF6A22" />;
+	return <FiCheckCircle {...common} color="#8B6BFF" />;
+}
+
+function ScoreStars({ score }: { score: number }) {
+	const rounded = Math.max(0, Math.min(5, Math.round(score)));
+
+	return (
+		<Text mt="4px" fontSize="14px" letterSpacing="1px" color={UI.orange}>
+			{"★".repeat(rounded)}
+			<Text as="span" color="#C8C3BC">
+				{"★".repeat(5 - rounded)}
+			</Text>
+		</Text>
+	);
+}
+
+function FinalResultModal({
+	isOpen,
+	onClose,
+	evaluation,
+	onGoMyPage,
+}: {
+	isOpen: boolean;
+	onClose: () => void;
+	evaluation: FinalEvaluation | null;
+	onGoMyPage: () => void;
+}) {
+	const metrics = extractMetricRows(evaluation);
+	const portfolio = evaluation?.portfolio_analysis;
+	const feedback = evaluation?.feedback;
+	const patterns = evaluation?.behavior_patterns ?? [];
+	const returnPct = numberValue(portfolio?.cumulative_return_pct);
+	const pnl = numberValue(portfolio?.profit_loss);
+	const overall = numberValue(evaluation?.decision_evaluation?.overall_score);
+
+	const strengths =
+		feedback?.strengths?.length
+			? feedback.strengths
+			: ["완료된 TURN의 판단 기록을 바탕으로 분석했습니다."];
+
+	const improvements =
+		feedback?.improvements?.length
+			? feedback.improvements
+			: patterns.slice(0, 3).map((item) => item.explanation || item.label || "");
+
+	const nextActions =
+		feedback?.next_actions?.filter(Boolean) ??
+		patterns
+			.map((item) => item.recommendation)
+			.filter((value): value is string => Boolean(value));
+
+	return (
+		<Modal isOpen={isOpen} onClose={onClose} isCentered size="4xl">
+			<ModalOverlay bg="rgba(35, 31, 27, 0.46)" />
+			<ModalContent
+				bg={UI.surface}
+				borderRadius="10px"
+				maxW="770px"
+				maxH="94vh"
+				overflowY="auto"
+				boxShadow="0 18px 48px rgba(0,0,0,0.18)"
+			>
+				<ModalCloseButton top="14px" right="14px" />
+
+				<ModalBody px="28px" pt="25px" pb="0">
+					<Flex justify="center">
+						<Flex
+							w="43px"
+							h="43px"
+							borderRadius="full"
+							border="3px solid"
+							borderColor={UI.orange}
+							align="center"
+							justify="center"
+							color={UI.orange}
+						>
+							<FiCheck size={23} />
+						</Flex>
+					</Flex>
+
+					<Heading
+						mt="12px"
+						fontSize="25px"
+						textAlign="center"
+						letterSpacing="-0.04em"
+					>
+						시나리오가 종료되었습니다!
+					</Heading>
+
+					<Text mt="8px" textAlign="center" fontSize="10px" lineHeight="1.65">
+						모든 TURN을 완료했습니다.
+						<br />
+						당신의 투자 여정을 종합 분석했습니다.
+					</Text>
+
+					<Grid
+						mt="20px"
+						templateColumns={{ base: "1fr", md: "190px minmax(0, 1fr)" }}
+						gap="10px"
+					>
+						<Panel px="15px" py="15px" bg="#FFFCF8">
+							<Text fontSize="11px" fontWeight="800">
+								판단 결과: 수익률
+							</Text>
+
+							<Text
+								mt="16px"
+								fontSize="29px"
+								fontWeight="900"
+								color={returnPct >= 0 ? UI.red : UI.blue}
+								textAlign="center"
+							>
+								{returnPct > 0 ? "+" : ""}
+								{returnPct.toFixed(2)}%
+							</Text>
+
+							<Text
+								mt="4px"
+								fontSize="11px"
+								fontWeight="800"
+								color={pnl >= 0 ? UI.red : UI.blue}
+								textAlign="center"
+							>
+								({pnl > 0 ? "+" : ""}
+								{formatWon(pnl)})
+							</Text>
+
+							<Stack mt="18px" spacing="7px">
+								<Flex justify="space-between">
+									<Text fontSize="9px" color={UI.subtle}>
+										최종 자산
+									</Text>
+									<Text fontSize="9px" fontWeight="800">
+										{formatWon(portfolio?.final_value)}
+									</Text>
+								</Flex>
+								<Flex justify="space-between">
+									<Text fontSize="9px" color={UI.subtle}>
+										초기 자산
+									</Text>
+									<Text fontSize="9px">
+										{formatWon(portfolio?.initial_value)}
+									</Text>
+								</Flex>
+								<Flex justify="space-between">
+									<Text fontSize="9px" color={UI.subtle}>
+										판단 평균
+									</Text>
+									<Text fontSize="9px" fontWeight="800">
+										{overall.toFixed(2)} / 5
+									</Text>
+								</Flex>
+							</Stack>
+						</Panel>
+
+						<Panel px="15px" py="15px" bg="#FFFCF8">
+							<Heading fontSize="12px">5가지 항목 별 점수</Heading>
+
+							<SimpleGrid mt="16px" columns={5} spacing="6px">
+								{metrics.map((metric) => (
+									<Box key={metric.key} textAlign="center">
+										<Text fontSize="8px" fontWeight="800" minH="24px">
+											{metric.label}
+										</Text>
+										<Flex mt="6px" justify="center">
+											<MetricIcon metric={metric.key} />
+										</Flex>
+										<Text mt="7px" fontSize="18px" fontWeight="900">
+											{metric.score.toFixed(1)}
+											<Text as="span" fontSize="9px" fontWeight="600">
+												{" "}
+												/ 5
+											</Text>
+										</Text>
+										<ScoreStars score={metric.score} />
+									</Box>
+								))}
+							</SimpleGrid>
+						</Panel>
+					</Grid>
+
+					<SimpleGrid mt="10px" columns={{ base: 1, md: 2 }} spacing="10px">
+						<Panel px="15px" py="14px" bg="#FFFCF8" minH="165px">
+							<Heading fontSize="12px">잘 본 요소</Heading>
+							<Stack mt="12px" spacing="11px">
+								{strengths.slice(0, 4).map((item, index) => (
+									<Flex key={`${item}-${index}`} gap="9px" align="flex-start">
+										<Box mt="1px" color={UI.orange} flexShrink={0}>
+											<FiCheckCircle size={14} />
+										</Box>
+										<Text fontSize="9px" lineHeight="1.55">
+											{item}
+										</Text>
+									</Flex>
+								))}
+							</Stack>
+						</Panel>
+
+						<Panel px="15px" py="14px" bg="#FFFCF8" minH="165px">
+							<Heading fontSize="12px">놓친 요소</Heading>
+							<Stack mt="12px" spacing="11px">
+								{improvements.length ? (
+									improvements.slice(0, 4).map((item, index) => (
+										<Flex key={`${item}-${index}`} gap="9px" align="flex-start">
+											<Box mt="1px" color={UI.orange} flexShrink={0}>
+												<FiAlertTriangle size={14} />
+											</Box>
+											<Text fontSize="9px" lineHeight="1.55">
+												{item}
+											</Text>
+										</Flex>
+									))
+								) : (
+									<Text fontSize="9px" color={UI.subtle}>
+										뚜렷하게 반복된 취약 패턴이 확인되지 않았습니다.
+									</Text>
+								)}
+							</Stack>
+						</Panel>
+					</SimpleGrid>
+
+					<Panel mt="10px" px="15px" py="14px" bg="#FFFCF8">
+						<Heading fontSize="12px">해설: 맞춤 피드백</Heading>
+
+						<Text mt="11px" fontSize="9px" lineHeight="1.7" color={UI.text}>
+							{feedback?.summary ||
+								"각 TURN의 판단 점수와 행동 패턴, 포트폴리오 결과를 종합했습니다."}
+						</Text>
+
+						{nextActions.length > 0 && (
+							<Box mt="10px" pt="10px" borderTop="1px solid #EEE5DB">
+								<Text fontSize="9px" fontWeight="800">
+									다음 투자에서 적용할 점
+								</Text>
+								{nextActions.slice(0, 3).map((item, index) => (
+									<Text
+										key={`${item}-${index}`}
+										mt="5px"
+										fontSize="9px"
+										lineHeight="1.55"
+										color={UI.subtle}
+									>
+										• {item}
+									</Text>
+								))}
+							</Box>
+						)}
+					</Panel>
+				</ModalBody>
+
+				<ModalFooter px="28px" pt="16px" pb="19px">
+					<Button
+						ml="auto"
+						w={{ base: "100%", md: "280px" }}
+						h="42px"
+						bg={UI.orange}
+						color="white"
+						fontSize="13px"
+						fontWeight="800"
+						_hover={{ bg: UI.orangeDark }}
+						onClick={onGoMyPage}
+					>
+						마이페이지로 이동
+					</Button>
+				</ModalFooter>
+			</ModalContent>
+		</Modal>
+	);
+}
+
+/* ============================================================================
+ * Page
+ * ========================================================================== */
+
+export default function ScenarioPlay() {
+	const [searchParams] = useSearchParams();
+	const navigate = useNavigate();
+	const toast = useToast();
+
+	const sessionId = searchParams.get("sessionId") ?? "";
+
+	const scenarioInfoModal = useDisclosure();
+	const orderSuccessModal = useDisclosure();
+	const decisionModal = useDisclosure();
+	const turnSavedModal = useDisclosure();
+	const finalResultModal = useDisclosure();
+
+	const [turnView, setTurnView] = useState<TurnView | null>(null);
+	const [isTurnLoading, setIsTurnLoading] = useState(true);
+
+	const [selectedAssetId, setSelectedAssetId] = useState("");
+	const [assetSearch, setAssetSearch] = useState("");
+
+	const [chart, setChart] = useState<ChartResponse | null>(null);
+	const [isChartLoading, setIsChartLoading] = useState(false);
+	const [chartRange, setChartRange] = useState<ChartRange>("DAY");
+	const [dataTab, setDataTab] = useState<DataTab>("CHART");
+
+	const [orderSide, setOrderSide] = useState<OrderSide>("BUY");
+	const [quantity, setQuantity] = useState(10);
+	const [isOrdering, setIsOrdering] = useState(false);
+	const [lastOrder, setLastOrder] = useState<OrderRecord | null>(null);
+	const [lastOrderAssetName, setLastOrderAssetName] = useState("");
+
+	const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
+	const [isSubmittingTurn, setIsSubmittingTurn] = useState(false);
+	const [transitionInfo, setTransitionInfo] = useState<TransitionInfo | null>(
+		null,
+	);
+
+	const [finalEvaluation, setFinalEvaluation] =
+		useState<FinalEvaluation | null>(null);
+
+	const assets = turnView?.assets ?? [];
+	const portfolio = turnView?.portfolio;
+	const progress = turnView?.progress;
+	const scenario = turnView?.scenario;
+	const turn = turnView?.turn;
+	const questions = turnView?.questions ?? [];
+	const news = turnView?.news ?? [];
+	const marketState = turnView?.market_state;
+
+	const selectedAsset = useMemo(
+		() =>
+			assets.find((item) => item.asset_id === selectedAssetId) ??
+			assets[0] ??
+			null,
+		[assets, selectedAssetId],
+	);
+
+	const initialAnswers = useCallback((items: QuestionItem[]) => {
+		const next: Record<string, AnswerValue> = {};
+
+		for (const question of items) {
+			next[question.question_id] = {
+				selected: [],
+				text: "",
+			};
+		}
+
+		return next;
+	}, []);
+
+	const showFinalEvaluation = useCallback(
+		(evaluation: FinalEvaluation) => {
+			setFinalEvaluation(evaluation);
+			finalResultModal.onOpen();
+		},
+		[finalResultModal],
+	);
+
+	const loadResult = useCallback(async () => {
+		if (!sessionId) return;
+
+		try {
+			const result = (await scenarioService.getResult(
+				sessionId,
+			)) as FinalEvaluation;
+
+			showFinalEvaluation(result);
+		} catch (error) {
+			console.error("최종 평가 조회 실패:", error);
+		}
+	}, [sessionId, showFinalEvaluation]);
+
+	const loadTurn = useCallback(
+		async (showSpinner = true) => {
+			if (!sessionId) return;
+
+			try {
+				if (showSpinner) setIsTurnLoading(true);
+
+				const value = (await scenarioService.getCurrentTurn(
+					sessionId,
+				)) as TurnView;
+
+				if (value?.result_ready) {
+					setTurnView(value);
+					await loadResult();
+					return;
+				}
+
+				if (value?.finalizing) {
+					try {
+						const finalized = (await scenarioService.finalize(
+							sessionId,
+						)) as FinalEvaluation;
+						showFinalEvaluation(finalized);
+					} catch (error) {
+						console.error("최종화 재시도 실패:", error);
+					}
+					return;
+				}
+
+				setTurnView(value);
+
+				const availableAssets = value?.assets ?? [];
+				const preferred =
+					availableAssets.find(
+						(item) => item.asset_id === selectedAssetId,
+					)?.asset_id ||
+					value?.default_asset_id ||
+					availableAssets[0]?.asset_id ||
+					"";
+
+				setSelectedAssetId(preferred);
+				setAnswers(initialAnswers(value?.questions ?? []));
+			} catch (error: any) {
+				console.error("시나리오 턴 조회 실패:", error);
+				toast({
+					title: "시나리오를 불러오지 못했습니다.",
+					description: errorMessage(
+						error,
+						"현재 TURN 데이터를 불러오는 중 오류가 발생했습니다.",
+					),
+					status: "error",
+					isClosable: true,
+				});
+			} finally {
+				if (showSpinner) setIsTurnLoading(false);
+			}
+		},
+		[
+			initialAnswers,
+			loadResult,
+			selectedAssetId,
+			sessionId,
+			showFinalEvaluation,
+			toast,
+		],
+	);
+
+	useEffect(() => {
+		if (!sessionId) {
+			setIsTurnLoading(false);
+			return;
+		}
+
+		void loadTurn();
+		// 최초 세션 진입 시 한 번만 실행한다.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [sessionId]);
+
+	useEffect(() => {
+		if (!sessionId || !selectedAssetId) {
+			setChart(null);
+			return;
+		}
+
+		let cancelled = false;
+
+		const load = async () => {
+			try {
+				setIsChartLoading(true);
+
+				const value = (await scenarioService.getChart(
+					sessionId,
+					selectedAssetId,
+				)) as ChartResponse;
+
+				if (!cancelled) {
+					setChart(value);
+				}
+			} catch (error: any) {
+				console.error("차트 조회 실패:", error);
+
+				if (!cancelled) {
+					setChart(null);
+					toast({
+						title: "차트 데이터를 불러오지 못했습니다.",
+						description: errorMessage(
+							error,
+							"해당 종목의 과거 가격 데이터를 확인해주세요.",
+						),
+						status: "warning",
+						isClosable: true,
+					});
+				}
+			} finally {
+				if (!cancelled) setIsChartLoading(false);
+			}
+		};
+
+		void load();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [selectedAssetId, sessionId, progress?.current_turn, toast]);
+
+	useEffect(() => {
+		if (!selectedAsset) return;
+
+		const max =
+			orderSide === "BUY"
+				? selectedAsset.current_price
+					? Math.floor(
+							numberValue(portfolio?.cash) /
+								numberValue(selectedAsset.current_price, 1),
+						)
+					: 0
+				: currentHoldingQuantity(portfolio, selectedAsset.asset_id);
+
+		if (max > 0 && quantity > max) {
+			setQuantity(max);
+		}
+
+		if (max === 0 && orderSide === "SELL") {
+			setQuantity(0);
+		}
+	}, [orderSide, portfolio, quantity, selectedAsset]);
+
+	const handleOrder = async () => {
+		if (!sessionId || !selectedAsset) return;
+
+		if (!selectedAsset.data_available || !selectedAsset.current_price) {
 			toast({
-				title: "매수/매도 선택 시 수량 또는 비중을 입력하세요.",
+				title: "주문할 수 없는 종목입니다.",
+				description: "현재 시점의 가격 데이터가 없습니다.",
 				status: "warning",
 				isClosable: true,
 			});
 			return;
 		}
 
-		if (!reason.trim()) {
+		if (!Number.isInteger(quantity) || quantity < 1) {
 			toast({
-				title: "판단 이유를 입력하세요.",
+				title: "주문 수량을 확인해주세요.",
+				description: "1주 이상의 정수 수량을 입력해야 합니다.",
+				status: "warning",
+				isClosable: true,
+			});
+			return;
+		}
+
+		const max =
+			orderSide === "BUY"
+				? Math.floor(
+						numberValue(portfolio?.cash) /
+							numberValue(selectedAsset.current_price, 1),
+					)
+				: currentHoldingQuantity(portfolio, selectedAsset.asset_id);
+
+		if (quantity > max) {
+			toast({
+				title:
+					orderSide === "BUY"
+						? "보유 현금이 부족합니다."
+						: "보유 수량이 부족합니다.",
+				description: `현재 주문 가능한 최대 수량은 ${integer.format(max)}주입니다.`,
 				status: "warning",
 				isClosable: true,
 			});
@@ -756,457 +3088,556 @@ export default function ScenarioPlay() {
 		}
 
 		try {
-			setIsSubmitting(true);
+			setIsOrdering(true);
 
-			const selectedStockTag = selectedStock
-				? `선택종목:${selectedStock.name}`
-				: "";
-
-			const res = await api.post(`/scenarios/${scenario.scenarioSlug}/decisions`, {
-				stepNumber: currentStep.stepNumber,
-				action,
+			const result = (await scenarioService.placeOrder(
+				sessionId,
+				selectedAsset.asset_id,
+				orderSide,
 				quantity,
-				ratio,
-				tags: [...tags, selectedStockTag].filter(Boolean),
-				reason,
-			});
+			)) as OrderResponse;
 
-			const result = unwrapApiData<any>(res.data);
-			setLastFeedback(result);
+			setLastOrder(result.order);
+			setLastOrderAssetName(selectedAsset.name);
 
-			toast({
-				title: "판단이 저장되었습니다.",
-				status: "success",
-				isClosable: true,
-			});
+			setTurnView((current) =>
+				current
+					? {
+							...current,
+							portfolio: result.portfolio,
+						}
+					: current,
+			);
 
-			await loadScenario();
+			orderSuccessModal.onOpen();
 		} catch (error: any) {
-			console.error(error);
+			console.error("주문 실패:", error);
 
 			toast({
-				title: "판단 저장 실패",
-				description:
-					error?.response?.data?.message ||
-					"시나리오 판단 저장 중 오류가 발생했습니다.",
+				title: "주문을 처리하지 못했습니다.",
+				description: errorMessage(error, "주문 처리 중 오류가 발생했습니다."),
 				status: "error",
 				isClosable: true,
 			});
 		} finally {
-			setIsSubmitting(false);
+			setIsOrdering(false);
 		}
 	};
 
-	const goNext = () => {
-		if (currentStepIndex < steps.length - 1) {
-			setCurrentStepIndex((prev) => prev + 1);
+	const validateAnswers = (): string | null => {
+		for (const question of questions) {
+			const answer = answers[question.question_id] ?? {
+				selected: [],
+				text: "",
+			};
+
+			if (question.type === "free") {
+				if (!answer.text.trim()) {
+					return `${question.text} 문항의 근거를 입력해주세요.`;
+				}
+				continue;
+			}
+
+			if (!answer.selected.length) {
+				return `${question.text} 문항에 답해주세요.`;
+			}
+
+			if (question.type === "single" && answer.selected.length !== 1) {
+				return `${question.text} 문항은 하나만 선택해주세요.`;
+			}
+
+			if (
+				question.max_select &&
+				answer.selected.length > question.max_select
+			) {
+				return `${question.text} 문항은 최대 ${question.max_select}개까지 선택할 수 있습니다.`;
+			}
+		}
+
+		return null;
+	};
+
+	const handleSubmitTurn = async () => {
+		if (!sessionId || !progress) return;
+
+		const invalid = validateAnswers();
+
+		if (invalid) {
+			toast({
+				title: "아직 답하지 않은 항목이 있습니다.",
+				description: invalid,
+				status: "warning",
+				isClosable: true,
+			});
 			return;
 		}
 
-		toast({
-			title: "시나리오를 완료했습니다.",
-			description: "이후 최종 리포트 화면을 연결할 예정입니다.",
-			status: "success",
-			isClosable: true,
+		const payload: ScenarioAnswer[] = questions.map((question) => {
+			const answer = answers[question.question_id] ?? {
+				selected: [],
+				text: "",
+			};
+
+			return {
+				question_id: question.question_id,
+				selected: answer.selected,
+				text: answer.text.trim(),
+			};
 		});
+
+		try {
+			setIsSubmittingTurn(true);
+
+			const submitted = (await scenarioService.submitTurn(
+				sessionId,
+				payload,
+			)) as TurnSubmitResponse;
+
+			decisionModal.onClose();
+
+			if (submitted.final_evaluation) {
+				showFinalEvaluation(submitted.final_evaluation);
+				return;
+			}
+
+			if (submitted.next_turn) {
+				setTransitionInfo({
+					turnNo: progress.current_turn,
+					currentDate: progress.market_date,
+					nextTurn: submitted.next_turn,
+					nextDate: progress.next_market_date,
+				});
+
+				turnSavedModal.onOpen();
+				return;
+			}
+
+			if (submitted.session?.status === "COMPLETED") {
+				await loadResult();
+				return;
+			}
+
+			toast({
+				title: "TURN 기록이 저장되었습니다.",
+				status: "success",
+				isClosable: true,
+			});
+
+			await loadTurn(false);
+		} catch (error: any) {
+			console.error("TURN 제출 실패:", error);
+
+			toast({
+				title: "TURN 기록을 저장하지 못했습니다.",
+				description: errorMessage(
+					error,
+					"판단 근거를 저장하는 중 오류가 발생했습니다.",
+				),
+				status: "error",
+				isClosable: true,
+			});
+		} finally {
+			setIsSubmittingTurn(false);
+		}
 	};
 
-	if (isLoading || !detail || !scenario || !currentStep || !selectedStock) {
+	const handleTurnSavedConfirm = async () => {
+		turnSavedModal.onClose();
+		setTransitionInfo(null);
+		setQuantity(10);
+		setOrderSide("BUY");
+		await loadTurn();
+	};
+
+	const handleOrderSuccessClose = () => {
+		orderSuccessModal.onClose();
+		setQuantity(10);
+	};
+
+	if (!sessionId) {
 		return (
-			<Flex minH="100vh" align="center" justify="center" bg="gray.50">
-				<Text color="gray.500">시나리오를 불러오는 중...</Text>
+			<Flex
+				minH="calc(100vh - 80px)"
+				bg={UI.bg}
+				align="center"
+				justify="center"
+				px="20px"
+			>
+				<Panel maxW="520px" w="100%" px="28px" py="30px" textAlign="center">
+					<FiAlertTriangle size={30} color={UI.orange} />
+					<Heading mt="15px" fontSize="19px">
+						시나리오 세션 정보가 없습니다.
+					</Heading>
+					<Text mt="10px" fontSize="12px" color={UI.subtle} lineHeight="1.7">
+						시나리오 목록에서 '시나리오 시작하기'를 눌러 세션을 생성한 뒤
+						진입해주세요.
+					</Text>
+					<Button
+						mt="20px"
+						bg={UI.orange}
+						color="white"
+						_hover={{ bg: UI.orangeDark }}
+						onClick={() => navigate("/scenario")}
+					>
+						과거 시나리오로 돌아가기
+					</Button>
+				</Panel>
 			</Flex>
 		);
 	}
 
-	const progressValue = ((currentStepIndex + 1) / steps.length) * 100;
-	const feedbackDecision = lastFeedback?.reference
-		?.referenceDecision as ScenarioAction | undefined;
+	if (isTurnLoading && !turnView) {
+		return (
+			<Flex
+				minH="calc(100vh - 80px)"
+				bg={UI.bg}
+				align="center"
+				justify="center"
+				direction="column"
+				gap="12px"
+			>
+				<Spinner color={UI.orange} thickness="3px" />
+				<Text fontSize="12px" color={UI.subtle}>
+					시나리오 데이터를 불러오는 중입니다.
+				</Text>
+			</Flex>
+		);
+	}
+
+	if (!turnView || !progress || !scenario || !turn || !portfolio) {
+		return (
+			<Flex
+				minH="calc(100vh - 80px)"
+				bg={UI.bg}
+				align="center"
+				justify="center"
+				px="20px"
+			>
+				<Panel maxW="540px" w="100%" px="28px" py="30px" textAlign="center">
+					<Heading fontSize="18px">현재 TURN 정보를 표시할 수 없습니다.</Heading>
+					<Text mt="9px" fontSize="11px" color={UI.subtle}>
+						시나리오 서버 응답과 세션 상태를 확인해주세요.
+					</Text>
+					<Button
+						mt="18px"
+						variant="outline"
+						borderColor={UI.orange}
+						color={UI.orange}
+						onClick={() => void loadTurn()}
+					>
+						다시 불러오기
+					</Button>
+				</Panel>
+			</Flex>
+		);
+	}
+
+	const selectedChange = numberValue(selectedAsset?.change);
+	const selectedChangePct = numberValue(selectedAsset?.change_pct);
+	const hasPositions = portfolio.positions.length > 0;
+	const moveDays = daysBetween(progress.market_date, progress.next_market_date);
 
 	return (
-		<Box px={{ base: 4, md: 8 }} py="6" bg="gray.50" minH="100vh">
-			<Flex align="center" mb="5">
+		<Box
+			w="100%"
+			minH="calc(100vh - 80px)"
+			bg={UI.bg}
+			color={UI.text}
+			px={{ base: "12px", md: "16px", xl: "18px" }}
+			pt="16px"
+			pb="26px"
+		>
+			{/* Page title */}
+			<Flex align="flex-start" justify="space-between" gap="16px" mb="12px">
+				<Box minW="0">
+					<Heading
+						fontSize={{ base: "21px", md: "24px" }}
+						letterSpacing="-0.04em"
+						noOfLines={1}
+					>
+						{scenario.title}
+					</Heading>
+					<Text
+						mt="2px"
+						fontSize="11px"
+						lineHeight="1.55"
+						color={UI.subtle}
+						noOfLines={2}
+					>
+						{turn.summary || scenario.description}
+					</Text>
+				</Box>
+
 				<Button
-					variant="ghost"
-					onClick={() => navigate(`/scenario/chapter/${scenario.chapterId}`)}
+					flexShrink={0}
+					size="sm"
+					h="31px"
+					px="12px"
+					variant="outline"
+					borderColor={UI.orange}
+					color={UI.orange}
+					borderRadius="8px"
+					leftIcon={<FiInfo size={13} />}
+					fontSize="10px"
+					_hover={{ bg: UI.orangeSoft }}
+					onClick={scenarioInfoModal.onOpen}
 				>
-					← 시나리오 목록
+					시나리오 정보
 				</Button>
-				<Spacer />
-				<Badge colorScheme="pink" px="3" py="1" borderRadius="full">
-					{scenario.scenarioNo}
-				</Badge>
 			</Flex>
 
-			<Card mb="5">
-				<CardBody>
-					<Flex direction={{ base: "column", xl: "row" }} gap="4">
-						<Box flex="1">
-							<Text color="gray.500" fontSize="sm">
-								{scenario.chapterTitle}
-							</Text>
-							<Heading size="lg" mt="1">
-								{scenario.title}
-							</Heading>
-							<Text mt="2" color="gray.600">
-								{scenario.summary}
-							</Text>
-						</Box>
-
-						<Box minW={{ base: "100%", xl: "320px" }}>
-							<Flex mb="1">
-								<Text fontSize="sm">
-									Step {currentStep.stepNumber} / {steps.length}
-								</Text>
-								<Spacer />
-								<Text fontSize="sm" fontWeight="800">
-									{Math.round(progressValue)}%
-								</Text>
-							</Flex>
-							<Progress
-								value={progressValue}
-								colorScheme="pink"
-								borderRadius="full"
-							/>
-						</Box>
-					</Flex>
-				</CardBody>
-			</Card>
-
-			<Grid templateColumns={{ base: "1fr", xl: "1fr 320px" }} gap="5">
-				<GridItem>
-					<Stack spacing="5">
-						<Card>
-							<CardBody>
-								<SimpleGrid columns={{ base: 1, md: 5 }} spacing="4">
-									<Stat>
-										<StatLabel>종목</StatLabel>
-										<StatNumber fontSize="lg">{selectedStock.name}</StatNumber>
-										<Text fontSize="sm" color="gray.500">
-											{selectedStock.symbol}
+			<Grid
+				templateColumns={{
+					base: "1fr",
+					xl: "minmax(0, 1fr) 265px 278px",
+				}}
+				gap="12px"
+				alignItems="stretch"
+			>
+				{/* Left large content */}
+				<GridItem minW="0">
+					<Stack spacing="12px">
+						{/* Selected asset summary */}
+						<Panel px="18px" py="14px">
+							<SimpleGrid columns={{ base: 2, sm: 3, lg: 5 }} spacing="16px">
+								<Box>
+									<TinyLabel>종목</TinyLabel>
+									<Flex mt="8px" align="baseline" gap="7px">
+										<Text fontSize="14px" fontWeight="900" noOfLines={1}>
+											{selectedAsset?.name ?? "-"}
 										</Text>
-									</Stat>
-
-									<Stat>
-										<StatLabel>현재가</StatLabel>
-										<StatNumber fontSize="lg">
-											{won.format(selectedStock.price)}
-										</StatNumber>
-									</Stat>
-
-									<Stat>
-										<StatLabel>등락률</StatLabel>
-										<StatNumber
-											fontSize="lg"
-											color={
-												selectedStock.changeRate >= 0 ? "red.500" : "blue.500"
-											}
-										>
-											{selectedStock.changeRate > 0 ? "+" : ""}
-											{selectedStock.changeRate.toFixed(2)}%
-										</StatNumber>
-									</Stat>
-
-									<Stat>
-										<StatLabel>거래량</StatLabel>
-										<StatNumber fontSize="lg">
-											{numberFormat.format(selectedStock.volume)}
-										</StatNumber>
-									</Stat>
-
-									<Stat>
-										<StatLabel>섹터</StatLabel>
-										<StatNumber fontSize="lg">
-											{selectedStock.sector ?? "대표"}
-										</StatNumber>
-									</Stat>
-								</SimpleGrid>
-							</CardBody>
-						</Card>
-
-						<Grid templateColumns={{ base: "1fr", xl: "1fr 300px" }} gap="5">
-							<GridItem>
-								<ScenarioMiniChart
-	         stock={selectedStock}
-	         period={chartPeriod}
-	            onPeriodChange={setChartPeriod}
-        />
-							</GridItem>
-
-							<GridItem>
-								<Card h="100%">
-									<CardHeader pb="0">
-										<Heading size="sm">매매 가능 종목</Heading>
-										<Text mt="1" fontSize="sm" color="gray.500">
-											상황에 따라 선택 가능한 학습용 종목입니다.
+										<Text fontSize="10px" color={UI.subtle}>
+											{selectedAsset?.asset_id ?? "-"}
 										</Text>
-									</CardHeader>
+									</Flex>
+								</Box>
 
-									<CardBody>
-										<Stack spacing="3">
-											{scenarioStocks.map((stock, index) => (
-												<Box
-													key={stock.symbol}
-													p="3"
-													borderWidth="1px"
-													borderRadius="lg"
-													cursor="pointer"
-													bg={selectedStockIndex === index ? "#FFEEF9" : "white"}
-													onClick={() => setSelectedStockIndex(index)}
-												>
-													<Flex align="center">
-														<Box>
-															<Text fontWeight="900">{stock.name}</Text>
-															<Text fontSize="sm" color="gray.500">
-																{stock.symbol} · {stock.sector}
-															</Text>
-														</Box>
-														<Spacer />
-														<Text
-															fontWeight="900"
-															color={
-																stock.changeRate >= 0 ? "red.500" : "blue.500"
-															}
-														>
-															{stock.changeRate > 0 ? "+" : ""}
-															{stock.changeRate.toFixed(2)}%
-														</Text>
-													</Flex>
-													<Text mt="2" fontSize="sm" color="gray.600">
-														{stock.reason}
-													</Text>
-												</Box>
-											))}
-										</Stack>
-									</CardBody>
-								</Card>
-							</GridItem>
-						</Grid>
-
-						<Grid templateColumns={{ base: "1fr", xl: "1fr 1fr" }} gap="5">
-							<Card>
-								<CardHeader pb="0">
-									<Heading size="md">시장 정보</Heading>
-									<Text mt="1" fontSize="sm" color="gray.500">
-										거래소의 호가창 대신 당시 시장 맥락을 제공합니다.
+								<Box>
+									<TinyLabel>현재가</TinyLabel>
+									<Text mt="8px" fontSize="14px" fontWeight="800">
+										{formatPrice(selectedAsset?.current_price)}
 									</Text>
-								</CardHeader>
+								</Box>
 
-								<CardBody>
-									<SimpleGrid columns={{ base: 1, md: 2 }} spacing="4">
-										<Box bg="gray.50" p="4" borderRadius="xl">
-											<Text fontWeight="900">지수 흐름</Text>
-											<Text mt="2" fontSize="sm" color="gray.600">
-												{currentStep.marketInfo.indexFlow}
-											</Text>
-										</Box>
-
-										<Box bg="gray.50" p="4" borderRadius="xl">
-											<Text fontWeight="900">섹터 흐름</Text>
-											<Text mt="2" fontSize="sm" color="gray.600">
-												{currentStep.marketInfo.sectorFlow}
-											</Text>
-										</Box>
-
-										<Box bg="gray.50" p="4" borderRadius="xl">
-											<Text fontWeight="900">변동성</Text>
-											<Text mt="2" fontSize="sm" color="gray.600">
-												{currentStep.marketInfo.volatility}
-											</Text>
-										</Box>
-
-										<Box bg="gray.50" p="4" borderRadius="xl">
-											<Text fontWeight="900">거래량</Text>
-											<Text mt="2" fontSize="sm" color="gray.600">
-												{currentStep.marketInfo.volume}
-											</Text>
-										</Box>
-									</SimpleGrid>
-								</CardBody>
-							</Card>
-
-							<Card>
-								<CardHeader pb="0">
-									<Heading size="md">뉴스 및 이벤트</Heading>
-									<Text mt="1" fontSize="sm" color="gray.500">
-										판단 시점에 제공되는 핵심 정보입니다.
+								<Box>
+									<TinyLabel>등락률</TinyLabel>
+									<Text
+										mt="8px"
+										fontSize="14px"
+										fontWeight="900"
+										color={
+											selectedChange > 0
+												? UI.red
+												: selectedChange < 0
+													? UI.blue
+													: UI.subtle
+										}
+									>
+										{formatSignedWon(selectedChange)}
 									</Text>
-								</CardHeader>
+									<Text
+										mt="2px"
+										fontSize="9px"
+										color={
+											selectedChangePct > 0
+												? UI.red
+												: selectedChangePct < 0
+													? UI.blue
+													: UI.subtle
+										}
+									>
+										{formatPct(selectedChangePct)}
+									</Text>
+								</Box>
 
-								<CardBody>
-									<Stack spacing="3">
-										{currentStep.newsCards.map((news, index) => (
-											<Box key={index} p="4" borderWidth="1px" borderRadius="xl">
-												<HStack mb="2">
-													<Badge colorScheme="blue">{news.source}</Badge>
-													<Text fontSize="sm" color="gray.500">
-														{news.publishedAt}
-													</Text>
-												</HStack>
-												<Text fontWeight="900">{news.title}</Text>
-												<Text mt="2" color="gray.600">
-													{news.summary}
-												</Text>
-											</Box>
-										))}
+								<Box>
+									<TinyLabel>거래량</TinyLabel>
+									<Text mt="8px" fontSize="14px" fontWeight="800">
+										{selectedAsset?.volume != null
+											? integer.format(selectedAsset.volume)
+											: "-"}
+									</Text>
+								</Box>
 
-										<Box p="4" bg="#FFF7ED" borderRadius="xl">
-											<Text fontWeight="900">이벤트 해석</Text>
-											<Text mt="2" color="gray.700">
-												{currentStep.eventInfo}
-											</Text>
-										</Box>
-									</Stack>
-								</CardBody>
-							</Card>
-						</Grid>
+								<Box>
+									<TinyLabel>섹터</TinyLabel>
+									<Text mt="8px" fontSize="14px" fontWeight="800">
+										{selectedAsset?.industry_label ||
+											selectedAsset?.market ||
+											"-"}
+									</Text>
+								</Box>
+							</SimpleGrid>
+						</Panel>
+
+						{/* Chart */}
+						<ChartPanel
+							chart={chart}
+							isLoading={isChartLoading}
+							activeTab={dataTab}
+							onTabChange={setDataTab}
+							range={chartRange}
+							onRangeChange={setChartRange}
+						/>
+
+						{/* Market / News */}
+						<SimpleGrid columns={{ base: 1, lg: 2 }} spacing="12px">
+							<MarketInfoPanel market={marketState} turn={turn} />
+							<NewsPanel news={news} />
+						</SimpleGrid>
 					</Stack>
 				</GridItem>
 
-				<GridItem>
-					<Card position={{ xl: "sticky" }} top="96px">
-						<CardHeader pb="0">
-							<Heading size="md">투자 판단 입력</Heading>
-							<Text mt="1" fontSize="sm" color="gray.500">
-								거래소 주문창처럼 판단을 입력합니다.
-							</Text>
-						</CardHeader>
+				{/* Middle asset list */}
+				<GridItem minW="0">
+					<AssetList
+						assets={assets}
+						selectedAssetId={selectedAsset?.asset_id ?? ""}
+						onSelect={setSelectedAssetId}
+						search={assetSearch}
+						onSearchChange={setAssetSearch}
+						hasPositions={hasPositions}
+					/>
 
-						<CardBody>
-							<Stack spacing="4">
-								<Box p="4" bg="#EFF6FF" borderRadius="xl">
-									<Text fontWeight="900">초보자 힌트</Text>
-									<Text mt="2" color="gray.700" fontSize="sm">
-										{currentStep.hint}
-									</Text>
-								</Box>
+					<HoldingsPanel portfolio={portfolio} />
+				</GridItem>
 
-								<Box>
-									<Text fontWeight="800" mb="2">
-										판단 선택
-									</Text>
-									<SimpleGrid columns={3} spacing="2">
-										{(["BUY", "SELL", "HOLD"] as ScenarioAction[]).map(
-											(item) => (
-												<Button
-													key={item}
-													colorScheme={action === item ? actionColor[item] : "gray"}
-													variant={action === item ? "solid" : "outline"}
-													onClick={() => setAction(item)}
-												>
-													{actionLabel[item]}
-												</Button>
-											),
-										)}
-									</SimpleGrid>
-								</Box>
+				{/* Right order / info */}
+				<GridItem minW="0">
+					<Stack spacing="12px">
+						<OrderPanel
+							asset={selectedAsset}
+							portfolio={portfolio}
+							side={orderSide}
+							onSideChange={(side) => {
+								setOrderSide(side);
+								setQuantity(side === "BUY" ? 10 : 0);
+							}}
+							quantity={quantity}
+							onQuantityChange={setQuantity}
+							onOrder={handleOrder}
+							isOrdering={isOrdering}
+						/>
 
-								{action !== "HOLD" && (
-									<SimpleGrid columns={2} spacing="3">
-										<Box>
-											<Text fontWeight="800" mb="2">
-												수량
-											</Text>
-											<NumberInput
-												min={0}
-												value={quantity}
-												onChange={(_, value) =>
-													setQuantity(Number.isNaN(value) ? 0 : value)
-												}
-											>
-												<NumberInputField placeholder="예: 10" />
-											</NumberInput>
-										</Box>
-
-										<Box>
-											<Text fontWeight="800" mb="2">
-												비중(%)
-											</Text>
-											<NumberInput
-												min={0}
-												max={100}
-												value={ratio}
-												onChange={(_, value) =>
-													setRatio(Number.isNaN(value) ? 0 : value)
-												}
-											>
-												<NumberInputField placeholder="예: 30" />
-											</NumberInput>
-										</Box>
-									</SimpleGrid>
-								)}
-
-								<Box>
-									<Text fontWeight="800" mb="2">
-										판단 태그
-									</Text>
-									<SimpleGrid columns={2} spacing="2">
-										{tagOptions.map((tag) => (
-											<Checkbox
-												key={tag}
-												isChecked={tags.includes(tag)}
-												onChange={() => toggleTag(tag)}
-											>
-												<Text fontSize="sm">{tag}</Text>
-											</Checkbox>
-										))}
-									</SimpleGrid>
-								</Box>
-
-								<Box>
-									<Text fontWeight="800" mb="2">
-										판단 이유
-									</Text>
-									<Textarea
-										value={reason}
-										onChange={(event) => setReason(event.target.value)}
-										placeholder="왜 이런 판단을 했는지 적어주세요."
-										rows={5}
-										resize="none"
-									/>
-								</Box>
-
-								<Button
-									colorScheme="pink"
-									onClick={submitDecision}
-									isLoading={isSubmitting}
-								>
-									판단 제출
-								</Button>
-
-								{lastFeedback?.reference && feedbackDecision && (
-									<Box p="4" bg="gray.50" borderRadius="xl">
-										<HStack mb="2">
-											<Text fontWeight="900">AI 기준 참고</Text>
-											<Badge colorScheme={actionColor[feedbackDecision]}>
-												{actionLabel[feedbackDecision]}
-											</Badge>
-										</HStack>
-
-										<Text fontSize="sm" color="gray.700">
-											{lastFeedback.reference.referenceReason}
-										</Text>
-
-										<Text mt="3" fontSize="sm" color="gray.500">
-											{lastFeedback.reference.expectedFeedback}
-										</Text>
-									</Box>
-								)}
-
-								<Button
-									variant="outline"
-									onClick={goNext}
-									isDisabled={!currentDecision && !lastFeedback}
-								>
-									{currentStepIndex < steps.length - 1
-										? "다음 단계로"
-										: "시나리오 완료"}
-								</Button>
-							</Stack>
-						</CardBody>
-					</Card>
+						<ScenarioMiniInfo progress={progress} />
+					</Stack>
 				</GridItem>
 			</Grid>
+
+			{/* Bottom turn bar */}
+			<Panel
+				mt="14px"
+				minH="76px"
+				overflow="hidden"
+				display="grid"
+				gridTemplateColumns={{ base: "1fr", lg: "1.1fr 1fr" }}
+			>
+				<Flex
+					px="14px"
+					py="12px"
+					align={{ base: "flex-start", md: "center" }}
+					gap={{ base: "5px", md: "24px" }}
+					direction={{ base: "column", md: "row" }}
+				>
+					<Text
+						fontSize="17px"
+						fontWeight="900"
+						color={UI.orange}
+						whiteSpace="nowrap"
+					>
+						TURN {progress.current_turn} / {progress.total_turns}
+					</Text>
+
+					<Text fontSize="10px" color={UI.subtle}>
+						{progress.next_market_date
+							? `이번 TURN을 종료하고${
+									moveDays != null ? ` 약 ${moveDays}일 후` : ""
+								} 다음 실제 시장 시점으로 이동합니다.`
+							: "이번 TURN을 제출하면 최종 평가가 생성됩니다."}
+					</Text>
+				</Flex>
+
+				<Button
+					h="100%"
+					minH="76px"
+					borderRadius="0"
+					bg={UI.orange}
+					color="white"
+					_hover={{ bg: UI.orangeDark }}
+					onClick={decisionModal.onOpen}
+				>
+					<Flex w="100%" align="center" justify="space-between" px="18px">
+						<Box flex="1" textAlign="center">
+							<Text fontSize="16px" fontWeight="800">
+								{progress.current_turn === progress.total_turns
+									? "마지막 TURN을 종료하고 결과 확인"
+									: "TURN을 종료하고 다음 시점으로"}
+							</Text>
+							<Text mt="4px" fontSize="9px" fontWeight="500">
+								{progress.next_market_date
+									? `${
+											moveDays != null ? `약 ${moveDays}일 후` : "다음 시점"
+										}로 이동`
+									: "최종 종합 평가 생성"}
+							</Text>
+						</Box>
+
+						<Flex
+							w="38px"
+							h="38px"
+							borderRadius="full"
+							border="1.5px solid white"
+							align="center"
+							justify="center"
+							flexShrink={0}
+						>
+							<FiArrowRight size={19} />
+						</Flex>
+					</Flex>
+				</Button>
+			</Panel>
+
+			{/* Modals */}
+			<ScenarioInfoModal
+				isOpen={scenarioInfoModal.isOpen}
+				onClose={scenarioInfoModal.onClose}
+				scenario={scenario}
+				progress={progress}
+				portfolio={portfolio}
+			/>
+
+			<OrderSuccessModal
+				isOpen={orderSuccessModal.isOpen}
+				onClose={handleOrderSuccessClose}
+				order={lastOrder}
+				assetName={lastOrderAssetName}
+			/>
+
+			<TurnDecisionModal
+				isOpen={decisionModal.isOpen}
+				onClose={decisionModal.onClose}
+				questions={questions}
+				answers={answers}
+				onAnswersChange={setAnswers}
+				onSubmit={handleSubmitTurn}
+				isSubmitting={isSubmittingTurn}
+				progress={progress}
+				recentOrder={lastOrder}
+				recentOrderAssetName={lastOrderAssetName}
+			/>
+
+			<TurnSavedModal
+				isOpen={turnSavedModal.isOpen}
+				onClose={() => void handleTurnSavedConfirm()}
+				info={transitionInfo}
+			/>
+
+			<FinalResultModal
+				isOpen={finalResultModal.isOpen}
+				onClose={finalResultModal.onClose}
+				evaluation={finalEvaluation}
+				onGoMyPage={() => navigate("/mypage")}
+			/>
 		</Box>
 	);
 }

@@ -57,7 +57,11 @@ const NAVIGATION_ITEMS: NavigationItem[] = [
 		to: "/news",
 		activePaths: ["/news"],
 	},
-	{ label: "AI 라면" },
+	{
+		label: "AI 라면",
+		to: "/ai-judgment",
+		activePaths: ["/ai-judgment"],
+	},
 	{ label: "설정" },
 ];
 
