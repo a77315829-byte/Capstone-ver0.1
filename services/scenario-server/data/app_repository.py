@@ -209,6 +209,27 @@ class AppRepository:
             upsert=False,
         )
 
+    def list_user_sessions(self, user_id: str) -> list[dict]:
+        return self.store.find_many(
+            "scenario_sessions",
+            {"user_id": user_id},
+            sort=[("updated_at", -1), ("started_at", -1)],
+        )
+
+    def get_quiz_progress(self, user_id: str) -> dict | None:
+        return self.store.find_one(
+            "quiz_progress",
+            {"user_id": user_id},
+        )
+
+    def save_quiz_progress(self, progress: dict) -> None:
+        self.store.replace_one(
+            "quiz_progress",
+            {"user_id": progress["user_id"]},
+            progress,
+            upsert=True,
+        )
+
     def insert_order(self, order: dict) -> None:
         self.store.insert_one("orders", order)
 

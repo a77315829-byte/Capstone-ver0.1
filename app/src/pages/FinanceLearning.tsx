@@ -1,6 +1,7 @@
 import React, {
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import {
@@ -11,8 +12,6 @@ import {
 	CardBody,
 	Divider,
 	Flex,
-	FormControl,
-	FormLabel,
 	Grid,
 	Heading,
 	HStack,
@@ -29,32 +28,21 @@ import {
 	Progress,
 	Select,
 	SimpleGrid,
+	Spacer,
 	Stack,
-	Stat,
-	StatLabel,
-	StatNumber,
-	Tab,
-	TabList,
-	TabPanel,
-	TabPanels,
-	Tabs,
 	Text,
 	useDisclosure,
 } from "@chakra-ui/react";
 import {
 	CheckCircleIcon,
-	CloseIcon,
-	InfoIcon,
-	RepeatIcon,
+	ChevronLeftIcon,
+	ChevronRightIcon,
 	SearchIcon,
 } from "@chakra-ui/icons";
-
 import {
 	useLocation,
-	useNavigate,
 	useSearchParams,
 } from "react-router-dom";
-
 
 import financeTermsData from "../data/financeTerms.json";
 import financeQuizzesData from "../data/financeQuizzes.json";
@@ -62,69 +50,106 @@ import type {
 	FinanceQuiz,
 	FinanceTerm,
 } from "../types/learning.types";
+import {
+	fetchQuizProgress,
+	getCachedQuizProgress,
+	recordQuizResult,
+	recordQuizSessionCompleted,
+	type QuizProgressSummary,
+} from "../services/learningProgress.service";
+import tokens from "../services/tokens.service";
 
-const financeTerms = financeTermsData as FinanceTerm[];
-const financeQuizzes = financeQuizzesData as FinanceQuiz[];
+const financeTerms =
+	financeTermsData as FinanceTerm[];
+const financeQuizzes =
+	financeQuizzesData as FinanceQuiz[];
 
 const ALL = "전체";
-const QUIZ_COUNT = 10;
 
-function shuffleArray<T>(items: T[]): T[] {
-	const copied = [...items];
+const ORANGE = "#F36F2A";
+const ORANGE_DARK = "#D95E20";
+const ORANGE_SOFT = "#FFF1E7";
+const BG = "#FDFAF4";
+const CARD = "#FFFFFF";
+const BORDER = "#E8DCCE";
+const TEXT = "#29231E";
+const MUTED = "#887D73";
+const GREEN = "#319A5B";
+const RED = "#D95546";
 
-	for (
-		let index = copied.length - 1;
-		index > 0;
-		index -= 1
-	) {
-		const randomIndex = Math.floor(
-			Math.random() * (index + 1),
-		);
+type MainTab =
+	| "dictionary"
+	| "quiz";
 
-		const currentItem = copied[index];
-		const randomItem = copied[randomIndex];
+type QuizScreen =
+	| "topics"
+	| "play"
+	| "result";
 
-		if (
-			currentItem === undefined ||
-			randomItem === undefined
-		) {
-			continue;
-		}
+type QuizTopic = {
+	id: string;
+	term: FinanceTerm;
+	quizzes: FinanceQuiz[];
+	completedCount: number;
+};
 
-		copied[index] = randomItem;
-		copied[randomIndex] = currentItem;
+function cleanQuestion(value: string): {
+	title: string;
+	quote: string | null;
+} {
+	const normalized = value.trim();
+	const match = normalized.match(
+		/^([\s\S]*?)\n[“"]([\s\S]*?)[”"]$/,
+	);
+
+	if (!match) {
+		return {
+			title: normalized,
+			quote: null,
+		};
 	}
 
-	return copied;
+	return {
+		title: match[1]?.trim() || normalized,
+		quote: match[2]?.trim() || null,
+	};
 }
 
-function makeQuizSession(
-	category: string,
+function getDifficultyStyle(
 	difficulty: string,
-	relatedTermId?: string | null,
-): FinanceQuiz[] {
-	const filtered = financeQuizzes.filter((quiz) => {
-		const categoryMatches =
-			category === ALL || quiz.category === category;
+) {
+	return difficulty === "초급"
+		? {
+			bg: "#EFF7EE",
+			color: "#588059",
+		}
+		: {
+			bg: "#FFF2E8",
+			color: "#C96B31",
+		};
+}
 
-		const difficultyMatches =
-			difficulty === ALL || quiz.difficulty === difficulty;
+function getCategoryList() {
+	return [
+		ALL,
+		...Array.from(
+			new Set(
+				financeTerms.map(
+					(term) => term.category,
+				),
+			),
+		),
+	];
+}
 
-		const termMatches =
-			!relatedTermId ||
-			quiz.relatedTermId === relatedTermId;
+function getTopicDescription(
+	term: FinanceTerm,
+) {
+	if (term.shortDefinition) {
+		return term.shortDefinition;
+	}
 
-		return (
-			categoryMatches &&
-			difficultyMatches &&
-			termMatches
-		);
-	});
-
-	return shuffleArray(filtered).slice(
-		0,
-		Math.min(QUIZ_COUNT, filtered.length),
-	);
+	return term.description;
 }
 
 function DictionaryView({
@@ -134,480 +159,845 @@ function DictionaryView({
 	initialTermId?: string | null;
 	onStartQuiz: (termId: string) => void;
 }) {
-	const [searchText, setSearchText] = useState("");
-	const [category, setCategory] = useState(ALL);
-	const [difficulty, setDifficulty] = useState(ALL);
-	const [selectedTerm, setSelectedTerm] =
-		useState<FinanceTerm | null>(null);
+	const [
+		searchText,
+		setSearchText,
+	] = useState("");
+	const [
+		category,
+		setCategory,
+	] = useState(ALL);
+	const [
+		difficulty,
+		setDifficulty,
+	] = useState(ALL);
+	const [
+		selectedTerm,
+		setSelectedTerm,
+	] = useState<FinanceTerm | null>(
+		null,
+	);
 
-	const modal = useDisclosure();
+	const detailModal = useDisclosure();
 
 	useEffect(() => {
 		if (!initialTermId) {
 			return;
 		}
 
-		const requestedTerm =
+		const requested =
 			financeTerms.find(
 				(term) =>
 					term.id ===
 					initialTermId,
 			);
 
-		if (!requestedTerm) {
+		if (!requested) {
 			return;
 		}
 
-		setSearchText(
-			requestedTerm.term,
-		);
+		setSelectedTerm(requested);
+		setSearchText(requested.term);
 		setCategory(ALL);
 		setDifficulty(ALL);
-		setSelectedTerm(
-			requestedTerm,
+		detailModal.onOpen();
+	}, [initialTermId]);
+
+	const categories =
+		useMemo(
+			() =>
+				getCategoryList(),
+			[],
 		);
-		modal.onOpen();
-	}, [
-		initialTermId,
-		modal.onOpen,
-	]);
 
-	const categories = useMemo(
-		() => [
-			ALL,
-			...Array.from(
-				new Set(financeTerms.map((term) => term.category)),
-			),
-		],
-		[],
-	);
+	const filteredTerms =
+		useMemo(() => {
+			const query =
+				searchText
+					.trim()
+					.toLowerCase();
 
-	const filteredTerms = useMemo(() => {
-		const normalizedSearch = searchText.trim().toLowerCase();
+			return financeTerms.filter(
+				(term) => {
+					const categoryMatch =
+						category === ALL ||
+						term.category ===
+						category;
 
-		return financeTerms.filter((term) => {
-			const categoryMatches =
-				category === ALL || term.category === category;
+					const difficultyMatch =
+						difficulty === ALL ||
+						term.difficulty ===
+						difficulty;
 
-			const difficultyMatches =
-				difficulty === ALL ||
-				term.difficulty === difficulty;
+					const searchMatch =
+						!query ||
+						term.term
+							.toLowerCase()
+							.includes(query) ||
+						term.shortDefinition
+							.toLowerCase()
+							.includes(query) ||
+						term.description
+							.toLowerCase()
+							.includes(query);
 
-			const searchMatches =
-				!normalizedSearch ||
-				term.term.toLowerCase().includes(normalizedSearch) ||
-				term.shortDefinition
-					.toLowerCase()
-					.includes(normalizedSearch) ||
-				term.description
-					.toLowerCase()
-					.includes(normalizedSearch);
-
-			return (
-				categoryMatches &&
-				difficultyMatches &&
-				searchMatches
+					return (
+						categoryMatch &&
+						difficultyMatch &&
+						searchMatch
+					);
+				},
 			);
-		});
-	}, [category, difficulty, searchText]);
+		}, [
+			category,
+			difficulty,
+			searchText,
+		]);
 
-	const openTerm = (term: FinanceTerm) => {
+	const openTerm = (
+		term: FinanceTerm,
+	) => {
 		setSelectedTerm(term);
-		modal.onOpen();
+		detailModal.onOpen();
 	};
 
 	return (
-		<Stack spacing="6">
-			<Card
-				borderRadius="18px"
-				borderWidth="1px"
-				borderColor="army.200"
-				bg="#FFFEFA"
-				boxShadow="panel"
-			>
-				<CardBody p={{ base: "20px", md: "24px" }}>
+		<>
+			<Stack spacing="18px">
+				<Box
+					bg={CARD}
+					borderWidth="1px"
+					borderColor={BORDER}
+					borderRadius="14px"
+					p={{
+						base: "16px",
+						md: "18px",
+					}}
+				>
 					<Grid
 						templateColumns={{
 							base: "1fr",
-							lg: "minmax(0, 1fr) 190px 170px",
+							lg: "minmax(0, 1fr) 190px 150px",
 						}}
-						gap="4"
+						gap="10px"
 					>
 						<InputGroup>
-							<InputLeftElement pointerEvents="none">
-								<SearchIcon color="army.400" />
+							<InputLeftElement
+								pointerEvents="none"
+							>
+								<SearchIcon
+									color="#A89B90"
+								/>
 							</InputLeftElement>
 
 							<Input
-								value={searchText}
-								onChange={(event) =>
-									setSearchText(event.target.value)
+								value={
+									searchText
 								}
-								placeholder="용어 또는 설명 검색"
-								borderRadius="12px"
-								bg="white"
-								borderColor="army.200"
-								_hover={{
-									borderColor: "army.400",
-								}}
+								onChange={(
+									event,
+								) =>
+									setSearchText(
+										event
+											.target
+											.value,
+									)
+								}
+								placeholder="금융 용어 검색"
+								bg="#FFFCF8"
+								borderColor={
+									BORDER
+								}
+								borderRadius="10px"
+								fontSize="12px"
 								_focusVisible={{
-									borderColor: "army.500",
+									borderColor:
+										ORANGE,
 									boxShadow:
-										"0 0 0 1px #697F43",
+										"0 0 0 1px #F36F2A",
 								}}
 							/>
 						</InputGroup>
 
 						<Select
-							value={category}
-							onChange={(event) =>
-								setCategory(event.target.value)
+							value={
+								category
 							}
-							borderRadius="12px"
-							bg="white"
-							borderColor="army.200"
+							onChange={(
+								event,
+							) =>
+								setCategory(
+									event
+										.target
+										.value,
+								)
+							}
+							bg="#FFFCF8"
+							borderColor={
+								BORDER
+							}
+							borderRadius="10px"
+							fontSize="12px"
 						>
-							{categories.map((item) => (
-								<option key={item} value={item}>
-									{item}
-								</option>
-							))}
+							{categories.map(
+								(item) => (
+									<option
+										key={
+											item
+										}
+										value={
+											item
+										}
+									>
+										{item}
+									</option>
+								),
+							)}
 						</Select>
 
 						<Select
-							value={difficulty}
-							onChange={(event) =>
-								setDifficulty(event.target.value)
+							value={
+								difficulty
 							}
-							borderRadius="12px"
-							bg="white"
-							borderColor="army.200"
+							onChange={(
+								event,
+							) =>
+								setDifficulty(
+									event
+										.target
+										.value,
+								)
+							}
+							bg="#FFFCF8"
+							borderColor={
+								BORDER
+							}
+							borderRadius="10px"
+							fontSize="12px"
 						>
-							<option value={ALL}>전체 난이도</option>
-							<option value="초급">초급</option>
-							<option value="중급">중급</option>
+							<option
+								value={ALL}
+							>
+								전체 난이도
+							</option>
+							<option value="초급">
+								초급
+							</option>
+							<option value="중급">
+								중급
+							</option>
 						</Select>
 					</Grid>
+				</Box>
 
-					<Flex
-						mt="4"
-						align={{ base: "flex-start", md: "center" }}
-						justify="space-between"
-						direction={{ base: "column", md: "row" }}
-						gap="2"
+				<Flex
+					align="center"
+					gap="8px"
+				>
+					<Text
+						fontSize="13px"
+						fontWeight="900"
+						color={TEXT}
 					>
-						<Text fontSize="sm" color="gray.600">
-							총 {financeTerms.length}개 용어 중{" "}
-							<strong>{filteredTerms.length}개</strong> 표시
-						</Text>
+						금융 용어
+					</Text>
 
-						<Text fontSize="xs" color="gray.500">
-							카드를 누르면 예시와 주의사항이 표시됩니다.
-						</Text>
-					</Flex>
-				</CardBody>
-			</Card>
+					<Badge
+						bg="#F2ECE6"
+						color="#786D63"
+						borderRadius="full"
+						fontSize="9px"
+					>
+						{
+							filteredTerms.length
+						}
+						개
+					</Badge>
+				</Flex>
 
-			{filteredTerms.length > 0 ? (
 				<SimpleGrid
 					columns={{
 						base: 1,
 						md: 2,
 						xl: 3,
 					}}
-					spacing="5"
+					spacing="12px"
 				>
-					{filteredTerms.map((term) => (
-						<Card
-							key={term.id}
-							as="button"
-							type="button"
-							textAlign="left"
-							borderRadius="18px"
-							borderWidth="1px"
-							borderColor="army.200"
-							boxShadow="sm"
-							bg="#FFFEFA"
-							transition="all 0.16s ease"
-							onClick={() => openTerm(term)}
-							_hover={{
-								transform: "translateY(-3px)",
-								boxShadow: "md",
-								borderColor: "army.400",
-							}}
-						>
-							<CardBody p="22px">
-								<Flex
-									align="center"
-									justify="space-between"
-									gap="3"
+					{filteredTerms.map(
+						(term) => {
+							const style =
+								getDifficultyStyle(
+									term.difficulty,
+								);
+
+							return (
+								<Button
+									key={
+										term.id
+									}
+									h="auto"
+									minH="156px"
+									p="0"
+									variant="unstyled"
+									textAlign="left"
+									whiteSpace="normal"
+									onClick={() =>
+										openTerm(
+											term,
+										)
+									}
+								>
+									<Box
+										h="100%"
+										minH="156px"
+										p="16px"
+										bg="white"
+										borderWidth="1px"
+										borderColor={
+											BORDER
+										}
+										borderRadius="12px"
+										transition="all .16s ease"
+										_hover={{
+											transform:
+												"translateY(-2px)",
+											borderColor:
+												"#E7B690",
+											boxShadow:
+												"0 10px 24px rgba(73,52,30,.07)",
+										}}
+									>
+										<Flex
+											align="center"
+											gap="7px"
+										>
+											<Badge
+												bg={
+													ORANGE_SOFT
+												}
+												color={
+													ORANGE_DARK
+												}
+												borderRadius="full"
+												fontSize="8px"
+												px="7px"
+												py="3px"
+											>
+												{
+													term.category
+												}
+											</Badge>
+
+											<Badge
+												bg={
+													style.bg
+												}
+												color={
+													style.color
+												}
+												borderRadius="full"
+												fontSize="8px"
+												px="7px"
+												py="3px"
+											>
+												{
+													term.difficulty
+												}
+											</Badge>
+										</Flex>
+
+										<Text
+											mt="13px"
+											fontSize="18px"
+											fontWeight="900"
+											letterSpacing="-0.035em"
+											color={
+												TEXT
+											}
+										>
+											{
+												term.term
+											}
+										</Text>
+
+										<Text
+											mt="7px"
+											fontSize="11px"
+											lineHeight="1.65"
+											color="#70665D"
+											noOfLines={
+												3
+											}
+										>
+											{
+												term.shortDefinition
+											}
+										</Text>
+
+										<Text
+											mt="12px"
+											fontSize="9px"
+											fontWeight="900"
+											color={
+												ORANGE
+											}
+										>
+											자세히 보기
+											›
+										</Text>
+									</Box>
+								</Button>
+							);
+						},
+					)}
+				</SimpleGrid>
+			</Stack>
+
+			<Modal
+				isOpen={
+					detailModal.isOpen
+				}
+				onClose={
+					detailModal.onClose
+				}
+				size="lg"
+				isCentered
+			>
+				<ModalOverlay
+					bg="rgba(29,25,21,.48)"
+				/>
+
+				<ModalContent
+					borderRadius="14px"
+					borderWidth="1px"
+					borderColor={BORDER}
+					overflow="hidden"
+				>
+					<ModalCloseButton />
+
+					{selectedTerm && (
+						<>
+							<ModalHeader
+								pt="24px"
+								pb="16px"
+							>
+								<HStack
+									mb="9px"
+									spacing="7px"
 								>
 									<Badge
-										bg="khaki.100"
-										color="army.800"
-										borderRadius="full"
-										px="2.5"
-										py="1"
+										bg={
+											ORANGE_SOFT
+										}
+										color={
+											ORANGE_DARK
+										}
 									>
-										{term.category}
+										{
+											selectedTerm.category
+										}
 									</Badge>
 
 									<Badge
 										bg={
-											term.difficulty === "초급"
-												? "army.100"
-												: "signal.100"
+											getDifficultyStyle(
+												selectedTerm.difficulty,
+											)
+												.bg
 										}
 										color={
-											term.difficulty === "초급"
-												? "army.700"
-												: "signal.800"
+											getDifficultyStyle(
+												selectedTerm.difficulty,
+											)
+												.color
 										}
-										borderRadius="full"
 									>
-										{term.difficulty}
+										{
+											selectedTerm.difficulty
+										}
 									</Badge>
-								</Flex>
+								</HStack>
 
-								<Heading mt="5" size="md">
-									{term.term}
+								<Heading
+									size="md"
+									color={TEXT}
+								>
+									{
+										selectedTerm.term
+									}
 								</Heading>
 
 								<Text
-									mt="3"
-									fontSize="sm"
-									lineHeight="1.75"
-									color="gray.600"
-									noOfLines={3}
+									mt="5px"
+									fontSize="11px"
+									fontWeight="700"
+									color={MUTED}
 								>
-									{term.shortDefinition}
-								</Text>
-
-								<Divider my="4" />
-
-								<Text
-									fontSize="xs"
-									fontWeight="800"
-									color="army.600"
-								>
-									자세히 보기
-								</Text>
-							</CardBody>
-						</Card>
-					))}
-				</SimpleGrid>
-			) : (
-				<Card
-					borderRadius="18px"
-					borderWidth="1px"
-					borderColor="army.200"
-					bg="#FFFEFA"
-				>
-					<CardBody py="70px">
-						<Stack align="center" spacing="3">
-							<SearchIcon boxSize="24px" color="gray.400" />
-							<Text fontWeight="800">
-								검색 결과가 없습니다.
-							</Text>
-							<Text fontSize="sm" color="gray.500">
-								검색어나 필터를 변경해 보세요.
-							</Text>
-						</Stack>
-					</CardBody>
-				</Card>
-			)}
-
-			<Modal
-				isOpen={modal.isOpen}
-				onClose={modal.onClose}
-				size="xl"
-				scrollBehavior="inside"
-			>
-				<ModalOverlay />
-
-				<ModalContent
-					borderRadius="18px"
-					bg="#FFFEFA"
-					borderWidth="1px"
-					borderColor="army.200"
-				>
-					<ModalHeader pr="12">
-						<Stack spacing="2">
-							<HStack spacing="2" wrap="wrap">
-								<Badge
-									bg="khaki.100"
-									color="army.800"
-								>
-									{selectedTerm?.category}
-								</Badge>
-								<Badge
-									bg={
-										selectedTerm?.difficulty === "초급"
-											? "army.100"
-											: "signal.100"
+									{
+										selectedTerm.shortDefinition
 									}
-									color={
-										selectedTerm?.difficulty === "초급"
-											? "army.700"
-											: "signal.800"
-									}
-								>
-									{selectedTerm?.difficulty}
-								</Badge>
-							</HStack>
+								</Text>
+							</ModalHeader>
 
-							<Heading size="lg">
-								{selectedTerm?.term}
-							</Heading>
-						</Stack>
-					</ModalHeader>
-
-					<ModalCloseButton />
-
-					<ModalBody pb="6">
-						{selectedTerm && (
-							<Stack spacing="5">
-								<Box
-									p="4"
-									borderRadius="14px"
-									bg="army.50"
-									borderWidth="1px"
-									borderColor="army.200"
-								>
-									<Text fontWeight="800" color="army.800">
-										{selectedTerm.shortDefinition}
-									</Text>
-								</Box>
-
-								<Box>
-									<Text mb="2" fontWeight="900">
-										상세 설명
-									</Text>
-									<Text lineHeight="1.8" color="gray.700">
-										{selectedTerm.description}
-									</Text>
-								</Box>
-
-								<Box>
-									<Text mb="2" fontWeight="900">
-										예시
-									</Text>
-									<Text
-										p="4"
-										borderRadius="12px"
-										bg="field.50"
-										borderWidth="1px"
-										borderColor="field.100"
-										lineHeight="1.75"
-									>
-										{selectedTerm.example}
-									</Text>
-								</Box>
-
-								<Box>
-									<Text mb="3" fontWeight="900">
-										핵심 포인트
-									</Text>
-
-									<Stack spacing="2">
-										{selectedTerm.keyPoints.map(
-											(point) => (
-												<Flex
-													key={point}
-													align="flex-start"
-													gap="3"
-													p="3"
-													borderRadius="12px"
-													bg="field.50"
-													borderWidth="1px"
-													borderColor="field.100"
-												>
-													<CheckCircleIcon
-														mt="3px"
-														color="green.500"
-													/>
-													<Text fontSize="sm">
-														{point}
-													</Text>
-												</Flex>
-											),
-										)}
-									</Stack>
-								</Box>
-
-								<Box
-									p="4"
-									borderRadius="14px"
-									bg="signal.50"
-									borderWidth="1px"
-									borderColor="signal.200"
-								>
-									<Text fontWeight="900" color="signal.800">
-										주의사항
-									</Text>
-									<Text
-										mt="2"
-										fontSize="sm"
-										lineHeight="1.75"
-										color="signal.900"
-									>
-										{selectedTerm.caution}
-									</Text>
-								</Box>
-
-								<Box>
-									<Text mb="3" fontWeight="900">
-										관련 용어
-									</Text>
-									<HStack spacing="2" wrap="wrap">
-										{selectedTerm.relatedTerms.map(
-											(term) => (
-												<Badge
-													key={term}
-													px="3"
-													py="1.5"
-													borderRadius="full"
-													bg="army.100"
-													color="army.800"
-												>
-													{term}
-												</Badge>
-											),
-										)}
-									</HStack>
-								</Box>
-							</Stack>
-						)}
-					</ModalBody>
-
-					<ModalFooter>
-						<Button
-							mr="2"
-							variant="outline"
-							colorScheme="army"
-							isDisabled={
-								!selectedTerm
-							}
-							onClick={() => {
-								if (
-									selectedTerm
-								) {
-									onStartQuiz(
-										selectedTerm.id,
-									);
+							<Divider
+								borderColor={
+									BORDER
 								}
-							}}
-						>
-							관련 퀴즈 풀기
-						</Button>
+							/>
 
-						<Button onClick={modal.onClose}>
-							닫기
-						</Button>
-					</ModalFooter>
+							<ModalBody py="18px">
+								<Stack spacing="16px">
+									<Box>
+										<Text
+											fontSize="10px"
+											fontWeight="900"
+											color={TEXT}
+										>
+											용어 설명
+										</Text>
+										<Text
+											mt="6px"
+											fontSize="11px"
+											lineHeight="1.75"
+											color="#675E55"
+										>
+											{
+												selectedTerm.description
+											}
+										</Text>
+									</Box>
+
+									<Box
+										p="13px"
+										bg="#FFF8F2"
+										borderRadius="10px"
+										borderWidth="1px"
+										borderColor="#F2DED0"
+									>
+										<Text
+											fontSize="9px"
+											fontWeight="900"
+											color={
+												ORANGE_DARK
+											}
+										>
+											예시
+										</Text>
+										<Text
+											mt="5px"
+											fontSize="11px"
+											lineHeight="1.7"
+											color="#675E55"
+										>
+											{
+												selectedTerm.example
+											}
+										</Text>
+									</Box>
+
+									{selectedTerm
+										.keyPoints
+										?.length >
+										0 && (
+											<Box>
+												<Text
+													fontSize="10px"
+													fontWeight="900"
+													color={
+														TEXT
+													}
+												>
+													핵심 포인트
+												</Text>
+												<Stack
+													mt="7px"
+													spacing="5px"
+												>
+													{selectedTerm.keyPoints.map(
+														(
+															point,
+															index,
+														) => (
+															<Flex
+																key={`${point}-${index}`}
+																gap="7px"
+																align="flex-start"
+															>
+																<Box
+																	mt="6px"
+																	w="4px"
+																	h="4px"
+																	borderRadius="full"
+																	bg={
+																		ORANGE
+																	}
+																	flexShrink={
+																		0
+																	}
+																/>
+																<Text
+																	fontSize="10px"
+																	lineHeight="1.6"
+																	color="#675E55"
+																>
+																	{
+																		point
+																	}
+																</Text>
+															</Flex>
+														),
+													)}
+												</Stack>
+											</Box>
+										)}
+
+									{selectedTerm.caution && (
+										<Box
+											p="12px"
+											bg="#FBF7F2"
+											borderRadius="9px"
+										>
+											<Text
+												fontSize="9px"
+												fontWeight="900"
+												color="#8C6C53"
+											>
+												주의
+											</Text>
+											<Text
+												mt="4px"
+												fontSize="10px"
+												lineHeight="1.65"
+												color="#72675E"
+											>
+												{
+													selectedTerm.caution
+												}
+											</Text>
+										</Box>
+									)}
+								</Stack>
+							</ModalBody>
+
+							<ModalFooter
+								gap="8px"
+								borderTopWidth="1px"
+								borderColor={BORDER}
+							>
+								<Button
+									size="sm"
+									variant="outline"
+									borderColor={
+										BORDER
+									}
+									onClick={
+										detailModal.onClose
+									}
+								>
+									닫기
+								</Button>
+
+								<Button
+									size="sm"
+									bg={ORANGE}
+									color="white"
+									_hover={{
+										bg:
+											ORANGE_DARK,
+									}}
+									onClick={() => {
+										detailModal.onClose();
+										onStartQuiz(
+											selectedTerm.id,
+										);
+									}}
+								>
+									이 용어 퀴즈 풀기
+								</Button>
+							</ModalFooter>
+						</>
+					)}
 				</ModalContent>
 			</Modal>
-		</Stack>
+		</>
+	);
+}
+
+function QuizTopicCard({
+	topic,
+	isFeatured,
+	onStart,
+}: {
+	topic: QuizTopic;
+	isFeatured: boolean;
+	onStart: (topic: QuizTopic) => void;
+}) {
+	const progress =
+		topic.quizzes.length > 0
+			? Math.round(
+				(topic.completedCount /
+					topic.quizzes.length) *
+				100,
+			)
+			: 0;
+
+	return (
+		<Box
+			bg="white"
+			borderWidth="1px"
+			borderColor={
+				isFeatured
+					? "#EAB68E"
+					: BORDER
+			}
+			borderRadius="13px"
+			p="17px"
+			boxShadow={
+				isFeatured
+					? "0 10px 28px rgba(243,111,42,.07)"
+					: "none"
+			}
+		>
+			<Flex
+				align="center"
+				gap="7px"
+			>
+				{isFeatured && (
+					<Badge
+						bg={ORANGE_SOFT}
+						color={ORANGE_DARK}
+						borderRadius="full"
+						px="8px"
+						py="3px"
+						fontSize="8px"
+					>
+						이번 주 추천
+					</Badge>
+				)}
+
+				<Badge
+					bg="#F4EFEA"
+					color="#756A61"
+					borderRadius="full"
+					px="8px"
+					py="3px"
+					fontSize="8px"
+				>
+					{
+						topic.term.category
+					}
+				</Badge>
+
+				<Spacer />
+
+				<Badge
+					bg={
+						getDifficultyStyle(
+							topic.term.difficulty,
+						).bg
+					}
+					color={
+						getDifficultyStyle(
+							topic.term.difficulty,
+						).color
+					}
+					fontSize="8px"
+				>
+					{
+						topic.term.difficulty
+					}
+				</Badge>
+			</Flex>
+
+			<Text
+				mt="15px"
+				fontSize="22px"
+				fontWeight="900"
+				color={TEXT}
+				letterSpacing="-0.04em"
+			>
+				{topic.term.term}
+			</Text>
+
+			<Text
+				mt="7px"
+				minH="38px"
+				fontSize="10px"
+				lineHeight="1.7"
+				color="#70665D"
+				noOfLines={2}
+			>
+				{getTopicDescription(
+					topic.term,
+				)}
+			</Text>
+
+			<Divider
+				my="14px"
+				borderColor="#F0E8E0"
+			/>
+
+			<Flex
+				align="center"
+				justify="space-between"
+			>
+				<Text
+					fontSize="9px"
+					fontWeight="800"
+					color={MUTED}
+				>
+					{
+						topic.completedCount
+					}{" "}
+					/ {topic.quizzes.length} 문제
+					완료
+				</Text>
+
+				<Text
+					fontSize="9px"
+					fontWeight="900"
+					color={ORANGE}
+				>
+					{progress}%
+				</Text>
+			</Flex>
+
+			<Progress
+				mt="7px"
+				value={progress}
+				h="5px"
+				borderRadius="full"
+				bg="#F0EBE5"
+				sx={{
+					"& > div": {
+						background: ORANGE,
+						borderRadius:
+							"999px",
+					},
+				}}
+			/>
+
+			<Button
+				mt="15px"
+				w="100%"
+				h="36px"
+				bg={ORANGE}
+				color="white"
+				borderRadius="9px"
+				fontSize="11px"
+				fontWeight="900"
+				_hover={{
+					bg: ORANGE_DARK,
+				}}
+				onClick={() =>
+					onStart(topic)
+				}
+			>
+				{topic.completedCount > 0
+					? "다시 풀기"
+					: "퀴즈 시작"}
+			</Button>
+		</Box>
 	);
 }
 
@@ -618,888 +1008,1624 @@ function QuizView({
 	initialTermId?: string | null;
 	onClearTerm: () => void;
 }) {
-	const categories = useMemo(
-		() => [
-			ALL,
-			...Array.from(
-				new Set(
-					financeQuizzes.map((quiz) => quiz.category),
-				),
-			),
-		],
-		[],
-	);
-
-	const [category, setCategory] = useState(ALL);
-	const [difficulty, setDifficulty] = useState(ALL);
 	const [
-		focusedTermId,
-		setFocusedTermId,
-	] = useState<string | null>(
-		initialTermId ?? null,
-	);
-	const [session, setSession] = useState<FinanceQuiz[]>(() =>
-		makeQuizSession(
-			ALL,
-			ALL,
-			initialTermId,
-		),
-	);
-	const [currentIndex, setCurrentIndex] = useState(0);
-	const [selectedIndex, setSelectedIndex] =
-		useState<number | null>(null);
-	const [isChecked, setIsChecked] = useState(false);
-	const [score, setScore] = useState(0);
-	const [streak, setStreak] = useState(0);
-	const [bestStreak, setBestStreak] = useState(0);
-	const [finished, setFinished] = useState(false);
+		screen,
+		setScreen,
+	] = useState<QuizScreen>("topics");
 
-	const currentQuiz = session[currentIndex]!;
+	const username =
+		tokens.getUsername() ?? "훈련생";
 
-	const restartQuiz = (
-		nextCategory = category,
-		nextDifficulty = difficulty,
-		nextTermId:
-			| string
-			| null =
-			focusedTermId,
-	) => {
-		setSession(
-			makeQuizSession(
-				nextCategory,
-				nextDifficulty,
-				nextTermId,
+	const [
+		progress,
+		setProgress,
+	] = useState<QuizProgressSummary>(
+		() =>
+			getCachedQuizProgress(
+				username,
+				financeQuizzes.length,
 			),
+	);
+
+	const [
+		selectedTopic,
+		setSelectedTopic,
+	] = useState<QuizTopic | null>(
+		null,
+	);
+
+	const [
+		session,
+		setSession,
+	] = useState<FinanceQuiz[]>([]);
+
+	const [
+		currentIndex,
+		setCurrentIndex,
+	] = useState(0);
+
+	const [
+		selectedIndex,
+		setSelectedIndex,
+	] = useState<number | null>(
+		null,
+	);
+
+	const [
+		isChecked,
+		setIsChecked,
+	] = useState(false);
+
+	const [score, setScore] =
+		useState(0);
+
+	const [streak, setStreak] =
+		useState(0);
+
+	const [
+		sessionAnswers,
+		setSessionAnswers,
+	] = useState<
+		Record<
+			string,
+			{
+				selectedIndex: number;
+				isCorrect: boolean;
+			}
+		>
+	>({});
+
+	const answerModal =
+		useDisclosure();
+
+	const topics =
+		useMemo(() => {
+			const termById =
+				new Map(
+					financeTerms.map(
+						(term) => [
+							term.id,
+							term,
+						],
+					),
+				);
+
+			const grouped =
+				new Map<
+					string,
+					FinanceQuiz[]
+				>();
+
+			financeQuizzes.forEach(
+				(quiz) => {
+					const current =
+						grouped.get(
+							quiz.relatedTermId,
+						) ?? [];
+
+					current.push(quiz);
+
+					grouped.set(
+						quiz.relatedTermId,
+						current,
+					);
+				},
+			);
+
+			const result: QuizTopic[] =
+				[];
+
+			grouped.forEach(
+				(
+					quizzes,
+					termId,
+				) => {
+					const term =
+						termById.get(
+							termId,
+						);
+
+					if (!term) {
+						return;
+					}
+
+					const completedCount =
+						quizzes.filter(
+							(quiz) =>
+								progress.answeredQuizIds.includes(
+									quiz.id,
+								),
+						).length;
+
+					result.push({
+						id: termId,
+						term,
+						quizzes,
+						completedCount,
+					});
+				},
+			);
+
+			return result.sort(
+				(a, b) => {
+					if (
+						a.id === "per"
+					) {
+						return -1;
+					}
+
+					if (
+						b.id === "per"
+					) {
+						return 1;
+					}
+
+					return a.term.term.localeCompare(
+						b.term.term,
+						"ko",
+					);
+				},
+			);
+		}, [progress]);
+
+	const completedTopicCount =
+		topics.filter((topic) =>
+			topic.quizzes.length > 0 &&
+			topic.quizzes.every((quiz) =>
+				progress.answeredQuizIds.includes(quiz.id),
+			),
+		).length;
+
+	useEffect(() => {
+		let active = true;
+
+		void fetchQuizProgress(
+			username,
+			financeQuizzes.length,
+		).then((next) => {
+			if (active) {
+				setProgress(next);
+			}
+		});
+
+		const refresh = () =>
+			setProgress(
+				getCachedQuizProgress(
+					username,
+					financeQuizzes.length,
+				),
+			);
+
+		window.addEventListener(
+			"antitude:quiz-progress-updated",
+			refresh,
 		);
+
+		window.addEventListener(
+			"storage",
+			refresh,
+		);
+
+		return () => {
+			active = false;
+			window.removeEventListener(
+				"antitude:quiz-progress-updated",
+				refresh,
+			);
+			window.removeEventListener(
+				"storage",
+				refresh,
+			);
+		};
+	}, [username]);
+
+	const autoStartedTermRef =
+		useRef<string | null>(null);
+
+	const startTopic = (
+		topic: QuizTopic,
+	) => {
+		setSelectedTopic(topic);
+		setSession([...topic.quizzes]);
 		setCurrentIndex(0);
 		setSelectedIndex(null);
 		setIsChecked(false);
 		setScore(0);
 		setStreak(0);
-		setBestStreak(0);
-		setFinished(false);
+		setSessionAnswers({});
+		setScreen("play");
 	};
 
 	useEffect(() => {
-		const nextTermId =
-			initialTermId ?? null;
-
-		setFocusedTermId(
-			nextTermId,
-		);
-		setCategory(ALL);
-		setDifficulty(ALL);
-		restartQuiz(
-			ALL,
-			ALL,
-			nextTermId,
-		);
-		// URL의 term 변경 시 새 세션을 구성합니다.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [initialTermId]);
-
-	const focusedTerm =
-		focusedTermId
-			? financeTerms.find(
-					(term) =>
-						term.id ===
-						focusedTermId,
-				) ?? null
-			: null;
-
-	const checkAnswer = () => {
-		if (selectedIndex === null || !currentQuiz) {
+		if (!initialTermId) {
 			return;
 		}
 
-		const isCorrect =
-			selectedIndex === currentQuiz.answerIndex;
+		// 같은 term으로 이미 자동 시작했다면 다시 시작하지 않음
+		if (
+			autoStartedTermRef.current ===
+			initialTermId
+		) {
+			return;
+		}
 
-		if (isCorrect) {
-			setScore((previous) => previous + 1);
-			setStreak((previous) => {
-				const next = previous + 1;
-				setBestStreak((best) => Math.max(best, next));
-				return next;
-			});
+		const topic = topics.find(
+			(item) =>
+				item.id === initialTermId,
+		);
+
+		if (!topic) {
+			return;
+		}
+
+		autoStartedTermRef.current =
+			initialTermId;
+
+		startTopic(topic);
+	}, [initialTermId, topics]);
+
+	const currentQuiz =
+		session[currentIndex];
+
+	const checkAnswer = () => {
+		if (
+			!currentQuiz ||
+			selectedIndex === null ||
+			isChecked
+		) {
+			return;
+		}
+
+		const correct =
+			selectedIndex ===
+			currentQuiz.answerIndex;
+
+		setIsChecked(true);
+
+		setSessionAnswers(
+			(current) => ({
+				...current,
+				[currentQuiz.id]: {
+					selectedIndex,
+					isCorrect: correct,
+				},
+			}),
+		);
+
+		if (correct) {
+			setScore(
+				(current) =>
+					current + 1,
+			);
+			setStreak(
+				(current) =>
+					current + 1,
+			);
 		} else {
 			setStreak(0);
 		}
 
-		setIsChecked(true);
+		void recordQuizResult(
+			username,
+			currentQuiz.id,
+			correct,
+		);
+
+		setProgress(
+			getCachedQuizProgress(
+				username,
+				financeQuizzes.length,
+			),
+		);
+
+		answerModal.onOpen();
 	};
 
-	const nextQuestion = () => {
-		if (currentIndex >= session.length - 1) {
-			setFinished(true);
+	const moveToQuestion = (
+		index: number,
+	) => {
+		const target =
+			session[index];
+
+		if (!target) {
 			return;
 		}
 
-		setCurrentIndex((previous) => previous + 1);
-		setSelectedIndex(null);
-		setIsChecked(false);
+		answerModal.onClose();
+		setCurrentIndex(index);
+
+		const previous =
+			sessionAnswers[target.id];
+
+		if (previous) {
+			setSelectedIndex(
+				previous.selectedIndex,
+			);
+			setIsChecked(true);
+		} else {
+			setSelectedIndex(null);
+			setIsChecked(false);
+		}
 	};
 
-	if (session.length === 0) {
+	const goNext = () => {
+		if (
+			currentIndex <
+			session.length - 1
+		) {
+			moveToQuestion(
+				currentIndex + 1,
+			);
+			return;
+		}
+
+		answerModal.onClose();
+
+		if (selectedTopic) {
+			void recordQuizSessionCompleted(
+				username,
+			);
+		}
+
+		setProgress(
+			getCachedQuizProgress(
+				username,
+				financeQuizzes.length,
+			),
+		);
+
+		setScreen("result");
+	};
+
+	const backToTopics = () => {
+		answerModal.onClose();
+		setScreen("topics");
+		setSelectedTopic(null);
+		setSession([]);
+		setCurrentIndex(0);
+		setSelectedIndex(null);
+		setIsChecked(false);
+		onClearTerm();
+	};
+
+	if (
+		screen === "topics" ||
+		!currentQuiz
+	) {
 		return (
-			<Card
-				borderRadius="18px"
-				borderWidth="1px"
-				borderColor="army.200"
-				bg="#FFFEFA"
-			>
-				<CardBody py="70px">
-					<Stack align="center" spacing="4">
-						<InfoIcon boxSize="24px" color="orange.500" />
-						<Text fontWeight="900">
-							조건에 맞는 문제가 없습니다.
-						</Text>
-						<Button
-							colorScheme="army"
-							onClick={() => {
-								setCategory(ALL);
-								setDifficulty(ALL);
-								restartQuiz(ALL, ALL);
-							}}
-						>
-							전체 문제로 시작
-						</Button>
-					</Stack>
-				</CardBody>
-			</Card>
-		);
-	}
-
-	if (finished) {
-		const percentage = Math.round(
-			(score / session.length) * 100,
-		);
-
-		return (
-			<Card
-				borderRadius="20px"
-				borderWidth="1px"
-				borderColor="army.200"
-				bg="#FFFEFA"
-				boxShadow="panel"
-			>
-				<CardBody p={{ base: "24px", md: "40px" }}>
-					<Stack align="center" spacing="7">
-						<Box
-							display="flex"
-							alignItems="center"
-							justifyContent="center"
-							w="76px"
-							h="76px"
-							borderRadius="24px"
-							bg={
-								percentage >= 70
-									? "green.50"
-									: "orange.50"
-							}
-							color={
-								percentage >= 70
-									? "green.500"
-									: "orange.500"
-							}
-						>
-							<CheckCircleIcon boxSize="34px" />
-						</Box>
-
-						<Box textAlign="center">
-							<Heading size="lg">퀴즈 완료</Heading>
-							<Text mt="2" color="gray.600">
-								금융 기초 학습 결과입니다.
-							</Text>
-						</Box>
-
-						<SimpleGrid
-							w="100%"
-							maxW="720px"
-							columns={{ base: 1, md: 3 }}
-							spacing="4"
-						>
-							<Stat
-								p="5"
-								textAlign="center"
-								borderRadius="16px"
-								bg="army.50"
-							>
-								<StatLabel>정답</StatLabel>
-								<StatNumber color="army.800">
-									{score}/{session.length}
-								</StatNumber>
-							</Stat>
-
-							<Stat
-								p="5"
-								textAlign="center"
-								borderRadius="16px"
-								bg="field.50"
-							>
-								<StatLabel>정답률</StatLabel>
-								<StatNumber color="field.800">
-									{percentage}%
-								</StatNumber>
-							</Stat>
-
-							<Stat
-								p="5"
-								textAlign="center"
-								borderRadius="16px"
-								bg="khaki.50"
-							>
-								<StatLabel>최고 연속 정답</StatLabel>
-								<StatNumber color="khaki.800">
-									{bestStreak}
-								</StatNumber>
-							</Stat>
-						</SimpleGrid>
-
-						<Button
-							leftIcon={<RepeatIcon />}
-							colorScheme="army"
-							borderRadius="12px"
-							onClick={() => restartQuiz()}
-						>
-							새 문제 풀기
-						</Button>
-					</Stack>
-				</CardBody>
-			</Card>
-		);
-	}
-
-	return (
-		<Stack spacing="5">
-			{focusedTerm ? (
-				<Card
-					borderRadius="18px"
-					borderWidth="1px"
-					borderColor="army.300"
-					bg="army.50"
-					boxShadow="panel"
+			<Stack spacing="18px">
+				<Grid
+					templateColumns={{
+						base: "1fr",
+						lg: "1.2fr .8fr",
+					}}
+					gap="12px"
 				>
-					<CardBody
-						p={{
-							base:
-								"18px",
-							md:
-								"22px",
-						}}
+					<Box
+						p="18px"
+						bg="white"
+						borderWidth="1px"
+						borderColor={BORDER}
+						borderRadius="13px"
+					>
+						<Badge
+							bg={ORANGE_SOFT}
+							color={ORANGE_DARK}
+							borderRadius="full"
+							fontSize="8px"
+						>
+							퀴즈 학습
+						</Badge>
+
+						<Text
+							mt="12px"
+							fontSize="18px"
+							fontWeight="900"
+							color={TEXT}
+							letterSpacing="-0.035em"
+						>
+							금융 개념을 문제로
+							확인해보세요.
+						</Text>
+
+						<Text
+							mt="6px"
+							fontSize="10px"
+							lineHeight="1.7"
+							color={MUTED}
+						>
+							용어별 핵심 문제를 풀고
+							학습 진행도와 정답률을
+							쌓을 수 있습니다.
+						</Text>
+					</Box>
+
+					<Box
+						p="18px"
+						bg="#FFF9F3"
+						borderWidth="1px"
+						borderColor="#F0D9C7"
+						borderRadius="13px"
 					>
 						<Flex
-							align={{
-								base:
-									"flex-start",
-								md:
-									"center",
-							}}
+							align="center"
 							justify="space-between"
-							direction={{
-								base:
-									"column",
-								md:
-									"row",
-							}}
-							gap="4"
 						>
-							<Box>
-								<Badge
-									colorScheme="army"
-								>
-									관련 용어 퀴즈
-								</Badge>
-								<Heading
-									mt="2"
-									size="sm"
-								>
-									{focusedTerm.term}
-								</Heading>
-								<Text
-									mt="1"
-									fontSize="sm"
-									color="gray.600"
-								>
-									{focusedTerm.shortDefinition}
-								</Text>
-							</Box>
+							<Text
+								fontSize="10px"
+								fontWeight="900"
+								color="#735A47"
+							>
+								전체 학습 진행도
+							</Text>
 
-							<HStack spacing="2">
-								<Button
-									size="sm"
-									leftIcon={
-										<RepeatIcon />
-									}
-									variant="outline"
-									onClick={() =>
-										restartQuiz()
-									}
-								>
-									문제 섞기
-								</Button>
-								<Button
-									size="sm"
-									colorScheme="army"
-									onClick={() => {
-										setFocusedTermId(
-											null,
-										);
-										onClearTerm();
-									}}
-								>
-									전체 퀴즈
-								</Button>
-							</HStack>
+							<Text
+								fontSize="17px"
+								fontWeight="900"
+								color={ORANGE}
+							>
+								{
+									progress.progressPercent
+								}
+								%
+							</Text>
 						</Flex>
-					</CardBody>
-				</Card>
-			) : (
-				<Card
-					borderRadius="18px"
-					borderWidth="1px"
-					borderColor="army.200"
-					bg="#FFFEFA"
-					boxShadow="panel"
-				>
-					<CardBody p={{ base: "18px", md: "22px" }}>
-						<Grid
-							templateColumns={{
-								base: "1fr",
-								md: "1fr 1fr auto",
+
+						<Progress
+							mt="8px"
+							value={
+								progress.progressPercent
+							}
+							h="6px"
+							borderRadius="full"
+							bg="#F0E4DA"
+							sx={{
+								"& > div":
+								{
+									background:
+										ORANGE,
+								},
 							}}
-							gap="3"
-							alignItems="end"
-						>
-							<FormControl>
-								<FormLabel fontSize="sm" fontWeight="800">
-									카테고리
-								</FormLabel>
-								<Select
-									value={category}
-									onChange={(event) => {
-										const next = event.target.value;
-										setCategory(next);
-										restartQuiz(next, difficulty);
-									}}
-									borderRadius="12px"
-								>
-									{categories.map((item) => (
-										<option key={item} value={item}>
-											{item}
-										</option>
-									))}
-								</Select>
-							</FormControl>
-
-							<FormControl>
-								<FormLabel fontSize="sm" fontWeight="800">
-									난이도
-								</FormLabel>
-								<Select
-									value={difficulty}
-									onChange={(event) => {
-										const next = event.target.value;
-										setDifficulty(next);
-										restartQuiz(category, next);
-									}}
-									borderRadius="12px"
-								>
-									<option value={ALL}>전체 난이도</option>
-									<option value="초급">초급</option>
-									<option value="중급">중급</option>
-								</Select>
-							</FormControl>
-
-							<Button
-								leftIcon={<RepeatIcon />}
-								variant="outline"
-								borderRadius="12px"
-								onClick={() => restartQuiz()}
-							>
-								문제 섞기
-							</Button>
-						</Grid>
-					</CardBody>
-				</Card>
-			)}
-
-			<Card
-				borderRadius="20px"
-				borderWidth="1px"
-				borderColor="army.200"
-				bg="#FFFEFA"
-				boxShadow="panel"
-				overflow="hidden"
-			>
-				<Box
-					px={{ base: "20px", md: "28px" }}
-					py="18px"
-					bg="army.50"
-					borderBottomWidth="1px"
-					borderBottomColor="army.200"
-				>
-					<Flex
-						mb="2"
-						align="center"
-						justify="space-between"
-					>
-						<Text fontSize="sm" fontWeight="900">
-							문제 {currentIndex + 1} /{" "}
-							{session.length}
-						</Text>
-
-						<HStack spacing="2">
-							<Badge
-								bg="field.100"
-								color="field.800"
-							>
-								정답 {score}
-							</Badge>
-							<Badge
-								bg="signal.100"
-								color="signal.800"
-							>
-								연속 {streak}
-							</Badge>
-						</HStack>
-					</Flex>
-
-					<Progress
-						value={
-							((currentIndex + 1) / session.length) *
-							100
-						}
-						colorScheme="army"
-						borderRadius="full"
-					/>
-				</Box>
-
-				<CardBody p={{ base: "22px", md: "34px" }}>
-					<Stack spacing="6">
-						<Box>
-							<HStack mb="3" spacing="2" wrap="wrap">
-								<Badge
-									bg="khaki.100"
-									color="army.800"
-								>
-									{currentQuiz.category}
-								</Badge>
-								<Badge
-									bg={
-										currentQuiz.difficulty === "초급"
-											? "army.100"
-											: "signal.100"
-									}
-									color={
-										currentQuiz.difficulty === "초급"
-											? "army.700"
-											: "signal.800"
-									}
-								>
-									{currentQuiz.difficulty}
-								</Badge>
-							</HStack>
-
-							<Heading
-								size="md"
-								lineHeight="1.65"
-								whiteSpace="pre-line"
-							>
-								{currentQuiz.question}
-							</Heading>
-						</Box>
+						/>
 
 						<SimpleGrid
-							columns={{ base: 1, md: 2 }}
-							spacing="4"
+							mt="15px"
+							columns={3}
+							spacing="8px"
 						>
-							{currentQuiz.options.map(
-								(option, optionIndex) => {
-									const isSelected =
-										selectedIndex === optionIndex;
-									const isCorrect =
-										optionIndex ===
-										currentQuiz.answerIndex;
-
-									let background = "white";
-									let borderColor = "army.200";
-									let color = "army.900";
-
-									if (!isChecked && isSelected) {
-										background = "army.50";
-										borderColor = "army.500";
-										color = "army.800";
-									}
-
-									if (isChecked && isCorrect) {
-										background = "green.50";
-										borderColor = "green.400";
-										color = "green.700";
-									}
-
-									if (
-										isChecked &&
-										isSelected &&
-										!isCorrect
-									) {
-										background = "red.50";
-										borderColor = "red.400";
-										color = "red.700";
-									}
-
-									return (
-										<Button
-											key={`${option}-${optionIndex}`}
-											h="auto"
-											minH="64px"
-											py="4"
-											px="5"
-											justifyContent="flex-start"
-											textAlign="left"
-											whiteSpace="normal"
-											borderWidth="2px"
-											borderColor={borderColor}
-											borderRadius="14px"
-											bg={background}
-											color={color}
-											isDisabled={isChecked}
-											onClick={() =>
-												setSelectedIndex(
-													optionIndex,
-												)
+							{[
+								{
+									label:
+										"푼 문제",
+									value: `${progress.answeredCount}/${progress.totalQuizCount}`,
+								},
+								{
+									label:
+										"정답률",
+									value: `${progress.accuracyPercent}%`,
+								},
+								{
+									label:
+										"완료 주제",
+									value: `${completedTopicCount}`,
+								},
+							].map(
+								(item) => (
+									<Box
+										key={
+											item.label
+										}
+										p="9px"
+										bg="white"
+										borderRadius="8px"
+										textAlign="center"
+									>
+										<Text
+											fontSize="8px"
+											color={
+												MUTED
 											}
 										>
-											<Flex align="center" gap="3">
-												<Box
-													display="flex"
-													alignItems="center"
-													justifyContent="center"
-													w="28px"
-													h="28px"
-													flexShrink={0}
-													borderRadius="full"
-													bg="army.100"
-													color="army.800"
-													fontSize="sm"
-													fontWeight="900"
-												>
-													{optionIndex + 1}
-												</Box>
-
-												<Text fontWeight="700">
-													{option}
-												</Text>
-											</Flex>
-										</Button>
-									);
-								},
-							)}
-						</SimpleGrid>
-
-						{isChecked && (
-							<Box
-								p="5"
-								borderRadius="14px"
-								bg={
-									selectedIndex ===
-									currentQuiz.answerIndex
-										? "green.50"
-										: "red.50"
-								}
-								borderWidth="1px"
-								borderColor={
-									selectedIndex ===
-									currentQuiz.answerIndex
-										? "green.100"
-										: "red.100"
-								}
-							>
-								<Flex align="flex-start" gap="3">
-									{selectedIndex ===
-									currentQuiz.answerIndex ? (
-										<CheckCircleIcon
-											mt="3px"
-											color="green.500"
-										/>
-									) : (
-										<CloseIcon
-											mt="5px"
-											boxSize="10px"
-											color="red.500"
-										/>
-									)}
-
-									<Box>
+											{
+												item.label
+											}
+										</Text>
 										<Text
+											mt="4px"
+											fontSize="12px"
 											fontWeight="900"
 											color={
-												selectedIndex ===
-												currentQuiz.answerIndex
-													? "green.700"
-													: "red.700"
+												TEXT
 											}
 										>
-											{selectedIndex ===
-											currentQuiz.answerIndex
-												? "정답입니다."
-												: `정답은 ${currentQuiz.options[currentQuiz.answerIndex]}입니다.`}
-										</Text>
-
-										<Text
-											mt="2"
-											fontSize="sm"
-											lineHeight="1.75"
-											color="gray.700"
-										>
-											{currentQuiz.explanation}
+											{
+												item.value
+											}
 										</Text>
 									</Box>
-								</Flex>
-							</Box>
-						)}
+								),
+							)}
+						</SimpleGrid>
+					</Box>
+				</Grid>
 
-						<Flex justify="flex-end">
-							{!isChecked ? (
+				<Flex align="center">
+					<Text
+						fontSize="14px"
+						fontWeight="900"
+						color={TEXT}
+					>
+						퀴즈 주제
+					</Text>
+
+					<Spacer />
+
+					<Text
+						fontSize="9px"
+						color={MUTED}
+					>
+						용어마다 핵심 문제
+						{
+							topics[0]
+								?.quizzes
+								.length ??
+							3
+						}
+						개 구성
+					</Text>
+				</Flex>
+
+				<SimpleGrid
+					columns={{
+						base: 1,
+						md: 2,
+						xl: 3,
+					}}
+					spacing="12px"
+				>
+					{topics.map(
+						(
+							topic,
+							index,
+						) => (
+							<QuizTopicCard
+								key={
+									topic.id
+								}
+								topic={
+									topic
+								}
+								isFeatured={
+									index === 0
+								}
+								onStart={
+									startTopic
+								}
+							/>
+						),
+					)}
+				</SimpleGrid>
+			</Stack>
+		);
+	}
+
+	if (
+		screen === "result" &&
+		selectedTopic
+	) {
+		const resultPercent =
+			session.length > 0
+				? Math.round(
+					(score /
+						session.length) *
+					100,
+				)
+				: 0;
+
+		return (
+			<Flex
+				minH="520px"
+				align="center"
+				justify="center"
+			>
+				<Box
+					w="100%"
+					maxW="580px"
+					p={{
+						base: "24px",
+						md: "34px",
+					}}
+					bg="white"
+					borderWidth="1px"
+					borderColor={BORDER}
+					borderRadius="16px"
+					textAlign="center"
+				>
+					<Flex
+						mx="auto"
+						w="54px"
+						h="54px"
+						align="center"
+						justify="center"
+						borderRadius="full"
+						bg={ORANGE_SOFT}
+					>
+						<CheckCircleIcon
+							boxSize="27px"
+							color={ORANGE}
+						/>
+					</Flex>
+
+					<Text
+						mt="16px"
+						fontSize="20px"
+						fontWeight="900"
+						color={TEXT}
+					>
+						퀴즈 완료
+					</Text>
+
+					<Text
+						mt="6px"
+						fontSize="11px"
+						color={MUTED}
+					>
+						{
+							selectedTopic
+								.term.term
+						}{" "}
+						주제 학습을 마쳤습니다.
+					</Text>
+
+					<Text
+						mt="20px"
+						fontSize="38px"
+						fontWeight="900"
+						color={ORANGE}
+					>
+						{score}
+						<Text
+							as="span"
+							fontSize="17px"
+							color={MUTED}
+						>
+							{" "}
+							/{" "}
+							{session.length}
+						</Text>
+					</Text>
+
+					<Text
+						mt="4px"
+						fontSize="10px"
+						color={MUTED}
+					>
+						정답률{" "}
+						{resultPercent}%
+					</Text>
+
+					<HStack
+						mt="24px"
+						justify="center"
+						spacing="8px"
+					>
+						<Button
+							size="sm"
+							variant="outline"
+							borderColor={
+								BORDER
+							}
+							onClick={
+								backToTopics
+							}
+						>
+							주제 목록
+						</Button>
+
+						<Button
+							size="sm"
+							bg={ORANGE}
+							color="white"
+							_hover={{
+								bg:
+									ORANGE_DARK,
+							}}
+							onClick={() =>
+								startTopic(
+									selectedTopic,
+								)
+							}
+						>
+							다시 풀기
+						</Button>
+					</HStack>
+				</Box>
+			</Flex>
+		);
+	}
+
+	const question =
+		cleanQuestion(
+			currentQuiz.question,
+		);
+
+	const progressPercent =
+		session.length > 0
+			? ((currentIndex + 1) /
+				session.length) *
+			100
+			: 0;
+
+	return (
+		<>
+			<Stack spacing="14px">
+				<Flex
+					align="center"
+					gap="10px"
+				>
+					<Button
+						size="sm"
+						variant="ghost"
+						leftIcon={
+							<ChevronLeftIcon />
+						}
+						color="#756A61"
+						fontSize="10px"
+						onClick={
+							backToTopics
+						}
+					>
+						퀴즈 목록
+					</Button>
+
+					<Spacer />
+
+					<Badge
+						bg={ORANGE_SOFT}
+						color={ORANGE_DARK}
+						borderRadius="full"
+						px="9px"
+						py="4px"
+						fontSize="8px"
+					>
+						{
+							selectedTopic
+								?.term.term
+						}
+					</Badge>
+				</Flex>
+
+				<Box
+					bg="white"
+					borderWidth="1px"
+					borderColor={BORDER}
+					borderRadius="14px"
+					overflow="hidden"
+				>
+					<Box
+						px={{
+							base: "18px",
+							md: "24px",
+						}}
+						py="17px"
+						bg="#FFF9F4"
+						borderBottomWidth="1px"
+						borderColor={BORDER}
+					>
+						<Flex
+							align="center"
+							mb="9px"
+						>
+							<Text
+								fontSize="11px"
+								fontWeight="900"
+								color={TEXT}
+							>
+								문제{" "}
+								{
+									currentIndex +
+									1
+								}{" "}
+								/{" "}
+								{
+									session.length
+								}
+							</Text>
+
+							<Spacer />
+
+							<HStack spacing="12px">
+								<Text
+									fontSize="9px"
+									color={MUTED}
+								>
+									정답{" "}
+									<Text
+										as="span"
+										fontWeight="900"
+										color={
+											GREEN
+										}
+									>
+										{
+											score
+										}
+									</Text>
+								</Text>
+
+								<Text
+									fontSize="9px"
+									color={MUTED}
+								>
+									연속{" "}
+									<Text
+										as="span"
+										fontWeight="900"
+										color={
+											ORANGE
+										}
+									>
+										{
+											streak
+										}
+									</Text>
+								</Text>
+							</HStack>
+						</Flex>
+
+						<Progress
+							value={
+								progressPercent
+							}
+							h="6px"
+							borderRadius="full"
+							bg="#EFE5DC"
+							sx={{
+								"& > div":
+								{
+									background:
+										ORANGE,
+									borderRadius:
+										"999px",
+								},
+							}}
+						/>
+					</Box>
+
+					<Box
+						p={{
+							base: "20px",
+							md: "28px",
+						}}
+					>
+						<Stack spacing="22px">
+							<Box>
+								<HStack
+									mb="10px"
+									spacing="7px"
+								>
+									<Badge
+										bg="#F5EFE9"
+										color="#786D63"
+										borderRadius="full"
+										fontSize="8px"
+									>
+										{
+											currentQuiz.category
+										}
+									</Badge>
+
+									<Badge
+										bg={
+											getDifficultyStyle(
+												currentQuiz.difficulty,
+											)
+												.bg
+										}
+										color={
+											getDifficultyStyle(
+												currentQuiz.difficulty,
+											)
+												.color
+										}
+										borderRadius="full"
+										fontSize="8px"
+									>
+										{
+											currentQuiz.difficulty
+										}
+									</Badge>
+								</HStack>
+
+								<Heading
+									size="md"
+									lineHeight="1.65"
+									letterSpacing="-0.03em"
+									color={TEXT}
+									whiteSpace="pre-line"
+								>
+									{
+										question.title
+									}
+								</Heading>
+
+								{question.quote && (
+									<Box
+										mt="14px"
+										p="13px 15px"
+										bg="#FBF7F2"
+										borderLeftWidth="3px"
+										borderLeftColor={
+											ORANGE
+										}
+										borderRadius="0 9px 9px 0"
+									>
+										<Text
+											fontSize="11px"
+											lineHeight="1.7"
+											color="#675D54"
+										>
+											“
+											{
+												question.quote
+											}
+											”
+										</Text>
+									</Box>
+								)}
+							</Box>
+
+							<SimpleGrid
+								columns={{
+									base: 1,
+									md: 2,
+								}}
+								spacing="10px"
+							>
+								{currentQuiz.options.map(
+									(
+										option,
+										optionIndex,
+									) => {
+										const selected =
+											selectedIndex ===
+											optionIndex;
+
+										const correct =
+											optionIndex ===
+											currentQuiz.answerIndex;
+
+										let border =
+											BORDER;
+										let background =
+											"white";
+										let color =
+											TEXT;
+
+										if (
+											!isChecked &&
+											selected
+										) {
+											border =
+												ORANGE;
+											background =
+												ORANGE_SOFT;
+										}
+
+										if (
+											isChecked &&
+											correct
+										) {
+											border =
+												"#92CBA5";
+											background =
+												"#F0FAF3";
+											color =
+												"#2F7D4B";
+										}
+
+										if (
+											isChecked &&
+											selected &&
+											!correct
+										) {
+											border =
+												"#E7A9A1";
+											background =
+												"#FFF3F1";
+											color =
+												RED;
+										}
+
+										return (
+											<Button
+												key={`${option}-${optionIndex}`}
+												h="auto"
+												minH="62px"
+												py="12px"
+												px="14px"
+												justifyContent="flex-start"
+												textAlign="left"
+												whiteSpace="normal"
+												borderWidth="1px"
+												borderColor={
+													border
+												}
+												borderRadius="10px"
+												bg={
+													background
+												}
+												color={
+													color
+												}
+												_hover={{
+													bg:
+														isChecked
+															? background
+															: "#FFF9F4",
+												}}
+												onClick={() => {
+													if (
+														!isChecked
+													) {
+														setSelectedIndex(
+															optionIndex,
+														);
+													}
+												}}
+											>
+												<Flex
+													align="center"
+													gap="10px"
+												>
+													<Flex
+														w="26px"
+														h="26px"
+														align="center"
+														justify="center"
+														borderRadius="full"
+														bg={
+															selected
+																? ORANGE
+																: "#F4EFEA"
+														}
+														color={
+															selected
+																? "white"
+																: "#756A61"
+														}
+														fontSize="10px"
+														fontWeight="900"
+														flexShrink={
+															0
+														}
+													>
+														{
+															optionIndex +
+															1
+														}
+													</Flex>
+
+													<Text
+														fontSize="11px"
+														fontWeight="700"
+														lineHeight="1.55"
+													>
+														{
+															option
+														}
+													</Text>
+												</Flex>
+											</Button>
+										);
+									},
+								)}
+							</SimpleGrid>
+
+							<Flex
+								align={{
+									base: "stretch",
+									md: "center",
+								}}
+								direction={{
+									base: "column",
+									md: "row",
+								}}
+								gap="10px"
+							>
+								<HStack
+									spacing="6px"
+									flexWrap="wrap"
+								>
+									{session.map(
+										(
+											item,
+											index,
+										) => {
+											const answered =
+												sessionAnswers[
+												item
+													.id
+												];
+
+											const active =
+												index ===
+												currentIndex;
+
+											return (
+												<Button
+													key={
+														item.id
+													}
+													size="xs"
+													minW="30px"
+													h="30px"
+													borderRadius="full"
+													variant="outline"
+													borderColor={
+														active
+															? ORANGE
+															: answered
+																? answered.isCorrect
+																	? "#95CDA7"
+																	: "#E6AAA3"
+																: BORDER
+													}
+													bg={
+														active
+															? ORANGE_SOFT
+															: "white"
+													}
+													color={
+														active
+															? ORANGE_DARK
+															: "#786D63"
+													}
+													onClick={() =>
+														moveToQuestion(
+															index,
+														)
+													}
+												>
+													{
+														index +
+														1
+													}
+												</Button>
+											);
+										},
+									)}
+								</HStack>
+
+								<Spacer />
+
 								<Button
 									minW="120px"
-									colorScheme="army"
-									borderRadius="12px"
-									isDisabled={selectedIndex === null}
-									onClick={checkAnswer}
+									h="38px"
+									bg={ORANGE}
+									color="white"
+									fontSize="11px"
+									fontWeight="900"
+									_hover={{
+										bg:
+											ORANGE_DARK,
+									}}
+									isDisabled={
+										selectedIndex ===
+										null ||
+										isChecked
+									}
+									onClick={
+										checkAnswer
+									}
 								>
 									정답 확인
 								</Button>
+							</Flex>
+						</Stack>
+					</Box>
+				</Box>
+			</Stack>
+
+			<Modal
+				isOpen={
+					answerModal.isOpen
+				}
+				onClose={
+					answerModal.onClose
+				}
+				size="md"
+				isCentered
+				closeOnOverlayClick={false}
+			>
+				<ModalOverlay
+					bg="rgba(29,25,21,.48)"
+				/>
+
+				<ModalContent
+					borderRadius="15px"
+					borderWidth="1px"
+					borderColor={BORDER}
+					overflow="hidden"
+				>
+					<ModalBody
+						px="24px"
+						pt="28px"
+						pb="18px"
+						textAlign="center"
+					>
+						<Flex
+							mx="auto"
+							w="52px"
+							h="52px"
+							align="center"
+							justify="center"
+							borderRadius="full"
+							bg={
+								selectedIndex ===
+									currentQuiz.answerIndex
+									? "#EDF8F0"
+									: "#FFF0ED"
+							}
+						>
+							{selectedIndex ===
+								currentQuiz.answerIndex ? (
+								<CheckCircleIcon
+									boxSize="25px"
+									color={GREEN}
+								/>
 							) : (
-								<Button
-									minW="120px"
-									colorScheme="army"
-									borderRadius="12px"
-									onClick={nextQuestion}
+								<Text
+									fontSize="24px"
+									fontWeight="900"
+									color={RED}
 								>
-									{currentIndex === session.length - 1
-										? "결과 보기"
-										: "다음 문제"}
-								</Button>
+									×
+								</Text>
 							)}
 						</Flex>
-					</Stack>
-				</CardBody>
-			</Card>
-		</Stack>
+
+						<Text
+							mt="13px"
+							fontSize="19px"
+							fontWeight="900"
+							color={TEXT}
+						>
+							{selectedIndex ===
+								currentQuiz.answerIndex
+								? "정답입니다!"
+								: "아쉬워요!"}
+						</Text>
+
+						<Box
+							mt="18px"
+							p="13px"
+							bg="#FBF7F2"
+							borderRadius="10px"
+							textAlign="left"
+						>
+							<Flex gap="9px">
+								<Text
+									fontSize="10px"
+									fontWeight="900"
+									color={ORANGE_DARK}
+									flexShrink={0}
+								>
+									정답
+								</Text>
+
+								<Text
+									fontSize="11px"
+									fontWeight="800"
+									color={TEXT}
+								>
+									{
+										currentQuiz
+											.answerIndex +
+										1
+									}
+									.{" "}
+									{
+										currentQuiz
+											.options[
+										currentQuiz
+											.answerIndex
+										]
+									}
+								</Text>
+							</Flex>
+						</Box>
+
+						<Box
+							mt="10px"
+							p="13px"
+							borderWidth="1px"
+							borderColor={BORDER}
+							borderRadius="10px"
+							textAlign="left"
+						>
+							<Text
+								fontSize="9px"
+								fontWeight="900"
+								color={MUTED}
+							>
+								해설
+							</Text>
+
+							<Text
+								mt="5px"
+								fontSize="10px"
+								lineHeight="1.75"
+								color="#675D54"
+							>
+								{
+									currentQuiz.explanation
+								}
+							</Text>
+						</Box>
+					</ModalBody>
+
+					<ModalFooter
+						gap="8px"
+						borderTopWidth="1px"
+						borderColor={BORDER}
+					>
+						<Button
+							size="sm"
+							variant="outline"
+							borderColor={
+								BORDER
+							}
+							onClick={() => {
+								answerModal.onClose();
+								setSelectedIndex(
+									null,
+								);
+								setIsChecked(
+									false,
+								);
+							}}
+						>
+							다시 풀기
+						</Button>
+
+						<Button
+							size="sm"
+							bg={ORANGE}
+							color="white"
+							rightIcon={
+								currentIndex <
+									session.length -
+									1 ? (
+									<ChevronRightIcon />
+								) : undefined
+							}
+							_hover={{
+								bg:
+									ORANGE_DARK,
+							}}
+							onClick={goNext}
+						>
+							{currentIndex <
+								session.length - 1
+								? "다음 문제"
+								: "결과 보기"}
+						</Button>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
+		</>
 	);
 }
 
 export default function FinanceLearning() {
 	const location =
 		useLocation();
-	const navigate =
-		useNavigate();
-	const [searchParams] =
-		useSearchParams();
-
-	const requestedTermId =
-		searchParams.get(
-			"term",
-		);
-
-	const routeTabIndex =
-		location.pathname ===
-		"/quiz"
-			? 1
-			: 0;
 
 	const [
-		tabIndex,
-		setTabIndex,
-	] = useState(
-		routeTabIndex,
+		searchParams,
+		setSearchParams,
+	] = useSearchParams();
+
+	const initialTab =
+		location.pathname === "/quiz" ||
+			searchParams.get("tab") ===
+			"quiz"
+			? "quiz"
+			: "dictionary";
+
+	const [
+		mainTab,
+		setMainTab,
+	] = useState<MainTab>(
+		initialTab,
 	);
 
-	useEffect(() => {
-		setTabIndex(
-			routeTabIndex,
-		);
-	}, [routeTabIndex]);
+	const relatedTermId =
+		searchParams.get("term");
 
 	const changeTab = (
-		nextIndex: number,
+		tab: MainTab,
 	) => {
-		setTabIndex(
-			nextIndex,
-		);
+		setMainTab(tab);
 
-		navigate(
-			nextIndex === 0
-				? "/dictionary"
-				: "/quiz",
-		);
+		const next =
+			new URLSearchParams(
+				searchParams,
+			);
+
+		if (tab === "quiz") {
+			next.set("tab", "quiz");
+		} else {
+			next.delete("tab");
+			next.delete("term");
+		}
+
+		setSearchParams(next, {
+			replace: true,
+		});
+	};
+
+	const startQuizForTerm = (
+		termId: string,
+	) => {
+		setMainTab("quiz");
+
+		const next =
+			new URLSearchParams(
+				searchParams,
+			);
+
+		next.set("tab", "quiz");
+		next.set("term", termId);
+
+		setSearchParams(next, {
+			replace: true,
+		});
+	};
+
+	const clearTerm = () => {
+		const next =
+			new URLSearchParams(
+				searchParams,
+			);
+
+		next.delete("term");
+
+		if (mainTab === "quiz") {
+			next.set("tab", "quiz");
+		}
+
+		setSearchParams(next, {
+			replace: true,
+		});
 	};
 
 	return (
 		<Box
-			minH="calc(100vh - 66px)"
-			bg="#F2F1E9"
+			minH="100vh"
+			bg={BG}
+			px={{
+				base: "16px",
+				md: "24px",
+				xl: "32px",
+			}}
+			py={{
+				base: "20px",
+				md: "28px",
+			}}
 		>
 			<Box
-				maxW="1440px"
+				maxW="1460px"
 				mx="auto"
-				px={{
-					base: "16px",
-					md: "24px",
-					xl: "32px",
-				}}
-				py={{
-					base: "24px",
-					md: "36px",
-				}}
 			>
-				<Box
-					mb="7"
-					px={{
-						base: "22px",
-						md: "32px",
-					}}
-					py={{
-						base: "28px",
-						md: "36px",
-					}}
-					borderRadius="22px"
-					bgGradient="linear(to-r, army.900, army.700, army.600)"
-					color="white"
-					boxShadow="panel"
-				>
-					<HStack
-						mb="4"
-						spacing="2"
-						wrap="wrap"
-					>
-						<Badge
-							px="3"
-							py="1"
-							bg="khaki.200"
-							color="army.900"
-						>
-							전군 금융 학습
-						</Badge>
-
-						<Badge
-							px="3"
-							py="1"
-							bg="whiteAlpha.200"
-							color="white"
-						>
-							사전 · 퀴즈
-						</Badge>
-					</HStack>
-
+				<Box mb="22px">
 					<Heading
-						fontSize={{
-							base: "30px",
-							md: "40px",
-						}}
+						size="lg"
 						letterSpacing="-0.04em"
+						color={TEXT}
 					>
-						금융 기초 학습
+						금융 사전 퀴즈
 					</Heading>
 
 					<Text
-						mt="3"
-						maxW="760px"
-						color="whiteAlpha.800"
-						lineHeight="1.8"
+						mt="6px"
+						fontSize="12px"
+						color={MUTED}
 					>
-						금융 용어{" "}
-						{financeTerms.length}개와
-						객관식 퀴즈{" "}
-						{financeQuizzes.length}개로
-						핵심 개념을 학습합니다.
+						금융 용어를 익히고
+						퀴즈로 개념을
+						확인해보세요.
 					</Text>
 				</Box>
 
-				<Tabs
-					index={tabIndex}
-					onChange={changeTab}
-					variant="unstyled"
-					isLazy
+				<Flex
+					mb="20px"
+					borderBottomWidth="1px"
+					borderColor={BORDER}
 				>
-					<TabList
-						mb="6"
-						p="1.5"
-						maxW="500px"
-						bg="#FFFEFA"
-						borderWidth="1px"
-						borderColor="army.200"
-						borderRadius="16px"
-						boxShadow="sm"
-					>
-						<Tab
-							flex="1"
-							borderRadius="12px"
-							fontWeight="900"
-							color="army.800"
-							_selected={{
-								bg: "army.700",
-								color: "white",
-								boxShadow:
-									"0 4px 12px rgba(64, 79, 43, 0.24)",
-							}}
-						>
-							용어 사전
-						</Tab>
+					{[
+						{
+							id:
+								"dictionary" as const,
+							label:
+								"용어 사전",
+						},
+						{
+							id:
+								"quiz" as const,
+							label:
+								"퀴즈 학습",
+						},
+					].map((tab) => {
+						const active =
+							mainTab ===
+							tab.id;
 
-						<Tab
-							flex="1"
-							borderRadius="12px"
-							fontWeight="900"
-							color="army.800"
-							_selected={{
-								bg: "army.700",
-								color: "white",
-								boxShadow:
-									"0 4px 12px rgba(64, 79, 43, 0.24)",
-							}}
-						>
-							퀴즈 학습
-						</Tab>
-					</TabList>
-
-					<TabPanels>
-						<TabPanel p="0">
-							<DictionaryView
-								initialTermId={
-									tabIndex === 0
-										? requestedTermId
-										: null
+						return (
+							<Button
+								key={tab.id}
+								h="44px"
+								px="20px"
+								variant="ghost"
+								borderRadius="0"
+								fontSize="12px"
+								fontWeight={
+									active
+										? "900"
+										: "700"
 								}
-								onStartQuiz={(
-									termId,
-								) =>
-									navigate(
-										`/quiz?term=${encodeURIComponent(
-											termId,
-										)}`,
+								color={
+									active
+										? TEXT
+										: "#A39A91"
+								}
+								borderBottomWidth="2px"
+								borderBottomColor={
+									active
+										? ORANGE
+										: "transparent"
+								}
+								_hover={{
+									bg:
+										"transparent",
+									color:
+										active
+											? TEXT
+											: "#756A61",
+								}}
+								onClick={() =>
+									changeTab(
+										tab.id,
 									)
 								}
-							/>
-						</TabPanel>
+							>
+								{tab.label}
+							</Button>
+						);
+					})}
+				</Flex>
 
-						<TabPanel p="0">
-							<QuizView
-								initialTermId={
-									tabIndex === 1
-										? requestedTermId
-										: null
-								}
-								onClearTerm={() =>
-									navigate(
-										"/quiz",
-									)
-								}
-							/>
-						</TabPanel>
-					</TabPanels>
-				</Tabs>
+				{mainTab ===
+					"dictionary" ? (
+					<DictionaryView
+						initialTermId={
+							relatedTermId
+						}
+						onStartQuiz={
+							startQuizForTerm
+						}
+					/>
+				) : (
+					<QuizView
+						initialTermId={
+							relatedTermId
+						}
+						onClearTerm={
+							clearTerm
+						}
+					/>
+				)}
 			</Box>
 		</Box>
 	);

@@ -253,21 +253,58 @@ type ScenarioAnswer = {
 	text: string;
 };
 
+type TurnMetricEvaluation = {
+	metric?: string;
+	score?: number;
+	reason?: string;
+	feedback?: string;
+	penalties?: Array<{
+		cause?: string;
+		evidence?: string;
+	}>;
+};
+
+type TurnGuidanceAction = {
+	guidance_code?: string;
+	kind?: string;
+	message?: string;
+	source_turn?: number;
+	target_metrics?: string[];
+	trigger_causes?: string[];
+	check_causes?: string[];
+};
+
+type TurnGuidanceReview = {
+	guidance_code?: string;
+	message?: string;
+	source_turn?: number;
+	evaluated_turn?: number;
+	status?: "FOLLOWED" | "REPEATED" | "NOT_VERIFIABLE" | string;
+	evidence?: string;
+	target_scores?: Record<string, number>;
+};
+
+type TurnFeedbackData = {
+	good_points?: string[];
+	missed_points?: string[];
+	explanation?: string;
+	next_actions?: TurnGuidanceAction[];
+	previous_guidance_review?: TurnGuidanceReview[];
+};
+
+type TurnEvaluation = {
+	evaluation_id?: string;
+	turn_no?: number;
+	scorecard?: {
+		turn_score?: number;
+		metrics?: TurnMetricEvaluation[];
+		feedback?: TurnFeedbackData | string | null;
+	};
+};
+
 type TurnSubmitResponse = {
 	session: SessionPublic;
-	turn_evaluation?: {
-		evaluation_id?: string;
-		turn_no?: number;
-		scorecard?: {
-			turn_score?: number;
-			metrics?: Array<{
-				metric?: string;
-				score?: number;
-				feedback?: string;
-			}>;
-			feedback?: unknown;
-		};
-	};
+	turn_evaluation?: TurnEvaluation;
 	next_turn?: number | null;
 	final_evaluation?: FinalEvaluation | null;
 };
@@ -478,6 +515,32 @@ function extractMetricRows(evaluation?: FinalEvaluation | null) {
 		label: metricLabels[key] ?? key,
 		score: numberValue(values[key], 0),
 	}));
+}
+
+function normalizeTurnFeedback(value: unknown): TurnFeedbackData {
+	if (!value) return {};
+
+	if (typeof value === "object" && !Array.isArray(value)) {
+		return value as TurnFeedbackData;
+	}
+
+	if (typeof value === "string") {
+		const trimmed = value.trim();
+		if (!trimmed) return {};
+
+		try {
+			const parsed = JSON.parse(trimmed);
+			if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+				return parsed as TurnFeedbackData;
+			}
+		} catch {
+			// 문자열 피드백은 그대로 해설로 사용한다.
+		}
+
+		return { explanation: trimmed };
+	}
+
+	return {};
 }
 
 /* ============================================================================
@@ -2426,97 +2489,466 @@ function TurnDecisionModal({
 	);
 }
 
-function TurnSavedModal({
+function TurnFeedbackModal({
 	isOpen,
-	onClose,
+	onContinue,
+	evaluation,
 	info,
+	isFinalTurn,
 }: {
 	isOpen: boolean;
-	onClose: () => void;
+	onContinue: () => void;
+	evaluation: TurnEvaluation | null;
 	info: TransitionInfo | null;
+	isFinalTurn: boolean;
 }) {
-	if (!info) return null;
+	if (!evaluation?.scorecard) return null;
+
+	const scorecard = evaluation.scorecard;
+	const feedback = normalizeTurnFeedback(scorecard.feedback);
+	const turnNo = evaluation.turn_no ?? info?.turnNo ?? 0;
+	const turnScore = numberValue(scorecard.turn_score);
+	const metrics = (scorecard.metrics ?? []).filter(
+		(item) => item.metric && Number.isFinite(numberValue(item.score)),
+	);
+	const goodPoints = (feedback.good_points ?? []).filter(Boolean);
+	const missedPoints = (feedback.missed_points ?? []).filter(Boolean);
+	const nextActions = (feedback.next_actions ?? []).filter(
+		(item) => Boolean(item?.message),
+	);
+	const previousReviews = (feedback.previous_guidance_review ?? []).filter(
+		(item) => Boolean(item?.message || item?.evidence),
+	);
+
+	const scoreColor =
+		turnScore >= 4
+			? UI.green
+			: turnScore >= 3
+				? UI.orange
+				: UI.red;
 
 	return (
-		<Modal isOpen={isOpen} onClose={onClose} isCentered size="sm">
-			<ModalOverlay bg="rgba(35, 31, 27, 0.46)" />
-			<ModalContent bg={UI.surface} borderRadius="10px" overflow="hidden">
-				<ModalCloseButton top="12px" right="12px" />
-				<ModalBody px="24px" pt="22px" pb="0">
-					<Flex justify="center">
-						<Flex
-							w="36px"
-							h="36px"
-							borderRadius="full"
-							border="2px solid"
-							borderColor={UI.orange}
-							align="center"
-							justify="center"
-							color={UI.orange}
-						>
-							<FiCheck size={18} />
-						</Flex>
+		<Modal
+			isOpen={isOpen}
+			onClose={() => undefined}
+			isCentered
+			size="4xl"
+			closeOnOverlayClick={false}
+			closeOnEsc={false}
+		>
+			<ModalOverlay bg="rgba(35, 31, 27, 0.50)" />
+			<ModalContent
+				bg={UI.surface}
+				borderRadius="12px"
+				maxW="820px"
+				maxH="92vh"
+				overflow="hidden"
+				boxShadow="0 22px 58px rgba(0,0,0,0.20)"
+			>
+				<ModalHeader
+					px={{ base: "20px", md: "28px" }}
+					pt="24px"
+					pb="18px"
+					borderBottom="1px solid"
+					borderColor="#EEE5DB"
+				>
+					<Flex align="flex-start" justify="space-between" gap="16px">
+						<Box>
+							<Text
+								display="inline-block"
+								px="8px"
+								py="4px"
+								borderRadius="6px"
+								bg={UI.orangeSoft}
+								color={UI.orange}
+								fontSize="9px"
+								fontWeight="900"
+							>
+								TURN {turnNo} 분석 완료
+							</Text>
+
+							<Heading
+								mt="10px"
+								fontSize={{ base: "21px", md: "24px" }}
+								letterSpacing="-0.035em"
+							>
+								이번 TURN 피드백
+							</Heading>
+
+							<Text
+								mt="6px"
+								fontSize="11px"
+								lineHeight="1.65"
+								color={UI.subtle}
+							>
+								이번 턴의 투자 판단, 근거, 실제 행동을 기준표에 따라 분석했습니다.
+							</Text>
+						</Box>
+
+						<Box textAlign="right" flexShrink={0}>
+							<Text fontSize="9px" color={UI.muted}>
+								이번 TURN 점수
+							</Text>
+							<Flex mt="4px" align="baseline" justify="flex-end">
+								<Text
+									fontSize="31px"
+									lineHeight="1"
+									fontWeight="900"
+									color={scoreColor}
+								>
+									{turnScore.toFixed(2)}
+								</Text>
+								<Text ml="4px" fontSize="11px" color={UI.muted}>
+									/ 5
+								</Text>
+							</Flex>
+						</Box>
 					</Flex>
+				</ModalHeader>
 
-					<Heading
-						mt="18px"
-						fontSize="18px"
-						textAlign="center"
-						letterSpacing="-0.03em"
-					>
-						TURN {info.turnNo} 기록이 저장되었습니다.
-					</Heading>
+				<ModalBody
+					px={{ base: "20px", md: "28px" }}
+					py="20px"
+					overflowY="auto"
+					sx={{
+						"&::-webkit-scrollbar": { width: "7px" },
+						"&::-webkit-scrollbar-thumb": {
+							background: "#D7CEC5",
+							borderRadius: "20px",
+						},
+					}}
+				>
+					{/* 평가 항목 */}
+					<Box>
+						<Flex align="center" justify="space-between" mb="10px">
+							<Heading fontSize="13px">평가 항목별 점수</Heading>
+							<Text fontSize="9px" color={UI.muted}>
+								점수는 수익률이 아니라 판단 과정 기준입니다.
+							</Text>
+						</Flex>
 
-					<Text
-						mt="12px"
-						fontSize="10px"
-						lineHeight="1.7"
-						textAlign="center"
-						color={UI.subtle}
-					>
-						입력한 투자 판단과 근거가 저장되었습니다.
-						<br />
-						다음 시장 시점으로 이동합니다.
-					</Text>
+						<SimpleGrid
+							columns={{
+								base: 2,
+								sm: 3,
+								md: metrics.length >= 6 ? 6 : 5,
+							}}
+							spacing="8px"
+						>
+							{metrics.map((metric) => {
+								const metricId = String(metric.metric ?? "");
+								const score = numberValue(metric.score);
+								const width = `${Math.max(
+									0,
+									Math.min(100, (score / 5) * 100),
+								)}%`;
 
-					<Panel mt="16px" px="18px" py="15px" bg="#FFFCF8">
-						<Flex align="center" justify="center" gap="28px">
-							<Box textAlign="center">
-								<Text fontSize="13px" fontWeight="800">
-									{formatDate(info.currentDate)}
-								</Text>
-								<Text mt="3px" fontSize="8px" color={UI.muted}>
-									TURN {info.turnNo} 시작
-								</Text>
+								return (
+									<Panel
+										key={metricId}
+										px="10px"
+										py="11px"
+										bg="#FFFCF8"
+										textAlign="center"
+										minW="0"
+									>
+										<Text
+											fontSize="8px"
+											fontWeight="800"
+											color={UI.subtle}
+											minH="23px"
+											noOfLines={2}
+										>
+											{metricLabels[metricId] ?? metricId}
+										</Text>
+
+										<Text mt="6px" fontSize="18px" fontWeight="900">
+											{score.toFixed(1)}
+											<Text
+												as="span"
+												ml="2px"
+												fontSize="8px"
+												fontWeight="600"
+												color={UI.muted}
+											>
+												/ 5
+											</Text>
+										</Text>
+
+										<Box
+											mt="8px"
+											h="4px"
+											borderRadius="full"
+											bg="#EEE7DF"
+											overflow="hidden"
+										>
+											<Box
+												w={width}
+												h="100%"
+												borderRadius="full"
+												bg={score >= 4 ? UI.green : score >= 3 ? UI.orange : UI.red}
+											/>
+										</Box>
+									</Panel>
+								);
+							})}
+						</SimpleGrid>
+					</Box>
+
+					{/* 종합 해설 */}
+					<Panel mt="12px" px="16px" py="14px" bg="#FFF9F4">
+						<Flex gap="9px" align="flex-start">
+							<Box mt="1px" color={UI.orange} flexShrink={0}>
+								<FiBookOpen size={15} />
 							</Box>
-
-							<Box color={UI.orange}>
-								<FiArrowRight size={17} />
-							</Box>
-
-							<Box textAlign="center">
-								<Text fontSize="13px" fontWeight="800">
-									{formatDate(info.nextDate)}
+							<Box>
+								<Text fontSize="11px" fontWeight="900">
+									이번 TURN 해설
 								</Text>
-								<Text mt="3px" fontSize="8px" color={UI.muted}>
-									TURN {info.nextTurn} 시작
+								<Text
+									mt="6px"
+									fontSize="10px"
+									lineHeight="1.8"
+									color={UI.subtle}
+								>
+									{feedback.explanation ||
+										"이번 TURN의 점수와 판단 기록을 저장했습니다. 다음 턴에서는 낮은 평가 항목과 위험 요인을 함께 확인해보세요."}
 								</Text>
 							</Box>
 						</Flex>
 					</Panel>
+
+					<SimpleGrid mt="12px" columns={{ base: 1, md: 2 }} spacing="10px">
+						<Panel px="15px" py="14px" bg="#FFFCF8" minH="150px">
+							<Flex align="center" gap="7px">
+								<FiCheckCircle size={15} color={UI.green} />
+								<Heading fontSize="12px">잘 본 요소</Heading>
+							</Flex>
+
+							<Stack mt="11px" spacing="9px">
+								{goodPoints.length ? (
+									goodPoints.slice(0, 4).map((item, index) => (
+										<Flex
+											key={`${item}-${index}`}
+											gap="8px"
+											align="flex-start"
+										>
+											<Box
+												mt="5px"
+												w="4px"
+												h="4px"
+												borderRadius="full"
+												bg={UI.green}
+												flexShrink={0}
+											/>
+											<Text fontSize="9px" lineHeight="1.6" color={UI.subtle}>
+												{item}
+											</Text>
+										</Flex>
+									))
+								) : (
+									<Text fontSize="9px" lineHeight="1.65" color={UI.muted}>
+										이번 TURN에서 별도로 강조할 강점이 확인되지 않았습니다.
+									</Text>
+								)}
+							</Stack>
+						</Panel>
+
+						<Panel px="15px" py="14px" bg="#FFFCF8" minH="150px">
+							<Flex align="center" gap="7px">
+								<FiAlertTriangle size={15} color={UI.orange} />
+								<Heading fontSize="12px">보완할 요소</Heading>
+							</Flex>
+
+							<Stack mt="11px" spacing="9px">
+								{missedPoints.length ? (
+									missedPoints.slice(0, 4).map((item, index) => (
+										<Flex
+											key={`${item}-${index}`}
+											gap="8px"
+											align="flex-start"
+										>
+											<Box
+												mt="5px"
+												w="4px"
+												h="4px"
+												borderRadius="full"
+												bg={UI.orange}
+												flexShrink={0}
+											/>
+											<Text fontSize="9px" lineHeight="1.6" color={UI.subtle}>
+												{item}
+											</Text>
+										</Flex>
+									))
+								) : (
+									<Text fontSize="9px" lineHeight="1.65" color={UI.muted}>
+										이번 TURN에서 추가로 확인된 주요 누락이나 함정은 없습니다.
+									</Text>
+								)}
+							</Stack>
+						</Panel>
+					</SimpleGrid>
+
+					{/* 이전 조언 반영 여부 */}
+					{previousReviews.length > 0 && (
+						<Panel mt="10px" px="15px" py="13px" bg="#FFFCF8">
+							<Heading fontSize="11px">이전 TURN 피드백 반영</Heading>
+
+							<Stack mt="9px" spacing="8px">
+								{previousReviews.slice(0, 3).map((review, index) => {
+									const followed = review.status === "FOLLOWED";
+									const repeated = review.status === "REPEATED";
+
+									return (
+										<Flex
+											key={`${review.guidance_code ?? "review"}-${index}`}
+											gap="9px"
+											align="flex-start"
+										>
+											<Text
+												flexShrink={0}
+												fontSize="8px"
+												fontWeight="900"
+												color={
+													followed
+														? UI.green
+														: repeated
+															? UI.red
+															: UI.muted
+												}
+												bg={
+													followed
+														? "#EDF8F0"
+														: repeated
+															? "#FFF0EE"
+															: "#F2EFEB"
+												}
+												px="6px"
+												py="3px"
+												borderRadius="5px"
+											>
+												{followed
+													? "반영"
+													: repeated
+														? "반복"
+														: "확인 필요"}
+											</Text>
+
+											<Box>
+												<Text fontSize="9px" fontWeight="800">
+													{review.message}
+												</Text>
+												{review.evidence && (
+													<Text
+														mt="3px"
+														fontSize="8px"
+														lineHeight="1.55"
+														color={UI.muted}
+													>
+														{review.evidence}
+													</Text>
+												)}
+											</Box>
+										</Flex>
+									);
+								})}
+							</Stack>
+						</Panel>
+					)}
+
+					{/* 다음 턴 코칭 */}
+					<Panel mt="10px" px="15px" py="14px" bg={UI.orangeSoft}>
+						<Flex align="center" gap="7px">
+							<FiTarget size={15} color={UI.orange} />
+							<Heading fontSize="12px">
+								{isFinalTurn ? "다음 투자에서 적용할 점" : "다음 TURN에서 확인할 점"}
+							</Heading>
+						</Flex>
+
+						<Stack mt="10px" spacing="7px">
+							{nextActions.length ? (
+								nextActions.slice(0, 3).map((action, index) => (
+									<Flex
+										key={`${action.guidance_code ?? "action"}-${index}`}
+										gap="8px"
+										align="flex-start"
+									>
+										<Text
+											flexShrink={0}
+											fontSize="9px"
+											fontWeight="900"
+											color={UI.orange}
+										>
+											{index + 1}.
+										</Text>
+										<Text fontSize="9px" lineHeight="1.65" color={UI.text}>
+											{action.message}
+										</Text>
+									</Flex>
+								))
+							) : (
+								<Text fontSize="9px" lineHeight="1.65" color={UI.subtle}>
+									낮은 점수 항목이 있다면 해당 항목의 근거와 반대 시나리오를 다시 확인해보세요.
+								</Text>
+							)}
+						</Stack>
+					</Panel>
+
+					{!isFinalTurn && info && (
+						<Flex
+							mt="12px"
+							px="14px"
+							py="11px"
+							align="center"
+							justify="center"
+							gap="20px"
+							borderRadius="8px"
+							bg="#F8F4EF"
+						>
+							<Box textAlign="center">
+								<Text fontSize="10px" fontWeight="800">
+									{formatDate(info.currentDate)}
+								</Text>
+								<Text mt="2px" fontSize="8px" color={UI.muted}>
+									TURN {info.turnNo}
+								</Text>
+							</Box>
+
+							<FiArrowRight size={15} color={UI.orange} />
+
+							<Box textAlign="center">
+								<Text fontSize="10px" fontWeight="800">
+									{formatDate(info.nextDate)}
+								</Text>
+								<Text mt="2px" fontSize="8px" color={UI.muted}>
+									TURN {info.nextTurn}
+								</Text>
+							</Box>
+						</Flex>
+					)}
 				</ModalBody>
 
-				<ModalFooter px="24px" pt="16px" pb="18px">
+				<ModalFooter
+					px={{ base: "20px", md: "28px" }}
+					py="17px"
+					borderTop="1px solid"
+					borderColor="#EEE5DB"
+					bg={UI.surface}
+				>
 					<Button
-						w="100%"
-						h="41px"
+						ml="auto"
+						w={{ base: "100%", md: "280px" }}
+						h="42px"
 						bg={UI.orange}
 						color="white"
-						fontWeight="800"
+						fontSize="12px"
+						fontWeight="900"
+						rightIcon={<FiArrowRight size={16} />}
 						_hover={{ bg: UI.orangeDark }}
-						onClick={onClose}
+						onClick={onContinue}
 					>
-						확인
+						{isFinalTurn ? "종합 평가 결과 보기" : "다음 TURN으로"}
 					</Button>
 				</ModalFooter>
 			</ModalContent>
@@ -2815,7 +3247,7 @@ export default function ScenarioPlay() {
 	const scenarioInfoModal = useDisclosure();
 	const orderSuccessModal = useDisclosure();
 	const decisionModal = useDisclosure();
-	const turnSavedModal = useDisclosure();
+	const turnFeedbackModal = useDisclosure();
 	const finalResultModal = useDisclosure();
 
 	const [turnView, setTurnView] = useState<TurnView | null>(null);
@@ -2840,6 +3272,10 @@ export default function ScenarioPlay() {
 	const [transitionInfo, setTransitionInfo] = useState<TransitionInfo | null>(
 		null,
 	);
+	const [turnEvaluation, setTurnEvaluation] =
+		useState<TurnEvaluation | null>(null);
+	const [pendingFinalEvaluation, setPendingFinalEvaluation] =
+		useState<FinalEvaluation | null>(null);
 
 	const [finalEvaluation, setFinalEvaluation] =
 		useState<FinalEvaluation | null>(null);
@@ -3195,10 +3631,9 @@ export default function ScenarioPlay() {
 
 			decisionModal.onClose();
 
-			if (submitted.final_evaluation) {
-				showFinalEvaluation(submitted.final_evaluation);
-				return;
-			}
+			const evaluation = submitted.turn_evaluation ?? null;
+			setTurnEvaluation(evaluation);
+			setPendingFinalEvaluation(submitted.final_evaluation ?? null);
 
 			if (submitted.next_turn) {
 				setTransitionInfo({
@@ -3207,8 +3642,29 @@ export default function ScenarioPlay() {
 					nextTurn: submitted.next_turn,
 					nextDate: progress.next_market_date,
 				});
+			} else {
+				setTransitionInfo(null);
+			}
 
-				turnSavedModal.onOpen();
+			// 서버는 매 TURN 제출 시 turn_evaluation을 반환한다.
+			// 바로 다음 TURN이나 종합 결과로 이동하지 않고, 반드시 턴 피드백을 먼저 보여준다.
+			if (evaluation?.scorecard) {
+				turnFeedbackModal.onOpen();
+				return;
+			}
+
+			// 예외적으로 턴 평가가 없는 응답이 오면 기존 흐름으로 안전하게 진행한다.
+			if (submitted.final_evaluation) {
+				showFinalEvaluation(submitted.final_evaluation);
+				return;
+			}
+
+			if (submitted.next_turn) {
+				setQuantity(10);
+				setOrderSide("BUY");
+				setLastOrder(null);
+				setLastOrderAssetName("");
+				await loadTurn();
 				return;
 			}
 
@@ -3241,12 +3697,32 @@ export default function ScenarioPlay() {
 		}
 	};
 
-	const handleTurnSavedConfirm = async () => {
-		turnSavedModal.onClose();
+	const handleTurnFeedbackContinue = async () => {
+		turnFeedbackModal.onClose();
+
+		const nextTurn = transitionInfo?.nextTurn ?? null;
+		const finalResult = pendingFinalEvaluation;
+
+		setTurnEvaluation(null);
+		setPendingFinalEvaluation(null);
 		setTransitionInfo(null);
 		setQuantity(10);
 		setOrderSide("BUY");
-		await loadTurn();
+		setLastOrder(null);
+		setLastOrderAssetName("");
+
+		if (finalResult) {
+			showFinalEvaluation(finalResult);
+			return;
+		}
+
+		if (nextTurn) {
+			await loadTurn();
+			return;
+		}
+
+		// 마지막 TURN에서 final_evaluation이 응답에 직접 없던 경우 결과 API로 다시 조회한다.
+		await loadResult();
 	};
 
 	const handleOrderSuccessClose = () => {
@@ -3626,10 +4102,12 @@ export default function ScenarioPlay() {
 				recentOrderAssetName={lastOrderAssetName}
 			/>
 
-			<TurnSavedModal
-				isOpen={turnSavedModal.isOpen}
-				onClose={() => void handleTurnSavedConfirm()}
+			<TurnFeedbackModal
+				isOpen={turnFeedbackModal.isOpen}
+				onContinue={() => void handleTurnFeedbackContinue()}
+				evaluation={turnEvaluation}
 				info={transitionInfo}
+				isFinalTurn={progress.current_turn === progress.total_turns}
 			/>
 
 			<FinalResultModal

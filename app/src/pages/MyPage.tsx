@@ -13,7 +13,6 @@ import {
 	CardBody,
 	Flex,
 	Grid,
-	GridItem,
 	Heading,
 	HStack,
 	Progress,
@@ -36,6 +35,15 @@ import { useNavigate } from "react-router-dom";
 
 import api from "../services/api.service";
 import tokens from "../services/tokens.service";
+import scenarioService, {
+	type ScenarioUserProgress,
+} from "../services/scenario.service";
+import {
+	fetchQuizProgress,
+	getCachedQuizProgress,
+	type QuizProgressSummary,
+} from "../services/learningProgress.service";
+import financeQuizzesData from "../data/financeQuizzes.json";
 import UsPortfolioMyPageSection from "../components/Profile/UsPortfolioMyPageSection";
 
 type TradingOrderSide = "BUY" | "SELL";
@@ -107,7 +115,11 @@ type TradeOrderData = {
 
 type PeriodKey = "7d" | "30d" | "90d" | "180d" | "365d" | "all";
 
-const periodOptions: { key: PeriodKey; label: string; days?: number }[] = [
+const periodOptions: {
+	key: PeriodKey;
+	label: string;
+	days?: number;
+}[] = [
 	{ key: "7d", label: "1주", days: 7 },
 	{ key: "30d", label: "1개월", days: 30 },
 	{ key: "90d", label: "3개월", days: 90 },
@@ -115,6 +127,10 @@ const periodOptions: { key: PeriodKey; label: string; days?: number }[] = [
 	{ key: "365d", label: "1년", days: 365 },
 	{ key: "all", label: "전체" },
 ];
+
+const TOTAL_QUIZ_COUNT = Array.isArray(financeQuizzesData)
+	? financeQuizzesData.length
+	: 0;
 
 const won = new Intl.NumberFormat("ko-KR", {
 	style: "currency",
@@ -152,10 +168,14 @@ function getHoldingValue(holding: PortfolioHolding): number {
 function formatCompactWon(value: number): string {
 	const absolute = Math.abs(value);
 	if (absolute >= 100_000_000) {
-		return `${value < 0 ? "-" : ""}${(absolute / 100_000_000).toFixed(1)}억원`;
+		return `${value < 0 ? "-" : ""}${(
+			absolute / 100_000_000
+		).toFixed(1)}억원`;
 	}
 	if (absolute >= 10_000) {
-		return `${value < 0 ? "-" : ""}${Math.round(absolute / 10_000).toLocaleString("ko-KR")}만원`;
+		return `${value < 0 ? "-" : ""}${Math.round(
+			absolute / 10_000,
+		).toLocaleString("ko-KR")}만원`;
 	}
 	return won.format(value);
 }
@@ -227,23 +247,31 @@ function PerformanceChart({
 		const filled = orders
 			.filter((order) => order.status === "FILLED")
 			.filter((order) => {
-				const date = new Date(order.executedAt ?? order.createdAt).getTime();
+				const date = new Date(
+					order.executedAt ?? order.createdAt,
+				).getTime();
 				return cutoff === 0 || date >= cutoff;
 			})
 			.sort(
 				(first, second) =>
-					new Date(first.executedAt ?? first.createdAt).getTime() -
-					new Date(second.executedAt ?? second.createdAt).getTime(),
+					new Date(
+						first.executedAt ?? first.createdAt,
+					).getTime() -
+					new Date(
+						second.executedAt ?? second.createdAt,
+					).getTime(),
 			);
 
 		let cumulativeProfit = 0;
 		const result = filled.map((order, index) => {
 			cumulativeProfit += Number(order.realizedProfit ?? 0);
 			return {
-				label: new Date(order.executedAt ?? order.createdAt).toLocaleDateString(
-					"ko-KR",
-					{ month: "2-digit", day: "2-digit" },
-				),
+				label: new Date(
+					order.executedAt ?? order.createdAt,
+				).toLocaleDateString("ko-KR", {
+					month: "2-digit",
+					day: "2-digit",
+				}),
 				value:
 					initialCash > 0
 						? (cumulativeProfit / initialCash) * 100
@@ -264,7 +292,12 @@ function PerformanceChart({
 
 	const width = 820;
 	const height = 250;
-	const padding = { top: 24, right: 22, bottom: 34, left: 45 };
+	const padding = {
+		top: 24,
+		right: 22,
+		bottom: 34,
+		left: 45,
+	};
 	const values = points.map((point) => point.value);
 	const minValue = Math.min(-4, Math.floor(Math.min(...values) - 1));
 	const maxValue = Math.max(8, Math.ceil(Math.max(...values) + 1));
@@ -272,11 +305,15 @@ function PerformanceChart({
 	const chartWidth = width - padding.left - padding.right;
 	const chartHeight = height - padding.top - padding.bottom;
 	const x = (index: number) =>
-		padding.left + (index / Math.max(points.length - 1, 1)) * chartWidth;
+		padding.left +
+		(index / Math.max(points.length - 1, 1)) * chartWidth;
 	const y = (value: number) =>
 		padding.top + ((maxValue - value) / range) * chartHeight;
 	const path = points
-		.map((point, index) => `${index === 0 ? "M" : "L"}${x(index)} ${y(point.value)}`)
+		.map(
+			(point, index) =>
+				`${index === 0 ? "M" : "L"}${x(index)} ${y(point.value)}`,
+		)
 		.join(" ");
 
 	return (
@@ -305,7 +342,8 @@ function PerformanceChart({
 								fontSize="11"
 								fill="#827A72"
 							>
-								{tick > 0 ? "+" : ""}{tick}%
+								{tick > 0 ? "+" : ""}
+								{tick}%
 							</text>
 						</g>
 					);
@@ -328,7 +366,9 @@ function PerformanceChart({
 							r="4"
 							fill="#F66B24"
 						/>
-						{(index === 0 || index === points.length - 1 || index % 3 === 0) && (
+						{(index === 0 ||
+							index === points.length - 1 ||
+							index % 3 === 0) && (
 							<text
 								x={x(index)}
 								y={height - 8}
@@ -346,6 +386,207 @@ function PerformanceChart({
 	);
 }
 
+function LearningProgressCard({
+	scenarioProgress,
+	quizProgress,
+	onScenarioClick,
+	onQuizClick,
+}: {
+	scenarioProgress: ScenarioUserProgress | null;
+	quizProgress: QuizProgressSummary;
+	onScenarioClick: () => void;
+	onQuizClick: () => void;
+}) {
+	const activeScenario = scenarioProgress?.active ?? null;
+	const completedScenarioCount = scenarioProgress?.completed_count ?? 0;
+	const totalScenarioCount = scenarioProgress?.total_count ?? 0;
+	const scenarioPercent = activeScenario?.progress_percent ?? 0;
+
+	return (
+		<Card h="100%">
+			<CardBody p={{ base: "18px", md: "22px" }}>
+				<Heading size="sm" mb="18px">
+					학습 진행 현황
+				</Heading>
+
+				<SimpleGrid columns={{ base: 1, xl: 2 }} spacing="20px">
+					<Box
+						pr={{ xl: "20px" }}
+						borderRightWidth={{ base: "0", xl: "1px" }}
+						borderColor="app.borderSoft"
+					>
+						<Flex align="center" gap="8px" mb="10px">
+							<Box
+								w="42px"
+								h="42px"
+								borderRadius="full"
+								bg="brand.50"
+								borderWidth="1px"
+								borderColor="brand.100"
+								display="flex"
+								alignItems="center"
+								justifyContent="center"
+								fontWeight="900"
+								color="brand.500"
+							>
+								S
+							</Box>
+							<Box minW="0">
+								<Text fontSize="12px" color="app.muted">
+									시나리오 진행 현황
+								</Text>
+								{activeScenario ? (
+									<HStack spacing="7px" mt="2px">
+										<Text fontWeight="900" noOfLines={1}>
+											{activeScenario.title}
+										</Text>
+										<Badge colorScheme="orange">진행 중</Badge>
+									</HStack>
+								) : (
+									<Text mt="2px" fontWeight="900">
+										진행 중인 시나리오 없음
+									</Text>
+								)}
+							</Box>
+						</Flex>
+
+						{activeScenario ? (
+							<>
+								<Flex align="center" mb="9px">
+									<Text fontSize="12px" color="app.subtleText">
+										TURN {activeScenario.current_turn} /{" "}
+										{activeScenario.total_turns}
+									</Text>
+									<Spacer />
+									<Text
+										fontSize="13px"
+										fontWeight="900"
+										color="brand.500"
+									>
+										{scenarioPercent}%
+									</Text>
+								</Flex>
+								<Progress
+									value={scenarioPercent}
+									colorScheme="orange"
+									h="5px"
+									borderRadius="full"
+									bg="#F4E9DD"
+								/>
+							</>
+						) : (
+							<Text fontSize="12px" color="app.subtleText" lineHeight="1.7">
+								새 과거 시나리오를 시작하면 현재 턴과 진행률이 이곳에 표시됩니다.
+							</Text>
+						)}
+
+						<Flex
+							mt="18px"
+							pt="14px"
+							borderTopWidth="1px"
+							borderColor="app.borderSoft"
+							align="center"
+						>
+							<Box>
+								<Text fontSize="11px" color="app.muted">
+									완료한 시나리오
+								</Text>
+								<Text mt="3px" fontWeight="900">
+									{completedScenarioCount} / {totalScenarioCount || "-"}개
+								</Text>
+							</Box>
+							<Spacer />
+							<Button
+								size="sm"
+								variant={activeScenario ? "outline" : "solid"}
+								colorScheme="orange"
+								onClick={onScenarioClick}
+							>
+								{activeScenario ? "이어하기" : "시나리오 보기"}
+							</Button>
+						</Flex>
+					</Box>
+
+					<Box pl={{ xl: "4px" }}>
+						<Flex align="center" gap="8px" mb="10px">
+							<Box
+								w="42px"
+								h="42px"
+								borderRadius="full"
+								bg="brand.50"
+								borderWidth="1px"
+								borderColor="brand.100"
+								display="flex"
+								alignItems="center"
+								justifyContent="center"
+								fontWeight="900"
+								color="brand.500"
+							>
+								Q
+							</Box>
+							<Box>
+								<Text fontSize="12px" color="app.muted">
+									퀴즈 학습
+								</Text>
+								<Text mt="2px" fontSize="24px" fontWeight="900">
+									{quizProgress.progressPercent}%
+								</Text>
+							</Box>
+						</Flex>
+
+						<Progress
+							value={quizProgress.progressPercent}
+							colorScheme="orange"
+							h="5px"
+							borderRadius="full"
+							bg="#F4E9DD"
+						/>
+
+						<SimpleGrid columns={3} spacing="8px" mt="16px">
+							<Box>
+								<Text fontSize="10px" color="app.muted">
+									푼 문제
+								</Text>
+								<Text mt="3px" fontSize="13px" fontWeight="900">
+									{quizProgress.answeredCount} /{" "}
+									{quizProgress.totalQuizCount}
+								</Text>
+							</Box>
+							<Box>
+								<Text fontSize="10px" color="app.muted">
+									정답률
+								</Text>
+								<Text mt="3px" fontSize="13px" fontWeight="900">
+									{quizProgress.accuracyPercent}%
+								</Text>
+							</Box>
+							<Box>
+								<Text fontSize="10px" color="app.muted">
+									완료 세션
+								</Text>
+								<Text mt="3px" fontSize="13px" fontWeight="900">
+									{quizProgress.completedSessions}회
+								</Text>
+							</Box>
+						</SimpleGrid>
+
+						<Button
+							mt="18px"
+							w="100%"
+							size="sm"
+							variant="outline"
+							colorScheme="orange"
+							onClick={onQuizClick}
+						>
+							퀴즈 계속하기
+						</Button>
+					</Box>
+				</SimpleGrid>
+			</CardBody>
+		</Card>
+	);
+}
+
 export default function MyPage() {
 	const toast = useToast();
 	const navigate = useNavigate();
@@ -353,19 +594,44 @@ export default function MyPage() {
 
 	const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
 	const [tradeOrders, setTradeOrders] = useState<TradeOrderData[]>([]);
+	const [scenarioProgress, setScenarioProgress] =
+		useState<ScenarioUserProgress | null>(null);
+	const [quizProgress, setQuizProgress] = useState<QuizProgressSummary>(() =>
+		getCachedQuizProgress(username, TOTAL_QUIZ_COUNT),
+	);
 	const [isLoading, setIsLoading] = useState(true);
 	const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
 	const [period, setPeriod] = useState<PeriodKey>("7d");
 
+	const refreshQuizProgress = useCallback(async () => {
+		const progress = await fetchQuizProgress(
+			username,
+			TOTAL_QUIZ_COUNT,
+		);
+		setQuizProgress(progress);
+	}, [username]);
+
 	const loadMyPageData = useCallback(async () => {
 		try {
 			setIsLoading(true);
-			const [portfolioResponse, orderResponse] = await Promise.all([
-				api.get("/trading/portfolio?evaluate=true"),
-				api.get("/trading/orders?limit=50"),
-			]);
 
-			const portfolioData = unwrapApiData<PortfolioData>(portfolioResponse.data);
+			const scenarioRequest = scenarioService
+				.getUserProgress(username)
+				.catch((error) => {
+					console.warn("시나리오 진행도 조회 실패:", error);
+					return null;
+				});
+
+			const [portfolioResponse, orderResponse, scenarioData] =
+				await Promise.all([
+					api.get("/trading/portfolio?evaluate=true"),
+					api.get("/trading/orders?limit=50"),
+					scenarioRequest,
+				]);
+
+			const portfolioData = unwrapApiData<PortfolioData>(
+				portfolioResponse.data,
+			);
 			const orderData = unwrapApiData<TradeOrderData[]>(orderResponse.data);
 
 			setPortfolio({
@@ -375,9 +641,12 @@ export default function MyPage() {
 					: [],
 			});
 			setTradeOrders(Array.isArray(orderData) ? orderData : []);
+			setScenarioProgress(scenarioData);
+			await refreshQuizProgress();
 			setLastUpdatedAt(new Date());
 		} catch (error: any) {
 			console.error("마이페이지 데이터 조회 실패:", error);
+
 			if (error?.response?.status === 401) {
 				toast({
 					title: "로그인이 필요합니다.",
@@ -388,6 +657,7 @@ export default function MyPage() {
 				navigate("/login", { replace: true });
 				return;
 			}
+
 			toast({
 				title: "포트폴리오를 불러오지 못했습니다.",
 				description:
@@ -400,11 +670,30 @@ export default function MyPage() {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [navigate, toast]);
+	}, [navigate, refreshQuizProgress, toast, username]);
 
 	useEffect(() => {
 		void loadMyPageData();
 	}, [loadMyPageData]);
+
+	useEffect(() => {
+		const handleProgressUpdated = () => {
+			void refreshQuizProgress();
+		};
+		window.addEventListener("storage", handleProgressUpdated);
+		window.addEventListener(
+			"antitude:quiz-progress-updated",
+			handleProgressUpdated,
+		);
+
+		return () => {
+			window.removeEventListener("storage", handleProgressUpdated);
+			window.removeEventListener(
+				"antitude:quiz-progress-updated",
+				handleProgressUpdated,
+			);
+		};
+	}, [refreshQuizProgress]);
 
 	const account = portfolio?.account;
 	const holdings = portfolio?.holdings ?? [];
@@ -420,7 +709,9 @@ export default function MyPage() {
 			),
 		[account?.totalEvaluationAmount, holdings],
 	);
-	const totalAsset = Number(account?.totalAsset ?? cash + stockEvaluationAmount);
+	const totalAsset = Number(
+		account?.totalAsset ?? cash + stockEvaluationAmount,
+	);
 	const initialCash = Number(account?.initialCash ?? 0);
 	const totalProfitLoss = Number(
 		account?.totalProfitLoss ?? totalAsset - initialCash,
@@ -438,9 +729,12 @@ export default function MyPage() {
 			),
 		[tradeOrders],
 	);
-	const filledOrders = sortedOrders.filter((order) => order.status === "FILLED");
+	const filledOrders = sortedOrders.filter(
+		(order) => order.status === "FILLED",
+	);
 	const largestHolding = [...holdings].sort(
-		(first, second) => getHoldingValue(second) - getHoldingValue(first),
+		(first, second) =>
+			getHoldingValue(second) - getHoldingValue(first),
 	)[0];
 	const largestWeight =
 		totalAsset > 0 && largestHolding
@@ -449,15 +743,32 @@ export default function MyPage() {
 	const cashRatio = totalAsset > 0 ? (cash / totalAsset) * 100 : 0;
 	const averageHoldingRate =
 		holdings.length > 0
-			? holdings.reduce((sum, holding) => sum + holding.profitLossRate, 0) /
-				holdings.length
+			? holdings.reduce(
+					(sum, holding) => sum + holding.profitLossRate,
+					0,
+				) / holdings.length
 			: 0;
 	const bestHolding = [...holdings].sort(
-		(first, second) => second.profitLossRate - first.profitLossRate,
+		(first, second) =>
+			second.profitLossRate - first.profitLossRate,
 	)[0];
 	const worstHolding = [...holdings].sort(
-		(first, second) => first.profitLossRate - second.profitLossRate,
+		(first, second) =>
+			first.profitLossRate - second.profitLossRate,
 	)[0];
+
+	const handleScenarioClick = () => {
+		const active = scenarioProgress?.active;
+		if (active?.session_id && active.scenario_id) {
+			navigate(
+				`/scenario/play/${active.scenario_id}?sessionId=${encodeURIComponent(
+					active.session_id,
+				)}`,
+			);
+			return;
+		}
+		navigate("/scenario");
+	};
 
 	if (isLoading && !portfolio) {
 		return (
@@ -494,7 +805,7 @@ export default function MyPage() {
 						마이페이지
 					</Heading>
 					<Text mt="7px" fontSize="12px" color="app.subtleText">
-						나의 투자 현황을 한눈에 확인하세요.
+						나의 투자 현황과 학습 진행도를 한눈에 확인하세요.
 					</Text>
 					{lastUpdatedAt && (
 						<Text mt="5px" fontSize="10px" color="app.muted">
@@ -522,12 +833,22 @@ export default function MyPage() {
 				<Card>
 					<CardBody p="22px">
 						<Flex align="center" gap="22px">
-							<Avatar size="xl" name={username} bg="#D9D9D9" color="gray.700" />
+							<Avatar
+								size="xl"
+								name={username}
+								bg="#D9D9D9"
+								color="gray.700"
+							/>
 							<Box minW="0">
 								<Heading size="md" noOfLines={1}>
 									{username}
 								</Heading>
-								<Stack mt="13px" spacing="7px" fontSize="12px" color="app.subtleText">
+								<Stack
+									mt="13px"
+									spacing="7px"
+									fontSize="12px"
+									color="app.subtleText"
+								>
 									<Flex gap="18px">
 										<Text minW="72px">계정 ID</Text>
 										<Text fontWeight="700" noOfLines={1}>
@@ -536,7 +857,9 @@ export default function MyPage() {
 									</Flex>
 									<Flex gap="18px">
 										<Text minW="72px">계정 유형</Text>
-										<Text fontWeight="700">모의투자 학습 계정</Text>
+										<Text fontWeight="700">
+											모의투자 학습 계정
+										</Text>
 									</Flex>
 								</Stack>
 							</Box>
@@ -550,19 +873,32 @@ export default function MyPage() {
 							columns={{ base: 2, md: 3, "2xl": 5 }}
 							spacing="0"
 						>
-							<StatCell label="총 자산(모의자산)" value={won.format(totalAsset)} />
+							<StatCell
+								label="총 자산(국내 모의자산)"
+								value={won.format(totalAsset)}
+							/>
 							<StatCell
 								label="총 수익률"
 								value={`${totalProfitRate >= 0 ? "+" : ""}${totalProfitRate.toFixed(2)}%`}
-								accent={totalProfitRate >= 0 ? "positive" : "negative"}
+								accent={
+									totalProfitRate >= 0 ? "positive" : "negative"
+								}
 							/>
 							<StatCell
 								label="총 수익"
 								value={`${totalProfitLoss >= 0 ? "+" : ""}${won.format(totalProfitLoss)}`}
-								accent={totalProfitLoss >= 0 ? "positive" : "negative"}
+								accent={
+									totalProfitLoss >= 0 ? "positive" : "negative"
+								}
 							/>
-							<StatCell label="거래 횟수" value={`${filledOrders.length}회`} />
-							<StatCell label="보유종목" value={`${holdings.length}개`} />
+							<StatCell
+								label="거래 횟수"
+								value={`${filledOrders.length}회`}
+							/>
+							<StatCell
+								label="보유종목"
+								value={`${holdings.length}개`}
+							/>
 						</SimpleGrid>
 					</CardBody>
 				</Card>
@@ -578,15 +914,31 @@ export default function MyPage() {
 						<Heading size="sm" mb="18px">
 							투자 성과 요약
 						</Heading>
-						<SimpleGrid columns={{ base: 3, md: 6 }} spacing="0" mb="14px">
+						<SimpleGrid
+							columns={{ base: 3, md: 6 }}
+							spacing="0"
+							mb="14px"
+						>
 							{periodOptions.map((item) => (
 								<Button
 									key={item.key}
 									size="sm"
 									variant="outline"
-									borderColor={period === item.key ? "brand.500" : "app.border"}
-									color={period === item.key ? "brand.500" : "app.subtleText"}
-									bg={period === item.key ? "brand.50" : "transparent"}
+									borderColor={
+										period === item.key
+											? "brand.500"
+											: "app.border"
+									}
+									color={
+										period === item.key
+											? "brand.500"
+											: "app.subtleText"
+									}
+									bg={
+										period === item.key
+											? "brand.50"
+											: "transparent"
+									}
 									borderRadius="0"
 									_first={{ borderLeftRadius: "7px" }}
 									_last={{ borderRightRadius: "7px" }}
@@ -627,17 +979,27 @@ export default function MyPage() {
 									{holdings.slice(0, 5).map((holding) => (
 										<Tr key={holding.id || holding.symbol}>
 											<Td>
-												<Text fontWeight="800">{holding.name}</Text>
+												<Text fontWeight="800">
+													{holding.name}
+												</Text>
 												<Text fontSize="10px" color="app.muted">
 													{holding.symbol}
 												</Text>
 											</Td>
-											<Td isNumeric>{numberFormat.format(holding.quantity)}주</Td>
-											<Td isNumeric>{won.format(getHoldingValue(holding))}</Td>
+											<Td isNumeric>
+												{numberFormat.format(holding.quantity)}주
+											</Td>
+											<Td isNumeric>
+												{won.format(getHoldingValue(holding))}
+											</Td>
 											<Td
 												isNumeric
 												fontWeight="800"
-												color={holding.profitLossRate >= 0 ? "app.positive" : "app.negative"}
+												color={
+													holding.profitLossRate >= 0
+														? "app.positive"
+														: "app.negative"
+												}
 											>
 												{holding.profitLossRate >= 0 ? "+" : ""}
 												{holding.profitLossRate.toFixed(2)}%
@@ -646,7 +1008,12 @@ export default function MyPage() {
 									))}
 									{holdings.length === 0 && (
 										<Tr>
-											<Td colSpan={4} py="14" textAlign="center" color="app.muted">
+											<Td
+												colSpan={4}
+												py="14"
+												textAlign="center"
+												color="app.muted"
+											>
 												보유 중인 종목이 없습니다.
 											</Td>
 										</Tr>
@@ -660,17 +1027,32 @@ export default function MyPage() {
 							borderTopWidth="1px"
 							borderColor="app.borderSoft"
 						>
-							<Text fontSize="12px" color="app.muted">전체 평가 금액</Text>
+							<Text fontSize="12px" color="app.muted">
+								전체 평가 금액
+							</Text>
 							<Spacer />
-							<Text fontWeight="900">{won.format(stockEvaluationAmount)}</Text>
-							<Box mx="22px" borderLeftWidth="1px" borderColor="app.borderSoft" />
-							<Text fontSize="12px" color="app.muted">총 수익률</Text>
+							<Text fontWeight="900">
+								{won.format(stockEvaluationAmount)}
+							</Text>
+							<Box
+								mx="22px"
+								borderLeftWidth="1px"
+								borderColor="app.borderSoft"
+							/>
+							<Text fontSize="12px" color="app.muted">
+								총 수익률
+							</Text>
 							<Text
 								ml="12px"
 								fontWeight="900"
-								color={totalProfitRate >= 0 ? "app.positive" : "app.negative"}
+								color={
+									totalProfitRate >= 0
+										? "app.positive"
+										: "app.negative"
+								}
 							>
-								{totalProfitRate >= 0 ? "+" : ""}{totalProfitRate.toFixed(2)}%
+								{totalProfitRate >= 0 ? "+" : ""}
+								{totalProfitRate.toFixed(2)}%
 							</Text>
 						</Flex>
 					</CardBody>
@@ -678,7 +1060,7 @@ export default function MyPage() {
 			</Grid>
 
 			<Grid
-				templateColumns={{ base: "1fr", "2xl": "1.05fr 0.8fr 1.1fr" }}
+				templateColumns={{ base: "1fr", "2xl": "0.85fr 1.15fr" }}
 				gap="18px"
 				mb="18px"
 			>
@@ -687,7 +1069,9 @@ export default function MyPage() {
 						<Flex align="center" mb="12px">
 							<Heading size="sm">최근 거래 기록</Heading>
 							<Spacer />
-							<Text fontSize="11px" color="app.muted">최근 {sortedOrders.length}건</Text>
+							<Text fontSize="11px" color="app.muted">
+								최근 {sortedOrders.length}건
+							</Text>
 						</Flex>
 						<TableContainer>
 							<Table size="sm">
@@ -703,23 +1087,44 @@ export default function MyPage() {
 								<Tbody>
 									{sortedOrders.slice(0, 6).map((order) => {
 										const price = Number(
-											order.executedPrice ?? order.limitPrice ?? order.orderPrice ?? 0,
+											order.executedPrice ??
+												order.limitPrice ??
+												order.orderPrice ??
+												0,
 										);
 										return (
 											<Tr key={order._id}>
-												<Td whiteSpace="nowrap">{formatShortDate(order.executedAt ?? order.createdAt)}</Td>
+												<Td whiteSpace="nowrap">
+													{formatShortDate(
+														order.executedAt ?? order.createdAt,
+													)}
+												</Td>
 												<Td fontWeight="700">{order.name}</Td>
-												<Td color={order.side === "BUY" ? "app.positive" : "app.negative"} fontWeight="800">
+												<Td
+													color={
+														order.side === "BUY"
+															? "app.positive"
+															: "app.negative"
+													}
+													fontWeight="800"
+												>
 													{order.side === "BUY" ? "매수" : "매도"}
 												</Td>
-												<Td isNumeric>{numberFormat.format(order.quantity)}주</Td>
+												<Td isNumeric>
+													{numberFormat.format(order.quantity)}주
+												</Td>
 												<Td isNumeric>{won.format(price)}</Td>
 											</Tr>
 										);
 									})}
 									{sortedOrders.length === 0 && (
 										<Tr>
-											<Td colSpan={5} py="12" textAlign="center" color="app.muted">
+											<Td
+												colSpan={5}
+												py="12"
+												textAlign="center"
+												color="app.muted"
+											>
 												거래 기록이 없습니다.
 											</Td>
 										</Tr>
@@ -730,16 +1135,79 @@ export default function MyPage() {
 					</CardBody>
 				</Card>
 
+				<LearningProgressCard
+					scenarioProgress={scenarioProgress}
+					quizProgress={quizProgress}
+					onScenarioClick={handleScenarioClick}
+					onQuizClick={() => navigate("/quiz")}
+				/>
+			</Grid>
+
+			<Grid
+				templateColumns={{ base: "1fr", "2xl": "0.8fr 1.2fr" }}
+				gap="18px"
+				mb="18px"
+			>
 				<Card>
 					<CardBody p="22px">
-						<Heading size="sm" mb="18px">투자 통계</Heading>
+						<Heading size="sm" mb="18px">
+							투자 통계
+						</Heading>
 						<Stack spacing="17px" fontSize="13px">
-							<Flex><Text color="app.muted">평균 수익률</Text><Spacer /><Text color={averageHoldingRate >= 0 ? "app.positive" : "app.negative"} fontWeight="800">{averageHoldingRate >= 0 ? "+" : ""}{averageHoldingRate.toFixed(2)}%</Text></Flex>
-							<Flex><Text color="app.muted">평균 보유 종목 수</Text><Spacer /><Text fontWeight="800">{holdings.length}개</Text></Flex>
-							<Flex><Text color="app.muted">최고 수익률</Text><Spacer /><Text color="app.positive" fontWeight="800">{bestHolding ? `${bestHolding.profitLossRate >= 0 ? "+" : ""}${bestHolding.profitLossRate.toFixed(2)}%` : "-"}</Text></Flex>
-							<Flex><Text color="app.muted">최대 손실률</Text><Spacer /><Text color="app.negative" fontWeight="800">{worstHolding ? `${worstHolding.profitLossRate.toFixed(2)}%` : "-"}</Text></Flex>
-							<Flex><Text color="app.muted">손익비</Text><Spacer /><Text fontWeight="800">{Math.max(0, totalProfitRate + 100).toFixed(1)}</Text></Flex>
-							<Flex><Text color="app.muted">최대 거래 종목</Text><Spacer /><Text fontWeight="800">{largestHolding?.name ?? "-"}</Text></Flex>
+							<Flex>
+								<Text color="app.muted">평균 수익률</Text>
+								<Spacer />
+								<Text
+									color={
+										averageHoldingRate >= 0
+											? "app.positive"
+											: "app.negative"
+									}
+									fontWeight="800"
+								>
+									{averageHoldingRate >= 0 ? "+" : ""}
+									{averageHoldingRate.toFixed(2)}%
+								</Text>
+							</Flex>
+							<Flex>
+								<Text color="app.muted">평균 보유 종목 수</Text>
+								<Spacer />
+								<Text fontWeight="800">{holdings.length}개</Text>
+							</Flex>
+							<Flex>
+								<Text color="app.muted">최고 수익률</Text>
+								<Spacer />
+								<Text color="app.positive" fontWeight="800">
+									{bestHolding
+										? `${
+												bestHolding.profitLossRate >= 0 ? "+" : ""
+											}${bestHolding.profitLossRate.toFixed(2)}%`
+										: "-"}
+								</Text>
+							</Flex>
+							<Flex>
+								<Text color="app.muted">최대 손실률</Text>
+								<Spacer />
+								<Text color="app.negative" fontWeight="800">
+									{worstHolding
+										? `${worstHolding.profitLossRate.toFixed(2)}%`
+										: "-"}
+								</Text>
+							</Flex>
+							<Flex>
+								<Text color="app.muted">손익비</Text>
+								<Spacer />
+								<Text fontWeight="800">
+									{Math.max(0, totalProfitRate + 100).toFixed(1)}
+								</Text>
+							</Flex>
+							<Flex>
+								<Text color="app.muted">최대 거래 종목</Text>
+								<Spacer />
+								<Text fontWeight="800">
+									{largestHolding?.name ?? "-"}
+								</Text>
+							</Flex>
 						</Stack>
 					</CardBody>
 				</Card>
@@ -747,30 +1215,58 @@ export default function MyPage() {
 				<Card>
 					<CardBody p="22px">
 						<Heading size="sm">AI 라면 ?</Heading>
-						<Box mt="14px" p="18px" borderWidth="1px" borderColor="app.border" borderRadius="8px">
+						<Box
+							mt="14px"
+							p="18px"
+							borderWidth="1px"
+							borderColor="app.border"
+							borderRadius="8px"
+						>
 							<Text fontSize="12px" color="app.muted">
 								최근 투자 현황을 기준으로 분석했습니다.
 							</Text>
 							<Stack mt="16px" spacing="16px">
 								<Box>
 									<Text fontSize="13px" fontWeight="900">
-										• {largestWeight > 45 ? "특정 종목 비중이 높은 편이에요." : "분산 투자 비중이 안정적이에요."}
+										•{" "}
+										{largestWeight > 45
+											? "특정 종목 비중이 높은 편이에요."
+											: "분산 투자 비중이 안정적이에요."}
 									</Text>
-									<Text mt="5px" fontSize="12px" color="app.subtleText">
-										{largestHolding ? `${largestHolding.name} 비중이 ${largestWeight.toFixed(1)}%입니다.` : "보유 종목이 등록되지 않았습니다."}
+									<Text
+										mt="5px"
+										fontSize="12px"
+										color="app.subtleText"
+									>
+										{largestHolding
+											? `${largestHolding.name} 비중이 ${largestWeight.toFixed(1)}%입니다.`
+											: "보유 종목이 등록되지 않았습니다."}
 									</Text>
 								</Box>
 								<Box>
 									<Text fontSize="13px" fontWeight="900">
-										• {cashRatio < 10 ? "현금 여유 비중을 점검해보세요." : "현금 비중을 확보하고 있어요."}
+										•{" "}
+										{cashRatio < 10
+											? "현금 여유 비중을 점검해보세요."
+											: "현금 비중을 확보하고 있어요."}
 									</Text>
-									<Text mt="5px" fontSize="12px" color="app.subtleText">
+									<Text
+										mt="5px"
+										fontSize="12px"
+										color="app.subtleText"
+									>
 										현재 현금 비중은 {cashRatio.toFixed(1)}%입니다.
 									</Text>
 								</Box>
 							</Stack>
 						</Box>
-						<Button mt="12px" w="100%" size="sm" variant="outline">
+						<Button
+							mt="12px"
+							w="100%"
+							size="sm"
+							variant="outline"
+							onClick={() => navigate("/exchange")}
+						>
 							AI 분석 자세히 보기
 						</Button>
 					</CardBody>
@@ -779,11 +1275,28 @@ export default function MyPage() {
 
 			<Card mb="18px">
 				<CardBody p="22px">
-					<Heading size="sm" mb="18px">시뮬레이션 요약</Heading>
+					<Heading size="sm" mb="18px">
+						시뮬레이션 요약
+					</Heading>
 					<SimpleGrid columns={{ base: 2, md: 4 }} spacing="0">
-						<StatCell label="누적 수익률" value={`${totalProfitRate >= 0 ? "+" : ""}${totalProfitRate.toFixed(2)}%`} accent={totalProfitRate >= 0 ? "positive" : "negative"} />
-						<StatCell label="누적 수익금" value={`${totalProfitLoss >= 0 ? "+" : ""}${formatCompactWon(totalProfitLoss)}`} accent={totalProfitLoss >= 0 ? "positive" : "negative"} />
-						<StatCell label="거래 횟수" value={`${filledOrders.length}회`} />
+						<StatCell
+							label="누적 수익률"
+							value={`${totalProfitRate >= 0 ? "+" : ""}${totalProfitRate.toFixed(2)}%`}
+							accent={
+								totalProfitRate >= 0 ? "positive" : "negative"
+							}
+						/>
+						<StatCell
+							label="누적 수익금"
+							value={`${totalProfitLoss >= 0 ? "+" : ""}${formatCompactWon(totalProfitLoss)}`}
+							accent={
+								totalProfitLoss >= 0 ? "positive" : "negative"
+							}
+						/>
+						<StatCell
+							label="거래 횟수"
+							value={`${filledOrders.length}회`}
+						/>
 						<StatCell label="보유 현금" value={won.format(cash)} />
 					</SimpleGrid>
 				</CardBody>

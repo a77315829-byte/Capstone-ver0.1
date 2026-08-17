@@ -46,7 +46,9 @@ import {
 import api from "../services/api.service";
 import type { MarketStatus } from "../types/marketSession.types";
 import AiRamenPanel from "../components/AiRamenPanel";
+import MarketSimulatorPanel from "../components/MarketSimulatorPanel";
 import RelatedFinancialTerms from "../components/RelatedFinancialTerms";
+import CompactStockNews from "../components/CompactStockNews";
 
 
 type ChartPeriod = "1d" | "5d" | "1m" | "6m" | "YTD" | "1y" | "all";
@@ -153,6 +155,7 @@ type TradingOrderSide = "BUY" | "SELL";
 type TradingOrderType = "MARKET" | "LIMIT";
 type OrderPanelMode = "BUY" | "SELL" | "MANAGE";
 type DetailSection = "orderbook" | "executions" | "information";
+type RightPanelMode = "ORDER" | "AI";
 type TradingOrderStatus = "PENDING" | "FILLED" | "CANCELED" | "REJECTED";
 
 type TradingAccountSummary = {
@@ -1663,7 +1666,8 @@ function DetailSelectorCard({
 			type="button"
 			textAlign="left"
 			w="100%"
-			minH="220px"
+			h="100%"
+			minH="300px"
 			borderWidth="1px"
 			borderColor={selected ? "brand.500" : "app.borderSoft"}
 			boxShadow={
@@ -2260,7 +2264,11 @@ export default function DomesticExchange({
 
 	const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("1d");
 	const [chartInterval, setChartInterval] = useState<ChartInterval>("1m");
-	const [isAiRamenOpen, setIsAiRamenOpen] = useState(false);
+	const [rightPanelMode, setRightPanelMode] =
+		useState<RightPanelMode>("ORDER");
+	const [isMarketSimulatorOpen, setIsMarketSimulatorOpen] =
+		useState(false);
+	const isAiRamenOpen = rightPanelMode === "AI";
 
 	useEffect(() => {
 		const handleStockSelected = (
@@ -3055,6 +3063,20 @@ export default function DomesticExchange({
 				>
 					국내 주식 · 실시간 모의투자
 				</Badge>
+				<Button
+					size="sm"
+					h="36px"
+					px="16px"
+					variant="outline"
+					borderColor="brand.500"
+					color="brand.600"
+					bg="white"
+					fontWeight="900"
+					_hover={{ bg: "orange.50" }}
+					onClick={() => setIsMarketSimulatorOpen(true)}
+				>
+					시장 반응 시뮬레이터 ›
+				</Button>
 			</Flex>
 
 			<RelatedFinancialTerms
@@ -3209,21 +3231,23 @@ export default function DomesticExchange({
 									<Button
 										size="sm"
 										h="34px"
-										px="4"
+										px="16px"
+										variant="outline"
+										borderColor="brand.500"
+										color="brand.600"
+										bg={isAiRamenOpen ? "orange.50" : "white"}
 										fontWeight="900"
-										bg={isAiRamenOpen ? "#27231F" : "#F3EEE7"}
-										color={isAiRamenOpen ? "white" : "#51483F"}
-										onClick={() => setIsAiRamenOpen((prev) => !prev)}
+										_hover={{ bg: "orange.50" }}
+										onClick={() => setRightPanelMode("AI")}
 									>
-										{isAiRamenOpen ? "AI 판단 닫기" : "AI라면 보기"}
+										AI 라면 ›
 									</Button>
 								</HStack>
 							</Flex>
 						</CardHeader>
 
 						<CardBody pt="4">
-							<Flex gap="4" align="stretch" direction={{ base: "column", xl: "row" }}>
-								<Box flex="1" minW="0">
+							<Box minW="0">
 									{isLoadingStock ? (
 										<Flex h={{ base: "420px", xl: "540px" }} align="center" justify="center">
 											<Spinner color="brand.500" />
@@ -3231,21 +3255,29 @@ export default function DomesticExchange({
 									) : (
 										<InteractiveStockChart data={chartPoints} height={540} />
 									)}
-								</Box>
-								<AiRamenPanel
-									isOpen={isAiRamenOpen}
-									onClose={() => setIsAiRamenOpen(false)}
-									stock={stock}
-									chartPoints={chartPoints}
-									chartPeriod={chartPeriod}
-									chartInterval={chartInterval}
-								/>
-							</Flex>
+							</Box>
 						</CardBody>
 					</Card>
 				</GridItem>
 
 				<GridItem minW="0">
+
+				{rightPanelMode === "AI" ? (
+					<Box
+						position={{ "2xl": "sticky" }}
+						top={{ "2xl": "102px" }}
+						minW="0"
+					>
+						<AiRamenPanel
+							isOpen
+							onClose={() => setRightPanelMode("ORDER")}
+							stock={stock}
+							chartPoints={chartPoints}
+							chartPeriod={chartPeriod}
+							chartInterval={chartInterval}
+						/>
+					</Box>
+				) : (
 					<Card
 						position={{ "2xl": "sticky" }}
 						top={{ "2xl": "102px" }}
@@ -3521,14 +3553,21 @@ export default function DomesticExchange({
 							)}
 						</CardBody>
 					</Card>
-				</GridItem>
+				
+				)}
+			</GridItem>
 			</Grid>
 
 
 			<Grid
 				mt="5"
-				templateColumns={{ base: "1fr", md: "repeat(3, minmax(0, 1fr))" }}
+				templateColumns={{
+					base: "1fr",
+					md: "repeat(2, minmax(0, 1fr))",
+					xl: "repeat(4, minmax(0, 1fr))",
+				}}
 				gap="5"
+				alignItems="stretch"
 			>
 				<DetailSelectorCard
 					title="호가"
@@ -3603,6 +3642,14 @@ export default function DomesticExchange({
 				>
 					<CompactStockInfo detail={stockDetail} isLoading={isLoadingDetail} />
 				</DetailSelectorCard>
+
+				<Box minW="0" h="100%">
+					<CompactStockNews
+						symbol={stock?.symbol ?? selectedSymbol}
+						name={stock?.name ?? "삼성전자"}
+						market={stock?.market ?? "KOSPI"}
+					/>
+				</Box>
 			</Grid>
 
 			<Card
@@ -3673,6 +3720,14 @@ export default function DomesticExchange({
 					)}
 				</CardBody>
 			</Card>
+
+
+			<MarketSimulatorPanel
+				stock={stock}
+				isOpen={isMarketSimulatorOpen}
+				onClose={() => setIsMarketSimulatorOpen(false)}
+				showTrigger={false}
+			/>
 
 		</Box>
 	);
