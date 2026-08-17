@@ -19,7 +19,9 @@
         "risk_factors": ["실적 확인 전 기대가 빠르게 반영될 가능성", "AI 관련 종목의 무차별 상승 가능성"]
       },
       "news": [
-        {"news_id":"SEM-T1-N01","published_at":"2024-02-02T08:00:00+09:00","title":"Meta, AI 인프라 투자 확대 계획 제시","summary":"Meta가 AI 연구와 제품 개발을 지원하기 위한 서버 및 데이터센터 투자를 확대할 계획을 밝혔다.","source_name":"Meta Investor Relations","source_url":"https://investor.atmeta.com/investor-news/press-release-details/2024/Meta-Reports-Fourth-Quarter-and-Full-Year-2023-Results-Initiates-Quarterly-Dividend/default.aspx","related_assets":["000660","005930"],"importance":"high","display_order":1}
+        {"news_id":"SEM-T1-N01","published_at":"2024-02-02T08:00:00+09:00","title":"Meta, AI 인프라 투자 확대 계획 제시","summary":"Meta는 2024년 설비투자를 300억~370억 달러로 제시하고 AI·비AI 서버와 데이터센터 투자가 증가할 것으로 전망했다.","source_name":"Meta Investor Relations","source_url":"https://investor.atmeta.com/investor-news/press-release-details/2024/Meta-Reports-Fourth-Quarter-and-Full-Year-2023-Results-Initiates-Quarterly-Dividend/default.aspx","related_assets":["000660","005930","007660","091160"],"importance":"high","display_order":1},
+        {"news_id":"SEM-T1-N02","published_at":"2024-01-31T06:30:00+09:00","title":"Microsoft, 클라우드·AI 인프라 투자 확대","summary":"Microsoft는 분기 설비투자가 금융리스를 포함해 115억 달러였으며 다음 분기에도 클라우드와 AI 인프라 투자가 크게 증가할 것으로 예상했다.","source_name":"Microsoft Investor Relations","source_url":"https://www.microsoft.com/en-us/investor/events/fy-2024/earnings-fy-2024-q2","related_assets":["000660","005930","007660","091160"],"importance":"high","display_order":2},
+        {"news_id":"SEM-T1-N03","published_at":"2024-01-31T23:00:00+09:00","title":"AI 투자 확대에도 수익성 기대는 엇갈려","summary":"Microsoft와 Alphabet의 클라우드 매출은 성장했지만 서버·데이터센터 비용도 늘어 AI 투자 대비 수익성에 대한 시장의 경계가 나타났다.","source_name":"Reuters","source_url":"https://www.reuters.com/technology/investors-punish-microsoft-alphabet-ai-returns-fall-short-lofty-expectations-2024-01-31/","related_assets":["000660","005930","091160","069500"],"importance":"medium","display_order":3}
       ]
     },
     {
@@ -38,7 +40,9 @@
         "risk_factors": ["실적 호재의 당일 가격 반영", "단기 급등 이후 변동성 확대"]
       },
       "news": [
-        {"news_id":"SEM-T2-N01","published_at":"2024-02-22T06:00:00+09:00","title":"NVIDIA, 데이터센터 매출 급증 발표","summary":"NVIDIA가 분기 매출과 데이터센터 매출의 큰 폭 성장을 발표하며 AI 가속기 수요를 확인했다.","source_name":"NVIDIA Investor Relations","source_url":"https://investor.nvidia.com/news/press-release-details/2024/NVIDIA-Announces-Financial-Results-for-Fourth-Quarter-and-Fiscal-2024/","related_assets":["000660","005930","042700"],"importance":"high","display_order":1}
+        {"news_id":"SEM-T2-N01","published_at":"2024-02-22T06:20:00+09:00","title":"NVIDIA, 데이터센터 매출 급증 발표","summary":"NVIDIA는 분기 매출이 전년 대비 265%, 데이터센터 매출이 409% 증가했다고 발표했다.","source_name":"NVIDIA Investor Relations","source_url":"https://investor.nvidia.com/news/press-release-details/2024/NVIDIA-Announces-Financial-Results-for-Fourth-Quarter-and-Fiscal-2024/","related_assets":["000660","005930","042700","091160"],"importance":"high","display_order":1},
+        {"news_id":"SEM-T2-N02","published_at":"2024-01-25T08:00:00+09:00","title":"SK하이닉스, HBM3 판매 증가로 분기 흑자 전환","summary":"SK하이닉스는 HBM3 판매가 전년 대비 5배 이상 증가했고 네 분기 연속 적자 후 영업이익 흑자로 전환했다고 밝혔다.","source_name":"SK hynix Newsroom","source_url":"https://news.skhynix.com/en/sk-hynix-reports-fourth-quarter-2023-financial-results/","related_assets":["000660","042700","091160"],"importance":"high","display_order":2},
+        {"news_id":"SEM-T2-N03","published_at":"2024-02-22T09:23:00+09:00","title":"NVIDIA 실적 직후 국내 반도체주 장 초반 상승","summary":"NVIDIA 실적 발표 이후 장 초반 SK하이닉스는 3.29%, 삼성전자는 0.68% 상승해 호재가 국내 주가에 반영되기 시작했다.","source_name":"Yonhap News Agency","source_url":"https://en.yna.co.kr/view/AEN20240222002100320","related_assets":["000660","005930","042700","091160"],"importance":"medium","display_order":3}
       ]
     },
     {
@@ -57,7 +61,9 @@
         "risk_factors": ["HBM 직접 수혜와 단순 AI 테마 혼동", "기대 선반영과 밸류에이션 부담"]
       },
       "news": [
-        {"news_id":"SEM-T3-N01","published_at":"2024-03-19T09:00:00+09:00","title":"SK하이닉스, HBM3E 양산 개시","summary":"SK하이닉스가 HBM3E 양산을 시작하고 고객 공급을 진행한다고 발표했다.","source_name":"SK hynix Newsroom","source_url":"https://news.skhynix.com/en/sk-hynix-begins-volume-production-of-industry-first-hbm3e/","related_assets":["000660","042700","091160"],"importance":"high","display_order":1}
+        {"news_id":"SEM-T3-N01","published_at":"2024-03-19T09:00:00+09:00","title":"SK하이닉스, HBM3E 양산 개시","summary":"SK하이닉스는 HBM3E 양산을 시작했으며 3월 말부터 고객사에 공급할 계획이라고 발표했다.","source_name":"SK hynix Newsroom","source_url":"https://news.skhynix.com/en/sk-hynix-begins-volume-production-of-industry-first-hbm3e/","related_assets":["000660","042700","091160"],"importance":"high","display_order":1},
+        {"news_id":"SEM-T3-N02","published_at":"2024-03-19T05:00:00+09:00","title":"NVIDIA, 차세대 Blackwell AI 플랫폼 공개","summary":"NVIDIA는 주요 클라우드·서버 기업이 도입할 차세대 Blackwell 플랫폼을 공개해 고성능 AI 연산 인프라의 확대 계획을 제시했다.","source_name":"NVIDIA Newsroom","source_url":"https://nvidianews.nvidia.com/news/nvidia-blackwell-platform-arrives-to-power-a-new-era-of-computing","related_assets":["000660","005930","042700","007660","091160"],"importance":"high","display_order":2},
+        {"news_id":"SEM-T3-N03","published_at":"2024-02-27T02:00:00+09:00","title":"Micron도 NVIDIA H200용 HBM3E 양산 진입","summary":"Micron은 NVIDIA H200에 탑재될 HBM3E의 양산을 시작해 HBM 시장 확대와 공급사 간 경쟁 심화를 함께 확인시켰다.","source_name":"Micron Investor Relations","source_url":"https://investors.micron.com/news/press-release/2024/Micron-Commences-Volume-Production-of-Industry-Leading-HBM3E-Solution-to-Accelerate-the-Growth-of-AI-02-26-2024/default.aspx","related_assets":["000660","005930","091160"],"importance":"medium","display_order":3}
       ]
     },
     {
@@ -76,7 +82,9 @@
         "risk_factors": ["금리 인하 기대 후퇴", "지정학적 불안", "기술주 과열 해소"]
       },
       "news": [
-        {"news_id":"SEM-T4-N01","published_at":"2024-04-10T21:30:00+09:00","title":"미국 3월 소비자물가 상승률 예상 상회","summary":"미국 소비자물가 상승으로 조기 금리 인하 기대가 약화되며 성장주 할인율 부담이 커졌다.","source_name":"U.S. Bureau of Labor Statistics","source_url":"https://www.bls.gov/news.release/archives/cpi_04102024.htm","related_assets":["091160","069500"],"importance":"high","display_order":1}
+        {"news_id":"SEM-T4-N01","published_at":"2024-04-10T21:30:00+09:00","title":"미국 3월 소비자물가 전년 대비 3.5% 상승","summary":"미국 3월 소비자물가는 전년 대비 3.5%, 근원 소비자물가는 3.8% 상승해 조기 금리 인하 기대에 부담을 줬다.","source_name":"U.S. Bureau of Labor Statistics","source_url":"https://www.bls.gov/news.release/archives/cpi_04102024.htm","related_assets":["091160","069500","035420"],"importance":"high","display_order":1},
+        {"news_id":"SEM-T4-N02","published_at":"2024-04-17T03:00:00+09:00","title":"Powell, 긴축 정책에 시간이 더 필요하다고 평가","summary":"미 연준 의장은 최근 물가 지표가 금리 인하를 위한 확신을 높이지 못했으며 긴축 정책이 작동할 시간을 더 둘 필요가 있다고 밝혔다.","source_name":"Reuters","source_url":"https://www.reuters.com/markets/us/feds-powell-jefferson-square-restrictive-policy-with-strong-data-2024-04-16/","related_assets":["091160","069500","035420","132030"],"importance":"high","display_order":2},
+        {"news_id":"SEM-T4-N03","published_at":"2024-04-18T15:00:00+09:00","title":"TSMC, 전년 대비 성장 속 전분기 대비 매출 감소","summary":"TSMC의 1분기 매출은 전년 대비 16.5% 증가했지만 전분기 대비 5.3% 감소했으며 HPC 수요와 스마트폰 계절성이 함께 나타났다.","source_name":"TSMC","source_url":"https://pr.tsmc.com/english/news/3131","related_assets":["000660","005930","240810","403870","091160"],"importance":"medium","display_order":3}
       ]
     },
     {
@@ -95,7 +103,9 @@
         "risk_factors": ["신고가 추격매수", "포트폴리오 집중", "차익실현 매물"]
       },
       "news": [
-        {"news_id":"SEM-T5-N01","published_at":"2024-05-23T06:00:00+09:00","title":"NVIDIA, AI 수요 기반 실적 성장 지속","summary":"NVIDIA가 다시 큰 폭의 매출 성장을 발표하며 AI 인프라 수요를 확인했다.","source_name":"NVIDIA Investor Relations","source_url":"https://investor.nvidia.com/news/press-release-details/2024/NVIDIA-Announces-Financial-Results-for-First-Quarter-Fiscal-2025/default.aspx","related_assets":["000660","005930","042700"],"importance":"high","display_order":1}
+        {"news_id":"SEM-T5-N01","published_at":"2024-05-23T06:20:00+09:00","title":"NVIDIA, AI 수요 기반 실적 성장 지속","summary":"NVIDIA는 분기 매출이 전년 대비 262%, 데이터센터 매출이 427% 증가했다고 발표했다.","source_name":"NVIDIA Investor Relations","source_url":"https://investor.nvidia.com/news/press-release-details/2024/NVIDIA-Announces-Financial-Results-for-First-Quarter-Fiscal-2025/default.aspx","related_assets":["000660","005930","042700","091160"],"importance":"high","display_order":1},
+        {"news_id":"SEM-T5-N02","published_at":"2024-04-25T08:00:00+09:00","title":"SK하이닉스, AI 메모리 수요로 실적 회복","summary":"SK하이닉스는 1분기 매출 12조4300억원과 영업이익 2조8860억원을 기록했으며 HBM 등 AI 서버 제품 판매가 실적 회복을 이끌었다고 밝혔다.","source_name":"SK hynix Newsroom","source_url":"https://news.skhynix.com/en/sk-hynix-announces-1q24-financial-results/","related_assets":["000660","042700","091160"],"importance":"high","display_order":2},
+        {"news_id":"SEM-T5-N03","published_at":"2024-05-23T09:29:00+09:00","title":"금리 우려 속 SK하이닉스는 장 초반 상승","summary":"연준 의사록 영향으로 코스피가 장 초반 0.57% 하락한 가운데 SK하이닉스는 NVIDIA 실적 영향으로 1.16% 상승했다.","source_name":"Yonhap News Agency","source_url":"https://en.yna.co.kr/view/AEN20240523002000320","related_assets":["000660","005930","091160","069500"],"importance":"medium","display_order":3}
       ]
     },
     {
@@ -114,7 +124,9 @@
         "risk_factors": ["반도체 전 종목의 무차별 매수", "반등 이후 재조정", "약한 테마주의 동반 상승"]
       },
       "news": [
-        {"news_id":"SEM-T6-N01","published_at":"2024-07-01T08:00:00+09:00","title":"SK그룹, AI·반도체 중심 투자 확대","summary":"SK그룹이 AI와 반도체를 중심으로 투자 재원을 확보하고 SK하이닉스의 장기 반도체 투자를 추진한다고 밝혔다.","source_name":"Reuters","source_url":"https://www.reuters.com/technology/south-koreas-sk-hynix-invest-75-bln-by-2028-ai-chips-2024-06-30/","related_assets":["000660","042700","091160"],"importance":"high","display_order":1}
+        {"news_id":"SEM-T6-N01","published_at":"2024-06-30T12:01:00+09:00","title":"SK하이닉스, 2028년까지 AI·반도체에 103조원 투자","summary":"SK그룹은 SK하이닉스가 2028년까지 AI 중심 반도체 사업 강화에 103조원을 투자할 계획이라고 밝혔다.","source_name":"Reuters","source_url":"https://www.reuters.com/technology/south-koreas-sk-hynix-invest-75-bln-by-2028-ai-chips-2024-06-30/","related_assets":["000660","042700","091160"],"importance":"high","display_order":1},
+        {"news_id":"SEM-T6-N02","published_at":"2024-06-27T05:00:00+09:00","title":"Micron, AI 수요로 데이터센터 매출 증가","summary":"Micron은 AI 수요에 힘입어 데이터센터 매출이 전분기 대비 50% 증가했으며 다음 분기 매출을 76억 달러 안팎으로 전망했다.","source_name":"Micron Investor Relations","source_url":"https://investors.micron.com/news/press-release/2024/Micron-Technology-Inc--Reports-Results-for-the-Third-Quarter-of-Fiscal-2024-06-26-2024/default.aspx","related_assets":["000660","005930","091160"],"importance":"high","display_order":2},
+        {"news_id":"SEM-T6-N03","published_at":"2024-06-27T23:28:00+09:00","title":"실적 성장에도 높은 AI 기대가 주가에 부담","summary":"Micron은 큰 폭의 매출 성장을 전망했지만 시장 기대와 비슷한 수준에 그치면서 주가가 하락해 AI 관련주의 높은 기대 수준을 드러냈다.","source_name":"Reuters","source_url":"https://www.reuters.com/markets/us/micron-falls-ai-revenue-surge-falls-short-lofty-expectations-2024-06-27/","related_assets":["000660","005930","091160"],"importance":"medium","display_order":3}
       ]
     }
   ]
