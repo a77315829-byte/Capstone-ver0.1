@@ -20,6 +20,11 @@ class OrderIn(BaseModel):
     asset_id: str = Field(min_length=6, max_length=12)
     side: str = Field(pattern="^(BUY|SELL|buy|sell)$")
     quantity: int = Field(ge=1)
+    order_type: str = Field(
+        default="MARKET",
+        pattern="^(MARKET|LIMIT|market|limit)$",
+    )
+    limit_price: int | None = Field(default=None, ge=1)
 
 
 class AnswerIn(BaseModel):
@@ -72,6 +77,14 @@ def get_chart(
         return handled_error(exc)
 
 
+@router.get("/sessions/{session_id}/orderbook/{asset_id}")
+def get_orderbook(session_id: str, asset_id: str):
+    try:
+        return ok(service().get_orderbook(session_id, asset_id))
+    except Exception as exc:
+        return handled_error(exc)
+
+
 @router.post("/sessions/{session_id}/orders", status_code=201)
 def place_order(session_id: str, body: OrderIn):
     try:
@@ -81,6 +94,8 @@ def place_order(session_id: str, body: OrderIn):
                 asset_id=body.asset_id,
                 side=body.side,
                 quantity=body.quantity,
+                order_type=body.order_type,
+                limit_price=body.limit_price,
             )
         )
     except Exception as exc:

@@ -16,8 +16,11 @@
 | `daily_prices` | `(asset_id, trade_date)` | 실제 수정주가 일봉 OHLCV |
 | `news_items` | `news_id` | 화면용 제목·직접 작성 요약·출처 |
 | `market_snapshots` | `snapshot_id` | 턴별 시장심리·업종상태·위험요인 |
+| `order_book_snapshots` | `(scenario_id, scenario_version, turn_no, asset_id, generator_version)` | 일봉에서 생성한 공용 모의 호가 |
 
 JSON 파일은 콘텐츠 작성·검토·Git 이력용 원본이고, 서버 실행 시 위 컬렉션을 조회합니다.
+`order_book_snapshots`만 JSON 원본 없이 최초 조회 시 생성되며, 생성기 버전과 실제 사용한
+일봉 날짜·종가·거래량을 함께 저장합니다.
 
 ## 실행 컬렉션
 
@@ -45,7 +48,7 @@ JSON 파일은 콘텐츠 작성·검토·Git 이력용 원본이고, 서버 실�
 
 ### `orders`
 
-모든 주문은 베타에서 즉시 체결되며 수정하지 않는 이벤트 기록입니다.
+모든 주문은 IOC 방식으로 즉시 체결 또는 취소되며 수정하지 않는 이벤트 기록입니다.
 
 ```json
 {
@@ -55,13 +58,27 @@ JSON 파일은 콘텐츠 작성·검토·Git 이력용 원본이고, 서버 실�
   "market_date": "2024-02-02",
   "asset_id": "000660",
   "side": "BUY | SELL",
+  "order_type": "MARKET | LIMIT",
+  "limit_price": null,
+  "requested_quantity": 10,
+  "filled_quantity": 10,
+  "cancelled_quantity": 0,
   "quantity": 10,
-  "execution_price": 135900,
-  "amount": 1359000,
-  "status": "FILLED",
-  "price_basis": "close"
+  "execution_price": 135950.0,
+  "amount": 1359500,
+  "status": "FILLED | PARTIALLY_FILLED | CANCELLED",
+  "time_in_force": "IOC",
+  "fills": [
+    {"price":135900,"quantity":5,"amount":679500},
+    {"price":136000,"quantity":5,"amount":680000}
+  ],
+  "price_basis": "synthetic_orderbook_v1",
+  "orderbook_snapshot_id": "semiconductor-v1-turn-1-000660-synthetic-ohlcv-v1"
 }
 ```
+
+기존 호환 필드인 `quantity`와 `execution_price`는 각각 실제 체결 수량과 가중평균
+체결가입니다. 포트폴리오와 행동 평가는 `filled_quantity`와 실제 `amount`를 사용합니다.
 
 ### `portfolio_snapshots`
 

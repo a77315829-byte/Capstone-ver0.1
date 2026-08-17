@@ -246,7 +246,11 @@ def build_scenario_evaluation(
     scenario = repository.get_scenario(session["scenario_id"], session["scenario_version"])
     evaluations = repository.list_turn_evaluations(session["session_id"])
     snapshots = repository.list_snapshots(session["session_id"])
-    orders = repository.list_orders(session["session_id"])
+    orders = [
+        order
+        for order in repository.list_orders(session["session_id"])
+        if int(order.get("filled_quantity", order.get("quantity", 0)) or 0) > 0
+    ]
     metric_values: dict[str, list[float]] = defaultdict(list)
     timeline = []
     for evaluation in evaluations:

@@ -186,6 +186,16 @@ class MongoStore:
             "daily_prices": [([("asset_id", ASCENDING), ("trade_date", ASCENDING)], True)],
             "news_items": [([("news_id", ASCENDING)], True)],
             "market_snapshots": [([("snapshot_id", ASCENDING)], True)],
+            "order_book_snapshots": [
+                ([
+                    ("scenario_id", ASCENDING),
+                    ("scenario_version", ASCENDING),
+                    ("turn_no", ASCENDING),
+                    ("asset_id", ASCENDING),
+                    ("generator_version", ASCENDING),
+                ], True),
+                ([("snapshot_id", ASCENDING)], True),
+            ],
             "turn_rubrics": [
                 ([
                     ("scenario_id", ASCENDING),

@@ -9,9 +9,11 @@
 ## 각 턴
 
 1. `GET /api/sessions/{session_id}/turn`
-2. `turn`, `market_state`, `news`, `assets`, `portfolio`, `questions`를 화면에 배치
+2. `turn`, `market_state`, `news`, `assets`, `portfolio`, `orders`, `questions`를 화면에 배치
    - `coaching.reminders`가 있으면 직전 턴에서 피해야 할 행동을 상단 알림으로 표시
-3. 종목 선택 시 `GET /api/sessions/{session_id}/chart/{asset_id}`
+3. 종목 선택 시 차트와 호가를 조회
+   - `GET /api/sessions/{session_id}/chart/{asset_id}`
+   - `GET /api/sessions/{session_id}/orderbook/{asset_id}`
 4. 매수·매도 시 `POST /api/sessions/{session_id}/orders`
 5. 턴 완료 모달에서 여섯 답변을 `POST /api/sessions/{session_id}/turn/submit`
 6. `next_turn`이 숫자이면 다시 현재 턴 조회
@@ -19,6 +21,31 @@
 
 프론트가 임의로 현재 턴이나 현금을 계산하지 않습니다. 모든 진행 상태와 포트폴리오는
 서버 응답을 단일 기준으로 사용합니다.
+
+## 호가·주문
+
+호가 응답의 `is_simulated=true`, `source=SIMULATED_FROM_DAILY_OHLCV`를 기준으로 화면에
+`시나리오 모의 호가`라고 표시합니다. `bids`, `asks`는 각각 10단계이며 각 단계에는
+`price`, 현재 `quantity`, 최초 `initial_quantity`, `consumed_quantity`,
+`cumulative_quantity`가 들어갑니다.
+
+시장가 주문은 기존 요청과 호환됩니다.
+
+```json
+{"asset_id":"000660","side":"BUY","quantity":10,"order_type":"MARKET"}
+```
+
+지정가 주문은 가격을 함께 보냅니다.
+
+```json
+{"asset_id":"000660","side":"BUY","quantity":10,"order_type":"LIMIT","limit_price":135000}
+```
+
+주문 응답의 `fills`가 실제 체결 상세이고 `quantity`와 `filled_quantity`는 체결 수량입니다.
+`requested_quantity`는 사용자가 입력한 수량, `cancelled_quantity`는 IOC로 취소된 수량입니다.
+상태는 `FILLED`, `PARTIALLY_FILLED`, `CANCELLED` 중 하나입니다. 응답에 갱신된
+`portfolio`와 `orderbook`도 함께 오므로 주문 후 별도 계산 없이 화면 상태를 교체합니다.
+새로고침 후 체결내역은 `GET /turn`의 `orders`를 사용합니다.
 
 턴 제출 응답의 기존 `scorecard.metrics`, `feedback.good_points`,
 `feedback.missed_points`, `feedback.explanation` 계약은 유지됩니다. 추가된
