@@ -1,4 +1,4 @@
-# Beta v1 데이터 계약
+# Beta 데이터 계약
 
 모든 장기 저장 문서는 `schema_version`을 가집니다. 시나리오 실행 세션에는
 `scenario_version`, 평가에는 `evaluator_version`을 함께 저장해 과거 결과의 재현성을
@@ -75,8 +75,47 @@ JSON 파일은 콘텐츠 작성·검토·Git 이력용 원본이고, 서버 실�
 
 ### `turn_evaluations`
 
-기존 채점 엔진의 M1~M5·PORTFOLIO 점수, 감점 사유, 함정, 피드백을 저장합니다.
+채점 엔진의 M1~M5·PORTFOLIO 점수, 감점 사유, 함정, 피드백을 저장합니다.
 수익률은 이 점수에 포함되지 않습니다.
+
+`evaluator_version=beta-v2-rationale-m1-m5`부터 `scorecard.rationale_analysis`에 다음
+자유서술 분석 근거를 추가 저장합니다.
+
+- 입력 품질(`SUFFICIENT`, `WEAK`, `INSUFFICIENT`)
+- 언급 요인, 올바르게 해석한 요인, 방향을 잘못 해석한 요인
+- 위험 요인과 완화·호재 요인
+- 불확실성과 원인-영향 연결 여부
+- 자유서술에서 추론한 행동과 실제 주문 행동 강도
+
+이 필드는 기존 점수·피드백 필드를 제거하지 않는 추가 필드입니다.
+
+`evaluator_version=beta-v3-cross-turn-coaching`부터 각 턴의
+`scorecard.feedback`에 다음 필드를 추가합니다.
+
+```json
+{
+  "next_actions": [
+    {
+      "guidance_code": "AVOID_RISK_OMISSION",
+      "kind": "AVOID",
+      "message": "호재만 보고 손실 위험과 반대 시나리오를 생략하지 마세요.",
+      "source_turn": 1,
+      "target_metrics": ["M3"]
+    }
+  ],
+  "previous_guidance_review": [
+    {
+      "guidance_code": "AVOID_RISK_OMISSION",
+      "source_turn": 1,
+      "evaluated_turn": 2,
+      "status": "FOLLOWED | REPEATED | NOT_VERIFIABLE",
+      "evidence": "관련 감점이 반복되지 않았고 M3 4.20점으로 확인됐습니다."
+    }
+  ]
+}
+```
+
+코칭 판정은 점수의 추가 가감에 사용하지 않습니다.
 
 ## 결과 컬렉션
 
@@ -86,6 +125,7 @@ JSON 파일은 콘텐츠 작성·검토·Git 이력용 원본이고, 서버 실�
 
 - `decision_evaluation`: 6축 평균과 턴별 추이
 - `behavior_patterns`: 패턴, 관찰 횟수, 근거 턴, 권고사항
+- `coaching_progress`: 이전 조언의 반영·반복·판단 불가 횟수, 턴별 이력, 미해결 행동
 - `portfolio_analysis`: 수익률, 벤치마크, MDD, 회전율, 현금·집중도, 기여도
 - `feedback`: 요약, 강점, 개선점, 다음 행동
 

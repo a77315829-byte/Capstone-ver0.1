@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from config import EVALUATOR_VERSION, SCHEMA_VERSION
 from data.app_repository import AppRepository
+from scoring import coaching_tracker
 
 
 METRIC_LABELS = {
@@ -268,6 +269,8 @@ def build_scenario_evaluation(
     overall_score = round(mean(turn_scores), 2) if turn_scores else 0.0
     patterns = _behavior_patterns(repository, scenario, evaluations, snapshots, orders)
     portfolio = _portfolio_metrics(repository, scenario, session, snapshots, orders)
+    coaching_progress = coaching_tracker.summarize_progress(evaluations)
+    coaching_summary = coaching_tracker.progress_summary(coaching_progress)
     strengths = [
         f"{METRIC_LABELS.get(metric, metric)}이 안정적입니다({score:.2f}/5)."
         for metric, score in metric_averages.items()
@@ -287,6 +290,16 @@ def build_scenario_evaluation(
     summary_parts.append(
         f"최종 포트폴리오 수익률은 {portfolio['cumulative_return_pct']:.2f}%이며, 수익률은 판단 점수와 분리해 해석합니다."
     )
+    summary_parts.append(coaching_summary)
+    next_actions: list[str] = []
+    for message in [
+        *coaching_progress["unresolved_actions"],
+        *(item["recommendation"] for item in repeated),
+    ]:
+        if message and message not in next_actions:
+            next_actions.append(message)
+        if len(next_actions) >= 3:
+            break
     return {
         "schema_version": SCHEMA_VERSION,
         "evaluation_id": str(uuid4()),
@@ -302,12 +315,14 @@ def build_scenario_evaluation(
             "timeline": timeline,
         },
         "behavior_patterns": patterns,
+        "coaching_progress": coaching_progress,
         "portfolio_analysis": portfolio,
         "feedback": {
             "summary": " ".join(summary_parts),
             "strengths": strengths,
             "improvements": improvements,
-            "next_actions": [item["recommendation"] for item in repeated[:3]],
+            "coaching_summary": coaching_summary,
+            "next_actions": next_actions,
         },
     }
 

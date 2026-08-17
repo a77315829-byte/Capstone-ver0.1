@@ -37,7 +37,7 @@ MONGODB_CONNECT_TIMEOUT_MS = int(os.getenv("MONGODB_CONNECT_TIMEOUT_MS", "3000")
 # 시나리오 실행 기본값
 DEFAULT_USER_ID = os.getenv("DEFAULT_USER_ID", "beta-user")
 SCHEMA_VERSION = 1
-EVALUATOR_VERSION = "beta-v1"
+EVALUATOR_VERSION = "beta-v3-cross-turn-coaching"
 
 # 한국투자증권 과거 일봉 수집 설정
 KIS_APP_KEY = os.getenv("KIS_APP_KEY", "")

@@ -1,7 +1,9 @@
 """
 행동 채점기 (논문 표 2 기반).
-- M4 = 사용자 행동 점수(방향/강도)가 이 턴 적정 범위 안에 있는가.
+- 행동 적합도 = 사용자 행동 점수(방향/강도)가 이 턴 적정 범위 안에 있는가.
 - PORTFOLIO = 배분 품질(함정주·몰빵·현금).
+
+최종 M4는 engine에서 자유서술-실제행동 일치, 객관식, 행동 적합도를 합쳐 계산한다.
 """
 from data.models import MetricResult, MetricId, Penalty, Action
 
@@ -24,7 +26,18 @@ def _action_to_score(h) -> float:
     return 0.0
 
 
+def derive_action_score(holdings) -> float:
+    """실제 주문에서 만든 holding 목록을 -3~+2 행동 강도로 변환한다."""
+    if not holdings:
+        return 0.0
+    action_score = sum(_action_to_score(holding) for holding in holdings)
+    return max(-3.0, min(2.0, action_score))
+
+
 def score_actions(holdings, cash_pct, q36_answer, action_rule) -> tuple:
+    # q36_answer는 기존 호출 계약 호환을 위해 유지한다. 객관식 M4 응답은
+    # engine의 최종 M4 합성 단계에서 별도로 반영한다.
+    _ = q36_answer
     trap_assets = action_rule.get("trap_assets", [])
     core_assets = action_rule.get("core_assets", [])
     max_single = action_rule.get("max_single_weight", 100)
@@ -55,14 +68,8 @@ def score_actions(holdings, cash_pct, q36_answer, action_rule) -> tuple:
             evidence=f"현금 {cash_pct}%로 적정({cash_min}%)보다 낮음"))
     port_score = max(1.0, min(5.0, port_score))
 
-    # ── M4: 행동 점수가 적정 범위 안인가 (논문 방식) ──
-    # 사용자의 대표 행동 점수 = 모든 holding 점수의 합(순매수/순매도 방향)
-    if holdings:
-        action_score = sum(_action_to_score(h) for h in holdings)
-        # 여러 종목이면 평균적 방향으로 clip
-        action_score = max(-3.0, min(2.0, action_score))
-    else:
-        action_score = 0.0  # 아무것도 안 함 = 관망
+    # ── 행동 적합도: 행동 점수가 시나리오 적정 범위 안인가 ──
+    action_score = derive_action_score(holdings)
 
     lo, hi = expected_range
     m4_penalties = []
@@ -79,6 +86,11 @@ def score_actions(holdings, cash_pct, q36_answer, action_rule) -> tuple:
     else:
         m4_score = 5.0  # 적정 범위 안
 
-    m4 = MetricResult(metric=MetricId.M4, score=round(m4_score, 2), penalties=m4_penalties)
+    m4 = MetricResult(
+        metric=MetricId.M4,
+        score=round(m4_score, 2),
+        penalties=m4_penalties,
+        reason=f"실제 행동 강도 {action_score}, 시나리오 적정 범위 {lo}~{hi}",
+    )
     port = MetricResult(metric=MetricId.PORTFOLIO, score=round(port_score, 2), penalties=port_penalties)
     return m4, port

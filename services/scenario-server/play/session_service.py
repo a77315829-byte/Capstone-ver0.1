@@ -18,7 +18,7 @@ from play.portfolio_service import (
     execute_order,
     make_snapshot,
 )
-from scoring import engine
+from scoring import coaching_tracker, engine
 
 
 def utc_now() -> str:
@@ -139,6 +139,10 @@ class ScenarioSessionService:
         questions = self.repository.get_turn_questions(
             session["scenario_id"], session["scenario_version"], turn_no
         )
+        previous_guidance = coaching_tracker.latest_guidance(
+            self.repository.list_turn_evaluations(session_id),
+            turn_no,
+        )
         assets = self._asset_summaries(scenario["asset_ids"], turn["market_date"])
         portfolio = build_portfolio_state(
             self.repository,
@@ -193,6 +197,9 @@ class ScenarioSessionService:
             "default_asset_id": scenario.get("default_asset_id"),
             "portfolio": portfolio,
             "questions": questions,
+            "coaching": {
+                "reminders": previous_guidance,
+            },
         }
 
     def _asset_summaries(self, asset_ids: list[str], market_date: str) -> list[dict]:
@@ -369,12 +376,22 @@ class ScenarioSessionService:
                 for item in answers
             ],
         )
+        previous_guidance = coaching_tracker.latest_guidance(
+            self.repository.list_turn_evaluations(session_id),
+            turn_no,
+        )
         scorecard = to_primitive(engine.score_turn(decision, rubric))
         if isinstance(scorecard.get("feedback"), str):
             try:
                 scorecard["feedback"] = json.loads(scorecard["feedback"])
             except json.JSONDecodeError:
                 scorecard["feedback"] = {"explanation": scorecard["feedback"]}
+        coaching_tracker.enrich_scorecard(
+            scorecard,
+            previous_guidance,
+            turn_no,
+            is_final_turn=turn_no == int(scenario["total_turns"]),
+        )
 
         now = utc_now()
         after_snapshot = make_snapshot(

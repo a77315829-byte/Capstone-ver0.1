@@ -100,6 +100,7 @@ class Scorecard:
     traps: list[TrapResult] = field(default_factory=list)
     turn_score: float = 0.0     # 코드가 계산 (LLM 아님)
     feedback: str = ""
+    rationale_analysis: dict = field(default_factory=dict)
 
 @dataclass
 class QuestionScore:
