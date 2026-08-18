@@ -678,7 +678,9 @@ export default function MyPage() {
 
 	useEffect(() => {
 		const handleProgressUpdated = () => {
-			void refreshQuizProgress();
+			setQuizProgress(
+				getCachedQuizProgress(username, TOTAL_QUIZ_COUNT),
+			);
 		};
 		window.addEventListener("storage", handleProgressUpdated);
 		window.addEventListener(
@@ -693,7 +695,7 @@ export default function MyPage() {
 				handleProgressUpdated,
 			);
 		};
-	}, [refreshQuizProgress]);
+	}, [username]);
 
 	const account = portfolio?.account;
 	const holdings = portfolio?.holdings ?? [];

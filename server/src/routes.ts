@@ -199,6 +199,22 @@ router.get(
 	},
 );
 
+// 종목 호가 조회
+router.get(
+	"/api/scenario-service/sessions/:sessionId/orderbook/:assetId",
+	async (req, res) => {
+		try {
+			const response = await axios.get(
+				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/orderbook/${req.params.assetId}`,
+			);
+
+			return res.json(response.data);
+		} catch (error: any) {
+			return handleScenarioError(res, error);
+		}
+	},
+);
+
 // 매수 / 매도
 router.post(
 	"/api/scenario-service/sessions/:sessionId/orders",

@@ -37,6 +37,7 @@ import {
 	FiCheck,
 	FiCheckCircle,
 	FiChevronDown,
+	FiExternalLink,
 	FiInfo,
 	FiSearch,
 	FiShield,
@@ -52,7 +53,7 @@ import scenarioService from "../services/scenario.service";
 
 type OrderSide = "BUY" | "SELL";
 type ChartRange = "DAY" | "WEEK" | "MONTH" | "YEAR";
-type DataTab = "CHART" | "TRADES" | "ORDERBOOK" | "BROKERS";
+type DataTab = "CHART" | "TRADES" | "ORDERBOOK";
 
 type SessionPublic = {
 	session_id: string;
@@ -191,6 +192,7 @@ type TurnView = {
 	assets?: AssetSummary[];
 	default_asset_id?: string | null;
 	portfolio?: PortfolioState;
+	orders?: OrderRecord[];
 	questions?: QuestionItem[];
 	result_ready?: boolean;
 	evaluation_id?: string | null;
@@ -228,18 +230,52 @@ type OrderRecord = {
 	market_date?: string;
 	asset_id: string;
 	side: OrderSide;
+	order_type?: "MARKET" | "LIMIT";
+	limit_price?: number | null;
+	requested_quantity?: number;
+	filled_quantity?: number;
+	cancelled_quantity?: number;
 	quantity: number;
-	execution_price: number;
+	execution_price?: number | null;
+	average_execution_price?: number | null;
 	amount: number;
 	realized_pnl?: number;
 	status?: string;
+	time_in_force?: string;
+	fills?: Array<{
+		price: number;
+		quantity: number;
+		amount: number;
+	}>;
 	price_basis?: string;
 	created_at?: string;
+};
+
+type OrderbookLevel = {
+	level: number;
+	price: number;
+	quantity: number;
+	cumulative_quantity?: number;
+	initial_quantity?: number;
+	consumed_quantity?: number;
+};
+
+type OrderbookResponse = {
+	session_id?: string;
+	snapshot_id?: string;
+	asset_id: string;
+	asset_name?: string;
+	market_date?: string;
+	reference_price?: number;
+	spread?: number;
+	bids: OrderbookLevel[];
+	asks: OrderbookLevel[];
 };
 
 type OrderResponse = {
 	order: OrderRecord;
 	portfolio: PortfolioState;
+	orderbook: OrderbookResponse;
 };
 
 type AnswerValue = {
@@ -458,6 +494,19 @@ function formatShortDate(value?: string | null): string {
 	const [, month, day] = normalized.split("-");
 	if (!month || !day) return normalized;
 	return `${month}.${day}`;
+}
+
+function formatTime(value?: string | null): string {
+	if (!value) return "-";
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "-";
+
+	return new Intl.DateTimeFormat("ko-KR", {
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hour12: false,
+	}).format(date);
 }
 
 function daysBetween(from?: string | null, to?: string | null): number | null {
@@ -895,12 +944,230 @@ function CandlestickChart({
 }
 
 /* ============================================================================
- * Chart panel with screenshot tabs
+ * Chart / executions / orderbook panel
  * ========================================================================== */
+
+function TradeExecutions({ orders }: { orders: OrderRecord[] }) {
+	const executions = orders.flatMap((order) => {
+		const fills = order.fills?.length
+			? order.fills
+			: order.quantity > 0 && order.execution_price
+				? [
+						{
+							price: order.execution_price,
+							quantity: order.quantity,
+							amount: order.amount,
+						},
+					]
+				: [];
+
+		return fills.map((fill, index) => ({
+			...fill,
+			key: `${order.order_id ?? order.created_at ?? "order"}-${index}`,
+			side: order.side,
+			createdAt: order.created_at,
+		}));
+	});
+
+	if (!executions.length) {
+		return (
+			<EmptyData
+				title="체결 내역이 없습니다"
+				description="이 종목을 매수하거나 매도하면 체결 가격과 수량이 표시됩니다."
+			/>
+		);
+	}
+
+	return (
+		<Box px="14px" py="13px" minH="365px">
+			<Grid
+				templateColumns="76px 48px minmax(82px, 1fr) minmax(60px, 0.8fr) minmax(92px, 1fr)"
+				gap="8px"
+				px="8px"
+				pb="9px"
+				borderBottom="1px solid"
+				borderColor={UI.border}
+			>
+				{["시간", "구분", "체결가", "수량", "체결금액"].map((label) => (
+					<Text key={label} fontSize="9px" color={UI.muted} textAlign="right">
+						{label}
+					</Text>
+				))}
+			</Grid>
+
+			<Stack spacing="0" maxH="326px" overflowY="auto">
+				{executions.map((execution) => (
+					<Grid
+						key={execution.key}
+						templateColumns="76px 48px minmax(82px, 1fr) minmax(60px, 0.8fr) minmax(92px, 1fr)"
+						gap="8px"
+						alignItems="center"
+						px="8px"
+						py="10px"
+						borderBottom="1px solid #F3EEE8"
+					>
+						<Text fontSize="10px" color={UI.subtle} textAlign="right">
+							{formatTime(execution.createdAt)}
+						</Text>
+						<Text
+							fontSize="10px"
+							fontWeight="900"
+							color={execution.side === "BUY" ? UI.red : UI.blue}
+							textAlign="right"
+						>
+							{execution.side === "BUY" ? "매수" : "매도"}
+						</Text>
+						<Text fontSize="11px" fontWeight="800" textAlign="right">
+							{formatPrice(execution.price)}
+						</Text>
+						<Text fontSize="11px" fontWeight="800" textAlign="right">
+							{integer.format(execution.quantity)}주
+						</Text>
+						<Text fontSize="11px" fontWeight="800" textAlign="right">
+							{formatWon(execution.amount)}
+						</Text>
+					</Grid>
+				))}
+			</Stack>
+		</Box>
+	);
+}
+
+function OrderbookSide({
+	title,
+	levels,
+	color,
+	barColor,
+	maxQuantity,
+}: {
+	title: string;
+	levels: OrderbookLevel[];
+	color: string;
+	barColor: string;
+	maxQuantity: number;
+}) {
+	return (
+		<Box minW="0">
+			<Grid templateColumns="1fr 1fr" gap="8px" px="9px" pb="7px">
+				<Text fontSize="10px" fontWeight="900" color={color}>
+					{title}
+				</Text>
+				<Text fontSize="9px" color={UI.muted} textAlign="right">
+					잔량
+				</Text>
+			</Grid>
+
+			<Stack spacing="2px">
+				{levels.map((level) => (
+					<Box
+						key={`${title}-${level.level}-${level.price}`}
+						position="relative"
+						overflow="hidden"
+						borderRadius="3px"
+					>
+						<Box
+							position="absolute"
+							top="0"
+							right="0"
+							bottom="0"
+							w={`${Math.max(0, Math.min(100, (level.quantity / maxQuantity) * 100))}%`}
+							bg={barColor}
+						/>
+						<Grid
+							position="relative"
+							templateColumns="1fr 1fr"
+							gap="8px"
+							px="9px"
+							py="5px"
+						>
+							<Text fontSize="10px" fontWeight="800" color={color}>
+								{integer.format(level.price)}
+							</Text>
+							<Text fontSize="10px" textAlign="right" color={UI.text}>
+								{integer.format(level.quantity)}
+							</Text>
+						</Grid>
+					</Box>
+				))}
+			</Stack>
+		</Box>
+	);
+}
+
+function OrderbookView({
+	orderbook,
+	isLoading,
+}: {
+	orderbook: OrderbookResponse | null;
+	isLoading: boolean;
+}) {
+	if (isLoading) {
+		return (
+			<Flex minH="365px" align="center" justify="center">
+				<Spinner color={UI.orange} />
+			</Flex>
+		);
+	}
+
+	if (!orderbook) {
+		return (
+			<EmptyData
+				title="호가를 불러오지 못했습니다"
+				description="종목을 다시 선택하거나 잠시 후 다시 시도해주세요."
+			/>
+		);
+	}
+
+	const asks = [...(orderbook.asks ?? [])].reverse();
+	const bids = orderbook.bids ?? [];
+	const maxQuantity = Math.max(
+		1,
+		...asks.map((level) => level.quantity),
+		...bids.map((level) => level.quantity),
+	);
+
+	return (
+		<Box px="14px" py="12px" minH="365px">
+			<Flex align="center" justify="space-between" mb="10px" px="4px">
+				<Text fontSize="11px" fontWeight="900">
+					{orderbook.asset_name ?? orderbook.asset_id}
+				</Text>
+				<HStack spacing="14px">
+					<Text fontSize="9px" color={UI.muted}>
+						기준가 {formatPrice(orderbook.reference_price)}
+					</Text>
+					<Text fontSize="9px" color={UI.muted}>
+						스프레드 {formatPrice(orderbook.spread)}
+					</Text>
+				</HStack>
+			</Flex>
+
+			<SimpleGrid columns={{ base: 1, md: 2 }} spacing="12px">
+				<OrderbookSide
+					title="매도호가"
+					levels={asks}
+					color={UI.blue}
+					barColor="rgba(49, 112, 190, 0.10)"
+					maxQuantity={maxQuantity}
+				/>
+				<OrderbookSide
+					title="매수호가"
+					levels={bids}
+					color={UI.red}
+					barColor="rgba(217, 74, 74, 0.10)"
+					maxQuantity={maxQuantity}
+				/>
+			</SimpleGrid>
+		</Box>
+	);
+}
 
 function ChartPanel({
 	chart,
 	isLoading,
+	orderbook,
+	isOrderbookLoading,
+	orders,
 	activeTab,
 	onTabChange,
 	range,
@@ -908,6 +1175,9 @@ function ChartPanel({
 }: {
 	chart: ChartResponse | null;
 	isLoading: boolean;
+	orderbook: OrderbookResponse | null;
+	isOrderbookLoading: boolean;
+	orders: OrderRecord[];
 	activeTab: DataTab;
 	onTabChange: (tab: DataTab) => void;
 	range: ChartRange;
@@ -917,7 +1187,6 @@ function ChartPanel({
 		{ key: "CHART", label: "가격 차트" },
 		{ key: "TRADES", label: "체결" },
 		{ key: "ORDERBOOK", label: "호가" },
-		{ key: "BROKERS", label: "거래원" },
 	];
 
 	const ranges: Array<{ key: ChartRange; label: string }> = [
@@ -1001,16 +1270,12 @@ function ChartPanel({
 						isLoading={isLoading}
 					/>
 				</Box>
+			) : activeTab === "TRADES" ? (
+				<TradeExecutions orders={orders} />
 			) : (
-				<EmptyData
-					title={
-						activeTab === "TRADES"
-							? "과거 체결 데이터 미지원"
-							: activeTab === "ORDERBOOK"
-								? "과거 호가 데이터 미지원"
-								: "과거 거래원 데이터 미지원"
-					}
-					description="현재 시나리오 서버는 실제 과거 일봉과 주문 체결 기능을 제공하지만 과거 호가·개별 체결·거래원 스냅샷은 포함하지 않습니다. 임의 데이터를 생성하지 않고 지원 가능한 데이터만 표시합니다."
+				<OrderbookView
+					orderbook={orderbook}
+					isLoading={isOrderbookLoading}
 				/>
 			)}
 		</Panel>
@@ -1372,6 +1637,22 @@ function MarketInfoPanel({
 	);
 }
 
+function openNewsSource(sourceUrl?: string) {
+	const normalizedUrl = sourceUrl?.trim();
+	if (!normalizedUrl) return;
+
+	try {
+		const parsedUrl = new URL(normalizedUrl);
+		if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+			return;
+		}
+
+		window.open(parsedUrl.toString(), "_blank", "noopener,noreferrer");
+	} catch (error) {
+		console.warn("뉴스 원문 URL이 올바르지 않습니다:", sourceUrl, error);
+	}
+}
+
 function NewsPanel({ news }: { news: NewsItem[] }) {
 	return (
 		<Panel minH="228px" px="14px" py="14px">
@@ -1398,8 +1679,27 @@ function NewsPanel({ news }: { news: NewsItem[] }) {
 						{news.map((item) => (
 							<Box
 								key={item.news_id}
+								px="4px"
 								pb="9px"
 								borderBottom="1px solid #EFE8E0"
+								borderRadius="4px"
+								role={item.source_url ? "link" : undefined}
+								tabIndex={item.source_url ? 0 : undefined}
+								aria-label={item.source_url ? `${item.title} 원문 열기` : undefined}
+								cursor={item.source_url ? "pointer" : "default"}
+								onClick={() => openNewsSource(item.source_url)}
+								onKeyDown={(event) => {
+									if (event.key === "Enter" || event.key === " ") {
+										event.preventDefault();
+										openNewsSource(item.source_url);
+									}
+								}}
+								_hover={item.source_url ? { bg: "#FFF8F2" } : undefined}
+								_focusVisible={
+									item.source_url
+										? { outline: `2px solid ${UI.orange}` }
+										: undefined
+								}
 							>
 								<Flex align="center" gap="8px">
 									<Text
@@ -1413,6 +1713,9 @@ function NewsPanel({ news }: { news: NewsItem[] }) {
 									<Text fontSize="9px" color={UI.muted}>
 										{formatDate(item.published_at)}
 									</Text>
+									{item.source_url && (
+										<Box as={FiExternalLink} ml="auto" color={UI.muted} />
+									)}
 								</Flex>
 								<Text mt="4px" fontSize="11px" fontWeight="800" noOfLines={2}>
 									{item.title}
@@ -3258,6 +3561,8 @@ export default function ScenarioPlay() {
 
 	const [chart, setChart] = useState<ChartResponse | null>(null);
 	const [isChartLoading, setIsChartLoading] = useState(false);
+	const [orderbook, setOrderbook] = useState<OrderbookResponse | null>(null);
+	const [isOrderbookLoading, setIsOrderbookLoading] = useState(false);
 	const [chartRange, setChartRange] = useState<ChartRange>("DAY");
 	const [dataTab, setDataTab] = useState<DataTab>("CHART");
 
@@ -3295,6 +3600,13 @@ export default function ScenarioPlay() {
 			assets[0] ??
 			null,
 		[assets, selectedAssetId],
+	);
+	const selectedAssetOrders = useMemo(
+		() =>
+			(turnView?.orders ?? []).filter(
+				(order) => order.asset_id === selectedAsset?.asset_id,
+			),
+		[selectedAsset?.asset_id, turnView?.orders],
 	);
 
 	const initialAnswers = useCallback((items: QuestionItem[]) => {
@@ -3458,6 +3770,52 @@ export default function ScenarioPlay() {
 	}, [selectedAssetId, sessionId, progress?.current_turn, toast]);
 
 	useEffect(() => {
+		if (dataTab !== "ORDERBOOK") return;
+
+		if (!sessionId || !selectedAssetId) {
+			setOrderbook(null);
+			return;
+		}
+
+		let cancelled = false;
+
+		const load = async () => {
+			try {
+				setIsOrderbookLoading(true);
+				const value = (await scenarioService.getOrderbook(
+					sessionId,
+					selectedAssetId,
+				)) as OrderbookResponse;
+
+				if (!cancelled) setOrderbook(value);
+			} catch (error: any) {
+				console.error("호가 조회 실패:", error);
+
+				if (!cancelled) {
+					setOrderbook(null);
+					toast({
+						title: "호가를 불러오지 못했습니다.",
+						description: errorMessage(
+							error,
+							"선택한 종목의 호가를 불러오는 중 오류가 발생했습니다.",
+						),
+						status: "warning",
+						isClosable: true,
+					});
+				}
+			} finally {
+				if (!cancelled) setIsOrderbookLoading(false);
+			}
+		};
+
+		void load();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [dataTab, progress?.current_turn, selectedAssetId, sessionId, toast]);
+
+	useEffect(() => {
 		if (!selectedAsset) return;
 
 		const max =
@@ -3535,12 +3893,14 @@ export default function ScenarioPlay() {
 
 			setLastOrder(result.order);
 			setLastOrderAssetName(selectedAsset.name);
+			setOrderbook(result.orderbook);
 
 			setTurnView((current) =>
 				current
 					? {
 							...current,
 							portfolio: result.portfolio,
+							orders: [...(current.orders ?? []), result.order],
 						}
 					: current,
 			);
@@ -3950,6 +4310,9 @@ export default function ScenarioPlay() {
 						<ChartPanel
 							chart={chart}
 							isLoading={isChartLoading}
+							orderbook={orderbook}
+							isOrderbookLoading={isOrderbookLoading}
+							orders={selectedAssetOrders}
 							activeTab={dataTab}
 							onTabChange={setDataTab}
 							range={chartRange}
