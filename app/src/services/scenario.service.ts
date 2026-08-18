@@ -95,14 +95,6 @@ const scenarioService = {
 		return unwrap(response.data);
 	},
 
-	async getOrderbook(sessionId: string, assetId: string) {
-		const response = await api.get(
-			`/scenario-service/sessions/${sessionId}/orderbook/${assetId}`,
-		);
-
-		return unwrap(response.data);
-	},
-
 	async placeOrder(
 		sessionId: string,
 		assetId: string,

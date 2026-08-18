@@ -36,7 +36,6 @@ import {
 	FiBookOpen,
 	FiCheck,
 	FiCheckCircle,
-	FiChevronDown,
 	FiExternalLink,
 	FiInfo,
 	FiSearch,
@@ -52,8 +51,8 @@ import scenarioService from "../services/scenario.service";
  * ========================================================================== */
 
 type OrderSide = "BUY" | "SELL";
-type ChartRange = "DAY" | "WEEK" | "MONTH" | "YEAR";
-type DataTab = "CHART" | "TRADES" | "ORDERBOOK";
+type ChartRange = "DAY" | "WEEK" | "MONTH";
+type DataTab = "CHART" | "TRADES";
 
 type SessionPublic = {
 	session_id: string;
@@ -251,31 +250,9 @@ type OrderRecord = {
 	created_at?: string;
 };
 
-type OrderbookLevel = {
-	level: number;
-	price: number;
-	quantity: number;
-	cumulative_quantity?: number;
-	initial_quantity?: number;
-	consumed_quantity?: number;
-};
-
-type OrderbookResponse = {
-	session_id?: string;
-	snapshot_id?: string;
-	asset_id: string;
-	asset_name?: string;
-	market_date?: string;
-	reference_price?: number;
-	spread?: number;
-	bids: OrderbookLevel[];
-	asks: OrderbookLevel[];
-};
-
 type OrderResponse = {
 	order: OrderRecord;
 	portfolio: PortfolioState;
-	orderbook: OrderbookResponse;
 };
 
 type AnswerValue = {
@@ -488,14 +465,6 @@ function formatDate(value?: string | null): string {
 	return `${year}.${month}.${day}`;
 }
 
-function formatShortDate(value?: string | null): string {
-	if (!value) return "-";
-	const normalized = value.slice(0, 10);
-	const [, month, day] = normalized.split("-");
-	if (!month || !day) return normalized;
-	return `${month}.${day}`;
-}
-
 function formatTime(value?: string | null): string {
 	if (!value) return "-";
 	const date = new Date(value);
@@ -596,60 +565,77 @@ function normalizeTurnFeedback(value: unknown): TurnFeedbackData {
  * Data transformation for chart
  * ========================================================================== */
 
-function aggregateCandles(
+function calendarWeekKey(value: string): string {
+	const date = new Date(`${value.slice(0, 10)}T00:00:00Z`);
+	if (Number.isNaN(date.getTime())) return value;
+
+	const daysSinceMonday = (date.getUTCDay() + 6) % 7;
+	date.setUTCDate(date.getUTCDate() - daysSinceMonday);
+	return date.toISOString().slice(0, 10);
+}
+
+function aggregateCandlesByPeriod(
 	candles: ChartCandle[],
-	groupSize: number,
+	periodKey: (date: string) => string,
 ): ChartCandle[] {
-	if (groupSize <= 1) return candles;
+	const groups = new Map<string, ChartCandle[]>();
 
-	const groups: ChartCandle[] = [];
-
-	for (let index = 0; index < candles.length; index += groupSize) {
-		const block = candles.slice(index, index + groupSize);
-		if (!block.length) continue;
-
-		const first = block[0]!;
-		const last = block[block.length - 1]!;
-
-		groups.push({
-			date: last.date,
-			open: first.open,
-			high: Math.max(...block.map((item) => item.high)),
-			low: Math.min(...block.map((item) => item.low)),
-			close: last.close,
-			volume: block.reduce((sum, item) => sum + numberValue(item.volume), 0),
-		});
+	for (const candle of candles) {
+		const key = periodKey(candle.date);
+		const group = groups.get(key) ?? [];
+		group.push(candle);
+		groups.set(key, group);
 	}
 
-	return groups;
+	return Array.from(groups.values()).map((group) => {
+		const first = group[0]!;
+		const last = group[group.length - 1]!;
+
+		return {
+			date: last.date,
+			open: first.open,
+			high: Math.max(...group.map((item) => item.high)),
+			low: Math.min(...group.map((item) => item.low)),
+			close: last.close,
+			volume: group.reduce(
+				(sum, item) => sum + numberValue(item.volume),
+				0,
+			),
+		};
+	});
 }
 
 function candlesForRange(
 	candles: ChartCandle[],
 	range: ChartRange,
 ): ChartCandle[] {
-	const valid = candles.filter(
-		(item) =>
-			Number.isFinite(item.open) &&
-			Number.isFinite(item.high) &&
-			Number.isFinite(item.low) &&
-			Number.isFinite(item.close),
-	);
+	const valid = candles
+		.filter(
+			(item) =>
+				Number.isFinite(item.open) &&
+				Number.isFinite(item.high) &&
+				Number.isFinite(item.low) &&
+				Number.isFinite(item.close),
+		)
+		.sort((first, second) => first.date.localeCompare(second.date));
 
 	if (range === "DAY") {
-		return valid.slice(-72);
+		return valid.slice(-30);
 	}
 
 	if (range === "WEEK") {
-		return aggregateCandles(valid, 5).slice(-60);
+		return aggregateCandlesByPeriod(valid, calendarWeekKey).slice(-13);
 	}
 
-	if (range === "MONTH") {
-		return aggregateCandles(valid, 20).slice(-48);
-	}
+	return aggregateCandlesByPeriod(valid, (date) => date.slice(0, 7)).slice(-12);
+}
 
-	const group = Math.max(1, Math.ceil(valid.length / 60));
-	return aggregateCandles(valid, group).slice(-60);
+function formatChartDate(value: string, range: ChartRange): string {
+	const [year, month, day] = value.slice(0, 10).split("-");
+	if (!year || !month) return value;
+	if (range === "MONTH") return `${year.slice(2)}.${month}`;
+	if (!day) return `${year.slice(2)}.${month}`;
+	return `${month}.${day}`;
 }
 
 /* ============================================================================
@@ -934,7 +920,7 @@ function CandlestickChart({
 							textAnchor="middle"
 							fill="#7A756E"
 						>
-							{formatShortDate(item.date)}
+							{formatChartDate(item.date, range)}
 						</text>
 					);
 				})}
@@ -944,220 +930,104 @@ function CandlestickChart({
 }
 
 /* ============================================================================
- * Chart / executions / orderbook panel
+ * Chart / order history panel
  * ========================================================================== */
 
-function TradeExecutions({ orders }: { orders: OrderRecord[] }) {
-	const executions = orders.flatMap((order) => {
-		const fills = order.fills?.length
-			? order.fills
-			: order.quantity > 0 && order.execution_price
-				? [
-						{
-							price: order.execution_price,
-							quantity: order.quantity,
-							amount: order.amount,
-						},
-					]
-				: [];
+function orderStatus(status?: string): { label: string; color: string } {
+	if (status === "FILLED") return { label: "체결완료", color: "#2F855A" };
+	if (status === "PARTIALLY_FILLED") {
+		return { label: "부분체결", color: UI.orange };
+	}
+	if (status === "CANCELLED") return { label: "미체결", color: UI.muted };
+	return { label: status || "처리완료", color: UI.subtle };
+}
 
-		return fills.map((fill, index) => ({
-			...fill,
-			key: `${order.order_id ?? order.created_at ?? "order"}-${index}`,
-			side: order.side,
-			createdAt: order.created_at,
-		}));
-	});
-
-	if (!executions.length) {
+function OrderHistory({ orders }: { orders: OrderRecord[] }) {
+	if (!orders.length) {
 		return (
 			<EmptyData
-				title="체결 내역이 없습니다"
-				description="이 종목을 매수하거나 매도하면 체결 가격과 수량이 표시됩니다."
+				title="주문 내역이 없습니다"
+				description="이 종목을 매수하거나 매도하면 주문 결과가 표시됩니다."
 			/>
 		);
 	}
 
 	return (
-		<Box px="14px" py="13px" minH="365px">
-			<Grid
-				templateColumns="76px 48px minmax(82px, 1fr) minmax(60px, 0.8fr) minmax(92px, 1fr)"
-				gap="8px"
-				px="8px"
-				pb="9px"
-				borderBottom="1px solid"
-				borderColor={UI.border}
-			>
-				{["시간", "구분", "체결가", "수량", "체결금액"].map((label) => (
-					<Text key={label} fontSize="9px" color={UI.muted} textAlign="right">
-						{label}
-					</Text>
-				))}
-			</Grid>
-
-			<Stack spacing="0" maxH="326px" overflowY="auto">
-				{executions.map((execution) => (
-					<Grid
-						key={execution.key}
-						templateColumns="76px 48px minmax(82px, 1fr) minmax(60px, 0.8fr) minmax(92px, 1fr)"
-						gap="8px"
-						alignItems="center"
-						px="8px"
-						py="10px"
-						borderBottom="1px solid #F3EEE8"
-					>
-						<Text fontSize="10px" color={UI.subtle} textAlign="right">
-							{formatTime(execution.createdAt)}
-						</Text>
-						<Text
-							fontSize="10px"
-							fontWeight="900"
-							color={execution.side === "BUY" ? UI.red : UI.blue}
-							textAlign="right"
-						>
-							{execution.side === "BUY" ? "매수" : "매도"}
-						</Text>
-						<Text fontSize="11px" fontWeight="800" textAlign="right">
-							{formatPrice(execution.price)}
-						</Text>
-						<Text fontSize="11px" fontWeight="800" textAlign="right">
-							{integer.format(execution.quantity)}주
-						</Text>
-						<Text fontSize="11px" fontWeight="800" textAlign="right">
-							{formatWon(execution.amount)}
-						</Text>
-					</Grid>
-				))}
-			</Stack>
-		</Box>
-	);
-}
-
-function OrderbookSide({
-	title,
-	levels,
-	color,
-	barColor,
-	maxQuantity,
-}: {
-	title: string;
-	levels: OrderbookLevel[];
-	color: string;
-	barColor: string;
-	maxQuantity: number;
-}) {
-	return (
-		<Box minW="0">
-			<Grid templateColumns="1fr 1fr" gap="8px" px="9px" pb="7px">
-				<Text fontSize="10px" fontWeight="900" color={color}>
-					{title}
-				</Text>
-				<Text fontSize="9px" color={UI.muted} textAlign="right">
-					잔량
-				</Text>
-			</Grid>
-
-			<Stack spacing="2px">
-				{levels.map((level) => (
-					<Box
-						key={`${title}-${level.level}-${level.price}`}
-						position="relative"
-						overflow="hidden"
-						borderRadius="3px"
-					>
-						<Box
-							position="absolute"
-							top="0"
-							right="0"
-							bottom="0"
-							w={`${Math.max(0, Math.min(100, (level.quantity / maxQuantity) * 100))}%`}
-							bg={barColor}
-						/>
-						<Grid
-							position="relative"
-							templateColumns="1fr 1fr"
-							gap="8px"
-							px="9px"
-							py="5px"
-						>
-							<Text fontSize="10px" fontWeight="800" color={color}>
-								{integer.format(level.price)}
+		<Box px="14px" py="13px" minH="365px" overflowX="auto">
+			<Box minW="650px">
+				<Grid
+					templateColumns="76px 48px 58px 112px minmax(88px, 1fr) 70px"
+					gap="8px"
+					px="8px"
+					pb="9px"
+					borderBottom="1px solid"
+					borderColor={UI.border}
+				>
+					{["시간", "구분", "유형", "주문/체결", "체결가", "상태"].map(
+						(label) => (
+							<Text
+								key={label}
+								fontSize="9px"
+								color={UI.muted}
+								textAlign="right"
+							>
+								{label}
 							</Text>
-							<Text fontSize="10px" textAlign="right" color={UI.text}>
-								{integer.format(level.quantity)}
-							</Text>
-						</Grid>
-					</Box>
-				))}
-			</Stack>
-		</Box>
-	);
-}
+						),
+					)}
+				</Grid>
 
-function OrderbookView({
-	orderbook,
-	isLoading,
-}: {
-	orderbook: OrderbookResponse | null;
-	isLoading: boolean;
-}) {
-	if (isLoading) {
-		return (
-			<Flex minH="365px" align="center" justify="center">
-				<Spinner color={UI.orange} />
-			</Flex>
-		);
-	}
+				<Stack spacing="0" maxH="326px" overflowY="auto">
+					{orders.map((order, index) => {
+						const status = orderStatus(order.status);
+						const requested = order.requested_quantity ?? order.quantity;
+						const filled = order.filled_quantity ?? order.quantity;
+						const executionPrice =
+							order.average_execution_price ?? order.execution_price;
 
-	if (!orderbook) {
-		return (
-			<EmptyData
-				title="호가를 불러오지 못했습니다"
-				description="종목을 다시 선택하거나 잠시 후 다시 시도해주세요."
-			/>
-		);
-	}
-
-	const asks = [...(orderbook.asks ?? [])].reverse();
-	const bids = orderbook.bids ?? [];
-	const maxQuantity = Math.max(
-		1,
-		...asks.map((level) => level.quantity),
-		...bids.map((level) => level.quantity),
-	);
-
-	return (
-		<Box px="14px" py="12px" minH="365px">
-			<Flex align="center" justify="space-between" mb="10px" px="4px">
-				<Text fontSize="11px" fontWeight="900">
-					{orderbook.asset_name ?? orderbook.asset_id}
-				</Text>
-				<HStack spacing="14px">
-					<Text fontSize="9px" color={UI.muted}>
-						기준가 {formatPrice(orderbook.reference_price)}
-					</Text>
-					<Text fontSize="9px" color={UI.muted}>
-						스프레드 {formatPrice(orderbook.spread)}
-					</Text>
-				</HStack>
-			</Flex>
-
-			<SimpleGrid columns={{ base: 1, md: 2 }} spacing="12px">
-				<OrderbookSide
-					title="매도호가"
-					levels={asks}
-					color={UI.blue}
-					barColor="rgba(49, 112, 190, 0.10)"
-					maxQuantity={maxQuantity}
-				/>
-				<OrderbookSide
-					title="매수호가"
-					levels={bids}
-					color={UI.red}
-					barColor="rgba(217, 74, 74, 0.10)"
-					maxQuantity={maxQuantity}
-				/>
-			</SimpleGrid>
+						return (
+							<Grid
+								key={order.order_id ?? `${order.created_at}-${index}`}
+								templateColumns="76px 48px 58px 112px minmax(88px, 1fr) 70px"
+								gap="8px"
+								alignItems="center"
+								px="8px"
+								py="10px"
+								borderBottom="1px solid #F3EEE8"
+							>
+								<Text fontSize="10px" color={UI.subtle} textAlign="right">
+									{formatTime(order.created_at)}
+								</Text>
+								<Text
+									fontSize="10px"
+									fontWeight="900"
+									color={order.side === "BUY" ? UI.red : UI.blue}
+									textAlign="right"
+								>
+									{order.side === "BUY" ? "매수" : "매도"}
+								</Text>
+								<Text fontSize="10px" color={UI.subtle} textAlign="right">
+									{order.order_type === "LIMIT" ? "지정가" : "시장가"}
+								</Text>
+								<Text fontSize="10px" fontWeight="800" textAlign="right">
+									{integer.format(requested)}주 / {integer.format(filled)}주
+								</Text>
+								<Text fontSize="11px" fontWeight="800" textAlign="right">
+									{formatPrice(executionPrice)}
+								</Text>
+								<Text
+									fontSize="10px"
+									fontWeight="800"
+									color={status.color}
+									textAlign="right"
+								>
+									{status.label}
+								</Text>
+							</Grid>
+						);
+					})}
+				</Stack>
+			</Box>
 		</Box>
 	);
 }
@@ -1165,8 +1035,6 @@ function OrderbookView({
 function ChartPanel({
 	chart,
 	isLoading,
-	orderbook,
-	isOrderbookLoading,
 	orders,
 	activeTab,
 	onTabChange,
@@ -1175,8 +1043,6 @@ function ChartPanel({
 }: {
 	chart: ChartResponse | null;
 	isLoading: boolean;
-	orderbook: OrderbookResponse | null;
-	isOrderbookLoading: boolean;
 	orders: OrderRecord[];
 	activeTab: DataTab;
 	onTabChange: (tab: DataTab) => void;
@@ -1185,16 +1051,19 @@ function ChartPanel({
 }) {
 	const tabs: Array<{ key: DataTab; label: string }> = [
 		{ key: "CHART", label: "가격 차트" },
-		{ key: "TRADES", label: "체결" },
-		{ key: "ORDERBOOK", label: "호가" },
+		{ key: "TRADES", label: "주문 내역" },
 	];
 
 	const ranges: Array<{ key: ChartRange; label: string }> = [
-		{ key: "DAY", label: "일" },
-		{ key: "WEEK", label: "주" },
-		{ key: "MONTH", label: "월" },
-		{ key: "YEAR", label: "년" },
+		{ key: "DAY", label: "일봉" },
+		{ key: "WEEK", label: "주봉" },
+		{ key: "MONTH", label: "월봉" },
 	];
+	const rangeDescription: Record<ChartRange, string> = {
+		DAY: "최근 30거래일",
+		WEEK: "최근 13주",
+		MONTH: "최근 12개월",
+	};
 
 	return (
 		<Panel overflow="hidden">
@@ -1229,39 +1098,32 @@ function ChartPanel({
 			{activeTab === "CHART" ? (
 				<Box px="12px" pt="14px" pb="8px">
 					<Flex
-						justify="flex-end"
+						justify="space-between"
 						align="center"
 						gap="8px"
-						mb="4px"
+						mb="7px"
 						pr={{ base: "0", md: "36px" }}
 					>
-						<Select
-							size="xs"
-							w="58px"
-							border="0"
-							fontSize="11px"
-							value="1D"
-							onChange={() => undefined}
-							icon={<FiChevronDown />}
-						>
-							<option value="1D">1일</option>
-						</Select>
-
-						{ranges.map((item) => (
-							<Button
-								key={item.key}
-								size="xs"
-								minW="28px"
-								h="25px"
-								px="6px"
-								bg={range === item.key ? "#E6E3DF" : "transparent"}
-								color={range === item.key ? UI.text : UI.subtle}
-								_hover={{ bg: "#EFECE7" }}
-								onClick={() => onRangeChange(item.key)}
-							>
-								{item.label}
-							</Button>
-						))}
+						<Text fontSize="10px" color={UI.muted}>
+							{rangeDescription[range]}
+						</Text>
+						<HStack spacing="4px">
+							{ranges.map((item) => (
+								<Button
+									key={item.key}
+									size="xs"
+									minW="42px"
+									h="25px"
+									px="8px"
+									bg={range === item.key ? "#E6E3DF" : "transparent"}
+									color={range === item.key ? UI.text : UI.subtle}
+									_hover={{ bg: "#EFECE7" }}
+									onClick={() => onRangeChange(item.key)}
+								>
+									{item.label}
+								</Button>
+							))}
+						</HStack>
 					</Flex>
 
 					<CandlestickChart
@@ -1270,13 +1132,8 @@ function ChartPanel({
 						isLoading={isLoading}
 					/>
 				</Box>
-			) : activeTab === "TRADES" ? (
-				<TradeExecutions orders={orders} />
 			) : (
-				<OrderbookView
-					orderbook={orderbook}
-					isLoading={isOrderbookLoading}
-				/>
+				<OrderHistory orders={orders} />
 			)}
 		</Panel>
 	);
@@ -3561,8 +3418,6 @@ export default function ScenarioPlay() {
 
 	const [chart, setChart] = useState<ChartResponse | null>(null);
 	const [isChartLoading, setIsChartLoading] = useState(false);
-	const [orderbook, setOrderbook] = useState<OrderbookResponse | null>(null);
-	const [isOrderbookLoading, setIsOrderbookLoading] = useState(false);
 	const [chartRange, setChartRange] = useState<ChartRange>("DAY");
 	const [dataTab, setDataTab] = useState<DataTab>("CHART");
 
@@ -3770,52 +3625,6 @@ export default function ScenarioPlay() {
 	}, [selectedAssetId, sessionId, progress?.current_turn, toast]);
 
 	useEffect(() => {
-		if (dataTab !== "ORDERBOOK") return;
-
-		if (!sessionId || !selectedAssetId) {
-			setOrderbook(null);
-			return;
-		}
-
-		let cancelled = false;
-
-		const load = async () => {
-			try {
-				setIsOrderbookLoading(true);
-				const value = (await scenarioService.getOrderbook(
-					sessionId,
-					selectedAssetId,
-				)) as OrderbookResponse;
-
-				if (!cancelled) setOrderbook(value);
-			} catch (error: any) {
-				console.error("호가 조회 실패:", error);
-
-				if (!cancelled) {
-					setOrderbook(null);
-					toast({
-						title: "호가를 불러오지 못했습니다.",
-						description: errorMessage(
-							error,
-							"선택한 종목의 호가를 불러오는 중 오류가 발생했습니다.",
-						),
-						status: "warning",
-						isClosable: true,
-					});
-				}
-			} finally {
-				if (!cancelled) setIsOrderbookLoading(false);
-			}
-		};
-
-		void load();
-
-		return () => {
-			cancelled = true;
-		};
-	}, [dataTab, progress?.current_turn, selectedAssetId, sessionId, toast]);
-
-	useEffect(() => {
 		if (!selectedAsset) return;
 
 		const max =
@@ -3893,7 +3702,6 @@ export default function ScenarioPlay() {
 
 			setLastOrder(result.order);
 			setLastOrderAssetName(selectedAsset.name);
-			setOrderbook(result.orderbook);
 
 			setTurnView((current) =>
 				current
@@ -4310,8 +4118,6 @@ export default function ScenarioPlay() {
 						<ChartPanel
 							chart={chart}
 							isLoading={isChartLoading}
-							orderbook={orderbook}
-							isOrderbookLoading={isOrderbookLoading}
 							orders={selectedAssetOrders}
 							activeTab={dataTab}
 							onTabChange={setDataTab}
