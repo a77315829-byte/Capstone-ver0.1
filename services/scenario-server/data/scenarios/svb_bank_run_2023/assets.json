@@ -1,0 +1,96 @@
+{
+  "currency": "KRW",
+  "exchange": "KRX",
+  "assets": [
+    {
+      "asset_id": "105560",
+      "name": "KB금융",
+      "market": "KOSPI",
+      "asset_type": "stock",
+      "industry_label": "금융지주",
+      "description": "은행, 증권, 보험 사업을 보유한 국내 대형 금융지주",
+      "display_order": 1,
+      "is_active": true
+    },
+    {
+      "asset_id": "055550",
+      "name": "신한지주",
+      "market": "KOSPI",
+      "asset_type": "stock",
+      "industry_label": "금융지주",
+      "description": "은행과 비은행 사업을 함께 운영하는 국내 대형 금융지주",
+      "display_order": 2,
+      "is_active": true
+    },
+    {
+      "asset_id": "086790",
+      "name": "하나금융지주",
+      "market": "KOSPI",
+      "asset_type": "stock",
+      "industry_label": "금융지주",
+      "description": "은행과 증권, 카드 등을 보유한 국내 금융지주",
+      "display_order": 3,
+      "is_active": true
+    },
+    {
+      "asset_id": "091170",
+      "name": "KODEX 은행",
+      "market": "KOSPI",
+      "asset_type": "etf",
+      "industry_label": "은행 ETF",
+      "description": "국내 은행 업종에 분산 투자하는 섹터 ETF",
+      "display_order": 4,
+      "is_active": true
+    },
+    {
+      "asset_id": "069500",
+      "name": "KODEX 200",
+      "market": "KOSPI",
+      "asset_type": "etf",
+      "industry_label": "시장지수 ETF",
+      "description": "KOSPI 200 지수를 추종하는 국내 주식형 ETF",
+      "display_order": 5,
+      "is_active": true
+    },
+    {
+      "asset_id": "261240",
+      "name": "KODEX 미국달러선물",
+      "market": "KOSPI",
+      "asset_type": "etf",
+      "industry_label": "달러 ETF",
+      "description": "미국 달러선물 지수를 추종하는 위험회피·환율 대응 ETF",
+      "display_order": 6,
+      "is_active": true
+    },
+    {
+      "asset_id": "132030",
+      "name": "KODEX 골드선물(H)",
+      "market": "KOSPI",
+      "asset_type": "etf",
+      "industry_label": "원자재 ETF",
+      "description": "금 선물 가격을 추종하는 환헤지형 원자재 ETF",
+      "display_order": 7,
+      "is_active": true
+    },
+    {
+      "asset_id": "114260",
+      "name": "KODEX 국고채3년",
+      "market": "KOSPI",
+      "asset_type": "etf",
+      "industry_label": "단기 국채 ETF",
+      "description": "국내 3년 만기 국고채 지수를 추종하는 채권 ETF",
+      "display_order": 8,
+      "is_active": true
+    },
+    {
+      "asset_id": "017670",
+      "name": "SK텔레콤",
+      "market": "KOSPI",
+      "asset_type": "stock",
+      "industry_label": "통신·배당",
+      "description": "안정적인 통신 현금흐름과 배당 성격을 가진 방어주",
+      "display_order": 9,
+      "is_active": true
+    }
+  ]
+}

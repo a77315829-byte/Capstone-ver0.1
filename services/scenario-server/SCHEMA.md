@@ -36,15 +36,21 @@ JSON 파일은 콘텐츠 작성·검토·Git 이력용 원본이고, 서버 실�
   "scenario_version": 1,
   "status": "ACTIVE | FINALIZING | COMPLETED",
   "current_turn": 1,
-  "initial_cash": 10000000,
-  "cash": 9000000,
+  "initial_cash": 4000000,
+  "initial_value": 8208000,
+  "cash": 4000000,
   "positions": [
-    {"asset_id":"000660","quantity":10,"avg_price":100000}
+    {"asset_id":"035420","quantity":8,"avg_price":400000},
+    {"asset_id":"035720","quantity":15,"avg_price":125000}
   ],
   "realized_pnl_by_asset": {"000660": 120000},
   "revision": 1
 }
 ```
+
+`initial_cash`는 시작 현금 잔액이고 `initial_value`는 첫 턴 실제 종가로 평가한
+현금+초기 보유주식 총액입니다. 초기 보유주식이 없는 기존 세션은 두 값이 같으며,
+구버전 문서는 `initial_value`가 없으면 `initial_cash`를 수익률 기준으로 사용합니다.
 
 ### `orders`
 

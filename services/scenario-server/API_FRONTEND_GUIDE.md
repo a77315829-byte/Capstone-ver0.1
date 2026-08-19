@@ -3,7 +3,7 @@
 ## 시나리오 시작
 
 1. `GET /api/scenarios`
-2. 사용자가 시나리오를 선택하면 `POST /api/scenarios/semiconductor/sessions`
+2. 사용자가 시나리오를 선택하면 `POST /api/scenarios/{scenario_id}/sessions`
 3. 응답의 `session_id`를 라우트 상태 또는 전역 상태에 보관
 
 ## 각 턴
@@ -21,6 +21,10 @@
 
 프론트가 임의로 현재 턴이나 현금을 계산하지 않습니다. 모든 진행 상태와 포트폴리오는
 서버 응답을 단일 기준으로 사용합니다.
+
+시나리오 목록의 `event_period`, `initial_portfolio_label`은 선택 화면에 표시할 수 있습니다.
+세션 시작 뒤 첫 `GET /turn`의 `portfolio.positions`에는 시나리오에 설정된 초기 보유주식이
+이미 포함되며, `portfolio.total_value`와 수익률은 첫 턴 종가 평가액을 기준으로 합니다.
 
 ## 호가·주문
 

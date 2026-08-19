@@ -35,6 +35,8 @@ type ScenarioApiItem = {
 	difficulty: string;
 	total_turns: number;
 	initial_cash: number;
+	event_period?: string;
+	initial_portfolio_label?: string;
 	learning_points: string[];
 };
 
@@ -46,6 +48,7 @@ type ScenarioItem = {
 	scenarioSlug: string;
 	title: string;
 	eventPeriod: string;
+	initialPortfolioLabel: string;
 	summary: string;
 	difficulty: "쉬움" | "보통" | "어려움";
 	estimatedMinutes: number;
@@ -362,7 +365,10 @@ const loadScenarios = async () => {
                     scenarioNo: item.scenario_id,
                     scenarioSlug: item.scenario_id,
                     title: item.title,
-                    eventPeriod: "과거 데이터",
+                    eventPeriod: item.event_period ?? "과거 데이터",
+					initialPortfolioLabel:
+						item.initial_portfolio_label ??
+						`현금 ${item.initial_cash.toLocaleString("ko-KR")}원`,
                     summary: item.description,
                     difficulty: normalizeDifficulty(item.difficulty),
                     estimatedMinutes: item.total_turns * 3,
@@ -688,6 +694,11 @@ const loadScenarios = async () => {
 											<Spacer />
 											<Text>약 {selectedScenario.estimatedMinutes}분</Text>
 										</Flex>
+										<Flex gap="20px">
+											<Text fontWeight="700" flexShrink={0}>시작 자산</Text>
+											<Spacer />
+											<Text textAlign="right">{selectedScenario.initialPortfolioLabel}</Text>
+										</Flex>
 										<Flex>
 											<Text fontWeight="700">학습 챕터</Text>
 											<Spacer />
@@ -789,14 +800,14 @@ const loadScenarios = async () => {
 									{scenario.status === "IN_PROGRESS" ? (
 										<Flex align="center" gap="8px">
 											<Progress
-												value={(scenario.completedStepCount / 3) * 100}
+												value={scenario.progressPercent ?? 0}
 												flex="1"
 												size="sm"
 												colorScheme="orange"
 												borderRadius="full"
 											/>
 											<Text fontSize="12px" color="brand.500">
-												{Math.round((scenario.completedStepCount / 3) * 100)}%
+												{Math.round(scenario.progressPercent ?? 0)}%
 											</Text>
 										</Flex>
 									) : (

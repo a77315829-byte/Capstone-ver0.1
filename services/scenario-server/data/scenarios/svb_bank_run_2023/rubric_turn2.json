@@ -1,0 +1,76 @@
+{
+  "scenario_id": "svb_bank_run_2023",
+  "turn_no": 2,
+  "turn_title": "은행은 폐쇄됐지만 예금은 전액 보호됐다",
+  "turn_context": "SVB와 시그니처은행의 폐쇄는 현실이 됐지만 미국 당국은 보험 한도를 넘는 예금까지 보호하고 은행에 담보대출을 제공했다. 예금자의 뱅크런 위험은 완화됐지만 은행 주주의 손실과 다른 은행의 자산구조 위험은 남아 있다.",
+  "questions_used": ["Q1", "Q4", "Q9", "Q19", "Q36", "Q39"],
+  "answer_rules": {
+    "Q1": {
+      "metric": "M1",
+      "good": ["정책 대응", "현금흐름", "불확실성"],
+      "trap": ["공급망", "원자재"],
+      "note": "파산 자체뿐 아니라 예금 보호와 긴급 유동성, 남은 전염 불확실성을 함께 봐야 한다."
+    },
+    "Q4": {
+      "metric": "M2",
+      "good": ["완전히 새로운 정보", "일부 새로운 정보"],
+      "trap": ["이미 알려진 정보"],
+      "note": "주말 사이 은행 폐쇄와 예금 전액 보호가 확정된 것은 시장 판단을 바꿀 중요한 새 정보다."
+    },
+    "Q9": {
+      "metric": "M2",
+      "good": ["특정 업종", "연관 업종", "여러 산업"],
+      "trap": ["시장 전체"],
+      "note": "우선 은행과 스타트업·금융 연관 업종에 직접 영향이 크다. 시장 전체가 같은 강도로 붕괴한다고 단정하면 과도하다."
+    },
+    "Q19": {
+      "metric": "M3",
+      "good": ["정책 지원", "양호한 재무", "분산 효과"],
+      "trap": ["빠른 안정", "피해 제한"],
+      "note": "예금 보호와 유동성 공급, 은행별 재무 차이가 완화 요인이다. 아직 빠른 안정이나 피해 제한이 확인된 것은 아니다."
+    },
+    "Q36": {
+      "metric": "M4",
+      "good": ["매우 제한적", "일부 대응", "단계적 대응"],
+      "trap": ["대부분 대응", "전량 대응"],
+      "note": "정책 방어는 긍정적이지만 파산과 전염 위험이 공존한다. 현금과 분산을 유지하며 확인하는 행동이 적절하다."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "은행 파산이라는 악재와 예금 보호·긴급 유동성이라는 완화 요인을 구분하고, 예금자 보호가 주주 보호는 아니라는 점까지 연결하면 고득점이다."
+    }
+  },
+  "factors": [
+    {"factor_id": "BANK_FAILURE", "importance": "상", "direction": "악재", "note": "SVB와 시그니처은행의 실제 폐쇄"},
+    {"factor_id": "DEPOSIT_GUARANTEE", "importance": "상", "direction": "호재", "note": "미 금융당국의 보험 한도 초과 예금 전액 보호"},
+    {"factor_id": "EMERGENCY_LIQUIDITY", "importance": "상", "direction": "호재", "note": "보유채권을 담보로 한 은행 유동성 공급 장치"},
+    {"factor_id": "CONTAGION_RISK", "importance": "상", "direction": "악재", "note": "다른 지역은행의 예금 인출과 자산손실 전염 가능성"},
+    {"factor_id": "SLOWER_HIKE_EXPECTATION", "importance": "중", "direction": "호재", "note": "금융 불안으로 연준 긴축 속도가 완화될 가능성"}
+  ],
+  "assets": [
+    {"asset_id": "105560", "relevance": "매우높음", "is_trap": true, "reason": "정책 지원만 보고 기존 보유 대형 은행주를 즉시 늘리면 집중 위험"},
+    {"asset_id": "055550", "relevance": "매우높음", "is_trap": true, "reason": "예금자 보호와 은행 주주가치 보호를 혼동한 추가매수 주의"},
+    {"asset_id": "091170", "relevance": "높음", "is_trap": false, "reason": "개별 은행보다 분산됐지만 섹터 위험은 여전히 존재"},
+    {"asset_id": "069500", "relevance": "높음", "is_trap": false, "reason": "은행 개별 위험을 줄인 시장 분산 수단"},
+    {"asset_id": "114260", "relevance": "높음", "is_trap": false, "reason": "긴급 상황에서 포트폴리오 변동성 완화"},
+    {"asset_id": "261240", "relevance": "중간", "is_trap": false, "reason": "위험회피 환율 움직임 대응 수단이나 큰 비중 추격은 부적절"}
+  ],
+  "traps": [
+    {"trap_id": "TRAP_DEPOSITOR_EQUALS_SHAREHOLDER", "kind": "reason", "target": "예금 보호=주주 보호", "explanation": "예금자는 보호돼도 부실 은행 주주의 손실은 남을 수 있다."},
+    {"trap_id": "TRAP_POLICY_ALL_CLEAR", "kind": "reason", "target": "정책 발표로 위험 완전 해소", "explanation": "다른 은행의 미실현 손실과 예금 이동은 계속 확인해야 한다."},
+    {"trap_id": "TRAP_RELIEF_ALLIN", "kind": "action", "target": "은행주 전량 매수", "explanation": "파산 직후의 정책 방어만으로 금융주에 큰 비중을 싣는 것은 성급하다."}
+  ],
+  "ai_baseline": {
+    "action_summary": "기존 은행주를 무조건 투매하지 않되 추가매수도 보류한다. 현금과 시장 ETF·단기채 분산을 유지하며 예금 이동을 확인한다.",
+    "rationale": "예금 보호와 유동성 공급은 뱅크런을 완화하지만 은행 주주 손실과 전염 가능성을 없애지는 않는다. 악재와 정책 방어가 공존하므로 관망 또는 제한적 리밸런싱이 적절하다."
+  },
+  "action_rule": {
+    "max_single_weight": 30,
+    "good_cash_min": 30,
+    "trap_assets": ["105560", "055550", "086790"],
+    "core_assets": ["091170", "069500", "114260"],
+    "expected_action_score": [-1.0, 0.5],
+    "note": "관망·일부 분산 또는 소량 섹터 ETF 접근까지 허용한다. 개별 은행 집중 확대는 감점한다."
+  }
+}

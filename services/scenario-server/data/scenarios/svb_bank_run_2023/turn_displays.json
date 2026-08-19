@@ -1,0 +1,204 @@
+{
+  "turns": [
+    {
+      "turn_no": 1,
+      "market_date": "2023-03-10",
+      "next_market_date": "2023-03-13",
+      "title": "채권 손실 공개, 하루 만에 시작된 뱅크런",
+      "phase": "유동성 경고",
+      "summary": "SVB가 보유채권 매각손실과 증자 계획을 공개하자 예금 인출이 몰렸고 미국 은행주 전반이 급락했다.",
+      "market_state": {
+        "sentiment": "공포 확산",
+        "sentiment_score": 24,
+        "sector_state": "국내외 금융주 동반 약세",
+        "indices": [
+          {"code": "KOSPI", "name": "코스피", "value": 2394.59, "change_pct": -1.01, "unit": "pt", "as_of_date": "2023-03-10"},
+          {"code": "KOSDAQ", "name": "코스닥", "value": 788.60, "change_pct": -2.55, "unit": "pt", "as_of_date": "2023-03-10"}
+        ],
+        "indicators": [
+          {"code": "VIX", "name": "미국 변동성지수", "value": 24.80, "unit": "pt", "as_of_date": "2023-03-10"},
+          {"code": "USDKRW", "name": "원/달러 환율", "value": 1325.55, "unit": "원", "as_of_date": "2023-03-10"}
+        ],
+        "risk_factors": [
+          "금리 상승으로 누적된 은행 보유채권 평가손실",
+          "예금자 구성이 집중된 은행의 빠른 자금 유출",
+          "해외 충격을 국내 은행에 그대로 대입하는 공포매도"
+        ]
+      },
+      "news": [
+        {
+          "news_id": "SVB23-T1-N01",
+          "published_at": "2023-03-10T08:21:00+09:00",
+          "title": "SVB, 채권 매각손실·증자 발표 뒤 뱅크런 직면",
+          "summary": "SVB는 예금 감소에 대응해 자산을 매각하며 18억달러 손실을 확정했고 22억5천만달러 규모의 증자를 추진했다. 미국 대형 은행주도 동반 급락했다.",
+          "source_name": "머니투데이",
+          "source_url": "https://www.mt.co.kr/stock/2023/03/10/2023031008103276677",
+          "related_assets": ["105560", "055550", "086790", "091170"],
+          "importance": "high",
+          "display_order": 1
+        },
+        {
+          "news_id": "SVB23-T1-N02",
+          "published_at": "2023-03-10T17:38:00+09:00",
+          "title": "고금리 후폭풍, 채권 비중 큰 은행의 유동성 우려",
+          "summary": "급격한 금리 인상으로 은행 보유채권 가치가 하락한 상황에서 예금 인출이 겹치면 평가손실이 실제 손실로 확정될 수 있다는 우려가 커졌다.",
+          "source_name": "매일경제",
+          "source_url": "https://www.mk.co.kr/news/world/10676955",
+          "related_assets": ["105560", "055550", "091170", "114260"],
+          "importance": "high",
+          "display_order": 2
+        }
+      ]
+    },
+    {
+      "turn_no": 2,
+      "market_date": "2023-03-13",
+      "next_market_date": "2023-03-16",
+      "title": "은행은 폐쇄됐지만 예금은 전액 보호됐다",
+      "phase": "파산과 정책 방어",
+      "summary": "SVB와 시그니처은행이 폐쇄됐지만 미국 당국은 모든 예금을 보호하고 은행에 긴급 유동성을 공급하기로 했다.",
+      "market_state": {
+        "sentiment": "불안 속 안도",
+        "sentiment_score": 46,
+        "sector_state": "은행주 불안·시장지수 소폭 반등",
+        "indices": [
+          {"code": "KOSPI", "name": "코스피", "value": 2410.60, "change_pct": 0.67, "unit": "pt", "as_of_date": "2023-03-13"},
+          {"code": "KOSDAQ", "name": "코스닥", "value": 788.89, "change_pct": 0.04, "unit": "pt", "as_of_date": "2023-03-13"}
+        ],
+        "indicators": [
+          {"code": "VIX", "name": "미국 변동성지수", "value": 26.52, "unit": "pt", "as_of_date": "2023-03-13"},
+          {"code": "US10Y", "name": "미국 10년물 금리", "value": 3.52, "unit": "%", "as_of_date": "2023-03-13"}
+        ],
+        "risk_factors": [
+          "예금 보호가 은행 주주 손실까지 막아주지는 않음",
+          "다른 지역은행으로의 예금 인출 전염 가능성",
+          "정책 지원만 보고 금융주를 즉시 물타기할 위험"
+        ]
+      },
+      "news": [
+        {
+          "news_id": "SVB23-T2-N01",
+          "published_at": "2023-03-13T09:18:00+09:00",
+          "title": "미 금융당국, SVB 예금 100% 보호·긴급 유동성 공급",
+          "summary": "미국 당국은 보험 한도를 넘는 예금까지 전액 보호하고 은행이 보유채권을 담보로 자금을 조달할 수 있는 방안을 마련했다.",
+          "source_name": "한국경제",
+          "source_url": "https://www.hankyung.com/article/202303133864i",
+          "related_assets": ["105560", "055550", "086790", "091170"],
+          "importance": "high",
+          "display_order": 1
+        },
+        {
+          "news_id": "SVB23-T2-N02",
+          "published_at": "2023-03-13T16:03:00+09:00",
+          "title": "SVB 파산에도 코스피 상승, 긴축 완화 기대 반영",
+          "summary": "예금 보호와 금리 인상 속도 둔화 기대가 충격을 일부 완화하면서 코스피는 소폭 상승했지만 금융 시스템 불확실성은 남았다.",
+          "source_name": "연합뉴스",
+          "source_url": "https://www.yna.co.kr/view/AKR20230313115351002",
+          "related_assets": ["069500", "105560", "055550", "091170"],
+          "importance": "medium",
+          "display_order": 2
+        }
+      ]
+    },
+    {
+      "turn_no": 3,
+      "market_date": "2023-03-16",
+      "next_market_date": "2023-03-28",
+      "title": "크레디트스위스로 번진 공포",
+      "phase": "전염 여부 시험",
+      "summary": "크레디트스위스 주가 급락으로 금융 불안이 유럽까지 번졌지만, 장기 실적·내부통제 문제가 원인이어서 SVB와 동일한 실패 구조인지는 구분이 필요했다.",
+      "market_state": {
+        "sentiment": "높은 경계",
+        "sentiment_score": 31,
+        "sector_state": "국내 은행주 11개 중 10개 하락",
+        "indices": [
+          {"code": "KOSPI", "name": "코스피", "value": 2377.91, "change_pct": -0.08, "unit": "pt", "as_of_date": "2023-03-16"},
+          {"code": "KOSDAQ", "name": "코스닥", "value": 781.98, "change_pct": 0.10, "unit": "pt", "as_of_date": "2023-03-16"}
+        ],
+        "indicators": [
+          {"code": "VIX", "name": "미국 변동성지수", "value": 22.99, "unit": "pt", "as_of_date": "2023-03-16"},
+          {"code": "USDKRW", "name": "원/달러 환율", "value": 1311.74, "unit": "원", "as_of_date": "2023-03-16"}
+        ],
+        "risk_factors": [
+          "서로 다른 은행 문제를 하나의 시스템 위기로 묶는 과잉 일반화",
+          "금융주 투자심리 악화와 단기 수급 이탈",
+          "중앙은행 유동성 지원 이후에도 남는 수익성·자본 문제"
+        ]
+      },
+      "news": [
+        {
+          "news_id": "SVB23-T3-N01",
+          "published_at": "2023-03-16T17:03:00+09:00",
+          "title": "SVB·CS 불안에 국내 은행주 11개 중 10개 하락",
+          "summary": "글로벌 금융주 불안이 국내 투자심리에도 영향을 줬다. 다만 전문가들은 CS가 장기간의 실적과 내부통제 문제를 겪었다는 점에서 SVB와 원인이 다르다고 지적했다.",
+          "source_name": "조세일보",
+          "source_url": "https://news.nate.com/view/20230316n31338",
+          "related_assets": ["105560", "055550", "086790", "091170"],
+          "importance": "high",
+          "display_order": 1
+        },
+        {
+          "news_id": "SVB23-T3-N02",
+          "published_at": "2023-03-16T15:34:00+09:00",
+          "title": "크레디트스위스 유동성 우려에 시장 경계 확대",
+          "summary": "글로벌 대형 투자은행까지 불안이 확산되자 전염 우려가 커졌지만 스위스 금융당국의 유동성 지원 가능성도 함께 부각됐다.",
+          "source_name": "KB증권 리서치",
+          "source_url": "https://rdata.kbsec.com/pdf_data/20230316153440347K.pdf",
+          "related_assets": ["091170", "132030", "114260", "261240"],
+          "importance": "high",
+          "display_order": 2
+        }
+      ]
+    },
+    {
+      "turn_no": 4,
+      "market_date": "2023-03-28",
+      "next_market_date": null,
+      "title": "SVB 인수 완료, 공포 뒤의 정상화",
+      "phase": "안정화 확인",
+      "summary": "퍼스트시티즌스가 SVB의 예금과 대출을 인수하면서 파산 처리가 진전됐다. 시장은 안정됐지만 은행권 손실과 긴축의 후유증은 남았다.",
+      "market_state": {
+        "sentiment": "신중한 안도",
+        "sentiment_score": 62,
+        "sector_state": "금융 불안 완화·시장 반등",
+        "indices": [
+          {"code": "KOSPI", "name": "코스피", "value": 2434.94, "change_pct": 1.07, "unit": "pt", "as_of_date": "2023-03-28"},
+          {"code": "KOSDAQ", "name": "코스닥", "value": 833.51, "change_pct": 0.70, "unit": "pt", "as_of_date": "2023-03-28"}
+        ],
+        "indicators": [
+          {"code": "VIX", "name": "미국 변동성지수", "value": 19.97, "unit": "pt", "as_of_date": "2023-03-28"},
+          {"code": "USDKRW", "name": "원/달러 환율", "value": 1296.98, "unit": "원", "as_of_date": "2023-03-28"}
+        ],
+        "risk_factors": [
+          "인수 완료를 금융권 모든 위험 해소로 확대 해석할 가능성",
+          "은행의 대출 기준 강화와 실물경기 둔화",
+          "안전자산 급등 뒤 뒤늦게 추격하거나 금융주에 즉시 몰빵할 위험"
+        ]
+      },
+      "news": [
+        {
+          "news_id": "SVB23-T4-N01",
+          "published_at": "2023-03-28T08:56:00+09:00",
+          "title": "SVB 파산 17일 만에 퍼스트시티즌스가 인수",
+          "summary": "퍼스트시티즌스가 SVB의 예금과 대출을 인수하면서 영업 정상화와 예금자 관계 유지의 기반이 마련됐다.",
+          "source_name": "ZDNet Korea",
+          "source_url": "https://zdnet.co.kr/view/?no=20230328085631",
+          "related_assets": ["105560", "055550", "086790", "091170"],
+          "importance": "high",
+          "display_order": 1
+        },
+        {
+          "news_id": "SVB23-T4-N02",
+          "published_at": "2023-03-27T16:21:00+09:00",
+          "title": "SVB 인수로 금융시스템 불안 완화, 관심은 다시 물가로",
+          "summary": "인수 소식으로 시스템 위기 우려가 완화되자 시장의 초점은 다시 물가와 연준의 긴축 경로로 이동했다.",
+          "source_name": "이데일리",
+          "source_url": "https://www.edaily.co.kr/News/Read?mediaCodeNo=257&newsId=03076646635547584",
+          "related_assets": ["069500", "091170", "114260", "261240"],
+          "importance": "medium",
+          "display_order": 2
+        }
+      ]
+    }
+  ]
+}

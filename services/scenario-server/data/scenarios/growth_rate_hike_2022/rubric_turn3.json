@@ -1,0 +1,76 @@
+{
+  "scenario_id": "growth_rate_hike_2022",
+  "turn_no": 3,
+  "turn_title": "28년 만의 자이언트스텝, 그런데 증시는 반등",
+  "turn_context": "연준이 0.75%포인트를 인상했지만 이미 예상된 결정이라는 해석으로 시장은 반등했다. 큰 인상은 악재지만 불확실성 해소는 단기 호재가 될 수 있으며, 향후 물가와 추가 인상 경로는 남아 있다.",
+  "questions_used": ["Q4", "Q8", "Q18", "Q22", "Q36", "Q39"],
+  "answer_rules": {
+    "Q4": {
+      "metric": "M2",
+      "good": ["일부 새로운 정보", "기존 예상과 유사"],
+      "trap": ["완전히 새로운 정보"],
+      "note": "0.75%포인트 인상 가능성은 직전에 이미 크게 반영됐다. 결정은 중요하지만 완전히 새로운 충격으로만 해석하면 시장 반등을 설명할 수 없다."
+    },
+    "Q8": {
+      "metric": "M2",
+      "good": ["수개월", "1년 이상"],
+      "trap": ["수일", "일시적 충격"],
+      "note": "금리 수준과 긴축은 성장주 가치평가에 수개월 이상 영향을 준다. 하루 반등으로 충격이 끝났다고 보기 어렵다."
+    },
+    "Q18": {
+      "metric": "M3",
+      "good": ["정책 대응 불명", "영향 기간 불명", "시장 과민반응"],
+      "trap": ["향후 일정 불명"],
+      "note": "FOMC 일정은 알려져 있지만 인상 폭과 물가 경로, 반등의 과민 여부는 불확실하다."
+    },
+    "Q22": {
+      "metric": "M5",
+      "good": ["빠른 회복", "피해 확대", "사건 장기화"],
+      "trap": ["반대 가능성 없음"],
+      "note": "안도 반등이 이어질 가능성과 추가 긴축으로 다시 하락할 가능성을 모두 열어둬야 한다."
+    },
+    "Q36": {
+      "metric": "M4",
+      "good": ["매우 제한적", "일부 대응", "단계적 대응"],
+      "trap": ["대부분 대응", "전량 대응"],
+      "note": "반등을 인정하되 추세 전환 확인 전 큰 방향 베팅은 피한다. 보유 구조를 소폭 조정하거나 관망하는 행동이 적절하다."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "자이언트스텝이라는 악재와 예상 부합에 따른 불확실성 해소를 동시에 설명하고, 하루 반등을 추세로 단정하지 않는 조건부 판단이면 고득점이다."
+    }
+  },
+  "factors": [
+    {"factor_id": "GIANT_STEP", "importance": "상", "direction": "악재", "note": "28년 만의 0.75%포인트 인상"},
+    {"factor_id": "PRICED_IN", "importance": "상", "direction": "호재", "note": "시장 예상에 부합해 단기 정책 불확실성이 완화"},
+    {"factor_id": "RELIEF_RALLY", "importance": "중", "direction": "호재", "note": "낙폭 과대와 불확실성 해소에 따른 기술적 반등"},
+    {"factor_id": "FURTHER_HIKES", "importance": "상", "direction": "악재", "note": "다음 회의 추가 0.5~0.75%포인트 인상 가능성"},
+    {"factor_id": "TREND_NOT_CONFIRMED", "importance": "상", "direction": "중립", "note": "하루 반등만으로 추세 전환은 확인되지 않음"}
+  ],
+  "assets": [
+    {"asset_id": "035420", "relevance": "높음", "is_trap": false, "reason": "낙폭 과대 반등 가능성과 금리 부담이 공존"},
+    {"asset_id": "035720", "relevance": "높음", "is_trap": false, "reason": "낙폭 과대 반등 가능성과 금리 부담이 공존"},
+    {"asset_id": "133690", "relevance": "높음", "is_trap": true, "reason": "하루 안도 랠리만 보고 큰 비중 추격 시 위험"},
+    {"asset_id": "069500", "relevance": "높음", "is_trap": false, "reason": "개별 성장주보다 분산된 반등 참여 수단"},
+    {"asset_id": "114800", "relevance": "중간", "is_trap": true, "reason": "이미 큰 하락 뒤 인버스를 추격하면 반등 손실 위험"},
+    {"asset_id": "017670", "relevance": "중간", "is_trap": false, "reason": "불확실성 국면의 방어적 분산 자산"}
+  ],
+  "traps": [
+    {"trap_id": "TRAP_ONE_DAY_TREND", "kind": "reason", "target": "하루 반등=추세 전환", "explanation": "불확실성 해소 반등과 중기 금리 부담은 동시에 존재한다."},
+    {"trap_id": "TRAP_CHASE_NASDAQ", "kind": "asset", "target": "133690", "explanation": "급반등 당일 큰 비중 추격은 가격 확인 없이 낙관에 베팅하는 행동이다."},
+    {"trap_id": "TRAP_LATE_INVERSE", "kind": "asset", "target": "114800", "explanation": "낙폭 누적 뒤 인버스를 크게 사면 단기 반등에 취약하다."}
+  ],
+  "ai_baseline": {
+    "action_summary": "하루 반등을 추격하지 않고 현금과 기존 분산 구조를 유지한다. 참여하더라도 KODEX 200 등으로 소량만 단계적으로 접근한다.",
+    "rationale": "인상 폭은 크지만 예상에 부합해 단기 반등이 가능하다. 추가 인상과 물가 위험이 남아 있으므로 성장주 또는 인버스 어느 쪽에도 크게 베팅하지 않는다."
+  },
+  "action_rule": {
+    "max_single_weight": 30,
+    "good_cash_min": 35,
+    "trap_assets": ["133690", "114800"],
+    "core_assets": ["069500", "017670", "114260"],
+    "expected_action_score": [-1.0, 0.5],
+    "note": "관망, 소폭 축소 또는 제한적 분산 매수가 적정하다. 하루 반등을 근거로 큰 방향 베팅하면 감점한다."
+  }
+}

@@ -70,7 +70,7 @@ def build_portfolio_state(
             }
         )
     total_value = cash + total_position_value
-    initial_value = int(session.get("initial_cash", 0))
+    initial_value = int(session.get("initial_value", session.get("initial_cash", 0)))
     for position in positions:
         position["weight_pct"] = (
             round(position["market_value"] / total_value * 100, 2)

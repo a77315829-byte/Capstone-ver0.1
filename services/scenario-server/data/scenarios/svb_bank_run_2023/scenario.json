@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "scenario_id": "svb_bank_run_2023",
+  "version": 1,
+  "title": "SVB 뱅크런 — 공포는 어디까지 번지는가",
+  "description": "은행주를 보유한 채 2023년 SVB 파산과 예금보호, 유럽 은행 불안, 인수 안정화까지 3주간 겪으며 유동성·전염 위험을 판단하는 4턴 단기 시나리오",
+  "event_period": "2023년 3월",
+  "total_turns": 4,
+  "difficulty": "어려움",
+  "display_order": 3,
+  "is_published": true,
+  "initial_portfolio_label": "현금 300만원 + KB금융 40주 + 신한지주 50주 + 은행 ETF 150주 (평가액 약 772만원)",
+  "simulation": {
+    "timezone": "Asia/Seoul",
+    "currency": "KRW",
+    "initial_cash": 3000000,
+    "initial_positions": [
+      {"asset_id": "105560", "quantity": 40, "avg_price": 55000},
+      {"asset_id": "055550", "quantity": 50, "avg_price": 40000},
+      {"asset_id": "091170", "quantity": 150, "avg_price": 7000}
+    ],
+    "execution_price_basis": "close",
+    "valuation_price_basis": "close",
+    "order_unit": 1,
+    "fees_enabled": false,
+    "short_selling_enabled": false
+  },
+  "turn_schedule": [
+    {"turn_no": 1, "market_date": "2023-03-10", "next_market_date": "2023-03-13"},
+    {"turn_no": 2, "market_date": "2023-03-13", "next_market_date": "2023-03-16"},
+    {"turn_no": 3, "market_date": "2023-03-16", "next_market_date": "2023-03-28"},
+    {"turn_no": 4, "market_date": "2023-03-28", "next_market_date": null}
+  ],
+  "final_valuation": {
+    "market_date": "2023-04-07",
+    "has_decision": false,
+    "has_scoring": false,
+    "description": "SVB 인수 이후 2주가 지난 시점의 실제 종가로 보유자산을 재평가해 단기 위기 대응 결과를 확정한다."
+  },
+  "asset_ids": [
+    "105560", "055550", "086790", "091170", "069500",
+    "261240", "132030", "114260", "017670"
+  ],
+  "default_asset_id": "105560",
+  "benchmark_asset_id": "069500",
+  "learning_points": [
+    "금리 상승이 은행 보유채권 손실과 예금 유출로 번지는 유동성 경로 이해하기",
+    "해외 은행 실패와 국내 은행의 자본·예금 구조 차이를 구분하기",
+    "공포에 전량 매도하거나 정책 지원만 믿고 물타기하지 않고 전염 조건을 확인하기"
+  ]
+}

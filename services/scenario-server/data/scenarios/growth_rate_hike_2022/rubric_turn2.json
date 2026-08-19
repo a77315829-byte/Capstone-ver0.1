@@ -1,0 +1,76 @@
+{
+  "scenario_id": "growth_rate_hike_2022",
+  "turn_no": 2,
+  "turn_title": "빅스텝 뒤 하루 만에 무너진 안도감",
+  "turn_context": "연준의 0.5%포인트 인상은 예상에 부합했지만 금리 상승과 긴축 부담이 다시 부각되며 나스닥과 국내 성장주가 급락했다. NAVER와 카카오의 손실은 더 커졌고 변동성도 확대됐다.",
+  "questions_used": ["Q1", "Q10", "Q13", "Q23", "Q36", "Q39"],
+  "answer_rules": {
+    "Q1": {
+      "metric": "M1",
+      "good": ["금리", "시장 수급", "가격 수준"],
+      "trap": ["공급망", "규제 변화"],
+      "note": "금리 상승, 기술주 자금 이탈, 하락한 가격 수준을 함께 봐야 한다. 공급망이나 규제가 이번 급락의 직접 원인은 아니다."
+    },
+    "Q10": {
+      "metric": "M2",
+      "good": ["자금 조달", "수급 변화", "심리 변화"],
+      "trap": ["공급망 변화", "경로 불명확"],
+      "note": "고금리는 기업의 자금조달과 미래 현금흐름 할인에 영향을 주고 기술주 수급·심리를 악화시킨다."
+    },
+    "Q13": {
+      "metric": "M3",
+      "good": ["변동성 확대", "수급 악화", "집중 위험"],
+      "trap": ["규제 강화", "원가 상승"],
+      "note": "두 성장주에 집중한 상태에서 변동성과 수급 악화가 겹치는 것이 핵심 위험이다."
+    },
+    "Q23": {
+      "metric": "M5",
+      "good": ["수급 개선", "시장 안정", "실적 개선"],
+      "trap": ["변경 조건 없음"],
+      "note": "앞으로의 수급, 시장 안정, 기업 실적처럼 확인 가능한 조건을 정해야 한다. 어떤 변화에도 판단을 바꾸지 않겠다는 태도는 확증편향이다."
+    },
+    "Q36": {
+      "metric": "M4",
+      "good": ["일부 대응", "단계적 대응", "절반 대응"],
+      "trap": ["전량 대응"],
+      "note": "충격이 누적된 만큼 집중도를 실질적으로 줄일 수 있지만 급락 당일 전량 투매도 과도하다. 계획된 분할 축소가 적절하다."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "빅스텝, 국채금리, 성장주 수급 악화가 보유 종목에 미치는 경로를 설명하고 물타기 또는 투매를 피할 구체적 행동을 제시하면 고득점이다."
+    }
+  },
+  "factors": [
+    {"factor_id": "FED_BIG_STEP", "importance": "상", "direction": "악재", "note": "0.5%포인트 인상과 양적긴축 시작"},
+    {"factor_id": "NASDAQ_SELL_OFF", "importance": "상", "direction": "악재", "note": "미국 기술주 급락이 국내 성장주 수급과 심리에 전달"},
+    {"factor_id": "RATE_ABOVE_THREE", "importance": "상", "direction": "악재", "note": "미국 10년물 금리 3%대 진입으로 가치평가 부담 확대"},
+    {"factor_id": "PRICE_DECLINE", "importance": "중", "direction": "호재", "note": "가격 하락으로 일부 밸류에이션 부담은 완화됐지만 적정가치는 불확실"},
+    {"factor_id": "RELIEF_REVERSAL", "importance": "중", "direction": "악재", "note": "안도 랠리가 하루 만에 뒤집히며 변동성 확인"}
+  ],
+  "assets": [
+    {"asset_id": "035420", "relevance": "매우높음", "is_trap": true, "reason": "직접 타격을 받은 기존 보유주로 무계획 물타기 위험"},
+    {"asset_id": "035720", "relevance": "매우높음", "is_trap": true, "reason": "직접 타격을 받은 기존 보유주로 집중 확대 위험"},
+    {"asset_id": "133690", "relevance": "높음", "is_trap": true, "reason": "나스닥 급락 직후 단기 반등만 기대한 추격 매수는 위험"},
+    {"asset_id": "017670", "relevance": "높음", "is_trap": false, "reason": "성장주 집중을 완화하는 방어적 현금흐름 자산"},
+    {"asset_id": "114260", "relevance": "중간", "is_trap": false, "reason": "변동성 완화를 위한 단기 국채 ETF"},
+    {"asset_id": "114800", "relevance": "중간", "is_trap": false, "reason": "소량 단기 헤지는 가능하나 장기 보유에는 부적합"}
+  ],
+  "traps": [
+    {"trap_id": "TRAP_BLIND_AVERAGING", "kind": "action", "target": "성장주 물타기", "explanation": "가격 하락만으로 적정가치가 높아진 것은 아니다."},
+    {"trap_id": "TRAP_PANIC_SELL", "kind": "action", "target": "급락 당일 전량 매도", "explanation": "공포에 의한 전량 매도는 반등 가능성과 분할 대응 원칙을 무시한다."},
+    {"trap_id": "TRAP_NO_EXIT_RULE", "kind": "reason", "target": "변경 조건 없음", "explanation": "수급·실적·금리 등 판단 변경 조건이 없으면 확증편향이 강화된다."}
+  ],
+  "ai_baseline": {
+    "action_summary": "성장주 추가매수는 보류하고 NAVER·카카오를 일부 분할 축소해 현금과 방어자산 비중을 확보한다.",
+    "rationale": "금리와 기술주 수급 악화가 동시에 확인됐으므로 집중 위험은 줄여야 한다. 다만 급락 당일 전량 투매 대신 가격과 수급 확인 조건을 둔 분할 대응이 적절하다."
+  },
+  "action_rule": {
+    "max_single_weight": 30,
+    "good_cash_min": 45,
+    "trap_assets": ["035420", "035720", "133690"],
+    "core_assets": ["017670", "114260"],
+    "expected_action_score": [-2.0, 0.0],
+    "note": "관망부터 일부·전량이 아닌 분할 축소까지 허용한다. 낙폭만 근거로 성장주를 크게 늘리면 감점한다."
+  }
+}

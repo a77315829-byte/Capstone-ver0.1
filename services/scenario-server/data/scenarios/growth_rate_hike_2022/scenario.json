@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "scenario_id": "growth_rate_hike_2022",
+  "version": 1,
+  "title": "고금리 쇼크 — 물타기와 손절 사이",
+  "description": "NAVER·카카오를 보유한 채 2022년 급격한 금리 인상과 반등을 겪으며 손실회피, 물타기, 분산과 현금 비중을 판단하는 5턴 시나리오",
+  "event_period": "2022년 1월~12월",
+  "total_turns": 5,
+  "difficulty": "어려움",
+  "display_order": 2,
+  "is_published": true,
+  "initial_portfolio_label": "현금 400만원 + NAVER 8주 + 카카오 15주 (평가액 약 821만원)",
+  "simulation": {
+    "timezone": "Asia/Seoul",
+    "currency": "KRW",
+    "initial_cash": 4000000,
+    "initial_positions": [
+      {"asset_id": "035420", "quantity": 8, "avg_price": 400000},
+      {"asset_id": "035720", "quantity": 15, "avg_price": 125000}
+    ],
+    "execution_price_basis": "close",
+    "valuation_price_basis": "close",
+    "order_unit": 1,
+    "fees_enabled": false,
+    "short_selling_enabled": false
+  },
+  "turn_schedule": [
+    {"turn_no": 1, "market_date": "2022-01-06", "next_market_date": "2022-05-06"},
+    {"turn_no": 2, "market_date": "2022-05-06", "next_market_date": "2022-06-16"},
+    {"turn_no": 3, "market_date": "2022-06-16", "next_market_date": "2022-09-22"},
+    {"turn_no": 4, "market_date": "2022-09-22", "next_market_date": "2022-11-11"},
+    {"turn_no": 5, "market_date": "2022-11-11", "next_market_date": null}
+  ],
+  "final_valuation": {
+    "market_date": "2022-12-29",
+    "has_decision": false,
+    "has_scoring": false,
+    "description": "마지막 반등 국면의 주문을 반영한 보유자산을 2022년 마지막 거래일 종가로 재평가한다."
+  },
+  "asset_ids": [
+    "035420", "035720", "133690", "069500", "105560",
+    "017670", "132030", "114800", "114260"
+  ],
+  "default_asset_id": "035420",
+  "benchmark_asset_id": "069500",
+  "learning_points": [
+    "보유 종목의 손실과 앞으로의 기대수익을 분리해 판단하기",
+    "금리·물가·환율이 성장주 가치평가에 전달되는 경로 이해하기",
+    "급락 뒤 물타기와 급반등 뒤 추격매수 대신 단계적으로 비중 조절하기"
+  ]
+}

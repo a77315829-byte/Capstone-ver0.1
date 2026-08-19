@@ -1,16 +1,17 @@
 # Anttitude Scenario Server — Beta v3
 
-AI 반도체 6턴 시나리오를 실행하고, 주문·판단·포트폴리오 변화를 기록한 뒤
+AI 반도체 6턴, 2022 성장주·금리 충격 5턴, 2023 SVB 뱅크런 4턴 시나리오를
+실행하고 주문·판단·포트폴리오 변화를 기록한 뒤
 행동 패턴과 종합평가를 마이페이지용 데이터로 만드는 FastAPI 서버입니다.
 
 ## 구현된 흐름
 
 1. JSON 콘텐츠를 MongoDB에 반복 안전하게 시드
-2. 시나리오 세션 생성(초기자산 1,000만원)
+2. 시나리오별 현금·초기 보유주식으로 세션 생성
 3. 턴별 뉴스·시장상태·종목·차트 조회
 4. 일봉에서 만든 고정 10단계 모의 호가로 시장가·지정가 IOC 체결
 5. 객관식 5문항과 자유서술을 함께 사용한 M1~M5·PORTFOLIO 채점
-6. 6턴 종료 후 2024-07-19 종가로 최종 평가
+6. 시나리오별 마지막 턴 종료 후 지정된 최종 거래일 종가로 평가
 7. 이전 턴 조언의 준수·반복 여부를 다음 턴과 최종 피드백에 반영
 8. 반복 행동·포트폴리오 지표·사용자 누적 프로필 생성
 
@@ -33,10 +34,16 @@ Copy-Item .env.example .env
 
 ```powershell
 python -m scripts.seed_database --scenario semiconductor
+python -m scripts.seed_database --scenario growth_rate_hike_2022
+python -m scripts.seed_database --scenario svb_bank_run_2023
 ```
 
-`scenario.json`, `assets.json`, `turn_displays.json`, `rubric_turn1~6.json`,
+각 시나리오의 `scenario.json`, `assets.json`, `turn_displays.json`, `rubric_turn*.json`,
 `questions.json`을 MongoDB에 upsert합니다. 다시 실행해도 중복되지 않습니다.
+
+`simulation.initial_positions`가 있으면 세션은 해당 주식을 보유한 상태로 시작합니다.
+`initial_cash`는 실제 현금, `initial_value`는 첫 턴 종가로 평가한 현금+주식 총자산이며
+시나리오 수익률은 `initial_value`를 기준으로 계산합니다.
 
 ## 3. 실제 과거 일봉 적재
 
@@ -45,6 +52,17 @@ KIS 키를 `.env`에 입력한 뒤 실행합니다.
 ```powershell
 python -m scripts.import_kis_prices --scenario semiconductor --start 20231101 --end 20240719
 ```
+
+KIS 키가 없는 로컬 개발 환경에서는 Yahoo Finance의 실제 KRX 과거 일봉을 적재할 수
+있습니다. 성장주·금리 충격 시나리오의 기본 기간은 다음 명령으로 준비됩니다.
+
+```powershell
+python -m scripts.import_yahoo_prices --scenario growth_rate_hike_2022 --start 20211201 --end 20221229
+python -m scripts.import_yahoo_prices --scenario svb_bank_run_2023 --start 20230201 --end 20230407
+```
+
+Yahoo 보조 적재기는 KOSPI·ETF에 `.KS`, KOSDAQ에 `.KQ` 심볼을 사용하고 저장 문서의
+`source`를 `YAHOO_FINANCE_CHART`로 명시합니다.
 
 KIS를 당장 사용할 수 없으면 다음 열을 가진 CSV도 적재할 수 있습니다.
 
@@ -201,7 +219,7 @@ M5는 1점으로 제한합니다. 분석 결과는 각 턴 `scorecard.rationale_
 
 이 판정은 학습 피드백에만 사용하며 점수를 추가로 가감하지 않습니다. 같은 문제를 반복하면
 현재 턴의 기존 M1~M5 기준에서 이미 감점되므로, 코칭 이력으로 다시 감점하지 않습니다.
-6턴 종료 후에는 `coaching_progress`에 반영·반복·판단 불가 횟수와 아직 남은 개선 행동을
+마지막 턴 종료 후에는 `coaching_progress`에 반영·반복·판단 불가 횟수와 아직 남은 개선 행동을
 집계하고 최종 `feedback.summary`, `feedback.coaching_summary`, `feedback.next_actions`에
 포함합니다.
 
@@ -213,7 +231,8 @@ M5는 1점으로 제한합니다. 분석 결과는 각 턴 `scorecard.rationale_
 python -m unittest discover -v -s tests
 ```
 
-현재 테스트는 세션 시작, 주문, 6턴 제출, 최종평가, 사용자 누적 프로필과 함께 부실 서술의
+현재 테스트는 현금 전용·주식 보유형 세션 시작, 주문, 4턴·5턴·6턴 제출, 최종평가,
+사용자 누적 프로필과 함께 부실 서술의
 전 축 점수 제한, 정상 서술의 M1~M5 반영, 서술-행동 불일치, 이전 조언의 다음 턴 노출,
 조언 준수·반복 판정과 최종 집계, 10단계 호가 생성, 시장가·지정가·부분체결·잔량 차감을
 확인합니다.

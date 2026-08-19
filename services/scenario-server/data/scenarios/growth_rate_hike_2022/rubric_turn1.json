@@ -1,0 +1,77 @@
+{
+  "scenario_id": "growth_rate_hike_2022",
+  "turn_no": 1,
+  "turn_title": "연준 의사록, 조기 긴축을 경고하다",
+  "turn_context": "연준 의사록에서 예상보다 빠른 금리 인상과 양적긴축 가능성이 드러났다. NAVER와 카카오를 이미 보유한 사용자는 초기 손실을 보고 있지만 아직 긴축의 속도와 기업별 영향은 확정되지 않았다.",
+  "questions_used": ["Q1", "Q5", "Q18", "Q32", "Q36", "Q39"],
+  "answer_rules": {
+    "Q1": {
+      "metric": "M1",
+      "good": ["금리", "가격 수준", "불확실성"],
+      "trap": ["원자재", "공급망"],
+      "note": "이번 턴의 핵심은 금리 상승이 높은 밸류에이션 성장주의 할인율을 높인다는 점이다. 현재 가격과 긴축 경로의 불확실성까지 함께 봐야 한다."
+    },
+    "Q5": {
+      "metric": "M2",
+      "good": ["일부 반영", "미반영"],
+      "trap": ["과도하게 반영"],
+      "note": "의사록 공개 직후 하락했지만 긴축의 전체 경로가 이제 막 재평가되기 시작했다. 한 번 내렸다는 이유만으로 과도하게 반영됐다고 단정하기는 이르다."
+    },
+    "Q18": {
+      "metric": "M3",
+      "good": ["정책 대응 불명", "영향 기간 불명", "기업별 차이"],
+      "trap": ["피해 규모 불명"],
+      "note": "정책 속도와 영향 기간, 기업별 실적 방어력이 핵심 불확실성이다. 물리적 피해 규모를 따지는 사건은 아니다."
+    },
+    "Q32": {
+      "metric": "M4",
+      "good": ["일부 집중", "보통"],
+      "trap": ["매우 분산"],
+      "note": "시작 포트폴리오의 절반가량이 두 플랫폼 성장주에 묶여 있어 완전히 분산됐다고 볼 수 없다. 현재 집중 위험을 정확히 인식해야 한다."
+    },
+    "Q36": {
+      "metric": "M4",
+      "good": ["매우 제한적", "일부 대응", "단계적 대응"],
+      "trap": ["대부분 대응", "전량 대응"],
+      "note": "긴축 신호는 중요하지만 첫 충격만으로 전량 매도하거나 반대로 큰 폭 물타기하기보다 보유 집중도를 단계적으로 조절하는 편이 적절하다."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "금리 상승→성장주 할인율 상승의 경로, 이미 보유한 집중 위험, 아직 남은 정책 불확실성을 연결하고 제한적 대응의 이유를 쓰면 고득점이다. 본전 회복만을 근거로 삼으면 감점한다."
+    }
+  },
+  "factors": [
+    {"factor_id": "EARLY_TIGHTENING", "importance": "상", "direction": "악재", "note": "예상보다 빠른 금리 인상과 양적긴축 신호"},
+    {"factor_id": "GROWTH_DISCOUNT_RATE", "importance": "상", "direction": "악재", "note": "할인율 상승에 따른 성장주 가치평가 하락"},
+    {"factor_id": "STARTING_CONCENTRATION", "importance": "상", "direction": "악재", "note": "NAVER·카카오 기존 보유로 인한 집중 위험"},
+    {"factor_id": "POLICY_PATH_UNCERTAINTY", "importance": "중", "direction": "중립", "note": "긴축 속도와 최종금리의 불확실성"},
+    {"factor_id": "CASH_BUFFER", "importance": "중", "direction": "호재", "note": "약 절반의 현금 비중이 추가 하락과 분산 대응을 완충"},
+    {"factor_id": "SUPPLY_CHAIN", "importance": "하", "direction": "중립", "note": "이번 거시 충격의 직접 핵심이 아님"}
+  ],
+  "assets": [
+    {"asset_id": "035420", "relevance": "매우높음", "is_trap": true, "reason": "기존 보유 핵심 성장주지만 손실 만회를 위한 추가매수는 위험"},
+    {"asset_id": "035720", "relevance": "매우높음", "is_trap": true, "reason": "기존 보유 성장주로 금리 민감도와 집중 위험이 큼"},
+    {"asset_id": "017670", "relevance": "높음", "is_trap": false, "reason": "현금흐름과 배당 성격의 방어적 분산 수단"},
+    {"asset_id": "114260", "relevance": "중간", "is_trap": false, "reason": "주식 집중도를 낮추는 단기 국채 자산"},
+    {"asset_id": "069500", "relevance": "중간", "is_trap": false, "reason": "개별 성장주보다 넓게 분산된 시장 ETF"},
+    {"asset_id": "114800", "relevance": "낮음", "is_trap": true, "reason": "첫 하락 직후 인버스에 크게 몰리면 방향성 추격 위험"}
+  ],
+  "traps": [
+    {"trap_id": "TRAP_AVERAGE_DOWN", "kind": "action", "target": "NAVER·카카오 추가매수", "explanation": "매입단가를 낮추는 것 자체는 미래 수익의 근거가 아니다."},
+    {"trap_id": "TRAP_SUNK_COST", "kind": "reason", "target": "본전 심리", "explanation": "과거 매입가격이 아니라 현재 정보와 앞으로의 위험으로 판단해야 한다."},
+    {"trap_id": "TRAP_ALL_OUT", "kind": "action", "target": "전량 대응", "explanation": "정책 경로가 불확실한 첫 신호에 전량 방향 베팅은 과도하다."}
+  ],
+  "ai_baseline": {
+    "action_summary": "NAVER·카카오 추가매수는 멈추고 현금을 유지한다. 필요하면 성장주 일부를 방어주·시장 ETF로 제한적으로 분산한다.",
+    "rationale": "조기 긴축은 성장주 가치평가에 구조적 부담이지만 아직 경로가 확정되지 않았다. 본전 심리를 배제하고 집중 위험부터 줄이는 단계적 대응이 적절하다."
+  },
+  "action_rule": {
+    "max_single_weight": 35,
+    "good_cash_min": 40,
+    "trap_assets": ["035420", "035720", "114800"],
+    "core_assets": ["017670", "069500", "114260"],
+    "expected_action_score": [-1.0, 0.0],
+    "note": "관망 또는 성장주 일부 축소가 적정하다. 기존 손실을 이유로 한 추가매수와 전량 방향 베팅은 감점한다."
+  }
+}

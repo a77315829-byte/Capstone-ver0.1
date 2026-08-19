@@ -49,6 +49,7 @@ class ScenarioSessionService:
     def list_scenarios(self) -> list[dict]:
         result = []
         for scenario in self.repository.list_scenarios():
+            simulation = scenario.get("simulation", {})
             result.append(
                 {
                     "scenario_id": scenario["scenario_id"],
@@ -57,7 +58,13 @@ class ScenarioSessionService:
                     "description": scenario.get("description", ""),
                     "difficulty": scenario.get("difficulty", ""),
                     "total_turns": scenario["total_turns"],
-                    "initial_cash": scenario.get("simulation", {}).get("initial_cash", 0),
+                    "event_period": scenario.get("event_period", "과거 데이터"),
+                    "initial_cash": simulation.get("initial_cash", 0),
+                    "initial_positions": simulation.get("initial_positions", []),
+                    "initial_portfolio_label": scenario.get(
+                        "initial_portfolio_label",
+                        f"현금 {int(simulation.get('initial_cash', 0)):,}원",
+                    ),
                     "learning_points": scenario.get("learning_points", []),
                 }
             )
@@ -69,7 +76,47 @@ class ScenarioSessionService:
             raise PlayError("INVALID_USER", "사용자 ID가 필요합니다.")
         scenario = self.repository.get_scenario(scenario_id)
         now = utc_now()
-        initial_cash = int(scenario.get("simulation", {}).get("initial_cash", 10_000_000))
+        simulation = scenario.get("simulation", {})
+        initial_cash = int(simulation.get("initial_cash", 10_000_000))
+        first_date = scenario["turn_schedule"][0]["market_date"]
+        initial_positions = []
+        initial_position_value = 0
+        seen_asset_ids: set[str] = set()
+        for configured in simulation.get("initial_positions", []):
+            asset_id = str(configured.get("asset_id", "")).strip()
+            quantity = int(configured.get("quantity", 0))
+            if asset_id not in scenario.get("asset_ids", []):
+                raise PlayError(
+                    "INVALID_INITIAL_POSITION",
+                    f"초기 보유 종목 {asset_id}이 시나리오 매매 대상에 없습니다.",
+                )
+            if not asset_id or asset_id in seen_asset_ids or quantity <= 0:
+                raise PlayError(
+                    "INVALID_INITIAL_POSITION",
+                    "초기 보유 종목은 중복 없이 1주 이상이어야 합니다.",
+                )
+            price = self.repository.get_latest_price(asset_id, first_date)
+            if not price or price.get("close") is None:
+                raise DataUnavailableError(
+                    f"{asset_id}의 {first_date} 초기 보유 평가 가격이 없습니다."
+                )
+            current_price = int(price["close"])
+            avg_price = float(configured.get("avg_price", current_price))
+            if avg_price <= 0:
+                raise PlayError(
+                    "INVALID_INITIAL_POSITION",
+                    f"초기 보유 종목 {asset_id}의 매입단가는 0보다 커야 합니다.",
+                )
+            initial_positions.append(
+                {
+                    "asset_id": asset_id,
+                    "quantity": quantity,
+                    "avg_price": round(avg_price, 4),
+                }
+            )
+            initial_position_value += current_price * quantity
+            seen_asset_ids.add(asset_id)
+        initial_value = initial_cash + initial_position_value
         session = {
             "schema_version": SCHEMA_VERSION,
             "session_id": str(uuid4()),
@@ -79,8 +126,12 @@ class ScenarioSessionService:
             "status": "ACTIVE",
             "current_turn": 1,
             "initial_cash": initial_cash,
+            "initial_value": initial_value,
             "cash": initial_cash,
-            "positions": [],
+            "positions": sorted(
+                initial_positions,
+                key=lambda item: item["asset_id"],
+            ),
             "realized_pnl_by_asset": {},
             "revision": 0,
             "started_at": now,
@@ -89,7 +140,6 @@ class ScenarioSessionService:
             "final_evaluation_id": None,
         }
         self.repository.create_session(session)
-        first_date = scenario["turn_schedule"][0]["market_date"]
         portfolio = build_portfolio_state(self.repository, session, first_date)
         self.repository.save_snapshot(
             make_snapshot(
@@ -165,9 +215,12 @@ class ScenarioSessionService:
             None,
         )
         turn_base_value = int(
-            prior_turn_end.get("total_value", session["initial_cash"])
+            prior_turn_end.get(
+                "total_value",
+                session.get("initial_value", session["initial_cash"]),
+            )
             if prior_turn_end
-            else session["initial_cash"]
+            else session.get("initial_value", session["initial_cash"])
         )
         portfolio["turn_base_value"] = turn_base_value
         portfolio["turn_return_pct"] = (
@@ -688,7 +741,7 @@ class ScenarioSessionService:
         return value
 
     def finalize_session(self, session_id: str) -> dict:
-        """턴 6 저장 이후 종합평가 생성을 재시도할 수 있게 분리한다."""
+        """마지막 턴 저장 이후 종합평가 생성을 재시도할 수 있게 분리한다."""
         session = self.repository.get_session(session_id)
         if session.get("status") == "COMPLETED":
             existing = self.repository.get_evaluation_by_session(session_id)

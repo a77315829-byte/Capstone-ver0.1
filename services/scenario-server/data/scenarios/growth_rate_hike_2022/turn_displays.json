@@ -1,0 +1,254 @@
+{
+  "turns": [
+    {
+      "turn_no": 1,
+      "market_date": "2022-01-06",
+      "next_market_date": "2022-05-06",
+      "title": "연준 의사록, 조기 긴축을 경고하다",
+      "phase": "긴축 신호",
+      "summary": "연준이 예상보다 빠른 금리 인상과 양적긴축 가능성을 내비치자 고평가 성장주가 먼저 흔들렸다.",
+      "market_state": {
+        "sentiment": "경계",
+        "sentiment_score": 38,
+        "sector_state": "성장주 중심 약세",
+        "indices": [
+          {"code": "KOSPI", "name": "코스피", "value": 2920.53, "change_pct": -1.13, "unit": "pt", "as_of_date": "2022-01-06"},
+          {"code": "KOSDAQ", "name": "코스닥", "value": 980.30, "change_pct": -2.90, "unit": "pt", "as_of_date": "2022-01-06"}
+        ],
+        "indicators": [
+          {"code": "US10Y", "name": "미국 10년물 금리", "value": 1.73, "unit": "%", "as_of_date": "2022-01-06"},
+          {"code": "USDKRW", "name": "원/달러 환율", "value": 1199.25, "unit": "원", "as_of_date": "2022-01-06"}
+        ],
+        "risk_factors": [
+          "높은 밸류에이션 종목의 할인율 상승",
+          "초기 손실을 만회하려는 성급한 물타기",
+          "긴축 속도와 시작 시점의 불확실성"
+        ]
+      },
+      "news": [
+        {
+          "news_id": "GRH22-T1-N01",
+          "published_at": "2022-01-06T10:24:00+09:00",
+          "title": "연준, 예상보다 빠른 금리 인상·양적긴축 가능성 시사",
+          "summary": "2021년 12월 FOMC 의사록에서 인플레이션 대응을 위해 금리를 더 이른 시점에 올리고 대차대조표 축소도 논의할 수 있다는 신호가 확인됐다.",
+          "source_name": "머니투데이",
+          "source_url": "https://news.mt.co.kr/mtview.php?no=2022010610194445344",
+          "related_assets": ["035420", "035720", "133690", "069500"],
+          "importance": "high",
+          "display_order": 1
+        },
+        {
+          "news_id": "GRH22-T1-N02",
+          "published_at": "2022-01-06T15:30:00+09:00",
+          "title": "매파적 연준에 아시아 성장주 낙폭 확대",
+          "summary": "미국 금리 인상 가속화 우려로 코스피와 코스닥이 하락했고 NAVER·카카오 등 국내 빅테크도 약세를 보였다.",
+          "source_name": "미래에셋증권 리서치",
+          "source_url": "https://securities.miraeasset.com/bbs/download/2090365.pdf?attachmentId=2090365",
+          "related_assets": ["035420", "035720", "133690"],
+          "importance": "high",
+          "display_order": 2
+        }
+      ]
+    },
+    {
+      "turn_no": 2,
+      "market_date": "2022-05-06",
+      "next_market_date": "2022-06-16",
+      "title": "빅스텝 뒤 하루 만에 무너진 안도감",
+      "phase": "급락 확대",
+      "summary": "0.5%포인트 인상이 예상에 부합했다는 안도감은 하루 만에 뒤집혔고 나스닥 급락이 국내 성장주로 번졌다.",
+      "market_state": {
+        "sentiment": "공포",
+        "sentiment_score": 25,
+        "sector_state": "플랫폼·기술주 급락",
+        "indices": [
+          {"code": "KOSPI", "name": "코스피", "value": 2644.51, "change_pct": -1.23, "unit": "pt", "as_of_date": "2022-05-06"},
+          {"code": "KOSDAQ", "name": "코스닥", "value": 884.22, "change_pct": -1.76, "unit": "pt", "as_of_date": "2022-05-06"}
+        ],
+        "indicators": [
+          {"code": "US10Y", "name": "미국 10년물 금리", "value": 3.12, "unit": "%", "as_of_date": "2022-05-06"},
+          {"code": "NASDAQ_PREV", "name": "나스닥 전일 종가", "value": 12317.69, "change_pct": -4.99, "unit": "pt", "as_of_date": "2022-05-05"}
+        ],
+        "risk_factors": [
+          "기술주 변동성 확대와 추가 긴축",
+          "평균 매입단가만 낮추려는 무계획 물타기",
+          "손실 때문에 매도를 미루는 본전 심리"
+        ]
+      },
+      "news": [
+        {
+          "news_id": "GRH22-T2-N01",
+          "published_at": "2022-05-05T08:35:00+09:00",
+          "title": "연준 0.5%p 인상, 시장은 우선 선반영에 주목",
+          "summary": "연준의 빅스텝과 양적긴축 결정이 예상 범위였고 당시 파월 의장이 0.75%포인트 인상 가능성을 일축하면서 안도 기대가 형성됐다.",
+          "source_name": "연합뉴스",
+          "source_url": "https://www.yna.co.kr/view/AKR20220505021600002",
+          "related_assets": ["035420", "035720", "133690", "069500"],
+          "importance": "medium",
+          "display_order": 1
+        },
+        {
+          "news_id": "GRH22-T2-N02",
+          "published_at": "2022-05-06T17:00:00+09:00",
+          "title": "나스닥 4.99% 급락에 NAVER·카카오 동반 하락",
+          "summary": "미국 기술주 급락의 영향으로 국내 대표 성장주가 큰 폭으로 하락하며 전날의 안도 심리가 빠르게 사라졌다.",
+          "source_name": "KBS",
+          "source_url": "https://news.kbs.co.kr/news/view.do?ncd=5457295",
+          "related_assets": ["035420", "035720", "133690"],
+          "importance": "high",
+          "display_order": 2
+        }
+      ]
+    },
+    {
+      "turn_no": 3,
+      "market_date": "2022-06-16",
+      "next_market_date": "2022-09-22",
+      "title": "28년 만의 자이언트스텝, 그런데 증시는 반등",
+      "phase": "불확실성 해소 반등",
+      "summary": "연준이 0.75%포인트를 올렸지만 예상에 부합했다는 해석으로 증시는 잠시 반등했다. 반등이 추세 전환인지는 아직 확인되지 않았다.",
+      "market_state": {
+        "sentiment": "혼조",
+        "sentiment_score": 44,
+        "sector_state": "낙폭 과대주 기술적 반등",
+        "indices": [
+          {"code": "KOSPI", "name": "코스피", "value": 2451.41, "change_pct": 0.16, "unit": "pt", "as_of_date": "2022-06-16"},
+          {"code": "KOSDAQ", "name": "코스닥", "value": 802.15, "change_pct": 0.34, "unit": "pt", "as_of_date": "2022-06-16"}
+        ],
+        "indicators": [
+          {"code": "US10Y", "name": "미국 10년물 금리", "value": 3.31, "unit": "%", "as_of_date": "2022-06-16"},
+          {"code": "USDKRW", "name": "원/달러 환율", "value": 1288.18, "unit": "원", "as_of_date": "2022-06-16"}
+        ],
+        "risk_factors": [
+          "하루 반등을 추세 전환으로 오인할 가능성",
+          "향후 0.5~0.75%포인트 추가 인상 가능성",
+          "물가와 경기침체 위험의 동시 확대"
+        ]
+      },
+      "news": [
+        {
+          "news_id": "GRH22-T3-N01",
+          "published_at": "2022-06-16T09:44:00+09:00",
+          "title": "연준, 28년 만에 기준금리 0.75%p 인상",
+          "summary": "연준이 인플레이션 대응을 위해 자이언트스텝을 단행했고 다음 회의에서도 0.5%포인트 또는 0.75%포인트 인상 가능성을 열어뒀다.",
+          "source_name": "뉴시스",
+          "source_url": "https://www.newsis.com/view/NISX20220616_0001909091",
+          "related_assets": ["035420", "035720", "133690", "114260"],
+          "importance": "high",
+          "display_order": 1
+        },
+        {
+          "news_id": "GRH22-T3-N02",
+          "published_at": "2022-06-16T10:25:00+09:00",
+          "title": "한국은행, 자이언트스텝은 예상에 부합했다고 평가",
+          "summary": "큰 폭의 인상 자체보다 정책 불확실성 완화가 먼저 반영되며 미국 증시가 반등했지만 향후 물가 경로는 여전히 불확실했다.",
+          "source_name": "이데일리",
+          "source_url": "https://www.edaily.co.kr/News/Read?mediaCodeNo=257&newsId=01879446632362376",
+          "related_assets": ["069500", "035420", "035720", "105560"],
+          "importance": "medium",
+          "display_order": 2
+        }
+      ]
+    },
+    {
+      "turn_no": 4,
+      "market_date": "2022-09-22",
+      "next_market_date": "2022-11-11",
+      "title": "세 번째 자이언트스텝과 1,400원 환율",
+      "phase": "긴축 정점 공포",
+      "summary": "세 차례 연속 자이언트스텝과 더 높아진 최종금리 전망에 원/달러 환율이 1,400원을 넘고 성장주는 52주 신저가를 기록했다.",
+      "market_state": {
+        "sentiment": "극심한 공포",
+        "sentiment_score": 16,
+        "sector_state": "성장주 52주 신저가",
+        "indices": [
+          {"code": "KOSPI", "name": "코스피", "value": 2332.31, "change_pct": -0.63, "unit": "pt", "as_of_date": "2022-09-22"},
+          {"code": "KOSDAQ", "name": "코스닥", "value": 751.41, "change_pct": -0.46, "unit": "pt", "as_of_date": "2022-09-22"}
+        ],
+        "indicators": [
+          {"code": "US10Y", "name": "미국 10년물 금리", "value": 3.71, "unit": "%", "as_of_date": "2022-09-22"},
+          {"code": "USDKRW", "name": "원/달러 환율", "value": 1403.66, "unit": "원", "as_of_date": "2022-09-22"}
+        ],
+        "risk_factors": [
+          "고금리 장기화와 실적 전망 하향",
+          "원화 약세에 따른 외국인 수급 악화",
+          "신저가만 보고 전량 투매하거나 무조건 저가매수할 위험"
+        ]
+      },
+      "news": [
+        {
+          "news_id": "GRH22-T4-N01",
+          "published_at": "2022-09-22T09:40:00+09:00",
+          "title": "코스피 하락·환율 1,400원 돌파, 성장주 신저가",
+          "summary": "세 번째 자이언트스텝 여파로 원/달러 환율이 금융위기 이후 처음 1,400원을 넘었고 NAVER와 카카오는 52주 신저가를 경신했다.",
+          "source_name": "연합뉴스",
+          "source_url": "https://www.yna.co.kr/view/AKR20220922042551002",
+          "related_assets": ["035420", "035720", "069500", "114800"],
+          "importance": "high",
+          "display_order": 1
+        },
+        {
+          "news_id": "GRH22-T4-N02",
+          "published_at": "2022-09-22T11:30:00+09:00",
+          "title": "시장 예상보다 매파적인 점도표, 최종금리 전망 상향",
+          "summary": "금리 결정 폭은 예상에 부합했지만 연준 점도표가 더 높은 금리 수준과 장기간의 긴축 가능성을 가리켰다.",
+          "source_name": "조선비즈",
+          "source_url": "https://biz.chosun.com/policy/policy_sub/2022/09/22/MMCIJ2SCZZCEHI2P2NVG5RYXTQ/",
+          "related_assets": ["035420", "035720", "133690", "114260"],
+          "importance": "high",
+          "display_order": 2
+        }
+      ]
+    },
+    {
+      "turn_no": 5,
+      "market_date": "2022-11-11",
+      "next_market_date": null,
+      "title": "물가 둔화 한 번에 성장주가 폭등하다",
+      "phase": "급반등과 피벗 기대",
+      "summary": "미국 10월 CPI가 예상을 밑돌자 금리 인상 속도 조절 기대가 퍼졌고 NAVER·카카오가 급등했다. 한 번의 지표가 추세 전환을 보장하지는 않는다.",
+      "market_state": {
+        "sentiment": "강한 낙관",
+        "sentiment_score": 78,
+        "sector_state": "낙폭 과대 성장주 급반등",
+        "indices": [
+          {"code": "KOSPI", "name": "코스피", "value": 2483.16, "change_pct": 3.37, "unit": "pt", "as_of_date": "2022-11-11"},
+          {"code": "KOSDAQ", "name": "코스닥", "value": 731.22, "change_pct": 3.31, "unit": "pt", "as_of_date": "2022-11-11"}
+        ],
+        "indicators": [
+          {"code": "NASDAQ_PREV", "name": "나스닥 전일 종가", "value": 11114.15, "change_pct": 7.35, "unit": "pt", "as_of_date": "2022-11-10"},
+          {"code": "USDKRW", "name": "원/달러 환율", "value": 1349.37, "change_pct": -4.20, "unit": "원", "as_of_date": "2022-11-11"}
+        ],
+        "risk_factors": [
+          "한 번의 CPI 둔화를 피벗 확정으로 해석할 위험",
+          "하루 급등 뒤 손실 만회를 위한 추격매수",
+          "경기 둔화와 기업 실적 하향 가능성"
+        ]
+      },
+      "news": [
+        {
+          "news_id": "GRH22-T5-N01",
+          "published_at": "2022-11-11T07:39:00+09:00",
+          "title": "미국 CPI 예상 하회에 나스닥 7.35% 폭등",
+          "summary": "10월 미국 소비자물가 상승률이 예상보다 낮게 나오면서 긴축 속도 조절 기대가 커졌고 미국 기술주가 급반등했다.",
+          "source_name": "경향신문",
+          "source_url": "https://www.khan.co.kr/article/202211110739001",
+          "related_assets": ["133690", "035420", "035720"],
+          "importance": "high",
+          "display_order": 1
+        },
+        {
+          "news_id": "GRH22-T5-N02",
+          "published_at": "2022-11-11T16:08:00+09:00",
+          "title": "코스피·코스닥 3%대 급등, NAVER·카카오 랠리",
+          "summary": "물가 둔화 기대와 환율 급락이 국내 성장주 반등으로 이어졌지만 경기 둔화와 높은 금리 수준은 여전히 남아 있었다.",
+          "source_name": "한국경제",
+          "source_url": "https://www.hankyung.com/article/202211113548Y",
+          "related_assets": ["035420", "035720", "069500", "114800"],
+          "importance": "high",
+          "display_order": 2
+        }
+      ]
+    }
+  ]
+}

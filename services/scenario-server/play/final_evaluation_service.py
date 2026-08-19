@@ -1,4 +1,4 @@
-"""6턴 종료 후 행동 패턴과 포트폴리오를 종합한다."""
+"""시나리오 마지막 턴 종료 후 행동 패턴과 포트폴리오를 종합한다."""
 from __future__ import annotations
 
 from collections import defaultdict
@@ -39,7 +39,7 @@ def _portfolio_metrics(
     snapshots: list[dict],
     orders: list[dict],
 ) -> dict:
-    initial_value = int(session.get("initial_cash", 0))
+    initial_value = int(session.get("initial_value", session.get("initial_cash", 0)))
     final = next((item for item in reversed(snapshots) if item.get("kind") == "FINAL"), None)
     if final is None:
         final = snapshots[-1] if snapshots else {"total_value": initial_value, "positions": []}
