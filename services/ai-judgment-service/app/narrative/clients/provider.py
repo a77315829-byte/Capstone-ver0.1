@@ -1,5 +1,5 @@
 """LLM_PROVIDER 설정에 따라 gpt_client/ollama_client 중 하나로 분기한다.
-router.py와 news_classifier.py는 이 모듈만 통해 LLM을 호출해야 provider 전환이 한 곳에서 관리된다.
+router.py는 이 모듈만 통해 LLM을 호출해야 provider 전환이 한 곳에서 관리된다.
 """
 from app.config import settings
 from app.narrative.clients.gpt_client import call_gpt4o_json, call_gpt4o_text

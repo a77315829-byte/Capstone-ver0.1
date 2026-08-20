@@ -5,7 +5,7 @@ def build_reasoning_prompt(judge: str, weighted_factors: list[dict]) -> tuple[st
         "새로운 수치나 판단을 만들어내지 마라. 2~3문장으로 간결하게."
     )
     factor_lines = "\n".join(
-        f"- [{f['type']}] {f['factor']} ({f['weight']}%)" for f in weighted_factors
+        f"- {f['factor']} ({f['weight']}%)" for f in weighted_factors
     )
     user = f"판단: {judge}\n요인:\n{factor_lines}\n\n위 내용을 바탕으로 판단근거를 서술해라."
     return system, user

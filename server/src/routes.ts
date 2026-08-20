@@ -364,6 +364,97 @@ router.get("/api/ai-judgment/:symbol", async (req, res) => {
 		);
 	}
 });
+router.post("/api/ai-judgment/:symbol/watch", async (req, res) => {
+	try {
+		const baseUrl =
+			process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8002";
+
+		const response = await axios.post(
+			`${baseUrl}/judgment/${req.params.symbol}/watch`,
+		);
+
+		return res.json(response.data);
+	} catch (error: any) {
+		console.error(
+			"AI Judgment watch request failed:",
+			error.response?.data || error.message,
+		);
+
+		return res.status(error.response?.status || 502).json(
+			error.response?.data || {
+				error: "AI Judgment Service 연결 실패",
+			},
+		);
+	}
+});
+router.delete("/api/ai-judgment/:symbol/watch", async (req, res) => {
+	try {
+		const baseUrl =
+			process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8002";
+
+		const response = await axios.delete(
+			`${baseUrl}/judgment/${req.params.symbol}/watch`,
+		);
+
+		return res.json(response.data);
+	} catch (error: any) {
+		console.error(
+			"AI Judgment unwatch request failed:",
+			error.response?.data || error.message,
+		);
+
+		return res.status(error.response?.status || 502).json(
+			error.response?.data || {
+				error: "AI Judgment Service 연결 실패",
+			},
+		);
+	}
+});
+router.get("/api/ai-judgment/:symbol/history", async (req, res) => {
+	try {
+		const baseUrl =
+			process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8002";
+
+		const response = await axios.get(
+			`${baseUrl}/judgment/${req.params.symbol}/history`,
+			{ params: req.query },
+		);
+
+		return res.json(response.data);
+	} catch (error: any) {
+		console.error(
+			"AI Judgment history request failed:",
+			error.response?.data || error.message,
+		);
+
+		return res.status(error.response?.status || 502).json(
+			error.response?.data || {
+				error: "AI Judgment Service 연결 실패",
+			},
+		);
+	}
+});
+router.post("/api/ai-judgment/compare", async (req, res) => {
+	try {
+		const baseUrl =
+			process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8002";
+
+		const response = await axios.post(`${baseUrl}/judgment/compare`, req.body);
+
+		return res.json(response.data);
+	} catch (error: any) {
+		console.error(
+			"AI Judgment compare request failed:",
+			error.response?.data || error.message,
+		);
+
+		return res.status(error.response?.status || 502).json(
+			error.response?.data || {
+				error: "AI Judgment Service 연결 실패",
+			},
+		);
+	}
+});
 
 // Stocks routes
 router.get("/api/stocks/search/:query", stocksController.search);

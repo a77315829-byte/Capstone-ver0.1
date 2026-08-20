@@ -14,14 +14,13 @@ async def compare_judgment(payload: CompareRequest):
 
     explanation = await generate_comparison(payload.user_judge, doc["judge"], doc["factors"])
 
-    highlighted: dict[str, list[str]] = {"직접요인": [], "간접요인": []}
-    for f in doc["factors"]:
-        key = "직접요인" if f["type"] == "직접" else "간접요인"
-        highlighted[key].append(f["factor"])
+    highlighted = [f["factor"] for f in doc["factors"]]
 
     return CompareResponse(
         user_judge=payload.user_judge,
         ai_judge=doc["judge"],
+        # probabilities 필드 도입 전에 저장된 이력 문서에는 이 키가 없다.
+        ai_probabilities=doc.get("probabilities") or {"매수": 0.0, "매도": 0.0, "관망": 0.0},
         explanation=explanation,
         highlighted_factors=highlighted,
     )

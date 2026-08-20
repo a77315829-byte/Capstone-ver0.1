@@ -14,6 +14,8 @@ async def get_judgment(symbol: str):
         symbol=symbol,
         judge=doc["judge"],
         confidence=doc["confidence"],
+        # probabilities 필드 도입 전에 저장된 이력 문서에는 이 키가 없다.
+        probabilities=doc.get("probabilities") or {"매수": 0.0, "매도": 0.0, "관망": 0.0},
         summary=doc["reason"],
         factors=[Factor(**f) for f in doc["factors"]],
         computed_at=doc["time"],
