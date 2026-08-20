@@ -1,0 +1,76 @@
+{
+  "scenario_id": "growth_rate_hike_2022",
+  "turn_no": 4,
+  "turn_title": "세 번째 자이언트스텝과 1,400원 환율",
+  "turn_context": "연준은 세 차례 연속 0.75%포인트를 인상했고 점도표는 더 높은 최종금리를 가리켰다. 환율은 1,400원을 넘어섰고 NAVER·카카오는 52주 신저가를 기록했다. 낮아진 가격과 악화된 거시 환경을 함께 판단해야 한다.",
+  "questions_used": ["Q1", "Q13", "Q19", "Q29", "Q36", "Q39"],
+  "answer_rules": {
+    "Q1": {
+      "metric": "M1",
+      "good": ["금리", "환율", "가격 수준"],
+      "trap": ["원자재", "공급망"],
+      "note": "최종금리 상향, 1,400원 환율, 신저가 가격 수준이 핵심이다."
+    },
+    "Q13": {
+      "metric": "M3",
+      "good": ["수급 악화", "실적 악화", "집중 위험"],
+      "trap": ["규제 강화", "공급망 변화"],
+      "note": "외국인 수급, 경기 둔화에 따른 실적 하향, 기존 성장주 집중을 우선 봐야 한다."
+    },
+    "Q19": {
+      "metric": "M3",
+      "good": ["가격 선반영", "분산 효과", "양호한 재무"],
+      "trap": ["정책 지원", "빠른 안정"],
+      "note": "큰 폭 하락에 일부 악재가 반영됐고 분산·기업 재무가 완화 요인이 될 수 있다. 빠른 안정이나 정책 지원은 확인되지 않았다."
+    },
+    "Q29": {
+      "metric": "M2",
+      "good": ["적정 수준", "저평가", "판단 어려움"],
+      "trap": ["매우 저평가"],
+      "note": "주가는 크게 내렸지만 금리와 실적 가정도 변했다. 과거 가격과 비교해 무조건 매우 저평가라고 단정하면 앵커링이다."
+    },
+    "Q36": {
+      "metric": "M4",
+      "good": ["일부 대응", "단계적 대응", "절반 대응"],
+      "trap": ["전량 대응"],
+      "note": "집중을 줄이거나 현금·분산자산을 활용할 이유는 강해졌지만 신저가에서 전량 투매 또는 전량 저가매수는 모두 과도하다."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "높은 최종금리와 환율이 수급·실적·가치평가에 미치는 악영향, 큰 하락의 선반영 가능성을 함께 연결하고 분할 대응을 제시하면 고득점이다."
+    }
+  },
+  "factors": [
+    {"factor_id": "THIRD_GIANT_STEP", "importance": "상", "direction": "악재", "note": "세 차례 연속 0.75%포인트 인상"},
+    {"factor_id": "HAWKISH_DOT_PLOT", "importance": "상", "direction": "악재", "note": "예상보다 높은 최종금리와 고금리 장기화"},
+    {"factor_id": "FX_1400", "importance": "상", "direction": "악재", "note": "원/달러 1,400원 돌파와 외국인 수급 부담"},
+    {"factor_id": "PRICE_ALREADY_DOWN", "importance": "상", "direction": "호재", "note": "52주 신저가로 일부 위험은 가격에 반영"},
+    {"factor_id": "EARNINGS_DOWNGRADE", "importance": "중", "direction": "악재", "note": "경기 둔화와 기업 실적 전망 하향 가능성"}
+  ],
+  "assets": [
+    {"asset_id": "035420", "relevance": "매우높음", "is_trap": true, "reason": "가격은 낮아졌지만 고금리·실적 부담 속 무조건 물타기는 위험"},
+    {"asset_id": "035720", "relevance": "매우높음", "is_trap": true, "reason": "신저가만 보고 집중을 늘리면 앵커링 위험"},
+    {"asset_id": "114800", "relevance": "높음", "is_trap": true, "reason": "공포가 극심한 시점의 인버스 추격은 반등에 취약"},
+    {"asset_id": "017670", "relevance": "높음", "is_trap": false, "reason": "방어적 현금흐름과 배당으로 변동성 완화"},
+    {"asset_id": "114260", "relevance": "높음", "is_trap": false, "reason": "짧은 듀레이션 채권으로 주식 집중 완화"},
+    {"asset_id": "069500", "relevance": "중간", "is_trap": false, "reason": "개별 성장주보다 분산된 시장 노출"}
+  ],
+  "traps": [
+    {"trap_id": "TRAP_OLD_HIGH_ANCHOR", "kind": "reason", "target": "과거 고점 대비 저평가", "explanation": "과거 고점은 금리와 실적 가정이 달랐으므로 현재 적정가의 근거가 아니다."},
+    {"trap_id": "TRAP_CAPITULATION", "kind": "action", "target": "전량 투매", "explanation": "공포와 신저가만으로 전량 매도하면 선반영과 반등 가능성을 무시한다."},
+    {"trap_id": "TRAP_CATCH_FALLING_KNIFE", "kind": "action", "target": "전량 저가매수", "explanation": "낮은 가격과 개선된 전망은 같은 말이 아니다."}
+  ],
+  "ai_baseline": {
+    "action_summary": "남은 성장주 집중을 일부 줄이고 현금·SK텔레콤·단기 국채로 분산한다. 신저가 성장주와 인버스 모두 큰 비중 추격은 피한다.",
+    "rationale": "거시 부담이 더 오래갈 가능성이 커졌지만 급락으로 일부 악재도 반영됐다. 양극단 대신 목표 비중을 정한 분할 리밸런싱이 적절하다."
+  },
+  "action_rule": {
+    "max_single_weight": 25,
+    "good_cash_min": 35,
+    "trap_assets": ["035420", "035720", "114800"],
+    "core_assets": ["017670", "114260", "069500"],
+    "expected_action_score": [-2.0, 0.5],
+    "note": "일부 축소·분산·소량 헤지가 적정하다. 성장주 또는 인버스를 신저가에서 크게 추격하면 감점한다."
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "scenario_id": "growth_rate_hike_2022",
+  "turn_no": 5,
+  "turn_title": "물가 둔화 한 번에 성장주가 폭등하다",
+  "turn_context": "미국 10월 CPI가 시장 예상을 밑돌자 나스닥과 국내 성장주가 급등하고 원화도 강세를 보였다. 긴축 속도 조절 기대는 합리적이지만 한 번의 물가 지표만으로 금리 인상 종료나 실적 회복이 확정된 것은 아니다.",
+  "questions_used": ["Q1", "Q5", "Q17", "Q22", "Q36", "Q39"],
+  "answer_rules": {
+    "Q1": {
+      "metric": "M1",
+      "good": ["물가", "금리", "가격 수준"],
+      "trap": ["투자 심리", "공급망"],
+      "note": "CPI 둔화, 금리 경로, 하루 급등 뒤 가격 수준이 핵심이다. 시장 분위기만 좇으면 FOMO에 빠진다."
+    },
+    "Q5": {
+      "metric": "M2",
+      "good": ["일부 반영", "대부분 반영"],
+      "trap": ["미반영"],
+      "note": "나스닥 7.35%, 국내 지수 3%대 급등으로 좋은 소식은 이미 상당 부분 즉시 반영됐다."
+    },
+    "Q17": {
+      "metric": "M3",
+      "good": ["보통", "높음"],
+      "trap": ["매우 낮음"],
+      "note": "물가가 둔화해도 높은 금리와 경기 둔화의 영향은 수개월 이어질 수 있다. 위험 장기화 가능성을 지워서는 안 된다."
+    },
+    "Q22": {
+      "metric": "M5",
+      "good": ["빠른 회복", "실적 개선", "사건 장기화"],
+      "trap": ["반대 가능성 없음"],
+      "note": "피벗 기대에 따른 회복과 경기·물가 재악화로 긴축이 길어질 가능성을 함께 열어둬야 한다."
+    },
+    "Q36": {
+      "metric": "M4",
+      "good": ["일부 대응", "단계적 대응"],
+      "trap": ["대부분 대응", "전량 대응"],
+      "note": "거시 방향이 개선될 가능성에는 단계적으로 참여할 수 있지만 급등 당일 큰 비중 추격은 피해야 한다."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "CPI 둔화→금리 기대 완화→성장주 가치평가 반등의 경로와 이미 급등한 가격, 여전한 경기·실적 위험을 함께 설명하면 고득점이다."
+    }
+  },
+  "factors": [
+    {"factor_id": "CPI_BELOW_EXPECTATION", "importance": "상", "direction": "호재", "note": "10월 미국 CPI가 시장 예상을 하회"},
+    {"factor_id": "SLOWER_HIKE_EXPECTATION", "importance": "상", "direction": "호재", "note": "연준 금리 인상 속도 조절 기대"},
+    {"factor_id": "GROWTH_REPRICING", "importance": "상", "direction": "호재", "note": "할인율 기대 완화로 성장주 급반등"},
+    {"factor_id": "NEWS_PRICED_IN_FAST", "importance": "상", "direction": "악재", "note": "하루 급등으로 호재가 빠르게 가격에 반영"},
+    {"factor_id": "RECESSION_EARNINGS_RISK", "importance": "중", "direction": "악재", "note": "경기 둔화와 실적 하향 위험은 남음"}
+  ],
+  "assets": [
+    {"asset_id": "035420", "relevance": "매우높음", "is_trap": true, "reason": "직접 반등 수혜지만 하루 급등 뒤 손실 만회 추격은 위험"},
+    {"asset_id": "035720", "relevance": "매우높음", "is_trap": true, "reason": "반등 폭이 커 신규 큰 비중 추격 시 변동성 위험"},
+    {"asset_id": "133690", "relevance": "높음", "is_trap": false, "reason": "글로벌 기술주 분산 참여 수단이나 소량 단계적 접근 필요"},
+    {"asset_id": "069500", "relevance": "높음", "is_trap": false, "reason": "개별 성장주보다 분산된 위험자산 참여 수단"},
+    {"asset_id": "114800", "relevance": "높음", "is_trap": true, "reason": "급반등 뒤 뒤늦은 인버스 매수도 단기 방향 베팅"},
+    {"asset_id": "017670", "relevance": "중간", "is_trap": false, "reason": "기존 방어 비중을 유지해 포트폴리오 변동성 완화"}
+  ],
+  "traps": [
+    {"trap_id": "TRAP_FOMO_REBUY", "kind": "action", "target": "NAVER·카카오 급등 추격", "explanation": "손실을 빨리 만회하려는 급등 추격은 가격 반영을 무시한다."},
+    {"trap_id": "TRAP_PIVOT_CONFIRMED", "kind": "reason", "target": "금리 인상 종료 확정", "explanation": "한 번의 CPI 둔화는 속도 조절 근거이지 긴축 종료 확정이 아니다."},
+    {"trap_id": "TRAP_REVENGE_INVERSE", "kind": "asset", "target": "114800", "explanation": "급등이 과하다고 느껴 인버스에 크게 베팅하는 것도 반대 방향의 감정 매매다."}
+  ],
+  "ai_baseline": {
+    "action_summary": "기존 분산 구조를 유지하면서 KODEX 200 또는 나스닥100 ETF에 일부·단계적으로만 참여한다. NAVER·카카오 급등 추격은 자제한다.",
+    "rationale": "물가 둔화는 성장주에 의미 있는 호재지만 하루 만에 상당 부분 반영됐다. 긴축 종료와 실적 회복은 미확정이므로 현금을 남긴 단계적 재진입이 적절하다."
+  },
+  "action_rule": {
+    "max_single_weight": 30,
+    "good_cash_min": 20,
+    "trap_assets": ["035420", "035720", "114800"],
+    "core_assets": ["133690", "069500", "017670"],
+    "expected_action_score": [0.0, 1.0],
+    "note": "관망부터 일부·단계적 매수가 적정하다. 급등한 개별 성장주 또는 인버스에 큰 비중으로 베팅하면 감점한다."
+  }
+}

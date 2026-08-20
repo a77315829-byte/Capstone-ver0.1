@@ -1,17 +1,19 @@
-# Anttitude Scenario Server — Beta v1
+# Anttitude Scenario Server — Beta v3
 
-AI 반도체 6턴 시나리오를 실행하고, 주문·판단·포트폴리오 변화를 기록한 뒤
+AI 반도체 6턴, 2022 성장주·금리 충격 5턴, 2023 SVB 뱅크런 4턴 시나리오를
+실행하고 주문·판단·포트폴리오 변화를 기록한 뒤
 행동 패턴과 종합평가를 마이페이지용 데이터로 만드는 FastAPI 서버입니다.
 
 ## 구현된 흐름
 
 1. JSON 콘텐츠를 MongoDB에 반복 안전하게 시드
-2. 시나리오 세션 생성(초기자산 1,000만원)
+2. 시나리오별 현금·초기 보유주식으로 세션 생성
 3. 턴별 뉴스·시장상태·종목·차트 조회
-4. 턴 기준일 종가로 즉시 매수/매도
-5. 객관식 5문항과 자유서술 제출 및 기존 6축 채점
-6. 6턴 종료 후 2024-07-19 종가로 최종 평가
-7. 반복 행동·포트폴리오 지표·사용자 누적 프로필 생성
+4. 일봉에서 만든 고정 10단계 모의 호가로 시장가·지정가 IOC 체결
+5. 객관식 5문항과 자유서술을 함께 사용한 M1~M5·PORTFOLIO 채점
+6. 시나리오별 마지막 턴 종료 후 지정된 최종 거래일 종가로 평가
+7. 이전 턴 조언의 준수·반복 여부를 다음 턴과 최종 피드백에 반영
+8. 반복 행동·포트폴리오 지표·사용자 누적 프로필 생성
 
 수익률은 판단 점수에 포함되지 않고 별도 결과 지표로 저장됩니다.
 
@@ -32,10 +34,16 @@ Copy-Item .env.example .env
 
 ```powershell
 python -m scripts.seed_database --scenario semiconductor
+python -m scripts.seed_database --scenario growth_rate_hike_2022
+python -m scripts.seed_database --scenario svb_bank_run_2023
 ```
 
-`scenario.json`, `assets.json`, `turn_displays.json`, `rubric_turn1~6.json`,
+각 시나리오의 `scenario.json`, `assets.json`, `turn_displays.json`, `rubric_turn*.json`,
 `questions.json`을 MongoDB에 upsert합니다. 다시 실행해도 중복되지 않습니다.
+
+`simulation.initial_positions`가 있으면 세션은 해당 주식을 보유한 상태로 시작합니다.
+`initial_cash`는 실제 현금, `initial_value`는 첫 턴 종가로 평가한 현금+주식 총자산이며
+시나리오 수익률은 `initial_value`를 기준으로 계산합니다.
 
 ## 3. 실제 과거 일봉 적재
 
@@ -44,6 +52,17 @@ KIS 키를 `.env`에 입력한 뒤 실행합니다.
 ```powershell
 python -m scripts.import_kis_prices --scenario semiconductor --start 20231101 --end 20240719
 ```
+
+KIS 키가 없는 로컬 개발 환경에서는 Yahoo Finance의 실제 KRX 과거 일봉을 적재할 수
+있습니다. 성장주·금리 충격 시나리오의 기본 기간은 다음 명령으로 준비됩니다.
+
+```powershell
+python -m scripts.import_yahoo_prices --scenario growth_rate_hike_2022 --start 20211201 --end 20221229
+python -m scripts.import_yahoo_prices --scenario svb_bank_run_2023 --start 20230201 --end 20230407
+```
+
+Yahoo 보조 적재기는 KOSPI·ETF에 `.KS`, KOSDAQ에 `.KQ` 심볼을 사용하고 저장 문서의
+`source`를 `YAHOO_FINANCE_CHART`로 명시합니다.
 
 KIS를 당장 사용할 수 없으면 다음 열을 가진 CSV도 적재할 수 있습니다.
 
@@ -89,6 +108,7 @@ uvicorn main:app --reload --port 8000
 | 세션 시작 | `POST /api/scenarios/{scenario_id}/sessions` |
 | 현재 턴 화면 | `GET /api/sessions/{session_id}/turn` |
 | 종목 차트 | `GET /api/sessions/{session_id}/chart/{asset_id}` |
+| 모의 호가 | `GET /api/sessions/{session_id}/orderbook/{asset_id}` |
 | 주문 | `POST /api/sessions/{session_id}/orders` |
 | 판단 제출·채점·턴 이동 | `POST /api/sessions/{session_id}/turn/submit` |
 | 최종화 재시도 | `POST /api/sessions/{session_id}/finalize` |
@@ -115,7 +135,21 @@ uvicorn main:app --reload --port 8000
 {
   "asset_id": "000660",
   "side": "BUY",
-  "quantity": 10
+  "quantity": 10,
+  "order_type": "MARKET"
+}
+```
+
+지정가는 `order_type=LIMIT`과 `limit_price`를 함께 보냅니다. 기존 프론트처럼
+`order_type`을 생략하면 시장가로 처리합니다.
+
+```json
+{
+  "asset_id": "000660",
+  "side": "BUY",
+  "quantity": 10,
+  "order_type": "LIMIT",
+  "limit_price": 135000
 }
 ```
 
@@ -137,19 +171,76 @@ uvicorn main:app --reload --port 8000
 턴마다 문항 ID가 다르므로 위 예시를 고정 사용하지 말고 현재 턴 조회 응답을 기준으로
 폼을 구성해야 합니다.
 
+## 모의 호가와 체결
+
+현재 데이터에는 실제 과거 호가가 없으므로 서버는 해당 턴의 일봉 종가·거래량으로
+10단계 모의 호가를 생성합니다. 이 값은 `SIMULATED_FROM_DAILY_OHLCV`로 명시되며
+실제 당시 호가를 복원한 데이터가 아닙니다.
+
+- 종가 위 10단계는 매도호가, 아래 10단계는 매수호가
+- 한쪽 총잔량은 일 거래량의 0.1%이며 최소 100주, 최대 100,000주
+- 당일 시가 대비 종가 방향은 양쪽 총잔량에 최대 ±20%만 반영
+- 최초 조회 시 MongoDB `order_book_snapshots`에 저장하고 이후 같은 턴·종목은 재사용
+- 각 사용자 세션의 체결 수량만 해당 세션의 잔량에서 차감
+- 시장가는 가능한 호가를 순서대로 소진
+- 지정가는 가격 조건을 만족하는 호가만 소진
+- 미체결 잔량은 IOC 방식으로 즉시 취소
+
+주문 상태는 `FILLED`, `PARTIALLY_FILLED`, `CANCELLED` 중 하나입니다. 포트폴리오와
+M4 행동 파생은 요청 수량이 아니라 실제 체결 수량·금액만 사용합니다. 현재 턴 조회의
+`orders`에는 취소 주문을 포함한 전체 주문 이력이 들어갑니다.
+
+## 채점 방식 (`beta-v3-cross-turn-coaching`)
+
+자유서술은 M5에만 사용하지 않고 M1~M5 전체에 반영합니다.
+
+| 축 | 반영 입력 |
+|---|---|
+| M1 핵심 요인 식별 | 객관식 45% + 자유서술 요인 식별 55% |
+| M2 정보 해석 | 객관식 45% + 자유서술 영향 방향 해석 55% |
+| M3 위험 인식 | 객관식 45% + 자유서술의 위험·완화·불확실성 55% |
+| M4 행동-근거 정합성 | 자유서술↔실제 주문 55% + 행동 적합도 25% + 객관식 20% |
+| M5 논리 일관성 | 자유서술의 원인→영향→행동 연결 |
+| PORTFOLIO | 실제 현금·집중도·함정 종목 등 |
+
+`1` 같은 의미 없는 서술은 `INSUFFICIENT_RATIONALE`로 판정하며 M1~M4는 최대 2점,
+M5는 1점으로 제한합니다. 분석 결과는 각 턴 `scorecard.rationale_analysis`에 요인,
+방향 오류, 위험·완화 요인, 추론한 행동과 실제 행동 강도로 함께 저장합니다.
+
+외부 LLM은 이 점수 계산에 필요하지 않습니다. 피드백 문장 생성에만 선택적으로 사용하며,
+호출 실패 시에도 규칙 기반 피드백으로 턴이 정상 진행됩니다. 기존 완료 결과는 자동 재평가하지
+않으므로 변경 후 확인할 때는 새 시나리오 세션을 시작해야 합니다.
+
+## 턴 간 코칭 반영
+
+각 턴 피드백은 현재 감점 사유에서 최대 3개의 `next_actions`를 구조화해 저장합니다.
+다음 턴 조회 응답의 `coaching.reminders`에 직전 조언을 제공하고, 다음 턴 제출 시에는
+각 조언을 `FOLLOWED`, `REPEATED`, `NOT_VERIFIABLE` 중 하나로 판정합니다.
+
+이 판정은 학습 피드백에만 사용하며 점수를 추가로 가감하지 않습니다. 같은 문제를 반복하면
+현재 턴의 기존 M1~M5 기준에서 이미 감점되므로, 코칭 이력으로 다시 감점하지 않습니다.
+마지막 턴 종료 후에는 `coaching_progress`에 반영·반복·판단 불가 횟수와 아직 남은 개선 행동을
+집계하고 최종 `feedback.summary`, `feedback.coaching_summary`, `feedback.next_actions`에
+포함합니다.
+
 ## 자동 테스트
 
 테스트 데이터는 메모리에만 생성되며 실제 MongoDB를 수정하지 않습니다.
 
 ```powershell
-python -m unittest -v tests.test_beta_flow
+python -m unittest discover -v -s tests
 ```
 
-현재 테스트는 세션 시작, 주문, 6턴 제출, 최종평가, 사용자 누적 프로필까지 확인합니다.
+현재 테스트는 현금 전용·주식 보유형 세션 시작, 주문, 4턴·5턴·6턴 제출, 최종평가,
+사용자 누적 프로필과 함께 부실 서술의
+전 축 점수 제한, 정상 서술의 M1~M5 반영, 서술-행동 불일치, 이전 조언의 다음 턴 노출,
+조언 준수·반복 판정과 최종 집계, 10단계 호가 생성, 시장가·지정가·부분체결·잔량 차감을
+확인합니다.
 
 ## 베타 한계
 
-- 지정가·미체결·부분 체결은 없고 종가 즉시 체결만 지원합니다.
-- 과거 호가·체결·거래원 스냅샷은 아직 포함하지 않습니다.
+- 호가는 일봉에서 결정론적으로 생성한 교육용 모의 값이며 실제 과거 호가가 아닙니다.
+- 미체결 지정가를 다음 시점까지 유지하는 예약 주문과 주문 정정은 지원하지 않습니다.
+- 실제 과거 거래원 스냅샷은 포함하지 않습니다.
 - 인증 서버 연결 전이므로 `user_id`를 요청에서 받습니다. 배포 시 인증 토큰의 사용자 ID로 교체해야 합니다.
 - 패턴 분석은 규칙 기반 v1이며, 여러 시나리오에서 2회 이상 반복된 경우에만 안정적 성향으로 표시합니다.

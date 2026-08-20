@@ -164,6 +164,33 @@ class AppRepository:
             query["trade_date"] = date_query
         return self.store.find_many("daily_prices", query, sort=[("trade_date", 1)])
 
+    def get_orderbook_snapshot(
+        self,
+        scenario_id: str,
+        scenario_version: int,
+        turn_no: int,
+        asset_id: str,
+        generator_version: str,
+    ) -> dict | None:
+        return self.store.find_one(
+            "order_book_snapshots",
+            {
+                "scenario_id": scenario_id,
+                "scenario_version": scenario_version,
+                "turn_no": turn_no,
+                "asset_id": asset_id,
+                "generator_version": generator_version,
+            },
+        )
+
+    def save_orderbook_snapshot(self, snapshot: dict) -> None:
+        self.store.replace_one(
+            "order_book_snapshots",
+            {"snapshot_id": snapshot["snapshot_id"]},
+            snapshot,
+            upsert=True,
+        )
+
     # ── 실행 데이터 ──────────────────────────────────────────
     def create_session(self, session: dict) -> None:
         self.store.insert_one("scenario_sessions", session)
@@ -180,6 +207,27 @@ class AppRepository:
             {"session_id": session["session_id"]},
             session,
             upsert=False,
+        )
+
+    def list_user_sessions(self, user_id: str) -> list[dict]:
+        return self.store.find_many(
+            "scenario_sessions",
+            {"user_id": user_id},
+            sort=[("updated_at", -1), ("started_at", -1)],
+        )
+
+    def get_quiz_progress(self, user_id: str) -> dict | None:
+        return self.store.find_one(
+            "quiz_progress",
+            {"user_id": user_id},
+        )
+
+    def save_quiz_progress(self, progress: dict) -> None:
+        self.store.replace_one(
+            "quiz_progress",
+            {"user_id": progress["user_id"]},
+            progress,
+            upsert=True,
         )
 
     def insert_order(self, order: dict) -> None:

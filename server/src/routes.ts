@@ -264,6 +264,63 @@ router.post(
 		}
 	},
 );
+// 사용자별 시나리오 진행도
+router.get(
+    "/api/scenario-service/users/:userId/scenario-progress",
+    async (req, res) => {
+        try {
+            const response = await axios.get(
+                `${SCENARIO_SERVICE_URL}/api/users/${encodeURIComponent(
+                    req.params.userId,
+                )}/scenario-progress`,
+            );
+
+            return res.json(response.data);
+        } catch (error: any) {
+            return handleScenarioError(res, error);
+        }
+    },
+);
+
+// 사용자별 퀴즈 진행도 조회
+router.get(
+    "/api/scenario-service/users/:userId/quiz-progress",
+    async (req, res) => {
+        try {
+            const response = await axios.get(
+                `${SCENARIO_SERVICE_URL}/api/users/${encodeURIComponent(
+                    req.params.userId,
+                )}/quiz-progress`,
+                {
+                    params: req.query,
+                },
+            );
+
+            return res.json(response.data);
+        } catch (error: any) {
+            return handleScenarioError(res, error);
+        }
+    },
+);
+
+// 퀴즈 풀이/세션 완료 이벤트 저장
+router.post(
+    "/api/scenario-service/users/:userId/quiz-progress/events",
+    async (req, res) => {
+        try {
+            const response = await axios.post(
+                `${SCENARIO_SERVICE_URL}/api/users/${encodeURIComponent(
+                    req.params.userId,
+                )}/quiz-progress/events`,
+                req.body,
+            );
+
+            return res.status(response.status).json(response.data);
+        } catch (error: any) {
+            return handleScenarioError(res, error);
+        }
+    },
+);
 // ================================
 // AI Judgment Service
 // ================================

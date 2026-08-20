@@ -5,36 +5,80 @@ import {
 	DrawerContent,
 	DrawerOverlay,
 	Flex,
+	Icon,
 	Image,
 	Stack,
 	Text,
 } from "@chakra-ui/react";
+
 import {
 	Link as RouterLink,
 	useLocation,
 } from "react-router-dom";
+
+import type {
+	IconType,
+} from "react-icons";
+
+import {
+	FiBarChart2,
+} from "react-icons/fi";
+
+import {
+	LuHouse,
+	LuClock,
+	LuFileText,
+	LuBookOpen,
+} from "react-icons/lu";
+
 
 interface SidebarProps {
 	isOpen: boolean;
 	onClose: () => void;
 }
 
+
 interface NavigationItem {
 	label: string;
-	to?: string;
-	activePaths?: string[];
+	to: string;
+	activePaths: string[];
+	icon: IconType;
 }
+
 
 const NAVIGATION_ITEMS: NavigationItem[] = [
 	{
+		label: "마이페이지",
+		to: "/mypage",
+		activePaths: [
+			"/mypage",
+		],
+		icon: LuHouse,
+	},
+	{
 		label: "실시간 차트",
 		to: "/exchange",
-		activePaths: ["/exchange", "/stocks"],
+		activePaths: [
+			"/exchange",
+			"/stocks",
+		],
+		icon: FiBarChart2,
 	},
 	{
 		label: "과거 시나리오",
 		to: "/scenario",
-		activePaths: ["/scenario"],
+		activePaths: [
+			"/scenario",
+		],
+		icon: LuClock,
+	},
+	{
+		label: "실시간 뉴스",
+		to: "/news",
+		activePaths: [
+			"/news",
+		],
+		icon: LuFileText,
 	},
 	{
 		label: "금융 사전퀴즈",
@@ -46,35 +90,24 @@ const NAVIGATION_ITEMS: NavigationItem[] = [
 			"/dictionary",
 			"/quiz",
 		],
+		icon: LuBookOpen,
 	},
-	{
-		label: "시장반응 시뮬레이터",
-		to: "/simulator",
-		activePaths: ["/simulator"],
-	},
-	{
-		label: "실시간 뉴스",
-		to: "/news",
-		activePaths: ["/news"],
-	},
-	{
-		label: "AI 라면",
-		to: "/ai-judgment",
-		activePaths: ["/ai-judgment"],
-	},
-	{ label: "설정" },
 ];
+
 
 function isPathActive(
 	pathname: string,
-	activePaths: string[] = [],
-): boolean {
+	activePaths: string[],
+) {
 	return activePaths.some(
 		(path) =>
 			pathname === path ||
-			pathname.startsWith(`${path}/`),
+			pathname.startsWith(
+				`${path}/`,
+			),
 	);
 }
+
 
 function SidebarItem({
 	item,
@@ -83,51 +116,57 @@ function SidebarItem({
 	item: NavigationItem;
 	onNavigate?: () => void;
 }) {
-	const location = useLocation();
-	const active = isPathActive(
-		location.pathname,
-		item.activePaths,
-	);
+	const location =
+		useLocation();
 
-	const commonProps = {
-		h: "48px",
-		px: "18px",
-		align: "center",
-		borderRadius: "8px",
-		fontSize: "14px",
-		fontWeight: active ? "800" : "700",
-		letterSpacing: "-0.025em",
-		position: "relative" as const,
-		transition: "background-color 0.15s ease, color 0.15s ease",
-	};
-
-	if (!item.to) {
-		return (
-			<Flex
-				{...commonProps}
-				color="app.text"
-				opacity="0.72"
-				cursor="default"
-			>
-				<Text>{item.label}</Text>
-			</Flex>
+	const active =
+		isPathActive(
+			location.pathname,
+			item.activePaths,
 		);
-	}
 
 	return (
 		<Flex
-			{...commonProps}
 			as={RouterLink}
 			to={item.to}
-			bg={active ? "app.surface" : "transparent"}
-			color={active ? "brand.500" : "app.text"}
-			boxShadow={active ? "0 3px 10px rgba(86, 61, 38, 0.09)" : "none"}
+			h="48px"
+			px="18px"
+			align="center"
+			gap="12px"
+			position="relative"
+			borderRadius="8px"
+			bg={
+				active
+					? "white"
+					: "transparent"
+			}
+			color={
+				active
+					? "#F36F2A"
+					: "#29231E"
+			}
+			boxShadow={
+				active
+					? "0 4px 12px rgba(70, 48, 27, 0.08)"
+					: "none"
+			}
+			fontSize="14px"
+			fontWeight={
+				active
+					? "900"
+					: "700"
+			}
 			textDecoration="none"
+			transition="all .15s ease"
 			_hover={{
-				bg: active ? "app.surface" : "app.hover",
-				color: active ? "brand.500" : "app.text",
+				bg:
+					active
+						? "white"
+						: "#F8F1E8",
 			}}
-			onClick={onNavigate}
+			onClick={
+				onNavigate
+			}
 		>
 			{active && (
 				<Box
@@ -137,13 +176,24 @@ function SidebarItem({
 					bottom="7px"
 					w="4px"
 					borderRadius="0 999px 999px 0"
-					bg="brand.500"
+					bg="#F36F2A"
 				/>
 			)}
-			<Text>{item.label}</Text>
+
+			<Icon
+				as={item.icon}
+				boxSize="20px"
+				strokeWidth="2"
+				flexShrink={0}
+			/>
+
+			<Text>
+				{item.label}
+			</Text>
 		</Flex>
 	);
 }
+
 
 function SidebarContent({
 	onNavigate,
@@ -160,36 +210,42 @@ function SidebarContent({
 		>
 			<Flex
 				as={RouterLink}
-				to="/scenario"
+				to="/mypage"
 				align="center"
 				justify="center"
 				h="88px"
-				mb="4px"
+				mb="12px"
 				overflow="hidden"
-				onClick={onNavigate}
-				textDecoration="none"
+				onClick={
+					onNavigate
+				}
 			>
 				<Image
 					src="/logo.png?v=4"
 					alt="앤튜"
 					w="190px"
 					h="76px"
-					maxW="none"
-					maxH="none"
 					objectFit="contain"
 					transform="scale(1.28)"
-					transformOrigin="center"
 				/>
 			</Flex>
 
 			<Stack spacing="4px">
-				{NAVIGATION_ITEMS.map((item) => (
-					<SidebarItem
-						key={item.label}
-						item={item}
-						onNavigate={onNavigate}
-					/>
-				))}
+				{NAVIGATION_ITEMS.map(
+					(item) => (
+						<SidebarItem
+							key={
+								item.label
+							}
+							item={
+								item
+							}
+							onNavigate={
+								onNavigate
+							}
+						/>
+					),
+				)}
 			</Stack>
 
 			<Box
@@ -199,27 +255,43 @@ function SidebarContent({
 				borderRadius="8px"
 				bg="#F8F1E7"
 				borderWidth="1px"
-				borderColor="app.borderSoft"
+				borderColor="#E8DCCE"
 			>
 				<Text
 					fontSize="14px"
-					fontWeight="800"
-					letterSpacing="-0.025em"
+					fontWeight="900"
+					color="#29231E"
 				>
 					연속 학습 3일째!
 				</Text>
-				<Text mt="10px" fontSize="12px" color="app.subtleText">
-					꾸준함이 학습을 만듭니다.
+
+				<Text
+					mt="10px"
+					fontSize="12px"
+					color="#887D73"
+				>
+					꾸준함이 학습을
+					만듭니다.
 				</Text>
-				<Text mt="14px" fontSize="12px" fontWeight="700">
+
+				<Text
+					mt="14px"
+					fontSize="12px"
+					fontWeight="800"
+					color="#29231E"
+				>
 					3일 연속
 				</Text>
 			</Box>
 
-			<Box flex="1" minH="24px" />
+			<Box
+				flex="1"
+				minH="24px"
+			/>
 		</Flex>
 	);
 }
+
 
 export default function Sidebar({
 	isOpen,
@@ -228,15 +300,18 @@ export default function Sidebar({
 	return (
 		<>
 			<Box
-				display={{ base: "none", "2xl": "block" }}
+				display={{
+					base: "none",
+					"2xl": "block",
+				}}
 				position="fixed"
 				left="0"
 				top="0"
 				bottom="0"
 				w="246px"
-				bg="app.sidebar"
+				bg="#FBF7EE"
 				borderRightWidth="1px"
-				borderColor="app.border"
+				borderColor="#E8DCCE"
 				zIndex={1300}
 				overflowY="auto"
 			>
@@ -246,13 +321,22 @@ export default function Sidebar({
 			<Drawer
 				isOpen={isOpen}
 				placement="left"
-				onClose={onClose}
+				onClose={
+					onClose
+				}
 				size="xs"
 			>
 				<DrawerOverlay />
-				<DrawerContent bg="app.sidebar">
+
+				<DrawerContent
+					bg="#FBF7EE"
+				>
 					<DrawerBody p="0">
-						<SidebarContent onNavigate={onClose} />
+						<SidebarContent
+							onNavigate={
+								onClose
+							}
+						/>
 					</DrawerBody>
 				</DrawerContent>
 			</Drawer>

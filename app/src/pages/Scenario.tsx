@@ -35,6 +35,8 @@ type ScenarioApiItem = {
 	difficulty: string;
 	total_turns: number;
 	initial_cash: number;
+	event_period?: string;
+	initial_portfolio_label?: string;
 	learning_points: string[];
 };
 
@@ -46,13 +48,16 @@ type ScenarioItem = {
 	scenarioSlug: string;
 	title: string;
 	eventPeriod: string;
+	initialPortfolioLabel: string;
 	summary: string;
 	difficulty: "쉬움" | "보통" | "어려움";
 	estimatedMinutes: number;
 	keywords: string[];
 	learningPoints: string[];
 	status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
-	completedStepCount: number;
+    completedStepCount: number;
+    sessionId?: string | null;
+    progressPercent?: number;
 };
 
 const unwrapApiData = <T,>(payload: any): T => {
@@ -325,55 +330,72 @@ export default function Scenario() {
 };
 
 const loadScenarios = async () => {
-	try {
-		setIsLoading(true);
+    try {
+        setIsLoading(true);
 
-		const data = await scenarioService.getScenarios();
+        const userId = tokens.getUsername() || "USER-001";
 
-		const apiScenarios: ScenarioApiItem[] = Array.isArray(data)
-			? data
-			: [];
+        const [scenarioData, userProgress] = await Promise.all([
+            scenarioService.getScenarios(),
+            scenarioService.getUserProgress(userId).catch((error) => {
+                console.warn("시나리오 진행도 조회 실패:", error);
+                return null;
+            }),
+        ]);
 
-		const normalizedScenarios: ScenarioItem[] = apiScenarios.map(
-			(item) => ({
-				_id: item.scenario_id,
+        const apiScenarios: ScenarioApiItem[] = Array.isArray(scenarioData)
+            ? scenarioData
+            : [];
 
-				chapterId: 0,
-				chapterTitle: "과거 시나리오",
+        const progressMap = new Map(
+            (userProgress?.items ?? []).map((item) => [
+                item.scenario_id,
+                item,
+            ]),
+        );
 
-				scenarioNo: item.scenario_id,
-				scenarioSlug: item.scenario_id,
+        const normalizedScenarios: ScenarioItem[] = apiScenarios.map(
+            (item) => {
+                const progress = progressMap.get(item.scenario_id);
 
-				title: item.title,
-				eventPeriod: "과거 데이터",
-				summary: item.description,
+                return {
+                    _id: item.scenario_id,
+                    chapterId: 0,
+                    chapterTitle: "과거 시나리오",
+                    scenarioNo: item.scenario_id,
+                    scenarioSlug: item.scenario_id,
+                    title: item.title,
+                    eventPeriod: item.event_period ?? "과거 데이터",
+					initialPortfolioLabel:
+						item.initial_portfolio_label ??
+						`현금 ${item.initial_cash.toLocaleString("ko-KR")}원`,
+                    summary: item.description,
+                    difficulty: normalizeDifficulty(item.difficulty),
+                    estimatedMinutes: item.total_turns * 3,
+                    keywords: [],
+                    learningPoints: item.learning_points ?? [],
+                    status: progress?.status ?? "NOT_STARTED",
+                    completedStepCount: progress?.completed_turns ?? 0,
+                    sessionId: progress?.session_id ?? null,
+                    progressPercent: progress?.progress_percent ?? 0,
+                };
+            },
+        );
 
-				difficulty: normalizeDifficulty(item.difficulty),
+        setScenarios(normalizedScenarios);
+        setSelectedScenario(normalizedScenarios[0] ?? null);
+    } catch (error) {
+        console.error(error);
 
-				estimatedMinutes: item.total_turns * 3,
-
-				keywords: [],
-				learningPoints: item.learning_points ?? [],
-
-				status: "NOT_STARTED",
-				completedStepCount: 0,
-			}),
-		);
-
-		setScenarios(normalizedScenarios);
-		setSelectedScenario(normalizedScenarios[0] ?? null);
-	} catch (error) {
-		console.error(error);
-
-		toast({
-			title: "시나리오를 불러오지 못했습니다.",
-			description: "새 시나리오 서버 연결 상태를 확인하세요.",
-			status: "error",
-			isClosable: true,
-		});
-	} finally {
-		setIsLoading(false);
-	}
+        toast({
+            title: "시나리오를 불러오지 못했습니다.",
+            description: "새 시나리오 서버 연결 상태를 확인하세요.",
+            status: "error",
+            isClosable: true,
+        });
+    } finally {
+        setIsLoading(false);
+    }
 };
 
 	useEffect(() => {
@@ -418,9 +440,18 @@ const loadScenarios = async () => {
 	}, [scenarios]);
 
 	const handleStartScenario = async (scenario: ScenarioItem) => {
-		if (isStartingScenario) return;
+        if (isStartingScenario) return;
 
-		try {
+        if (scenario.status === "IN_PROGRESS" && scenario.sessionId) {
+            navigate(
+                `/scenario/play/${scenario.scenarioSlug}?sessionId=${encodeURIComponent(
+                    scenario.sessionId,
+                )}`,
+            );
+            return;
+        }
+
+        try {
 			setIsStartingScenario(true);
 
 			const userId = tokens.getUsername() || "USER-001";
@@ -663,6 +694,11 @@ const loadScenarios = async () => {
 											<Spacer />
 											<Text>약 {selectedScenario.estimatedMinutes}분</Text>
 										</Flex>
+										<Flex gap="20px">
+											<Text fontWeight="700" flexShrink={0}>시작 자산</Text>
+											<Spacer />
+											<Text textAlign="right">{selectedScenario.initialPortfolioLabel}</Text>
+										</Flex>
 										<Flex>
 											<Text fontWeight="700">학습 챕터</Text>
 											<Spacer />
@@ -764,14 +800,14 @@ const loadScenarios = async () => {
 									{scenario.status === "IN_PROGRESS" ? (
 										<Flex align="center" gap="8px">
 											<Progress
-												value={(scenario.completedStepCount / 3) * 100}
+												value={scenario.progressPercent ?? 0}
 												flex="1"
 												size="sm"
 												colorScheme="orange"
 												borderRadius="full"
 											/>
 											<Text fontSize="12px" color="brand.500">
-												{Math.round((scenario.completedStepCount / 3) * 100)}%
+												{Math.round(scenario.progressPercent ?? 0)}%
 											</Text>
 										</Flex>
 									) : (

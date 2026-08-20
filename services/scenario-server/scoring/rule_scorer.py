@@ -1,7 +1,7 @@
 """
-규칙 채점기: 객관식 답 → M1~M4 점수.
+규칙 채점기: 객관식 답 → M1~M4 보조 점수.
 - rubric의 answer_rules(good/trap)와 사용자 답을 대조. LLM 없음.
-- 자유서술(Q39, M5)은 여기서 안 다룸 → llm_scorer가 담당.
+- 자유서술은 rationale_scorer가 M1~M5 전 축에서 별도로 분석한다.
 """
 from data.models import QuestionScore
 

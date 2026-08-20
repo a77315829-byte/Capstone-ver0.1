@@ -1,4 +1,8 @@
-"""자유서술(Q39)로 M5 논리 일관성을 채점한다."""
+"""이전 beta-v1 M5 LLM 채점기.
+
+beta-v2 이후 엔진은 이 모듈을 점수 계산에 사용하지 않는다. 이전 독립 호출과
+과거 결과 재현을 위해 파일만 유지한다.
+"""
 from __future__ import annotations
 
 import config

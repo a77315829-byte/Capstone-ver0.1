@@ -1,0 +1,76 @@
+{
+  "scenario_id": "svb_bank_run_2023",
+  "turn_no": 1,
+  "turn_title": "채권 손실 공개, 하루 만에 시작된 뱅크런",
+  "turn_context": "SVB가 예금 감소에 대응해 보유채권을 매각하면서 손실을 확정했고 증자 계획을 발표하자 예금 인출이 급격히 늘었다. 금리 상승, 장기채 손실, 특정 산업에 집중된 예금 구조가 결합한 유동성 위기다. 국내 대형 은행의 구조와 동일한지는 아직 확인해야 한다.",
+  "questions_used": ["Q1", "Q10", "Q13", "Q18", "Q36", "Q39"],
+  "answer_rules": {
+    "Q1": {
+      "metric": "M1",
+      "good": ["금리", "현금흐름", "불확실성"],
+      "trap": ["원자재", "공급망"],
+      "note": "금리 상승으로 생긴 채권 손실과 예금 유출에 대응할 현금흐름, 다른 은행으로 번질지의 불확실성이 핵심이다."
+    },
+    "Q10": {
+      "metric": "M2",
+      "good": ["자금 조달", "수급 변화", "심리 변화"],
+      "trap": ["공급망 변화", "정책 변화"],
+      "note": "채권 손실 공개가 예금 인출과 증자 실패 우려를 키우며 자금조달·수급·심리를 통해 위기가 확대됐다."
+    },
+    "Q13": {
+      "metric": "M3",
+      "good": ["유동성 위험", "변동성 확대", "집중 위험"],
+      "trap": ["원가 상승", "규제 강화"],
+      "note": "지금 확인된 핵심 위험은 예금 유출을 버틸 유동성, 집중된 예금자 구성, 금융주 변동성이다."
+    },
+    "Q18": {
+      "metric": "M3",
+      "good": ["피해 규모 불명", "정책 대응 불명", "기업별 차이"],
+      "trap": ["향후 일정 불명"],
+      "note": "피해 범위와 당국 대응, 은행별 자산·예금 구조 차이가 아직 불명확하다."
+    },
+    "Q36": {
+      "metric": "M4",
+      "good": ["매우 제한적", "일부 대응", "단계적 대응"],
+      "trap": ["대부분 대응", "전량 대응"],
+      "note": "미국 특수은행의 문제를 국내 은행 전체에 그대로 대입해 전량 매도하거나 손실 만회를 위해 물타기하는 행동은 모두 성급하다."
+    },
+    "Q39": {
+      "metric": "M5",
+      "type": "free",
+      "note": "금리 상승→채권 손실→예금 유출→강제매각의 경로와 SVB의 예금 집중 특성, 국내 은행과의 차이를 연결해 제한적 대응을 설명하면 고득점이다."
+    }
+  },
+  "factors": [
+    {"factor_id": "INTEREST_RATE", "importance": "상", "direction": "악재", "note": "급격한 금리 상승이 은행 보유채권 가치에 부담"},
+    {"factor_id": "UNREALIZED_BOND_LOSS", "importance": "상", "direction": "악재", "note": "예금 인출 대응 과정에서 채권 평가손실이 실제 손실로 확정"},
+    {"factor_id": "DEPOSIT_CONCENTRATION", "importance": "상", "direction": "악재", "note": "스타트업·거액 법인예금 중심 구조가 빠른 뱅크런을 증폭"},
+    {"factor_id": "CONTAGION_RISK", "importance": "중", "direction": "악재", "note": "다른 은행으로 예금 인출과 공포가 번질 가능성"},
+    {"factor_id": "BANK_CAPITAL_STRENGTH", "importance": "중", "direction": "호재", "note": "국내 대형은행은 예금 구성과 자본·유동성 규제가 SVB와 다름"}
+  ],
+  "assets": [
+    {"asset_id": "105560", "relevance": "매우높음", "is_trap": true, "reason": "기존 보유 대형 은행주로 공포 물타기 시 집중 위험 증가"},
+    {"asset_id": "055550", "relevance": "매우높음", "is_trap": true, "reason": "기존 보유 은행주로 미국 사례와 구조 차이 확인 필요"},
+    {"asset_id": "091170", "relevance": "매우높음", "is_trap": true, "reason": "이미 은행 섹터 노출이 있어 추가매수는 집중 심화"},
+    {"asset_id": "114260", "relevance": "높음", "is_trap": false, "reason": "짧은 듀레이션 채권으로 주식·은행 집중을 완화"},
+    {"asset_id": "017670", "relevance": "높음", "is_trap": false, "reason": "금융업과 다른 안정적 현금흐름의 방어주"},
+    {"asset_id": "132030", "relevance": "중간", "is_trap": false, "reason": "금융 불안 시 소량 분산 가능한 안전자산"}
+  ],
+  "traps": [
+    {"trap_id": "TRAP_ALL_BANKS_SAME", "kind": "reason", "target": "모든 은행 동일시", "explanation": "SVB의 장기채·거액예금 집중 구조와 국내 대형은행의 구조 차이를 확인해야 한다."},
+    {"trap_id": "TRAP_PANIC_EXIT", "kind": "action", "target": "은행주 전량 매도", "explanation": "전염이 확인되기 전 공포만으로 전량 매도하면 과잉 일반화다."},
+    {"trap_id": "TRAP_BANK_AVERAGE_DOWN", "kind": "action", "target": "은행주 물타기", "explanation": "가격 하락은 유동성 위험이 해소됐다는 근거가 아니다."}
+  ],
+  "ai_baseline": {
+    "action_summary": "은행주 추가매수는 중단하고 현금을 유지한다. 필요하면 은행 섹터 일부만 줄여 단기채·통신·금으로 제한적으로 분산한다.",
+    "rationale": "SVB의 유동성 경로는 심각하지만 국내 은행의 예금·자본 구조는 다르다. 전염과 정책 대응을 확인하기 전에는 전량 방향 베팅보다 집중 위험을 소폭 낮추는 편이 적절하다."
+  },
+  "action_rule": {
+    "max_single_weight": 30,
+    "good_cash_min": 35,
+    "trap_assets": ["105560", "055550", "086790", "091170"],
+    "core_assets": ["114260", "017670", "132030"],
+    "expected_action_score": [-1.0, 0.0],
+    "note": "관망 또는 은행 노출 일부 축소가 적정하다. 은행주 물타기와 전량 공포매도는 감점한다."
+  }
+}

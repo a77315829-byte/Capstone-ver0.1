@@ -1,0 +1,96 @@
+{
+  "currency": "KRW",
+  "exchange": "KRX",
+  "assets": [
+    {
+      "asset_id": "035420",
+      "name": "NAVER",
+      "market": "KOSPI",
+      "asset_type": "stock",
+      "industry_label": "인터넷·플랫폼",
+      "description": "검색, 커머스, 콘텐츠와 핀테크 사업을 운영하는 국내 대표 성장주",
+      "display_order": 1,
+      "is_active": true
+    },
+    {
+      "asset_id": "035720",
+      "name": "카카오",
+      "market": "KOSPI",
+      "asset_type": "stock",
+      "industry_label": "인터넷·플랫폼",
+      "description": "메신저를 기반으로 광고, 콘텐츠, 금융 서비스를 운영하는 성장주",
+      "display_order": 2,
+      "is_active": true
+    },
+    {
+      "asset_id": "133690",
+      "name": "TIGER 미국나스닥100",
+      "market": "KOSPI",
+      "asset_type": "etf",
+      "industry_label": "미국 기술주 ETF",
+      "description": "미국 나스닥100 지수를 추종해 글로벌 대형 기술주에 분산 투자하는 ETF",
+      "display_order": 3,
+      "is_active": true
+    },
+    {
+      "asset_id": "069500",
+      "name": "KODEX 200",
+      "market": "KOSPI",
+      "asset_type": "etf",
+      "industry_label": "시장지수 ETF",
+      "description": "KOSPI 200 지수를 추종하는 국내 주식형 ETF",
+      "display_order": 4,
+      "is_active": true
+    },
+    {
+      "asset_id": "105560",
+      "name": "KB금융",
+      "market": "KOSPI",
+      "asset_type": "stock",
+      "industry_label": "금융",
+      "description": "은행, 증권, 보험 사업을 보유한 금융지주회사",
+      "display_order": 5,
+      "is_active": true
+    },
+    {
+      "asset_id": "017670",
+      "name": "SK텔레콤",
+      "market": "KOSPI",
+      "asset_type": "stock",
+      "industry_label": "통신·배당",
+      "description": "통신 서비스의 안정적 현금흐름과 배당 성격을 가진 방어주",
+      "display_order": 6,
+      "is_active": true
+    },
+    {
+      "asset_id": "132030",
+      "name": "KODEX 골드선물(H)",
+      "market": "KOSPI",
+      "asset_type": "etf",
+      "industry_label": "원자재 ETF",
+      "description": "금 선물 가격을 추종하는 환헤지형 원자재 ETF",
+      "display_order": 7,
+      "is_active": true
+    },
+    {
+      "asset_id": "114800",
+      "name": "KODEX 인버스",
+      "market": "KOSPI",
+      "asset_type": "etf",
+      "industry_label": "단기 헤지 ETF",
+      "description": "F-KOSPI200 지수의 일간 수익률을 역방향으로 추종하는 단기 헤지 상품",
+      "display_order": 8,
+      "is_active": true
+    },
+    {
+      "asset_id": "114260",
+      "name": "KODEX 국고채3년",
+      "market": "KOSPI",
+      "asset_type": "etf",
+      "industry_label": "단기 국채 ETF",
+      "description": "국내 3년 만기 국고채 지수를 추종하는 채권 ETF",
+      "display_order": 9,
+      "is_active": true
+    }
+  ]
+}

@@ -4,7 +4,12 @@ import pytest
 from pymongo.errors import PyMongoError
 
 from app.services.rag_index import Chunk
-from app.services.rag_repository import RagRepository, RagRepositoryError
+from app.services.rag_repository import (
+    RagRepository,
+    RagRepositoryError,
+    _pack_embedding,
+    _unpack_embedding,
+)
 
 
 class _FakeCursor:
@@ -113,7 +118,7 @@ async def test_get_chunks_returns_matching_chunks_as_dataclass():
     doc = {
         "_id": "005930:1:0", "stock_code": "005930", "rag_version": 1, "title": "t",
         "source_type": "dart_periodic", "published_at": "2026-07-01", "url": "http://x",
-        "text": "본문", "embedding": [0.1, 0.2],
+        "text": "본문", "embedding": _pack_embedding([0.1, 0.2]),
     }
     db = _FakeDatabase(_FakeChunksCollection(docs=[doc]), _FakeManifestCollection())
     repo = RagRepository(db)
@@ -122,7 +127,7 @@ async def test_get_chunks_returns_matching_chunks_as_dataclass():
     assert isinstance(chunks[0], Chunk)
     assert chunks[0].chunk_id == "005930:1:0"
     assert chunks[0].text == "본문"
-    assert chunks[0].embedding == [0.1, 0.2]
+    assert chunks[0].embedding == pytest.approx([0.1, 0.2], abs=1e-6)
     assert chunks[0].rag_version == 1
 
 
@@ -131,10 +136,10 @@ async def test_get_chunks_filters_by_stock_code_and_version():
     docs = [
         {"_id": "005930:1:0", "stock_code": "005930", "rag_version": 1, "title": "t",
          "source_type": "dart_periodic", "published_at": "2026-07-01", "url": "http://x",
-         "text": "본문1", "embedding": [0.1]},
+         "text": "본문1", "embedding": _pack_embedding([0.1])},
         {"_id": "005930:2:0", "stock_code": "005930", "rag_version": 2, "title": "t",
          "source_type": "dart_periodic", "published_at": "2026-07-01", "url": "http://x",
-         "text": "본문2", "embedding": [0.2]},
+         "text": "본문2", "embedding": _pack_embedding([0.2])},
     ]
     db = _FakeDatabase(_FakeChunksCollection(docs=docs), _FakeManifestCollection())
     repo = RagRepository(db)
@@ -165,11 +170,17 @@ async def test_insert_chunks_writes_expected_documents():
     db = _FakeDatabase(chunks_col, _FakeManifestCollection())
     repo = RagRepository(db)
     await repo.insert_chunks([_sample_chunk()])
-    assert chunks_col.inserted == [{
+    assert len(chunks_col.inserted) == 1
+    inserted = dict(chunks_col.inserted[0])
+    packed_embedding = inserted.pop("embedding")
+    assert inserted == {
         "_id": "005930:1:0", "stock_code": "005930", "rag_version": 1, "title": "t",
         "source_type": "dart_periodic", "published_at": "2026-07-01", "url": "http://x",
-        "text": "본문", "embedding": [0.1, 0.2],
-    }]
+        "text": "본문",
+    }
+    # embedding 은 float32 packed binary 로 저장된다(BSON 배열보다 훨씬 작음) — 원래
+    # 값으로 다시 unpack 되는지 확인한다.
+    assert _unpack_embedding(packed_embedding) == pytest.approx([0.1, 0.2], abs=1e-6)
 
 
 @pytest.mark.asyncio

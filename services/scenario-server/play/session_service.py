@@ -13,12 +13,17 @@ from data.app_repository import AppRepository, NotFoundError
 from data.models import Action, Holding, QuestionAnswer, UserDecision
 from play.errors import DataUnavailableError, PlayError
 from play.final_evaluation_service import build_scenario_evaluation, rebuild_user_profile
+from play.orderbook_service import (
+    GENERATOR_VERSION,
+    available_orderbook,
+    generate_orderbook_snapshot,
+)
 from play.portfolio_service import (
     build_portfolio_state,
     execute_order,
     make_snapshot,
 )
-from scoring import engine
+from scoring import coaching_tracker, engine
 
 
 def utc_now() -> str:
@@ -44,6 +49,7 @@ class ScenarioSessionService:
     def list_scenarios(self) -> list[dict]:
         result = []
         for scenario in self.repository.list_scenarios():
+            simulation = scenario.get("simulation", {})
             result.append(
                 {
                     "scenario_id": scenario["scenario_id"],
@@ -52,7 +58,13 @@ class ScenarioSessionService:
                     "description": scenario.get("description", ""),
                     "difficulty": scenario.get("difficulty", ""),
                     "total_turns": scenario["total_turns"],
-                    "initial_cash": scenario.get("simulation", {}).get("initial_cash", 0),
+                    "event_period": scenario.get("event_period", "과거 데이터"),
+                    "initial_cash": simulation.get("initial_cash", 0),
+                    "initial_positions": simulation.get("initial_positions", []),
+                    "initial_portfolio_label": scenario.get(
+                        "initial_portfolio_label",
+                        f"현금 {int(simulation.get('initial_cash', 0)):,}원",
+                    ),
                     "learning_points": scenario.get("learning_points", []),
                 }
             )
@@ -64,7 +76,47 @@ class ScenarioSessionService:
             raise PlayError("INVALID_USER", "사용자 ID가 필요합니다.")
         scenario = self.repository.get_scenario(scenario_id)
         now = utc_now()
-        initial_cash = int(scenario.get("simulation", {}).get("initial_cash", 10_000_000))
+        simulation = scenario.get("simulation", {})
+        initial_cash = int(simulation.get("initial_cash", 10_000_000))
+        first_date = scenario["turn_schedule"][0]["market_date"]
+        initial_positions = []
+        initial_position_value = 0
+        seen_asset_ids: set[str] = set()
+        for configured in simulation.get("initial_positions", []):
+            asset_id = str(configured.get("asset_id", "")).strip()
+            quantity = int(configured.get("quantity", 0))
+            if asset_id not in scenario.get("asset_ids", []):
+                raise PlayError(
+                    "INVALID_INITIAL_POSITION",
+                    f"초기 보유 종목 {asset_id}이 시나리오 매매 대상에 없습니다.",
+                )
+            if not asset_id or asset_id in seen_asset_ids or quantity <= 0:
+                raise PlayError(
+                    "INVALID_INITIAL_POSITION",
+                    "초기 보유 종목은 중복 없이 1주 이상이어야 합니다.",
+                )
+            price = self.repository.get_latest_price(asset_id, first_date)
+            if not price or price.get("close") is None:
+                raise DataUnavailableError(
+                    f"{asset_id}의 {first_date} 초기 보유 평가 가격이 없습니다."
+                )
+            current_price = int(price["close"])
+            avg_price = float(configured.get("avg_price", current_price))
+            if avg_price <= 0:
+                raise PlayError(
+                    "INVALID_INITIAL_POSITION",
+                    f"초기 보유 종목 {asset_id}의 매입단가는 0보다 커야 합니다.",
+                )
+            initial_positions.append(
+                {
+                    "asset_id": asset_id,
+                    "quantity": quantity,
+                    "avg_price": round(avg_price, 4),
+                }
+            )
+            initial_position_value += current_price * quantity
+            seen_asset_ids.add(asset_id)
+        initial_value = initial_cash + initial_position_value
         session = {
             "schema_version": SCHEMA_VERSION,
             "session_id": str(uuid4()),
@@ -74,8 +126,12 @@ class ScenarioSessionService:
             "status": "ACTIVE",
             "current_turn": 1,
             "initial_cash": initial_cash,
+            "initial_value": initial_value,
             "cash": initial_cash,
-            "positions": [],
+            "positions": sorted(
+                initial_positions,
+                key=lambda item: item["asset_id"],
+            ),
             "realized_pnl_by_asset": {},
             "revision": 0,
             "started_at": now,
@@ -84,7 +140,6 @@ class ScenarioSessionService:
             "final_evaluation_id": None,
         }
         self.repository.create_session(session)
-        first_date = scenario["turn_schedule"][0]["market_date"]
         portfolio = build_portfolio_state(self.repository, session, first_date)
         self.repository.save_snapshot(
             make_snapshot(
@@ -139,6 +194,11 @@ class ScenarioSessionService:
         questions = self.repository.get_turn_questions(
             session["scenario_id"], session["scenario_version"], turn_no
         )
+        previous_guidance = coaching_tracker.latest_guidance(
+            self.repository.list_turn_evaluations(session_id),
+            turn_no,
+        )
+        orders = self.repository.list_orders(session_id, turn_no)
         assets = self._asset_summaries(scenario["asset_ids"], turn["market_date"])
         portfolio = build_portfolio_state(
             self.repository,
@@ -155,9 +215,12 @@ class ScenarioSessionService:
             None,
         )
         turn_base_value = int(
-            prior_turn_end.get("total_value", session["initial_cash"])
+            prior_turn_end.get(
+                "total_value",
+                session.get("initial_value", session["initial_cash"]),
+            )
             if prior_turn_end
-            else session["initial_cash"]
+            else session.get("initial_value", session["initial_cash"])
         )
         portfolio["turn_base_value"] = turn_base_value
         portfolio["turn_return_pct"] = (
@@ -192,7 +255,11 @@ class ScenarioSessionService:
             "assets": assets,
             "default_asset_id": scenario.get("default_asset_id"),
             "portfolio": portfolio,
+            "orders": orders,
             "questions": questions,
+            "coaching": {
+                "reminders": previous_guidance,
+            },
         }
 
     def _asset_summaries(self, asset_ids: list[str], market_date: str) -> list[dict]:
@@ -229,6 +296,65 @@ class ScenarioSessionService:
                     "data_available": price is not None,
                 }
             )
+        return result
+
+    def _get_or_create_orderbook_snapshot(
+        self,
+        session: dict,
+        scenario: dict,
+        turn: dict,
+        asset_id: str,
+    ) -> dict:
+        turn_no = int(turn["turn_no"])
+        existing = self.repository.get_orderbook_snapshot(
+            session["scenario_id"],
+            int(session["scenario_version"]),
+            turn_no,
+            asset_id,
+            GENERATOR_VERSION,
+        )
+        if existing:
+            return existing
+        asset = self.repository.get_asset(asset_id)
+        price_bar = self.repository.get_latest_price(asset_id, turn["market_date"])
+        if not price_bar:
+            raise DataUnavailableError(
+                f"{asset_id}의 {turn['market_date']} 호가 생성용 일봉이 없습니다."
+            )
+        snapshot = generate_orderbook_snapshot(
+            scenario_id=session["scenario_id"],
+            scenario_version=int(session["scenario_version"]),
+            turn_no=turn_no,
+            market_date=turn["market_date"],
+            asset=asset,
+            price_bar=price_bar,
+            generated_at=utc_now(),
+        )
+        self.repository.save_orderbook_snapshot(snapshot)
+        return snapshot
+
+    def get_orderbook(self, session_id: str, asset_id: str) -> dict:
+        session = self.repository.get_session(session_id)
+        if session.get("status") != "ACTIVE":
+            raise PlayError("SESSION_NOT_ACTIVE", "진행 중인 세션의 호가만 조회할 수 있습니다.", 409)
+        scenario = self.repository.get_scenario(
+            session["scenario_id"], session["scenario_version"]
+        )
+        if asset_id not in scenario["asset_ids"]:
+            raise PlayError("ASSET_NOT_ALLOWED", "이 시나리오에서 매매할 수 없는 종목입니다.")
+        turn_no = int(session["current_turn"])
+        turn = self.repository.get_turn(
+            session["scenario_id"], session["scenario_version"], turn_no
+        )
+        snapshot = self._get_or_create_orderbook_snapshot(
+            session,
+            scenario,
+            turn,
+            asset_id,
+        )
+        orders = self.repository.list_orders(session_id, turn_no)
+        result = available_orderbook(snapshot, orders)
+        result["session_id"] = session_id
         return result
 
     def get_chart(
@@ -278,6 +404,8 @@ class ScenarioSessionService:
         asset_id: str,
         side: str,
         quantity: int,
+        order_type: str = "MARKET",
+        limit_price: int | None = None,
     ) -> dict:
         session = self.repository.get_session(session_id)
         scenario = self.repository.get_scenario(
@@ -289,6 +417,7 @@ class ScenarioSessionService:
         turn = self.repository.get_turn(
             session["scenario_id"], session["scenario_version"], turn_no
         )
+        orderbook = self.get_orderbook(session_id, asset_id)
         now = utc_now()
         updated, order = execute_order(
             self.repository,
@@ -296,6 +425,9 @@ class ScenarioSessionService:
             asset_id=asset_id,
             side=side,
             quantity=quantity,
+            order_type=order_type,
+            limit_price=limit_price,
+            orderbook=orderbook,
             market_date=turn["market_date"],
             turn_no=turn_no,
             created_at=now,
@@ -305,7 +437,12 @@ class ScenarioSessionService:
         portfolio = build_portfolio_state(
             self.repository, updated, turn["market_date"]
         )
-        return {"order": order, "portfolio": portfolio}
+        refreshed_orderbook = self.get_orderbook(session_id, asset_id)
+        return {
+            "order": order,
+            "portfolio": portfolio,
+            "orderbook": refreshed_orderbook,
+        }
 
     def submit_turn(self, session_id: str, answers: list[dict]) -> dict:
         session = self.repository.get_session(session_id)
@@ -369,12 +506,22 @@ class ScenarioSessionService:
                 for item in answers
             ],
         )
+        previous_guidance = coaching_tracker.latest_guidance(
+            self.repository.list_turn_evaluations(session_id),
+            turn_no,
+        )
         scorecard = to_primitive(engine.score_turn(decision, rubric))
         if isinstance(scorecard.get("feedback"), str):
             try:
                 scorecard["feedback"] = json.loads(scorecard["feedback"])
             except json.JSONDecodeError:
                 scorecard["feedback"] = {"explanation": scorecard["feedback"]}
+        coaching_tracker.enrich_scorecard(
+            scorecard,
+            previous_guidance,
+            turn_no,
+            is_final_turn=turn_no == int(scenario["total_turns"]),
+        )
 
         now = utc_now()
         after_snapshot = make_snapshot(
@@ -548,6 +695,11 @@ class ScenarioSessionService:
         before_total = max(1, int(before.get("total_value", after.get("total_value", 1))))
         grouped: dict[str, dict[str, int]] = {}
         for order in orders:
+            filled_quantity = int(
+                order.get("filled_quantity", order.get("quantity", 0)) or 0
+            )
+            if filled_quantity <= 0 or int(order.get("amount", 0) or 0) <= 0:
+                continue
             item = grouped.setdefault(order["asset_id"], {"buy": 0, "sell": 0})
             key = "buy" if order["side"] == "BUY" else "sell"
             item[key] += int(order["amount"])
@@ -589,7 +741,7 @@ class ScenarioSessionService:
         return value
 
     def finalize_session(self, session_id: str) -> dict:
-        """턴 6 저장 이후 종합평가 생성을 재시도할 수 있게 분리한다."""
+        """마지막 턴 저장 이후 종합평가 생성을 재시도할 수 있게 분리한다."""
         session = self.repository.get_session(session_id)
         if session.get("status") == "COMPLETED":
             existing = self.repository.get_evaluation_by_session(session_id)

@@ -50,6 +50,18 @@ def validate_content(scenario: dict, displays: dict, rubric_docs: list[dict]) ->
     for turn in displays["turns"]:
         if turn["market_date"] != schedule_dates[turn["turn_no"]]:
             raise ValueError(f"turn {turn['turn_no']}의 market_date가 서로 다릅니다.")
+    asset_ids = set(scenario.get("asset_ids", []))
+    seen_initial_assets: set[str] = set()
+    for position in scenario.get("simulation", {}).get("initial_positions", []):
+        asset_id = str(position.get("asset_id", ""))
+        quantity = int(position.get("quantity", 0))
+        if asset_id not in asset_ids:
+            raise ValueError(f"초기 보유 종목이 asset_ids에 없습니다: {asset_id}")
+        if asset_id in seen_initial_assets or quantity <= 0:
+            raise ValueError(f"초기 보유 종목은 중복 없이 1주 이상이어야 합니다: {asset_id}")
+        if "avg_price" in position and float(position["avg_price"]) <= 0:
+            raise ValueError(f"초기 보유 종목의 avg_price는 0보다 커야 합니다: {asset_id}")
+        seen_initial_assets.add(asset_id)
 
 
 def seed_scenario(

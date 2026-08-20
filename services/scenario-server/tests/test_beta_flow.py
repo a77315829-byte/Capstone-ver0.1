@@ -150,6 +150,66 @@ class BetaFlowTest(unittest.TestCase):
             buy_session["cash"] + sell_result["order"]["amount"],
         )
 
+    def test_gibberish_rationale_cannot_create_high_final_m4(self) -> None:
+        session = self.service.start_session("user-gibberish", "semiconductor")
+        session_id = session["session_id"]
+        result = None
+        for _ in range(1, 7):
+            view = self.service.get_turn_view(session_id)
+            answers = self.answers_for(view["questions"])
+            for answer in answers:
+                if answer["text"]:
+                    answer["text"] = "1"
+            result = self.service.submit_turn(session_id, answers)
+
+        self.assertIsNotNone(result)
+        final = self.service.get_evaluation(session_id)
+        averages = final["decision_evaluation"]["metric_averages"]
+        for metric_id in ("M1", "M2", "M3", "M4", "M5"):
+            self.assertLessEqual(averages[metric_id], 2.0, metric_id)
+        evaluations = self.repository.list_turn_evaluations(session_id)
+        first_actions = evaluations[0]["scorecard"]["feedback"]["next_actions"]
+        self.assertEqual(first_actions[0]["guidance_code"], "AVOID_EMPTY_RATIONALE")
+        second_reviews = evaluations[1]["scorecard"]["feedback"][
+            "previous_guidance_review"
+        ]
+        self.assertEqual(second_reviews[0]["status"], "REPEATED")
+        self.assertGreaterEqual(final["coaching_progress"]["repeated_count"], 5)
+        self.assertIn("같은 문제가 반복", final["feedback"]["coaching_summary"])
+
+    def test_previous_guidance_is_shown_and_followed_next_turn(self) -> None:
+        session = self.service.start_session("user-coaching", "semiconductor")
+        session_id = session["session_id"]
+        first_view = self.service.get_turn_view(session_id)
+        first_answers = self.answers_for(first_view["questions"])
+        for answer in first_answers:
+            if answer["text"]:
+                answer["text"] = "1"
+        self.service.submit_turn(session_id, first_answers)
+
+        second_view = self.service.get_turn_view(session_id)
+        reminders = second_view["coaching"]["reminders"]
+        self.assertEqual(reminders[0]["guidance_code"], "AVOID_EMPTY_RATIONALE")
+
+        second_answers = self.answers_for(second_view["questions"])
+        for answer in second_answers:
+            if answer["text"]:
+                answer["text"] = (
+                    "엔비디아 실적 호조는 AI 수요 확인에 긍정적이지만 주가가 이미 "
+                    "급등해 추격매수 위험이 있으므로 보유 없이 관망하겠습니다."
+                )
+        result = self.service.submit_turn(session_id, second_answers)
+        reviews = result["turn_evaluation"]["scorecard"]["feedback"][
+            "previous_guidance_review"
+        ]
+        empty_rationale_review = next(
+            item
+            for item in reviews
+            if item["guidance_code"] == "AVOID_EMPTY_RATIONALE"
+        )
+        self.assertEqual(empty_rationale_review["status"], "FOLLOWED")
+        self.assertIn("조언을 이번 판단에 반영", result["turn_evaluation"]["scorecard"]["feedback"]["explanation"])
+
 
 if __name__ == "__main__":
     unittest.main()

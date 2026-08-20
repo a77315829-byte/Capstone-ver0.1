@@ -4,10 +4,12 @@
   "version": 1,
   "title": "AI 반도체 랠리 — 좋은 뉴스에 올라타는 법",
   "description": "AI 반도체 붐 속에서 호재가 이미 반영됐는지까지 판단하는 6턴 시나리오",
+  "event_period": "2024년 2월~7월",
   "total_turns": 6,
   "difficulty": "중",
   "display_order": 1,
   "is_published": true,
+  "initial_portfolio_label": "현금 1,000만원",
   "simulation": {
     "timezone": "Asia/Seoul",
     "currency": "KRW",

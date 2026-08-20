@@ -1,4 +1,4 @@
-"""6턴 종료 후 행동 패턴과 포트폴리오를 종합한다."""
+"""시나리오 마지막 턴 종료 후 행동 패턴과 포트폴리오를 종합한다."""
 from __future__ import annotations
 
 from collections import defaultdict
@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from config import EVALUATOR_VERSION, SCHEMA_VERSION
 from data.app_repository import AppRepository
+from scoring import coaching_tracker
 
 
 METRIC_LABELS = {
@@ -38,7 +39,7 @@ def _portfolio_metrics(
     snapshots: list[dict],
     orders: list[dict],
 ) -> dict:
-    initial_value = int(session.get("initial_cash", 0))
+    initial_value = int(session.get("initial_value", session.get("initial_cash", 0)))
     final = next((item for item in reversed(snapshots) if item.get("kind") == "FINAL"), None)
     if final is None:
         final = snapshots[-1] if snapshots else {"total_value": initial_value, "positions": []}
@@ -245,7 +246,11 @@ def build_scenario_evaluation(
     scenario = repository.get_scenario(session["scenario_id"], session["scenario_version"])
     evaluations = repository.list_turn_evaluations(session["session_id"])
     snapshots = repository.list_snapshots(session["session_id"])
-    orders = repository.list_orders(session["session_id"])
+    orders = [
+        order
+        for order in repository.list_orders(session["session_id"])
+        if int(order.get("filled_quantity", order.get("quantity", 0)) or 0) > 0
+    ]
     metric_values: dict[str, list[float]] = defaultdict(list)
     timeline = []
     for evaluation in evaluations:
@@ -268,6 +273,8 @@ def build_scenario_evaluation(
     overall_score = round(mean(turn_scores), 2) if turn_scores else 0.0
     patterns = _behavior_patterns(repository, scenario, evaluations, snapshots, orders)
     portfolio = _portfolio_metrics(repository, scenario, session, snapshots, orders)
+    coaching_progress = coaching_tracker.summarize_progress(evaluations)
+    coaching_summary = coaching_tracker.progress_summary(coaching_progress)
     strengths = [
         f"{METRIC_LABELS.get(metric, metric)}이 안정적입니다({score:.2f}/5)."
         for metric, score in metric_averages.items()
@@ -287,6 +294,16 @@ def build_scenario_evaluation(
     summary_parts.append(
         f"최종 포트폴리오 수익률은 {portfolio['cumulative_return_pct']:.2f}%이며, 수익률은 판단 점수와 분리해 해석합니다."
     )
+    summary_parts.append(coaching_summary)
+    next_actions: list[str] = []
+    for message in [
+        *coaching_progress["unresolved_actions"],
+        *(item["recommendation"] for item in repeated),
+    ]:
+        if message and message not in next_actions:
+            next_actions.append(message)
+        if len(next_actions) >= 3:
+            break
     return {
         "schema_version": SCHEMA_VERSION,
         "evaluation_id": str(uuid4()),
@@ -302,12 +319,14 @@ def build_scenario_evaluation(
             "timeline": timeline,
         },
         "behavior_patterns": patterns,
+        "coaching_progress": coaching_progress,
         "portfolio_analysis": portfolio,
         "feedback": {
             "summary": " ".join(summary_parts),
             "strengths": strengths,
             "improvements": improvements,
-            "next_actions": [item["recommendation"] for item in repeated[:3]],
+            "coaching_summary": coaching_summary,
+            "next_actions": next_actions,
         },
     }
 
