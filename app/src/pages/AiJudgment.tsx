@@ -159,16 +159,6 @@ function FactorCard({ factor }: { factor: AiJudgmentFactor }) {
 			<Flex align="flex-start" gap="10px">
 				<Box minW="0" flex="1">
 					<HStack spacing="6px" mb="7px" flexWrap="wrap">
-						<Badge
-							bg={factor.type === "직접" ? "#2F2924" : "#F0EAE4"}
-							color={factor.type === "직접" ? "white" : "#62584F"}
-							borderRadius="full"
-							px="8px"
-							py="3px"
-							fontSize="9px"
-						>
-							{factor.type}요인
-						</Badge>
 						{factor.direction && (
 							<Badge
 								bg="white"
@@ -336,8 +326,6 @@ export default function AiJudgmentPage() {
 		() => [...(judgment?.factors ?? [])].sort((a, b) => b.weight - a.weight),
 		[judgment],
 	);
-	const directFactors = factors.filter((factor) => factor.type === "직접");
-	const indirectFactors = factors.filter((factor) => factor.type === "간접");
 	const theme = judgeTheme(judgment?.judge ?? "관망");
 	const isUp = Number(stock?.changeRate ?? 0) >= 0;
 
@@ -521,23 +509,13 @@ export default function AiJudgmentPage() {
 
 									<Divider my="22px" />
 
-									<Grid templateColumns={{ base: "1fr", lg: "repeat(2, minmax(0, 1fr))" }} gap="18px">
-										<Box>
-											<Flex mb="9px"><Heading fontSize="15px">핵심 직접 요인</Heading><Spacer /><Badge>{directFactors.length}</Badge></Flex>
-											<Stack spacing="8px">
-												{directFactors.map((factor, index) => <FactorCard key={`${factor.factor}-${index}`} factor={factor} />)}
-												{directFactors.length === 0 && <Text fontSize="11px" color="app.subtleText">직접 요인이 없습니다.</Text>}
-											</Stack>
-										</Box>
-
-										<Box>
-											<Flex mb="9px"><Heading fontSize="15px">간접 영향 요인</Heading><Spacer /><Badge>{indirectFactors.length}</Badge></Flex>
-											<Stack spacing="8px">
-												{indirectFactors.map((factor, index) => <FactorCard key={`${factor.factor}-${index}`} factor={factor} />)}
-												{indirectFactors.length === 0 && <Text fontSize="11px" color="app.subtleText">간접 요인이 없습니다.</Text>}
-											</Stack>
-										</Box>
-									</Grid>
+									<Box>
+										<Flex mb="9px"><Heading fontSize="15px">핵심 판단 근거</Heading><Spacer /><Badge>{factors.length}</Badge></Flex>
+										<Stack spacing="8px">
+											{factors.map((factor, index) => <FactorCard key={`${factor.factor}-${index}`} factor={factor} />)}
+											{factors.length === 0 && <Text fontSize="11px" color="app.subtleText">지금은 특별한 신호가 감지되지 않았어요.</Text>}
+										</Stack>
+									</Box>
 
 									<Flex mt="20px" p="12px" borderRadius="10px" bg="#F7F2EC" align={{ base: "flex-start", md: "center" }} direction={{ base: "column", md: "row" }} gap="7px">
 										<Text fontSize="9px" color="app.subtleText">최근 AI 계산 시각</Text>

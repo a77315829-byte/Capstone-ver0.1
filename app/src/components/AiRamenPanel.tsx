@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Badge,
   Box,
@@ -11,6 +11,12 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
+import judgmentService, {
+  type AiCompareResult,
+  type AiHistoryEntry,
+  type AiJudgment,
+  type AiJudgmentFactor,
+} from "../services/judgment.service";
 
 type AiDecision = "매수" | "매도" | "관망";
 
@@ -30,13 +36,6 @@ type ChartPointLike = {
   low: number;
   close: number;
   volume?: number;
-};
-
-type AiFactor = {
-  label: "직접" | "간접";
-  factor: string;
-  weight: number;
-  description: string;
 };
 
 type Props = {
@@ -66,110 +65,41 @@ function decisionBg(decision: AiDecision) {
   return "#FFF6E9";
 }
 
-function recentReturn(points: ChartPointLike[], count = 12) {
-  const recent = points.slice(-count);
-  const first = recent[0];
-  const last = recent[recent.length - 1];
-  if (!first || !last || first.close <= 0) return 0;
-  return ((last.close - first.close) / first.close) * 100;
-}
-
-function volatility(points: ChartPointLike[]) {
-  const recent = points.slice(-12);
-  if (recent.length < 2) return 0;
-
-  const returns = recent.slice(1).map((item, index) => {
-    const previous = recent[index];
-    if (!previous || previous.close <= 0) return 0;
-    return ((item.close - previous.close) / previous.close) * 100;
+function formatHistoryTime(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   });
-
-  const mean = returns.reduce((sum, value) => sum + value, 0) / returns.length;
-  const variance =
-    returns.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) /
-    returns.length;
-  return Math.sqrt(variance);
 }
 
-function getDecision(stock: StockLike | null, points: ChartPointLike[]): AiDecision {
-  if (!stock) return "관망";
-  const r = recentReturn(points);
-  const score = stock.changeRate * 0.65 + r * 0.35;
-  if (score >= 2.5) return "매수";
-  if (score <= -2.5) return "매도";
-  return "관망";
+function factorAccent(direction?: "긍정" | "부정" | null) {
+  if (direction === "긍정") return "#F05B45";
+  if (direction === "부정") return "#3C70D8";
+  return "#B1A79E";
 }
 
-function getFactors(stock: StockLike | null, points: ChartPointLike[]): AiFactor[] {
-  if (!stock) {
-    return [
-      {
-        label: "직접",
-        factor: "선택 종목 정보",
-        weight: 0,
-        description: "종목을 선택하면 판단 요인을 분석합니다.",
-      },
-    ];
-  }
-
-  const r = recentReturn(points, 10);
-  const v = volatility(points);
-  const recent = points.slice(-10);
-  const avgVolume =
-    recent.length > 0
-      ? recent.reduce((sum, item) => sum + Number(item.volume ?? 0), 0) /
-        recent.length
-      : 0;
-  const ratio = avgVolume > 0 ? Number(stock.volume ?? 0) / avgVolume : 1;
-
-  return [
-    {
-      label: "직접",
-      factor: stock.changeRate >= 0 ? "현재가 상승 흐름" : "현재가 하락 압력",
-      weight: Math.min(95, Math.max(35, Math.round(Math.abs(stock.changeRate) * 8))),
-      description: `현재 등락률 ${stock.changeRate >= 0 ? "+" : ""}${stock.changeRate.toFixed(2)}%를 반영했습니다.`,
-    },
-    {
-      label: "직접",
-      factor: r >= 0 ? "단기 차트 반등 흐름" : "단기 차트 약세 흐름",
-      weight: Math.min(95, Math.max(35, Math.round(Math.abs(r) * 10))),
-      description: `최근 구간 가격 변화율 ${r >= 0 ? "+" : ""}${r.toFixed(2)}%입니다.`,
-    },
-    {
-      label: "간접",
-      factor: "거래량 기반 수급 강도",
-      weight: Math.min(92, Math.max(30, Math.round(ratio * 48))),
-      description:
-        ratio >= 1
-          ? "최근 평균보다 거래가 활발한 구간입니다."
-          : "최근 평균 대비 거래량이 제한적인 구간입니다.",
-    },
-    {
-      label: "간접",
-      factor: "단기 변동성 리스크",
-      weight: Math.min(90, Math.max(30, Math.round(v * 22 + 30))),
-      description: `최근 단기 변동성 지표는 약 ${v.toFixed(2)} 수준입니다.`,
-    },
-  ];
-}
-
-function FactorCard({ factor }: { factor: AiFactor }) {
-  const direct = factor.label === "직접";
-  const accent = direct ? "#F05B45" : "#E7A31C";
+function FactorCard({ factor }: { factor: AiJudgmentFactor }) {
+  const accent = factorAccent(factor.direction);
 
   return (
     <Box p="12px" bg="white" borderWidth="1px" borderColor={BORDER} borderRadius="10px">
       <Flex align="center" gap="8px">
-        <Badge
-          px="7px"
-          py="2px"
-          borderRadius="5px"
-          fontSize="9px"
-          bg={direct ? "#FFF0ED" : "#FFF7E2"}
-          color={accent}
-        >
-          {factor.label}
-        </Badge>
+        {factor.direction && (
+          <Badge
+            px="7px"
+            py="2px"
+            borderRadius="5px"
+            fontSize="9px"
+            bg={`${accent}1A`}
+            color={accent}
+          >
+            {factor.direction}
+          </Badge>
+        )}
         <Text flex="1" fontSize="11px" fontWeight="900" color={TEXT} noOfLines={1}>
           {factor.factor}
         </Text>
@@ -186,10 +116,6 @@ function FactorCard({ factor }: { factor: AiFactor }) {
         bg="#F0EBE6"
         sx={{ "& > div": { background: accent, borderRadius: "999px" } }}
       />
-
-      <Text mt="8px" fontSize="9px" lineHeight="1.6" color={MUTED}>
-        {factor.description}
-      </Text>
     </Box>
   );
 }
@@ -205,44 +131,82 @@ export default function AiRamenPanel({
   const [tab, setTab] = useState<"판단근거" | "히스토리" | "비교">("판단근거");
   const [userDecision, setUserDecision] = useState<AiDecision | null>(null);
 
-  const aiDecision = useMemo(
-    () => getDecision(stock, chartPoints),
-    [stock, chartPoints],
-  );
+  const [judgment, setJudgment] = useState<AiJudgment | null>(null);
+  const [isLoadingJudgment, setIsLoadingJudgment] = useState(false);
+  const [history, setHistory] = useState<AiHistoryEntry[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  const factors = useMemo(
-    () => getFactors(stock, chartPoints),
-    [stock, chartPoints],
-  );
-
-  const confidence = useMemo(() => {
-    const average =
-      factors.reduce((sum, item) => sum + item.weight, 0) /
-      Math.max(factors.length, 1);
-    return Math.min(93, Math.max(45, Math.round(average)));
-  }, [factors]);
-
-  const summary = useMemo(() => {
-    if (!stock) return "종목을 선택하면 AI 판단을 확인할 수 있습니다.";
-    const r = recentReturn(chartPoints);
-
-    if (aiDecision === "매수") {
-      return `${stock.name}은 현재 등락률과 단기 차트 흐름이 우호적으로 나타납니다. 다만 단기 상승 이후 변동성 확대 가능성은 함께 확인할 필요가 있습니다.`;
+  // 지금 보고 있는 종목만 백엔드가 실시간으로 감시하도록, 패널이 열려 있는 동안
+  // 주기적으로 구독을 갱신(하트비트)하고 종목이 바뀌거나 패널을 닫으면 해제한다.
+  // 최초 구독(콜드스타트 포함)이 끝날 때까지 기다렸다가 판단·히스토리를 불러와야
+  // "이력이 아직 없다"는 응답을 콜드스타트 완료 전에 잘못 받는 걸 피할 수 있다.
+  useEffect(() => {
+    if (!isOpen || !stock?.symbol) {
+      setJudgment(null);
+      setHistory([]);
+      return;
     }
-    if (aiDecision === "매도") {
-      return `${stock.name}은 현재 가격 흐름과 단기 차트가 약세 방향을 보이고 있습니다. 추가 하락 가능성과 변동성 리스크를 함께 고려할 필요가 있습니다.`;
-    }
-    return `${stock.name}은 현재 방향성이 뚜렷하지 않습니다. 최근 차트 변화율은 ${r.toFixed(2)}% 수준으로 추가 신호 확인 전까지 관망 판단이 상대적으로 우세합니다.`;
-  }, [aiDecision, stock, chartPoints]);
 
-  const history = useMemo(
-    () => [
-      { time: "09:30", decision: "관망" as AiDecision, reason: "장 초반 방향성 확인 필요" },
-      { time: "10:15", decision: aiDecision, reason: "현재가와 단기 차트 흐름 반영" },
-      { time: "11:00", decision: aiDecision, reason: "거래량과 변동성 요인 재확인" },
-    ],
-    [aiDecision],
-  );
+    const symbol = stock.symbol;
+    let cancelled = false;
+    setIsLoadingJudgment(true);
+    setIsLoadingHistory(true);
+
+    judgmentService
+      .watchSymbol(symbol)
+      .catch(() => {})
+      .then(() =>
+        Promise.all([
+          judgmentService.getJudgment(symbol).catch(() => null),
+          judgmentService.getHistory(symbol).catch(() => []),
+        ]),
+      )
+      .then(([judgmentResult, historyResult]) => {
+        if (cancelled) return;
+        setJudgment(judgmentResult);
+        setHistory(historyResult);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoadingJudgment(false);
+          setIsLoadingHistory(false);
+        }
+      });
+
+    const heartbeat = setInterval(() => {
+      void judgmentService.watchSymbol(symbol);
+    }, 30_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(heartbeat);
+      void judgmentService.unwatchSymbol(symbol);
+    };
+  }, [isOpen, stock?.symbol]);
+
+  const aiDecision: AiDecision = judgment?.judge ?? "관망";
+  const confidence = judgment?.confidence ?? 0;
+  const factors = judgment?.factors ?? [];
+  const summary = isLoadingJudgment
+    ? "AI 판단을 불러오는 중입니다..."
+    : judgment?.summary ??
+      (stock ? "아직 계산된 판단이 없습니다." : "종목을 선택하면 AI 판단을 확인할 수 있습니다.");
+
+  const [compareResult, setCompareResult] = useState<AiCompareResult | null>(null);
+  const [isComparing, setIsComparing] = useState(false);
+
+  const handleSelectDecision = (decision: AiDecision) => {
+    setUserDecision(decision);
+    setCompareResult(null);
+    if (!stock?.symbol) return;
+
+    setIsComparing(true);
+    judgmentService
+      .compare(stock.symbol, decision)
+      .then((result) => setCompareResult(result))
+      .catch(() => setCompareResult(null))
+      .finally(() => setIsComparing(false));
+  };
 
   if (!isOpen) return null;
 
@@ -349,6 +313,11 @@ export default function AiRamenPanel({
             {factors.map((factor) => (
               <FactorCard key={factor.factor} factor={factor} />
             ))}
+            {!isLoadingJudgment && factors.length === 0 && (
+              <Text fontSize="10px" color={MUTED} textAlign="center" py="12px">
+                지금은 특별한 신호가 감지되지 않았어요.
+              </Text>
+            )}
           </Stack>
         )}
 
@@ -359,26 +328,36 @@ export default function AiRamenPanel({
                 시간에 따라 AI 판단이 어떻게 변했는지 확인할 수 있습니다.
               </Text>
             </Box>
-            {history.map((item, index) => (
-              <Flex key={`${item.time}-${index}`} gap="11px" minH="78px">
-                <Flex direction="column" align="center">
-                  <Box mt="4px" w="9px" h="9px" borderRadius="full" bg={decisionColor(item.decision)} />
-                  {index < history.length - 1 && <Box mt="5px" w="1px" flex="1" bg="#E8DED3" />}
-                </Flex>
-                <Box flex="1" pb="14px">
-                  <Flex align="center">
-                    <Text fontSize="9px" color={MUTED}>{item.time}</Text>
-                    <Spacer />
-                    <Badge bg={decisionBg(item.decision)} color={decisionColor(item.decision)} fontSize="8px">
-                      {item.decision}
-                    </Badge>
+            {isLoadingHistory ? (
+              <Text fontSize="10px" color={MUTED} textAlign="center" py="24px">
+                불러오는 중...
+              </Text>
+            ) : history.length === 0 ? (
+              <Text fontSize="10px" color={MUTED} textAlign="center" py="24px">
+                아직 판단 이력이 없습니다.
+              </Text>
+            ) : (
+              history.map((item, index) => (
+                <Flex key={`${item.time}-${index}`} gap="11px" minH="78px">
+                  <Flex direction="column" align="center">
+                    <Box mt="4px" w="9px" h="9px" borderRadius="full" bg={decisionColor(item.judge)} />
+                    {index < history.length - 1 && <Box mt="5px" w="1px" flex="1" bg="#E8DED3" />}
                   </Flex>
-                  <Text mt="7px" fontSize="10px" fontWeight="800" color={TEXT}>
-                    {item.reason}
-                  </Text>
-                </Box>
-              </Flex>
-            ))}
+                  <Box flex="1" pb="14px">
+                    <Flex align="center">
+                      <Text fontSize="9px" color={MUTED}>{formatHistoryTime(item.time)}</Text>
+                      <Spacer />
+                      <Badge bg={decisionBg(item.judge)} color={decisionColor(item.judge)} fontSize="8px">
+                        {item.judge}
+                      </Badge>
+                    </Flex>
+                    <Text mt="7px" fontSize="10px" fontWeight="800" color={TEXT}>
+                      {item.reason}
+                    </Text>
+                  </Box>
+                </Flex>
+              ))
+            )}
           </Stack>
         )}
 
@@ -398,7 +377,7 @@ export default function AiRamenPanel({
                     bg={userDecision === decision ? decisionBg(decision) : "white"}
                     color={decisionColor(decision)}
                     fontSize="10px"
-                    onClick={() => setUserDecision(decision)}
+                    onClick={() => handleSelectDecision(decision)}
                   >
                     {decision}
                   </Button>
@@ -424,14 +403,22 @@ export default function AiRamenPanel({
 
             {userDecision && (
               <Box p="12px" bg={userDecision === aiDecision ? "#F2F9F2" : "#FFF7ED"} borderRadius="10px">
-                <Text fontSize="10px" fontWeight="900" color={TEXT}>
-                  {userDecision === aiDecision
-                    ? "AI와 같은 방향으로 판단했습니다."
-                    : "AI와 다른 방향으로 판단했습니다."}
-                </Text>
-                <Text mt="5px" fontSize="9px" lineHeight="1.65" color={MUTED}>
-                  정답/오답 비교가 아니라 어떤 요인을 다르게 해석했는지 확인하는 학습용 비교입니다.
-                </Text>
+                {isComparing ? (
+                  <Text fontSize="10px" color={MUTED}>비교 결과를 불러오는 중...</Text>
+                ) : compareResult ? (
+                  <>
+                    <Text fontSize="10px" fontWeight="900" color={TEXT}>
+                      {userDecision === compareResult.ai_judge
+                        ? "AI와 같은 방향으로 판단했습니다."
+                        : "AI와 다른 방향으로 판단했습니다."}
+                    </Text>
+                    <Text mt="5px" fontSize="9px" lineHeight="1.65" color={MUTED}>
+                      {compareResult.explanation}
+                    </Text>
+                  </>
+                ) : (
+                  <Text fontSize="10px" color={MUTED}>비교 결과를 불러오지 못했습니다.</Text>
+                )}
               </Box>
             )}
           </Stack>
