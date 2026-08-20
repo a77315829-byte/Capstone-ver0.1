@@ -3,7 +3,6 @@ from typing import TypedDict, Literal
 
 class FactorCatalogEntry(TypedDict):
     factor_id: str
-    type: Literal["직접", "간접"]
     direction: Literal["긍정", "부정"]  # 판단에 긍정적(매수)/부정적(매도) 신호인지
     feature_key: str       # 예: "foreign_net_flow", "rsi_14"
     description: str
@@ -15,6 +14,7 @@ class JudgmentHistoryDoc(TypedDict):
     time: str
     judge: str
     confidence: float
+    probabilities: dict[str, float]  # {"매수": %, "매도": %, "관망": %}, 합계 100
     reason: str
     factors: list[dict]
     changed: bool

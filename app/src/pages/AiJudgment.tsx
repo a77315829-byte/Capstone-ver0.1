@@ -258,11 +258,19 @@ export default function AiJudgmentPage() {
 		if (judgmentResult.status === "fulfilled") {
 			setJudgment(judgmentResult.value);
 		} else {
-			setJudgment(null);
 			const error: any = judgmentResult.reason;
 			if (error?.response?.status === 404) {
-				setNotFound(true);
+				// 이력이 없는 종목 - 감시 대상으로 등록하면 백엔드가 콜드스타트로
+				// 첫 판단을 만들어주니, 그걸 기다렸다가 한 번 더 조회해본다.
+				try {
+					await judgmentService.watchSymbol(next);
+					setJudgment(await judgmentService.getJudgment(next));
+				} catch {
+					setJudgment(null);
+					setNotFound(true);
+				}
 			} else {
+				setJudgment(null);
 				setErrorText(
 					error?.response?.data?.detail ??
 						error?.response?.data?.message ??
@@ -278,6 +286,22 @@ export default function AiJudgmentPage() {
 		void load("005930");
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	// 지금 보고 있는 종목만 백엔드가 실시간으로 감시하도록, 화면에 떠 있는 동안
+	// 주기적으로 구독을 갱신(하트비트)하고 종목이 바뀌거나 화면을 벗어나면 해제한다.
+	useEffect(() => {
+		if (!selectedSymbol) return;
+
+		void judgmentService.watchSymbol(selectedSymbol);
+		const heartbeat = setInterval(() => {
+			void judgmentService.watchSymbol(selectedSymbol);
+		}, 30_000);
+
+		return () => {
+			clearInterval(heartbeat);
+			void judgmentService.unwatchSymbol(selectedSymbol);
+		};
+	}, [selectedSymbol]);
 
 	const search = async () => {
 		if (!keyword.trim()) return;

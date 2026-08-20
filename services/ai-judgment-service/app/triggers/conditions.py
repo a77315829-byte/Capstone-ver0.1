@@ -16,5 +16,13 @@ def supply_demand_flipped(prev_flow: float, cur_flow: float) -> bool:
     return prev_flow > 0 and cur_flow < 0
 
 
-def news_arrived(new_article_count: int) -> bool:
-    return new_article_count > 0
+def volume_surged(volume_ratio: float | None) -> bool:
+    return volume_ratio is not None and volume_ratio >= settings.volume_surge_ratio
+
+
+def ma_crossed(golden_cross: bool, dead_cross: bool) -> bool:
+    return bool(golden_cross or dead_cross)
+
+
+def week52_extreme_hit(week52_high: bool, week52_low: bool) -> bool:
+    return bool(week52_high or week52_low)
