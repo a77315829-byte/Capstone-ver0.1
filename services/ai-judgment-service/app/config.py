@@ -1,9 +1,18 @@
 from typing import Literal
+from urllib.parse import quote
 
-from pydantic_settings import BaseSettings
+from pydantic import model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    # 통합 저장소에서는 server/.env의 Atlas 계정 정보를 재사용하고, 서비스별 .env가
+    # provider·DB 이름·명시적 MONGO_URI를 덮어쓸 수 있게 한다.
+    model_config = SettingsConfigDict(
+        env_file=("../../server/.env", ".env"),
+        extra="ignore",
+    )
+
     # llm_provider="ollama"로 두면 OpenAI 유료 호출 없이 로컬 Ollama 모델로 테스트할 수 있다.
     llm_provider: Literal["openai", "ollama"] = "openai"
 
@@ -11,10 +20,33 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o"
 
     ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "qwen2.5"
+    ollama_model: str = "qwen3.5:4b"
 
-    mongo_uri: str
-    mongo_db_name: str = "entitude"
+    mongo_uri: str = ""
+    mongo_db_name: str = "anttitude_ai_judgment"
+    stotra_mongodb_username: str = ""
+    stotra_mongodb_password: str = ""
+    stotra_mongodb_cluster: str = ""
+
+    @model_validator(mode="after")
+    def resolve_mongo_uri(self):
+        if self.mongo_uri:
+            return self
+        if (
+            self.stotra_mongodb_username
+            and self.stotra_mongodb_password
+            and self.stotra_mongodb_cluster
+        ):
+            username = quote(self.stotra_mongodb_username, safe="")
+            password = quote(self.stotra_mongodb_password, safe="")
+            cluster = self.stotra_mongodb_cluster.strip()
+            self.mongo_uri = (
+                f"mongodb+srv://{username}:{password}@{cluster}/"
+                "?authMechanism=DEFAULT&retryWrites=true&w=majority"
+            )
+            return self
+        self.mongo_uri = "mongodb://127.0.0.1:27017"
+        return self
 
     # 프론트엔드 dev 서버 오리진. 개발 단계라 넓게 허용 - 배포 시엔 실제 프론트 도메인으로 좁혀야 한다.
     cors_allow_origins: list[str] = ["*"]
@@ -61,9 +93,5 @@ class Settings(BaseSettings):
     # 이전 이력과 라벨이 같아도, 매수/매도/관망 확률 중 하나라도 이 값(%p) 이상
     # 움직였으면 "변경"으로 기록한다 - 데모 값, 튜닝 필요.
     judge_change_threshold_pct: float = 15.0
-
-    class Config:
-        env_file = ".env"
-
 
 settings = Settings()

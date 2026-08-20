@@ -85,31 +85,8 @@ router.get(
 // ================================
 // Scenario Service
 // ================================
-
-router.get("/api/scenario-service/scenarios", async (req, res) => {
-	try {
-		const baseUrl =
-			process.env.SCENARIO_SERVICE_URL || "http://127.0.0.1:8001";
-
-		const response = await axios.get(`${baseUrl}/api/scenarios`);
-
-		return res.json(response.data);
-	} catch (error: any) {
-		console.error(
-			"Scenario Service request failed:",
-			error.response?.data || error.message,
-		);
-
-		return res.status(error.response?.status || 502).json(
-			error.response?.data || {
-				error: "Scenario Service 연결 실패",
-			},
-		);
-	}
-});
-
 const SCENARIO_SERVICE_URL =
-	process.env.SCENARIO_SERVICE_URL || "http://127.0.0.1:8001";
+	process.env.SCENARIO_SERVICE_URL || "http://127.0.0.1:8000";
 
 const handleScenarioError = (res: any, error: any) => {
 	console.error(
@@ -325,12 +302,12 @@ router.post(
 // AI Judgment Service
 // ================================
 
+const AI_JUDGMENT_SERVICE_URL =
+	process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8003";
+
 router.get("/api/ai-judgment/health", async (req, res) => {
 	try {
-		const baseUrl =
-			process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8002";
-
-		const response = await axios.get(`${baseUrl}/health`);
+		const response = await axios.get(`${AI_JUDGMENT_SERVICE_URL}/health`);
 
 		return res.json(response.data);
 	} catch (error) {
@@ -343,11 +320,8 @@ router.get("/api/ai-judgment/health", async (req, res) => {
 });
 router.get("/api/ai-judgment/:symbol", async (req, res) => {
 	try {
-		const baseUrl =
-			process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8002";
-
 		const response = await axios.get(
-			`${baseUrl}/judgment/${req.params.symbol}`,
+			`${AI_JUDGMENT_SERVICE_URL}/judgment/${req.params.symbol}`,
 		);
 
 		return res.json(response.data);
@@ -366,11 +340,8 @@ router.get("/api/ai-judgment/:symbol", async (req, res) => {
 });
 router.post("/api/ai-judgment/:symbol/watch", async (req, res) => {
 	try {
-		const baseUrl =
-			process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8002";
-
 		const response = await axios.post(
-			`${baseUrl}/judgment/${req.params.symbol}/watch`,
+			`${AI_JUDGMENT_SERVICE_URL}/judgment/${req.params.symbol}/watch`,
 		);
 
 		return res.json(response.data);
@@ -389,11 +360,8 @@ router.post("/api/ai-judgment/:symbol/watch", async (req, res) => {
 });
 router.delete("/api/ai-judgment/:symbol/watch", async (req, res) => {
 	try {
-		const baseUrl =
-			process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8002";
-
 		const response = await axios.delete(
-			`${baseUrl}/judgment/${req.params.symbol}/watch`,
+			`${AI_JUDGMENT_SERVICE_URL}/judgment/${req.params.symbol}/watch`,
 		);
 
 		return res.json(response.data);
@@ -412,11 +380,8 @@ router.delete("/api/ai-judgment/:symbol/watch", async (req, res) => {
 });
 router.get("/api/ai-judgment/:symbol/history", async (req, res) => {
 	try {
-		const baseUrl =
-			process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8002";
-
 		const response = await axios.get(
-			`${baseUrl}/judgment/${req.params.symbol}/history`,
+			`${AI_JUDGMENT_SERVICE_URL}/judgment/${req.params.symbol}/history`,
 			{ params: req.query },
 		);
 
@@ -436,10 +401,10 @@ router.get("/api/ai-judgment/:symbol/history", async (req, res) => {
 });
 router.post("/api/ai-judgment/compare", async (req, res) => {
 	try {
-		const baseUrl =
-			process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8002";
-
-		const response = await axios.post(`${baseUrl}/judgment/compare`, req.body);
+		const response = await axios.post(
+			`${AI_JUDGMENT_SERVICE_URL}/judgment/compare`,
+			req.body,
+		);
 
 		return res.json(response.data);
 	} catch (error: any) {

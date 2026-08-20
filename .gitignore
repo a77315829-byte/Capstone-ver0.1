@@ -58,6 +58,7 @@ simulator/market_reaction/data/
 # -------------------------
 .env
 .env.*
+!server/.env.example
 server/.env
 simulator/.env
 
