@@ -1,838 +1,2677 @@
-import React, { useEffect, useMemo, useState } from "react";
 import {
-	Badge,
-	Box,
-	Button,
-	Card,
-	CardBody,
-	Flex,
-	Grid,
-	GridItem,
-	Heading,
-	HStack,
-	Image,
-	Progress,
-	Select,
-	SimpleGrid,
-	Skeleton,
-	Spacer,
-	Stack,
-	Text,
-	useToast,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  Badge,
+  Box,
+  Button,
+  Flex,
+  Grid,
+  GridItem,
+  Heading,
+  HStack,
+  Image,
+  Progress,
+  Select,
+  SimpleGrid,
+  Skeleton,
+  Spacer,
+  Stack,
+  Text,
+  useToast,
 } from "@chakra-ui/react";
+
 import { useNavigate } from "react-router-dom";
 
 import scenarioService from "../services/scenario.service";
 import tokens from "../services/tokens.service";
 
-
+/* =========================================================
+   TYPES
+========================================================= */
 
 type ScenarioApiItem = {
-	scenario_id: string;
-	version: number;
-	title: string;
-	description: string;
-	difficulty: string;
-	total_turns: number;
-	initial_cash: number;
-	event_period?: string;
-	initial_portfolio_label?: string;
-	learning_points: string[];
+  scenario_id: string;
+  version: number;
+  title: string;
+  description: string;
+  difficulty: string;
+  total_turns: number;
+  initial_cash: number;
+
+  event_period?: string;
+
+  initial_portfolio_label?: string;
+
+  learning_points: string[];
 };
+
+type ScenarioStatus =
+  | "NOT_STARTED"
+  | "IN_PROGRESS"
+  | "COMPLETED";
 
 type ScenarioItem = {
-	_id: string;
-	chapterId: number;
-	chapterTitle: string;
-	scenarioNo: string;
-	scenarioSlug: string;
-	title: string;
-	eventPeriod: string;
-	initialPortfolioLabel: string;
-	summary: string;
-	difficulty: "쉬움" | "보통" | "어려움";
-	estimatedMinutes: number;
-	keywords: string[];
-	learningPoints: string[];
-	status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
-    completedStepCount: number;
-    sessionId?: string | null;
-    progressPercent?: number;
+  _id: string;
+
+  scenarioSlug: string;
+
+  title: string;
+
+  eventPeriod: string;
+
+  initialPortfolioLabel: string;
+
+  summary: string;
+
+  difficulty:
+    | "쉬움"
+    | "보통"
+    | "어려움";
+
+  estimatedMinutes: number;
+
+  totalTurns: number;
+
+  learningPoints: string[];
+
+  status: ScenarioStatus;
+
+  completedStepCount: number;
+
+  sessionId?:
+    | string
+    | null;
+
+  progressPercent: number;
+
+  updatedAt?:
+    | string
+    | null;
 };
 
-const unwrapApiData = <T,>(payload: any): T => {
-	return payload?.data ?? payload;
-};
+/* =========================================================
+   COLORS
+========================================================= */
 
-const statusLabel: Record<ScenarioItem["status"], string> = {
-	NOT_STARTED: "미시작",
-	IN_PROGRESS: "진행 중",
-	COMPLETED: "완료",
-};
+const BG = "#FDFAF4";
 
-const statusColor: Record<ScenarioItem["status"], string> = {
-	NOT_STARTED: "gray",
-	IN_PROGRESS: "orange",
-	COMPLETED: "green",
-};
+const SURFACE = "#FFFCF8";
 
-const bubblePositions = [
-	{ left: "43%", top: "47%", width: 252, height: 252 },
-	{ left: "14%", top: "25%", width: 184, height: 184 },
-	{ left: "12%", top: "67%", width: 166, height: 166 },
-	{ left: "76%", top: "24%", width: 184, height: 184 },
-	{ left: "76%", top: "66%", width: 170, height: 170 },
-	{ left: "43%", top: "84%", width: 210, height: 128 },
+const WHITE = "#FFFFFF";
+
+const TEXT = "#211C18";
+
+const MUTED = "#81766D";
+
+const SUBTLE = "#625950";
+
+const BORDER = "#E7DCCE";
+
+const ORANGE = "#F36F2A";
+
+const ORANGE_DARK = "#D95E20";
+
+const ORANGE_SOFT = "#FFF3EA";
+
+const GREEN = "#4F9B63";
+
+const GREEN_SOFT = "#EFF8F1";
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function getScenarioYear(
+  eventPeriod: string,
+) {
+  const match =
+    eventPeriod?.match(
+      /(?:19|20)\d{2}/,
+    );
+
+  return match?.[0] ?? "과거";
+}
+
+/**
+ * 화면에서는 반드시
+ *
+ * 2022 → 2022년
+ */
+function getScenarioYearLabel(
+  eventPeriod: string,
+) {
+  const year =
+    getScenarioYear(
+      eventPeriod,
+    );
+
+  if (year === "과거") {
+    return year;
+  }
+
+  return `${year}년`;
+}
+
+function normalizeDifficulty(
+  value: string,
+): ScenarioItem["difficulty"] {
+  if (
+    value === "쉬움" ||
+    value === "보통" ||
+    value === "어려움"
+  ) {
+    return value;
+  }
+
+  const normalized =
+    value.toLowerCase();
+
+  if (
+    normalized === "easy"
+  ) {
+    return "쉬움";
+  }
+
+  if (
+    normalized === "hard"
+  ) {
+    return "어려움";
+  }
+
+  return "보통";
+}
+
+function difficultyLevel(
+  difficulty: ScenarioItem["difficulty"],
+) {
+  if (
+    difficulty === "어려움"
+  ) {
+    return 4;
+  }
+
+  if (
+    difficulty === "보통"
+  ) {
+    return 3;
+  }
+
+  return 2;
+}
+
+function statusLabel(
+  status: ScenarioStatus,
+) {
+  if (
+    status === "IN_PROGRESS"
+  ) {
+    return "진행 중";
+  }
+
+  if (
+    status === "COMPLETED"
+  ) {
+    return "완료";
+  }
+
+  return "미시작";
+}
+
+function formatDate(
+  value?:
+    | string
+    | null,
+) {
+  if (!value) {
+    return "";
+  }
+
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return "";
+  }
+
+  return date.toLocaleDateString(
+    "ko-KR",
+    {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    },
+  );
+}
+
+/* =========================================================
+   DIFFICULTY DOTS
+========================================================= */
+
+function DifficultyDots({
+  difficulty,
+  size = "8px",
+}: {
+  difficulty: ScenarioItem["difficulty"];
+
+  size?: string;
+}) {
+  const level =
+    difficultyLevel(
+      difficulty,
+    );
+
+  return (
+    <HStack spacing="4px">
+      {[1, 2, 3, 4, 5].map(
+        (dot) => (
+          <Box
+            key={dot}
+            w={size}
+            h={size}
+            borderRadius="full"
+            bg={
+              dot <= level
+                ? ORANGE
+                : "#D9D4CE"
+            }
+          />
+        ),
+      )}
+    </HStack>
+  );
+}
+
+/* =========================================================
+   RACE TRACK
+========================================================= */
+
+function RaceTrackBackground() {
+  /**
+   * 개미 위치.
+   *
+   * 디자이너가 준 race-track.png 위에
+   * 실제 ant.png를 배치한다.
+   */
+  const ants = [
+    {
+      left: "8%",
+      top: "50%",
+      rotate:
+        "-25deg",
+    },
+
+    {
+      left: "24%",
+      top: "41%",
+      rotate:
+        "24deg",
+    },
+
+    {
+      left: "43%",
+      top: "55%",
+      rotate:
+        "-10deg",
+    },
+
+    {
+      left: "69%",
+      top: "40%",
+      rotate:
+        "12deg",
+    },
+
+    {
+      left: "82%",
+      top: "51%",
+      rotate:
+        "28deg",
+    },
+  ];
+
+  return (
+    <Box
+      position="absolute"
+      inset="0"
+      pointerEvents="none"
+      overflow="hidden"
+      zIndex={0}
+    >
+      {/* =========================
+          실제 레이스 트랙
+      ========================= */}
+
+      <Image
+        position="absolute"
+        left="5%"
+        top="10%"
+        w="90%"
+        h="78%"
+        src="/scenario/race-track.png"
+        alt=""
+        objectFit="contain"
+        opacity={0.95}
+      />
+
+      {/* =========================
+          출발 깃발
+      ========================= */}
+
+      <Image
+        position="absolute"
+        left="7%"
+        top="46%"
+        w="17px"
+        h="17px"
+        src="/icons/flag.svg"
+        alt=""
+        objectFit="contain"
+      />
+
+      {/* =========================
+          도착 깃발
+      ========================= */}
+
+      <Image
+        position="absolute"
+        right="9%"
+        top="42%"
+        w="17px"
+        h="17px"
+        src="/icons/flag.svg"
+        alt=""
+        objectFit="contain"
+      />
+
+      {/* =========================
+          실제 검은 개미
+      ========================= */}
+
+      {ants.map(
+        (ant, index) => (
+          <Image
+            key={index}
+            position="absolute"
+            left={ant.left}
+            top={ant.top}
+            src="/scenario/ant.png"
+            alt=""
+            w="17px"
+            h="17px"
+            objectFit="contain"
+            transform={`rotate(${ant.rotate})`}
+          />
+        ),
+      )}
+    </Box>
+  );
+}
+
+/* =========================================================
+   CENTER SCENARIO
+========================================================= */
+
+function CenterScenarioBubble({
+  scenario,
+  onClick,
+}: {
+  scenario: ScenarioItem;
+
+  onClick: () => void;
+}) {
+  const buttonLabel =
+    scenario.status ===
+    "IN_PROGRESS"
+      ? "이어하기"
+      : scenario.status ===
+          "COMPLETED"
+        ? "결과 보기"
+        : "시작하기";
+
+  return (
+    <Button
+      position="absolute"
+      left="50%"
+      top="48%"
+      transform="translate(-50%, -50%)"
+      w="218px"
+      h="218px"
+      minW="218px"
+      p="17px"
+      bg={SURFACE}
+      borderWidth="2px"
+      borderColor={ORANGE}
+      borderRadius="full"
+      whiteSpace="normal"
+      boxShadow="0 10px 26px rgba(243,111,42,.08)"
+      zIndex={3}
+      transition="all .18s ease"
+      _hover={{
+        bg:
+          "#FFF9F4",
+
+        transform:
+          "translate(-50%, -50%) scale(1.02)",
+      }}
+      _active={{
+        transform:
+          "translate(-50%, -50%) scale(1)",
+      }}
+      onClick={onClick}
+    >
+      <Stack
+        spacing="5px"
+        align="center"
+      >
+        {/* 개미 */}
+
+        <Image
+          src="/scenario/ant.png"
+          alt=""
+          w="18px"
+          h="18px"
+          objectFit="contain"
+        />
+
+        {/* 연도 */}
+
+        <Text
+          fontSize="12px"
+          fontWeight="900"
+          color={ORANGE}
+        >
+          {getScenarioYearLabel(
+            scenario.eventPeriod,
+          )}
+        </Text>
+
+        {/* 제목 */}
+
+        <Text
+          maxW="160px"
+          fontSize="20px"
+          lineHeight="1.28"
+          fontWeight="900"
+          color={TEXT}
+          letterSpacing="-0.035em"
+          noOfLines={3}
+        >
+          {scenario.title}
+        </Text>
+
+        {/* turn */}
+
+        <Text
+          fontSize="11px"
+          fontWeight="700"
+          color={SUBTLE}
+        >
+          총 {scenario.totalTurns} TURN
+        </Text>
+
+        {/* 난이도 */}
+
+        <DifficultyDots
+          difficulty={
+            scenario.difficulty
+          }
+          size="8px"
+        />
+
+        {/* 버튼 */}
+
+        <Button
+          mt="3px"
+          h="32px"
+          px="17px"
+          variant="outline"
+          borderColor={ORANGE}
+          color={ORANGE}
+          bg={WHITE}
+          borderRadius="7px"
+          fontSize="12px"
+          fontWeight="900"
+          pointerEvents="none"
+        >
+          {buttonLabel}
+        </Button>
+      </Stack>
+    </Button>
+  );
+}
+
+/* =========================================================
+   ORBIT SCENARIOS
+========================================================= */
+
+const ORBIT_POSITIONS = [
+  {
+    left: "18%",
+    top: "29%",
+    size: 155,
+  },
+
+  {
+    left: "18%",
+    top: "72%",
+    size: 150,
+  },
+
+  {
+    left: "82%",
+    top: "29%",
+    size: 155,
+  },
+
+  {
+    left: "80%",
+    top: "72%",
+    size: 150,
+  },
+
+  {
+    left: "50%",
+    top: "84%",
+    size: 143,
+  },
 ];
 
-function getScenarioYear(eventPeriod: string): string {
-	const year = eventPeriod?.match(/(?:19|20)\d{2}/)?.[0];
-	return year ?? "과거";
-}
-
-function difficultyLevel(difficulty: ScenarioItem["difficulty"]): number {
-	if (difficulty === "어려움") return 3;
-	if (difficulty === "보통") return 2;
-	return 1;
-}
-
-function ScenarioBubble({
-	scenario,
-	index,
-	isSelected,
-	onSelect,
+function OrbitScenarioBubble({
+  scenario,
+  index,
+  onSelect,
 }: {
-	scenario: ScenarioItem;
-	index: number;
-	isSelected: boolean;
-	onSelect: () => void;
-}) {
-	const position = bubblePositions[index % bubblePositions.length]!;
-	const level = difficultyLevel(scenario.difficulty);
-	const year = getScenarioYear(scenario.eventPeriod);
+  scenario: ScenarioItem;
 
-	return (
-		<Button
-			position="absolute"
-			left={position.left}
-			top={position.top}
-			transform="translate(-50%, -50%)"
-			w={`${position.width}px`}
-			h={`${position.height}px`}
-			minW="0"
-			p="18px"
-			borderRadius="50%"
-			whiteSpace="normal"
-			bg="transparent"
-			borderWidth={isSelected ? "2px" : "1.5px"}
-			borderColor={isSelected ? "brand.500" : "#343434"}
-			color="app.text"
-			boxShadow={isSelected ? "0 8px 24px rgba(246, 107, 36, 0.10)" : "none"}
-			_hover={{
-				bg: "#FFFDF9",
-				borderColor: "brand.500",
-				transform: "translate(-50%, -50%) translateY(-3px)",
-			}}
-			_active={{
-				transform: "translate(-50%, -50%)",
-			}}
-			onClick={onSelect}
-		>
-			<Stack spacing="8px" align="center">
-				<Badge
-					variant="outline"
-					borderColor="brand.500"
-					color="brand.500"
-					fontSize="13px"
-					px="10px"
-					py="2px"
-				>
-					{year}
-				</Badge>
-				<Text
-					fontSize={position.width >= 230 ? "20px" : "16px"}
-					fontWeight="900"
-					lineHeight="1.25"
-					noOfLines={2}
-				>
-					{scenario.title}
-				</Text>
-				<HStack spacing="8px">
-					<Text fontSize="12px" fontWeight="600">
-						난이도
-					</Text>
-					<HStack spacing="5px">
-						{[1, 2, 3].map((dot) => (
-							<Box
-								key={dot}
-								w="10px"
-								h="10px"
-								borderRadius="full"
-								borderWidth="1px"
-								borderColor="brand.500"
-								bg={dot <= level ? "brand.500" : "transparent"}
-							/>
-						))}
-					</HStack>
-				</HStack>
-				<HStack spacing="7px">
-					<Box
-						w="14px"
-						h="14px"
-						borderRadius="full"
-						borderWidth="1px"
-						borderColor="app.border"
-					/>
-					<Text fontSize="12px">{scenario.estimatedMinutes}분</Text>
-				</HStack>
-			</Stack>
-		</Button>
-	);
+  index: number;
+
+  onSelect: () => void;
+}) {
+  /**
+   * ORBIT_POSITIONS가 항상 존재하므로
+   * ! 로 undefined 가능성 제거.
+   */
+  const position =
+    ORBIT_POSITIONS[
+      index %
+        ORBIT_POSITIONS.length
+    ]!;
+
+  return (
+    <Button
+      position="absolute"
+      left={position.left}
+      top={position.top}
+      transform="translate(-50%, -50%)"
+      w={`${position.size}px`}
+      h={`${position.size}px`}
+      minW="0"
+      p="13px"
+      borderRadius="full"
+      whiteSpace="normal"
+      bg={SURFACE}
+      borderWidth="1px"
+      borderColor="#CEC7BF"
+      boxShadow="0 4px 12px rgba(40,29,21,.025)"
+      zIndex={2}
+      transition="all .16s ease"
+      _hover={{
+        borderColor:
+          ORANGE,
+
+        bg:
+          "#FFF9F4",
+
+        transform:
+          "translate(-50%, -50%) translateY(-3px)",
+      }}
+      onClick={
+        onSelect
+      }
+    >
+      <Stack
+        spacing="5px"
+        align="center"
+      >
+        {/* 연도 */}
+
+        <Text
+          fontSize="11px"
+          fontWeight="900"
+          color={ORANGE}
+        >
+          {getScenarioYearLabel(
+            scenario.eventPeriod,
+          )}
+        </Text>
+
+        {/* 제목 */}
+
+        <Text
+          maxW="115px"
+          fontSize="15px"
+          lineHeight="1.3"
+          fontWeight="900"
+          color={TEXT}
+          noOfLines={3}
+        >
+          {scenario.title}
+        </Text>
+
+        {/* turn */}
+
+        <Text
+          fontSize="10px"
+          fontWeight="700"
+          color={SUBTLE}
+        >
+          총 {scenario.totalTurns} TURN
+        </Text>
+
+        {/* 난이도 */}
+
+        <DifficultyDots
+          difficulty={
+            scenario.difficulty
+          }
+          size="7px"
+        />
+
+        {/* 상태 */}
+
+        {scenario.status !==
+          "NOT_STARTED" && (
+          <Badge
+            mt="2px"
+            px="6px"
+            py="2px"
+            borderRadius="full"
+            fontSize="7px"
+            bg={
+              scenario.status ===
+              "COMPLETED"
+                ? GREEN_SOFT
+                : ORANGE_SOFT
+            }
+            color={
+              scenario.status ===
+              "COMPLETED"
+                ? GREEN
+                : ORANGE
+            }
+          >
+            {statusLabel(
+              scenario.status,
+            )}
+          </Badge>
+        )}
+      </Stack>
+    </Button>
+  );
 }
+
+/* =========================================================
+   MOBILE SCENARIO
+========================================================= */
 
 function MobileScenarioCard({
-	scenario,
-	isSelected,
-	onSelect,
+  scenario,
+  selected,
+  onClick,
 }: {
-	scenario: ScenarioItem;
-	isSelected: boolean;
-	onSelect: () => void;
+  scenario: ScenarioItem;
+
+  selected: boolean;
+
+  onClick: () => void;
 }) {
-	return (
-		<Button
-			h="auto"
-			minH="150px"
-			p="18px"
-			whiteSpace="normal"
-			variant="outline"
-			borderColor={isSelected ? "brand.500" : "app.border"}
-			bg={isSelected ? "brand.50" : "app.surface"}
-			onClick={onSelect}
-		>
-			<Stack spacing="8px" align="flex-start" w="100%">
-				<Badge colorScheme="orange" variant="outline">
-					{getScenarioYear(scenario.eventPeriod)}
-				</Badge>
-				<Text fontSize="17px" fontWeight="900" textAlign="left">
-					{scenario.title}
-				</Text>
-				<Text fontSize="12px" color="app.muted">
-					{scenario.difficulty} · 약 {scenario.estimatedMinutes}분
-				</Text>
-			</Stack>
-		</Button>
-	);
+  return (
+    <Button
+      h="auto"
+      minH="135px"
+      p="15px"
+      whiteSpace="normal"
+      bg={
+        selected
+          ? ORANGE_SOFT
+          : WHITE
+      }
+      borderWidth="1px"
+      borderColor={
+        selected
+          ? ORANGE
+          : BORDER
+      }
+      borderRadius="10px"
+      onClick={onClick}
+    >
+      <Flex
+        w="100%"
+        direction="column"
+        align="flex-start"
+      >
+        <Flex
+          w="100%"
+          align="center"
+        >
+          <Flex
+            align="center"
+            gap="6px"
+          >
+            <Image
+              src="/scenario/ant.png"
+              alt=""
+              w="14px"
+              h="14px"
+            />
+
+            <Text
+              fontSize="11px"
+              fontWeight="900"
+              color={ORANGE}
+            >
+              {getScenarioYearLabel(
+                scenario.eventPeriod,
+              )}
+            </Text>
+          </Flex>
+
+          <Spacer />
+
+          <Badge
+            px="6px"
+            py="2px"
+            fontSize="7px"
+            borderRadius="full"
+            bg={
+              scenario.status ===
+              "COMPLETED"
+                ? GREEN_SOFT
+                : "#F5F0EA"
+            }
+            color={
+              scenario.status ===
+              "COMPLETED"
+                ? GREEN
+                : MUTED
+            }
+          >
+            {statusLabel(
+              scenario.status,
+            )}
+          </Badge>
+        </Flex>
+
+        <Text
+          mt="8px"
+          fontSize="16px"
+          fontWeight="900"
+          color={TEXT}
+          textAlign="left"
+        >
+          {scenario.title}
+        </Text>
+
+        <Flex
+          mt="9px"
+          align="center"
+          gap="9px"
+        >
+          <DifficultyDots
+            difficulty={
+              scenario.difficulty
+            }
+          />
+
+          <Text
+            fontSize="10px"
+            color={MUTED}
+          >
+            {scenario.totalTurns} TURN
+          </Text>
+        </Flex>
+      </Flex>
+    </Button>
+  );
 }
+
+/* =========================================================
+   SCENARIO DETAIL
+========================================================= */
+
+function ScenarioDetail({
+  scenario,
+  onStart,
+  isStarting,
+}: {
+  scenario: ScenarioItem;
+
+  onStart: () => void;
+
+  isStarting: boolean;
+}) {
+  const buttonLabel =
+    scenario.status ===
+    "IN_PROGRESS"
+      ? "시나리오 이어하기"
+      : scenario.status ===
+          "COMPLETED"
+        ? "결과 보기"
+        : "시나리오 시작하기";
+
+  return (
+    <Flex
+      h="100%"
+      minH="580px"
+      direction="column"
+      p="20px"
+      bg={WHITE}
+      borderWidth="1px"
+      borderColor={ORANGE}
+      borderRadius="12px"
+    >
+      {/* =========================
+          TOP
+      ========================= */}
+
+      <Flex
+        align="flex-start"
+      >
+        <Badge
+          px="8px"
+          py="4px"
+          bg={ORANGE_SOFT}
+          color={ORANGE}
+          borderRadius="6px"
+          fontSize="9px"
+          fontWeight="900"
+        >
+          선택된 시나리오
+        </Badge>
+
+        <Spacer />
+
+        <Text
+          fontSize="21px"
+          lineHeight="1"
+          color="#AEA49B"
+        >
+          ♧
+        </Text>
+      </Flex>
+
+      {/* =========================
+          TITLE
+      ========================= */}
+
+      <Text
+        mt="15px"
+        fontSize="29px"
+        lineHeight="1.24"
+        fontWeight="900"
+        color={TEXT}
+        letterSpacing="-0.04em"
+      >
+        {scenario.title}
+      </Text>
+
+      {/* 기간 */}
+
+      <Text
+        mt="8px"
+        fontSize="12px"
+        fontWeight="700"
+        color={MUTED}
+      >
+        {scenario.eventPeriod}
+      </Text>
+
+      {/* 설명 */}
+
+      <Text
+        mt="10px"
+        fontSize="13px"
+        lineHeight="1.7"
+        color={SUBTLE}
+        noOfLines={4}
+      >
+        {scenario.summary}
+      </Text>
+
+      {/* =========================
+          PROGRESS
+      ========================= */}
+
+      {scenario.status ===
+        "IN_PROGRESS" && (
+        <Box
+          mt="14px"
+          p="11px"
+          bg="#FFF8F2"
+          borderRadius="8px"
+        >
+          <Flex align="center">
+            <Text
+              fontSize="11px"
+              fontWeight="900"
+              color={TEXT}
+            >
+              현재 진행도
+            </Text>
+
+            <Spacer />
+
+            <Text
+              fontSize="11px"
+              fontWeight="900"
+              color={ORANGE}
+            >
+              {Math.round(
+                scenario.progressPercent,
+              )}
+              %
+            </Text>
+          </Flex>
+
+          <Progress
+            mt="7px"
+            value={
+              scenario.progressPercent
+            }
+            h="6px"
+            bg="#F0E5DC"
+            borderRadius="full"
+            sx={{
+              "& > div": {
+                background:
+                  ORANGE,
+
+                borderRadius:
+                  "999px",
+              },
+            }}
+          />
+        </Box>
+      )}
+
+      {/* =========================
+          META
+      ========================= */}
+
+      <Stack
+        mt="18px"
+        spacing="12px"
+      >
+        <Flex align="center">
+          <Text
+            fontSize="12px"
+            fontWeight="700"
+            color={MUTED}
+          >
+            시나리오 기간
+          </Text>
+
+          <Spacer />
+
+          <Text
+            maxW="210px"
+            textAlign="right"
+            fontSize="12px"
+            fontWeight="800"
+            color={TEXT}
+          >
+            {scenario.eventPeriod}
+          </Text>
+        </Flex>
+
+        <Flex align="center">
+          <Text
+            fontSize="12px"
+            fontWeight="700"
+            color={MUTED}
+          >
+            총 TURN
+          </Text>
+
+          <Spacer />
+
+          <Text
+            fontSize="12px"
+            fontWeight="900"
+            color={TEXT}
+          >
+            {scenario.totalTurns} TURN
+          </Text>
+        </Flex>
+
+        <Flex align="center">
+          <Text
+            fontSize="12px"
+            fontWeight="700"
+            color={MUTED}
+          >
+            예상 시간
+          </Text>
+
+          <Spacer />
+
+          <Text
+            fontSize="12px"
+            fontWeight="900"
+            color={TEXT}
+          >
+            약{" "}
+            {scenario.estimatedMinutes}
+            분
+          </Text>
+        </Flex>
+
+        <Flex
+          align="flex-start"
+          gap="15px"
+        >
+          <Text
+            flexShrink={0}
+            fontSize="12px"
+            fontWeight="700"
+            color={MUTED}
+          >
+            시작 자산
+          </Text>
+
+          <Spacer />
+
+          <Text
+            maxW="220px"
+            textAlign="right"
+            fontSize="12px"
+            lineHeight="1.5"
+            fontWeight="900"
+            color={ORANGE}
+          >
+            {
+              scenario.initialPortfolioLabel
+            }
+          </Text>
+        </Flex>
+      </Stack>
+
+      {/* =========================
+          LEARNING POINT
+      ========================= */}
+
+      <Box
+        mt="18px"
+        p="14px"
+        bg="#FFFCF8"
+        borderWidth="1px"
+        borderColor={BORDER}
+        borderRadius="9px"
+      >
+        <Text
+          fontSize="13px"
+          fontWeight="900"
+          color={TEXT}
+        >
+          학습 포인트
+        </Text>
+
+        <Stack
+          mt="10px"
+          spacing="9px"
+        >
+          {scenario.learningPoints
+            .slice(0, 3)
+            .map(
+              (
+                point,
+                index,
+              ) => (
+                <Flex
+                  key={`${point}-${index}`}
+                  gap="8px"
+                  align="flex-start"
+                >
+                  <Flex
+                    mt="1px"
+                    w="17px"
+                    h="17px"
+                    align="center"
+                    justify="center"
+                    borderRadius="full"
+                    borderWidth="1px"
+                    borderColor={ORANGE}
+                    color={ORANGE}
+                    fontSize="8px"
+                    fontWeight="900"
+                    flexShrink={0}
+                  >
+                    ✓
+                  </Flex>
+
+                  <Text
+                    fontSize="12px"
+                    lineHeight="1.6"
+                    color={SUBTLE}
+                  >
+                    {point}
+                  </Text>
+                </Flex>
+              ),
+            )}
+
+          {scenario.learningPoints
+            .length === 0 && (
+            <Text
+              fontSize="12px"
+              lineHeight="1.6"
+              color={MUTED}
+            >
+              시나리오를 통해
+              시장 변화와 투자
+              판단 과정을
+              학습합니다.
+            </Text>
+          )}
+        </Stack>
+      </Box>
+
+      {/* =========================
+          NOTICE
+      ========================= */}
+
+      <Flex
+        mt="13px"
+        gap="7px"
+        align="flex-start"
+      >
+        <Box
+          mt="6px"
+          w="4px"
+          h="4px"
+          flexShrink={0}
+          borderRadius="full"
+          bg={ORANGE}
+        />
+
+        <Text
+          fontSize="10px"
+          lineHeight="1.6"
+          color={MUTED}
+        >
+          각 시나리오는 실제 과거
+          시장 사건을 바탕으로
+          구성됩니다.
+        </Text>
+      </Flex>
+
+      <Box flex="1" />
+
+      {/* =========================
+          BUTTON
+      ========================= */}
+
+      <Button
+        mt="17px"
+        w="100%"
+        h="50px"
+        bg={ORANGE}
+        color="white"
+        borderRadius="8px"
+        fontSize="15px"
+        fontWeight="900"
+        isLoading={
+          isStarting
+        }
+        loadingText="불러오는 중"
+        _hover={{
+          bg:
+            ORANGE_DARK,
+        }}
+        _active={{
+          bg:
+            ORANGE_DARK,
+        }}
+        onClick={onStart}
+      >
+        {buttonLabel}
+      </Button>
+    </Flex>
+  );
+}
+
+/* =========================================================
+   RECENT SCENARIO
+========================================================= */
+
+function RecentScenarioCard({
+  scenario,
+  onClick,
+}: {
+  scenario: ScenarioItem;
+
+  onClick: () => void;
+}) {
+  const completed =
+    scenario.status ===
+    "COMPLETED";
+
+  const inProgress =
+    scenario.status ===
+    "IN_PROGRESS";
+
+  const updatedDate =
+    formatDate(
+      scenario.updatedAt,
+    );
+
+  return (
+    <Flex
+      minW="0"
+      p="12px"
+      gap="12px"
+      bg={WHITE}
+      borderWidth="1px"
+      borderColor={BORDER}
+      borderRadius="9px"
+    >
+      {/* thumbnail */}
+
+      <Flex
+        w="105px"
+        minH="90px"
+        flexShrink={0}
+        align="center"
+        justify="center"
+        bg="#FBF7F1"
+        borderWidth="1px"
+        borderColor="#EEE5DB"
+        borderRadius="7px"
+      >
+        <Stack
+          spacing="5px"
+          align="center"
+        >
+          <Image
+            src="/scenario/ant.png"
+            alt=""
+            w="18px"
+            h="18px"
+          />
+
+          <Text
+            fontSize="11px"
+            fontWeight="900"
+            color={ORANGE}
+          >
+            {getScenarioYearLabel(
+              scenario.eventPeriod,
+            )}
+          </Text>
+        </Stack>
+      </Flex>
+
+      {/* content */}
+
+      <Flex
+        flex="1"
+        minW="0"
+        direction="column"
+      >
+        <Flex
+          gap="6px"
+          align="center"
+          wrap="wrap"
+        >
+          <Badge
+            px="6px"
+            py="2px"
+            bg={
+              completed
+                ? GREEN_SOFT
+                : ORANGE_SOFT
+            }
+            color={
+              completed
+                ? GREEN
+                : ORANGE
+            }
+            borderRadius="5px"
+            fontSize="8px"
+          >
+            {statusLabel(
+              scenario.status,
+            )}
+          </Badge>
+
+          <Text
+            minW="0"
+            fontSize="14px"
+            fontWeight="900"
+            color={TEXT}
+            noOfLines={1}
+          >
+            {scenario.title}
+          </Text>
+        </Flex>
+
+        <Text
+          mt="6px"
+          fontSize="10px"
+          lineHeight="1.5"
+          color={MUTED}
+        >
+          {scenario.eventPeriod}
+
+          {updatedDate
+            ? ` · ${updatedDate}`
+            : ""}
+        </Text>
+
+        <Box flex="1" />
+
+        {inProgress ? (
+          <>
+            <Flex
+              mt="9px"
+              align="center"
+            >
+              <Text
+                fontSize="10px"
+                color={MUTED}
+              >
+                진행률
+              </Text>
+
+              <Spacer />
+
+              <Text
+                fontSize="10px"
+                fontWeight="900"
+                color={ORANGE}
+              >
+                {Math.round(
+                  scenario.progressPercent,
+                )}
+                %
+              </Text>
+            </Flex>
+
+            <Progress
+              mt="5px"
+              value={
+                scenario.progressPercent
+              }
+              h="5px"
+              bg="#EFE5DD"
+              borderRadius="full"
+              sx={{
+                "& > div": {
+                  background:
+                    ORANGE,
+
+                  borderRadius:
+                    "999px",
+                },
+              }}
+            />
+
+            <Button
+              mt="9px"
+              h="32px"
+              variant="outline"
+              borderColor={ORANGE}
+              color={ORANGE}
+              borderRadius="6px"
+              fontSize="11px"
+              fontWeight="900"
+              onClick={onClick}
+            >
+              이어하기
+            </Button>
+          </>
+        ) : (
+          <Button
+            mt="11px"
+            h="32px"
+            variant="outline"
+            borderColor={
+              completed
+                ? GREEN
+                : ORANGE
+            }
+            color={
+              completed
+                ? GREEN
+                : ORANGE
+            }
+            borderRadius="6px"
+            fontSize="11px"
+            fontWeight="900"
+            onClick={onClick}
+          >
+            {completed
+              ? "결과 보기"
+              : "시작하기"}
+          </Button>
+        )}
+      </Flex>
+    </Flex>
+  );
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
 
 function ScenarioLoadingScreen({
-	scenario,
-	progress,
+  scenario,
+  progress,
 }: {
-	scenario: ScenarioItem;
-	progress: number;
+  scenario: ScenarioItem;
+
+  progress: number;
 }) {
-	return (
-		<Flex
-			minH="calc(100vh - 82px)"
-			px={{ base: "20px", md: "32px" }}
-			py={{ base: "42px", xl: "64px" }}
-			align="center"
-			justify="flex-start"
-			direction="column"
-			bg="app.background"
-		>
-			<Badge
-				bg="brand.500"
-				color="white"
-				px="20px"
-				py="7px"
-				fontSize="18px"
-				borderRadius="10px"
-			>
-				{getScenarioYear(scenario.eventPeriod)}
-			</Badge>
+  return (
+    <Flex
+      minH="calc(100vh - 80px)"
+      px="24px"
+      py="45px"
+      direction="column"
+      align="center"
+      justify="center"
+      bg={BG}
+    >
+      <Badge
+        px="12px"
+        py="5px"
+        bg={ORANGE}
+        color="white"
+        borderRadius="7px"
+        fontSize="11px"
+      >
+        {getScenarioYearLabel(
+          scenario.eventPeriod,
+        )}
+      </Badge>
 
-			<Heading
-				mt="28px"
-				fontSize={{ base: "34px", md: "44px" }}
-				letterSpacing="-0.045em"
-				textAlign="center"
-			>
-				{scenario.title}
-			</Heading>
-			<Text
-				mt="14px"
-				fontSize={{ base: "14px", md: "17px" }}
-				lineHeight="1.7"
-				textAlign="center"
-				maxW="760px"
-				color="app.subtleText"
-			>
-				{scenario.summary}
-			</Text>
+      <Heading
+        mt="18px"
+        fontSize={{
+          base: "29px",
+          md: "37px",
+        }}
+        letterSpacing="-0.04em"
+        textAlign="center"
+        color={TEXT}
+      >
+        {scenario.title}
+      </Heading>
 
-			<Image
-				mt={{ base: "24px", md: "38px" }}
-				src="/scenario-loading.png"
-				alt="개미굴 학습 시나리오"
-				w="100%"
-				maxW="980px"
-				maxH="520px"
-				objectFit="contain"
-			/>
+      <Text
+        mt="10px"
+        maxW="680px"
+        fontSize="13px"
+        lineHeight="1.7"
+        textAlign="center"
+        color={MUTED}
+      >
+        {scenario.summary}
+      </Text>
 
-			<Box mt="24px" w="100%" maxW="700px">
-				<Text mb="12px" textAlign="center" fontSize="16px" fontWeight="700">
-					시나리오를 불러오는 중입니다......
-				</Text>
-				<Flex align="center" gap="14px">
-					<Progress
-						value={progress}
-						flex="1"
-						h="14px"
-						borderRadius="full"
-						bg="#FBE1D3"
-						colorScheme="orange"
-					/>
-					<Text minW="44px" color="brand.500" fontWeight="800">
-						{progress}%
-					</Text>
-				</Flex>
-			</Box>
-		</Flex>
-	);
+      <Image
+        mt="24px"
+        src="/scenario/ant.png"
+        alt=""
+        w="38px"
+        h="38px"
+        objectFit="contain"
+      />
+
+      <Box
+        mt="22px"
+        w="100%"
+        maxW="520px"
+      >
+        <Flex
+          mb="7px"
+          align="center"
+        >
+          <Text
+            fontSize="12px"
+            color={MUTED}
+          >
+            시나리오를 준비하고
+            있습니다.
+          </Text>
+
+          <Spacer />
+
+          <Text
+            fontSize="12px"
+            fontWeight="900"
+            color={ORANGE}
+          >
+            {progress}%
+          </Text>
+        </Flex>
+
+        <Progress
+          value={progress}
+          h="7px"
+          bg="#F0E2D8"
+          borderRadius="full"
+          sx={{
+            "& > div": {
+              background:
+                ORANGE,
+
+              borderRadius:
+                "999px",
+            },
+          }}
+        />
+      </Box>
+    </Flex>
+  );
 }
 
+/* =========================================================
+   PAGE
+========================================================= */
+
 export default function Scenario() {
-	const navigate = useNavigate();
-	const toast = useToast();
+  const navigate =
+    useNavigate();
 
+  const toast =
+    useToast();
 
-	const [scenarios, setScenarios] = useState<ScenarioItem[]>([]);
-	const [selectedScenario, setSelectedScenario] = useState<ScenarioItem | null>(null);
-	const [selectedYear, setSelectedYear] = useState("전체");
-	const [selectedDifficulty, setSelectedDifficulty] = useState("전체");
-	const [isLoading, setIsLoading] = useState(false);
-	const [launchingScenario, setLaunchingScenario] = useState<ScenarioItem | null>(null);
-	const [launchSessionId, setLaunchSessionId] = useState<string | null>(null);
-	const [launchProgress, setLaunchProgress] = useState(0);
-	const [isStartingScenario, setIsStartingScenario] = useState(false);
+  const [
+    scenarios,
+    setScenarios,
+  ] =
+    useState<ScenarioItem[]>(
+      [],
+    );
 
-	const normalizeDifficulty = (
-	value: string,
-): ScenarioItem["difficulty"] => {
-	if (value === "쉬움" || value === "보통" || value === "어려움") {
-		return value;
-	}
+  const [
+    selectedScenario,
+    setSelectedScenario,
+  ] =
+    useState<ScenarioItem | null>(
+      null,
+    );
 
-	return "보통";
-};
+  const [
+    selectedYear,
+    setSelectedYear,
+  ] = useState("전체");
 
-const loadScenarios = async () => {
-    try {
+  const [
+    selectedDifficulty,
+    setSelectedDifficulty,
+  ] = useState("전체");
+
+  const [
+    isLoading,
+    setIsLoading,
+  ] = useState(false);
+
+  const [
+    launchingScenario,
+    setLaunchingScenario,
+  ] =
+    useState<ScenarioItem | null>(
+      null,
+    );
+
+  const [
+    launchSessionId,
+    setLaunchSessionId,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  const [
+    launchProgress,
+    setLaunchProgress,
+  ] = useState(0);
+
+  const [
+    isStartingScenario,
+    setIsStartingScenario,
+  ] = useState(false);
+
+  /* =======================================================
+     LOAD SCENARIOS
+  ======================================================= */
+
+  const loadScenarios =
+    async () => {
+      try {
         setIsLoading(true);
 
-        const userId = tokens.getUsername() || "USER-001";
+        const userId =
+          tokens.getUsername() ||
+          "USER-001";
 
-        const [scenarioData, userProgress] = await Promise.all([
+        const [
+          scenarioData,
+          userProgress,
+        ] =
+          await Promise.all([
             scenarioService.getScenarios(),
-            scenarioService.getUserProgress(userId).catch((error) => {
-                console.warn("시나리오 진행도 조회 실패:", error);
-                return null;
-            }),
-        ]);
 
-        const apiScenarios: ScenarioApiItem[] = Array.isArray(scenarioData)
+            scenarioService
+              .getUserProgress(
+                userId,
+              )
+              .catch(
+                (error) => {
+                  console.warn(
+                    "시나리오 진행도 조회 실패:",
+                    error,
+                  );
+
+                  return null;
+                },
+              ),
+          ]);
+
+        const apiScenarios:
+          ScenarioApiItem[] =
+          Array.isArray(
+            scenarioData,
+          )
             ? scenarioData
             : [];
 
-        const progressMap = new Map(
-            (userProgress?.items ?? []).map((item) => [
+        const progressMap =
+          new Map(
+            (
+              userProgress?.items ??
+              []
+            ).map(
+              (item) => [
                 item.scenario_id,
                 item,
-            ]),
-        );
+              ],
+            ),
+          );
 
-        const normalizedScenarios: ScenarioItem[] = apiScenarios.map(
+        const normalized:
+          ScenarioItem[] =
+          apiScenarios.map(
             (item) => {
-                const progress = progressMap.get(item.scenario_id);
+              const progress =
+                progressMap.get(
+                  item.scenario_id,
+                );
 
-                return {
-                    _id: item.scenario_id,
-                    chapterId: 0,
-                    chapterTitle: "과거 시나리오",
-                    scenarioNo: item.scenario_id,
-                    scenarioSlug: item.scenario_id,
-                    title: item.title,
-                    eventPeriod: item.event_period ?? "과거 데이터",
-					initialPortfolioLabel:
-						item.initial_portfolio_label ??
-						`현금 ${item.initial_cash.toLocaleString("ko-KR")}원`,
-                    summary: item.description,
-                    difficulty: normalizeDifficulty(item.difficulty),
-                    estimatedMinutes: item.total_turns * 3,
-                    keywords: [],
-                    learningPoints: item.learning_points ?? [],
-                    status: progress?.status ?? "NOT_STARTED",
-                    completedStepCount: progress?.completed_turns ?? 0,
-                    sessionId: progress?.session_id ?? null,
-                    progressPercent: progress?.progress_percent ?? 0,
-                };
+              return {
+                _id:
+                  item.scenario_id,
+
+                scenarioSlug:
+                  item.scenario_id,
+
+                title:
+                  item.title,
+
+                eventPeriod:
+                  item.event_period ??
+                  "과거 데이터",
+
+                initialPortfolioLabel:
+                  item.initial_portfolio_label ??
+                  `현금 ${item.initial_cash.toLocaleString(
+                    "ko-KR",
+                  )}원`,
+
+                summary:
+                  item.description,
+
+                difficulty:
+                  normalizeDifficulty(
+                    item.difficulty,
+                  ),
+
+                estimatedMinutes:
+                  Math.max(
+                    10,
+                    item.total_turns *
+                      3,
+                  ),
+
+                totalTurns:
+                  item.total_turns,
+
+                learningPoints:
+                  item.learning_points ??
+                  [],
+
+                status:
+                  progress?.status ??
+                  "NOT_STARTED",
+
+                completedStepCount:
+                  progress?.completed_turns ??
+                  0,
+
+                sessionId:
+                  progress?.session_id ??
+                  null,
+
+                progressPercent:
+                  progress?.progress_percent ??
+                  0,
+
+                updatedAt:
+                  progress?.updated_at ??
+                  null,
+              };
             },
+          );
+
+        setScenarios(
+          normalized,
         );
 
-        setScenarios(normalizedScenarios);
-        setSelectedScenario(normalizedScenarios[0] ?? null);
-    } catch (error) {
-        console.error(error);
+        /**
+         * 진행 중인 시나리오가 있으면
+         * 처음부터 그것을 가운데에 표시.
+         */
+        const active =
+          normalized.find(
+            (scenario) =>
+              scenario.status ===
+              "IN_PROGRESS",
+          );
+
+        setSelectedScenario(
+          active ??
+            normalized[0] ??
+            null,
+        );
+      } catch (error) {
+        console.error(
+          error,
+        );
 
         toast({
-            title: "시나리오를 불러오지 못했습니다.",
-            description: "새 시나리오 서버 연결 상태를 확인하세요.",
-            status: "error",
-            isClosable: true,
+          title:
+            "시나리오를 불러오지 못했습니다.",
+
+          description:
+            "시나리오 서버 연결 상태를 확인하세요.",
+
+          status:
+            "error",
+
+          isClosable:
+            true,
         });
-    } finally {
-        setIsLoading(false);
+      } finally {
+        setIsLoading(
+          false,
+        );
+      }
+    };
+
+  useEffect(() => {
+    void loadScenarios();
+  }, []);
+
+  /* =======================================================
+     YEARS
+  ======================================================= */
+
+  const years =
+    useMemo(() => {
+      return Array.from(
+        new Set(
+          scenarios.map(
+            (scenario) =>
+              getScenarioYear(
+                scenario.eventPeriod,
+              ),
+          ),
+        ),
+      )
+        .filter(
+          (year) =>
+            year !== "과거",
+        )
+        .sort();
+    }, [scenarios]);
+
+  /* =======================================================
+     FILTERED
+  ======================================================= */
+
+  const filteredScenarios =
+    useMemo(() => {
+      return scenarios.filter(
+        (scenario) => {
+          const yearMatch =
+            selectedYear ===
+              "전체" ||
+            getScenarioYear(
+              scenario.eventPeriod,
+            ) ===
+              selectedYear;
+
+          const difficultyMatch =
+            selectedDifficulty ===
+              "전체" ||
+            scenario.difficulty ===
+              selectedDifficulty;
+
+          return (
+            yearMatch &&
+            difficultyMatch
+          );
+        },
+      );
+    }, [
+      scenarios,
+      selectedYear,
+      selectedDifficulty,
+    ]);
+
+  /* =======================================================
+     FILTER CHANGE
+  ======================================================= */
+
+  useEffect(() => {
+    if (
+      selectedScenario &&
+      filteredScenarios.some(
+        (scenario) =>
+          scenario.scenarioSlug ===
+          selectedScenario.scenarioSlug,
+      )
+    ) {
+      return;
     }
-};
 
-	useEffect(() => {
-		void loadScenarios();
-	}, []);
+    setSelectedScenario(
+      filteredScenarios[0] ??
+        null,
+    );
+  }, [
+    filteredScenarios,
+    selectedScenario,
+  ]);
 
-	const years = useMemo(() => {
-		return Array.from(
-			new Set(scenarios.map((scenario) => getScenarioYear(scenario.eventPeriod))),
-		).sort();
-	}, [scenarios]);
+  /* =======================================================
+     ORBIT
+  ======================================================= */
 
-	const filteredScenarios = useMemo(() => {
-		return scenarios.filter((scenario) => {
-			const yearMatched =
-				selectedYear === "전체" ||
-				getScenarioYear(scenario.eventPeriod) === selectedYear;
-			const difficultyMatched =
-				selectedDifficulty === "전체" ||
-				scenario.difficulty === selectedDifficulty;
-			return yearMatched && difficultyMatched;
-		});
-	}, [scenarios, selectedYear, selectedDifficulty]);
+  const orbitScenarios =
+    useMemo(() => {
+      if (
+        !selectedScenario
+      ) {
+        return [];
+      }
 
-	useEffect(() => {
-		if (
-			selectedScenario &&
-			filteredScenarios.some(
-				(item) => item.scenarioSlug === selectedScenario.scenarioSlug,
-			)
-		) {
-			return;
-		}
-		setSelectedScenario(filteredScenarios[0] ?? null);
-	}, [filteredScenarios, selectedScenario]);
+      return filteredScenarios
+        .filter(
+          (scenario) =>
+            scenario.scenarioSlug !==
+            selectedScenario.scenarioSlug,
+        )
+        .slice(0, 5);
+    }, [
+      filteredScenarios,
+      selectedScenario,
+    ]);
 
-	const recentScenarios = useMemo(() => {
-		const progressed = scenarios.filter(
-			(scenario) => scenario.status !== "NOT_STARTED",
-		);
-		return (progressed.length > 0 ? progressed : scenarios).slice(0, 3);
-	}, [scenarios]);
+  /* =======================================================
+     RECENT
+  ======================================================= */
 
-	const handleStartScenario = async (scenario: ScenarioItem) => {
-        if (isStartingScenario) return;
+  const recentScenarios =
+    useMemo(() => {
+      return scenarios
+        .filter(
+          (scenario) =>
+            scenario.status !==
+            "NOT_STARTED",
+        )
+        .sort(
+          (a, b) => {
+            const aTime =
+              a.updatedAt
+                ? new Date(
+                    a.updatedAt,
+                  ).getTime()
+                : 0;
 
-        if (scenario.status === "IN_PROGRESS" && scenario.sessionId) {
-            navigate(
-                `/scenario/play/${scenario.scenarioSlug}?sessionId=${encodeURIComponent(
-                    scenario.sessionId,
-                )}`,
+            const bTime =
+              b.updatedAt
+                ? new Date(
+                    b.updatedAt,
+                  ).getTime()
+                : 0;
+
+            return (
+              bTime -
+              aTime
             );
-            return;
+          },
+        )
+        .slice(0, 3);
+    }, [scenarios]);
+
+  /* =======================================================
+     OPEN EXISTING SESSION
+  ======================================================= */
+
+  const openSession = (
+    scenario: ScenarioItem,
+    sessionId: string,
+  ) => {
+    navigate(
+      `/scenario/play/${scenario.scenarioSlug}?sessionId=${encodeURIComponent(
+        sessionId,
+      )}`,
+    );
+  };
+
+  /* =======================================================
+     START / CONTINUE / RESULT
+  ======================================================= */
+
+  const handleStartScenario =
+    async (
+      scenario: ScenarioItem,
+    ) => {
+      if (
+        isStartingScenario
+      ) {
+        return;
+      }
+
+      /**
+       * 진행 중 / 완료된 세션은
+       * 기존 sessionId로 이동.
+       */
+      if (
+        scenario.sessionId &&
+        (scenario.status ===
+          "IN_PROGRESS" ||
+          scenario.status ===
+            "COMPLETED")
+      ) {
+        openSession(
+          scenario,
+          scenario.sessionId,
+        );
+
+        return;
+      }
+
+      try {
+        setIsStartingScenario(
+          true,
+        );
+
+        const userId =
+          tokens.getUsername() ||
+          "USER-001";
+
+        const session =
+          await scenarioService.createSession(
+            scenario.scenarioSlug,
+            userId,
+          );
+
+        if (
+          !session?.session_id
+        ) {
+          throw new Error(
+            "시나리오 서버 응답에 session_id가 없습니다.",
+          );
         }
 
-        try {
-			setIsStartingScenario(true);
+        setLaunchSessionId(
+          session.session_id,
+        );
 
-			const userId = tokens.getUsername() || "USER-001";
-			const session = await scenarioService.createSession(
-				scenario.scenarioSlug,
-				userId,
-			);
+        setLaunchProgress(
+          0,
+        );
 
-			if (!session?.session_id) {
-				throw new Error("시나리오 서버 응답에 session_id가 없습니다.");
-			}
+        setLaunchingScenario(
+          scenario,
+        );
+      } catch (
+        error: any
+      ) {
+        console.error(
+          "시나리오 세션 생성 실패:",
+          error,
+        );
 
-			setLaunchSessionId(session.session_id);
-			setLaunchProgress(0);
-			setLaunchingScenario(scenario);
-		} catch (error: any) {
-			console.error("시나리오 세션 생성 실패:", error);
+        toast({
+          title:
+            "시나리오를 시작하지 못했습니다.",
 
-			toast({
-				title: "시나리오를 시작하지 못했습니다.",
-				description:
-					error?.response?.data?.message ||
-					error?.response?.data?.detail ||
-					"시나리오 세션 생성 중 오류가 발생했습니다.",
-				status: "error",
-				isClosable: true,
-			});
-		} finally {
-			setIsStartingScenario(false);
-		}
-	};
+          description:
+            error?.response?.data
+              ?.message ||
+            error?.response?.data
+              ?.detail ||
+            "시나리오 세션 생성 중 오류가 발생했습니다.",
 
-	useEffect(() => {
-		if (!launchingScenario) return;
+          status:
+            "error",
 
-		setLaunchProgress(12);
-		const intervalId = window.setInterval(() => {
-			setLaunchProgress((current) => {
-				if (current >= 100) return 100;
-				return Math.min(100, current + Math.max(2, Math.round((100 - current) / 8)));
-			});
-		}, 70);
+          isClosable:
+            true,
+        });
+      } finally {
+        setIsStartingScenario(
+          false,
+        );
+      }
+    };
 
-		return () => window.clearInterval(intervalId);
-	}, [launchingScenario]);
+  /* =======================================================
+     LOADING PROGRESS
+  ======================================================= */
 
-	useEffect(() => {
-		if (!launchingScenario || !launchSessionId || launchProgress < 100) return;
+  useEffect(() => {
+    if (
+      !launchingScenario
+    ) {
+      return;
+    }
 
-		const timeoutId = window.setTimeout(() => {
-			navigate(
-				`/scenario/play/${launchingScenario.scenarioSlug}?sessionId=${encodeURIComponent(
-					launchSessionId,
-				)}`,
-			);
-		}, 250);
+    setLaunchProgress(
+      12,
+    );
 
-		return () => window.clearTimeout(timeoutId);
-	}, [launchProgress, launchSessionId, launchingScenario, navigate]);
+    const interval =
+      window.setInterval(
+        () => {
+          setLaunchProgress(
+            (current) => {
+              if (
+                current >= 100
+              ) {
+                return 100;
+              }
 
-	if (launchingScenario) {
-		return (
-			<ScenarioLoadingScreen
-				scenario={launchingScenario}
-				progress={launchProgress}
-			/>
-		);
-	}
+              return Math.min(
+                100,
 
-	return (
-		<Box
-			w="100%"
-			maxW="1680px"
-			mx="auto"
-			px={{ base: "16px", md: "24px" }}
-			pt={{ base: "22px", xl: "26px" }}
-			pb="64px"
-		>
-			<Box mb="18px">
-				<Heading size="md" letterSpacing="-0.035em">
-					과거 시나리오
-				</Heading>
-				<Text mt="7px" fontSize="12px" color="app.subtleText">
-					역사적인 경제 사건 속으로 들어가 당시 시장에서 투자 판단을 경험해보세요.
-				</Text>
-			</Box>
+                current +
+                  Math.max(
+                    2,
 
-			<Flex
-				direction={{ base: "column", lg: "row" }}
-				align={{ base: "stretch", lg: "center" }}
-				gap="12px"
-				mb="18px"
-			>
-				<HStack spacing="12px" wrap="wrap">
-					<Button
-						size="sm"
-						variant={selectedYear === "전체" ? "outline" : "ghost"}
-						borderColor={selectedYear === "전체" ? "brand.500" : "app.border"}
-						color={selectedYear === "전체" ? "brand.500" : "app.subtleText"}
-						onClick={() => setSelectedYear("전체")}
-					>
-						전체
-					</Button>
-					{years.slice(0, 5).map((year) => (
-						<Button
-							key={year}
-							size="sm"
-							variant="outline"
-							borderColor={selectedYear === year ? "brand.500" : "app.border"}
-							color={selectedYear === year ? "brand.500" : "app.subtleText"}
-							bg={selectedYear === year ? "brand.50" : "transparent"}
-							onClick={() => setSelectedYear(year)}
-						>
-							{year}년
-						</Button>
-					))}
-				</HStack>
+                    Math.round(
+                      (100 -
+                        current) /
+                        8,
+                    ),
+                  ),
+              );
+            },
+          );
+        },
+        70,
+      );
 
-				<Spacer />
+    return () =>
+      window.clearInterval(
+        interval,
+      );
+  }, [launchingScenario]);
 
-				<Select
-					w={{ base: "100%", lg: "150px" }}
-					size="sm"
-					value={selectedDifficulty}
-					onChange={(event) => setSelectedDifficulty(event.target.value)}
-				>
-					<option value="전체">난이도 전체</option>
-					<option value="쉬움">쉬움</option>
-					<option value="보통">보통</option>
-					<option value="어려움">어려움</option>
-				</Select>
-			</Flex>
+  useEffect(() => {
+    if (
+      !launchingScenario ||
+      !launchSessionId ||
+      launchProgress < 100
+    ) {
+      return;
+    }
 
-			<Grid
-				templateColumns={{ base: "1fr", "2xl": "minmax(0, 1fr) 460px" }}
-				gap="22px"
-				alignItems="stretch"
-			>
-				<GridItem minW="0">
-					{isLoading ? (
-						<Skeleton h="650px" borderRadius="10px" />
-					) : filteredScenarios.length > 0 ? (
-						<>
-							<Box
-								display={{ base: "none", "2xl": "block" }}
-								position="relative"
-								h="650px"
-								minW="0"
-							>
-								{filteredScenarios.slice(0, 6).map((scenario, index) => (
-									<ScenarioBubble
-										key={scenario.scenarioSlug}
-										scenario={scenario}
-										index={index}
-										isSelected={
-											selectedScenario?.scenarioSlug === scenario.scenarioSlug
-										}
-										onSelect={() => setSelectedScenario(scenario)}
-									/>
-								))}
-							</Box>
+    const timeout =
+      window.setTimeout(
+        () => {
+          openSession(
+            launchingScenario,
+            launchSessionId,
+          );
+        },
+        250,
+      );
 
-							<SimpleGrid
-								display={{ base: "grid", "2xl": "none" }}
-								columns={{ base: 1, md: 2 }}
-								spacing="12px"
-							>
-								{filteredScenarios.slice(0, 6).map((scenario) => (
-									<MobileScenarioCard
-										key={scenario.scenarioSlug}
-										scenario={scenario}
-										isSelected={
-											selectedScenario?.scenarioSlug === scenario.scenarioSlug
-										}
-										onSelect={() => setSelectedScenario(scenario)}
-									/>
-								))}
-							</SimpleGrid>
-						</>
-					) : (
-						<Flex h="420px" align="center" justify="center">
-							<Text color="app.muted">조건에 맞는 시나리오가 없습니다.</Text>
-						</Flex>
-					)}
-				</GridItem>
+    return () =>
+      window.clearTimeout(
+        timeout,
+      );
+  }, [
+    launchProgress,
+    launchSessionId,
+    launchingScenario,
+  ]);
 
-				<GridItem>
-					<Card h={{ "2xl": "650px" }}>
-						<CardBody p={{ base: "20px", md: "26px" }}>
-							{selectedScenario ? (
-								<Flex direction="column" h="100%">
-									<Flex align="flex-start">
-										<Badge
-											bg="brand.50"
-											color="brand.500"
-											px="10px"
-											py="5px"
-										>
-											선택된 시나리오
-										</Badge>
-										<Spacer />
-										<Button variant="ghost" size="sm" px="6px" fontSize="22px">
-											☆
-										</Button>
-									</Flex>
+  /* =======================================================
+     LOADING SCREEN
+  ======================================================= */
 
-									<Heading
-										mt="18px"
-										fontSize={{ base: "26px", md: "31px" }}
-										letterSpacing="-0.045em"
-									>
-										{selectedScenario.title}
-									</Heading>
-									<Text mt="20px" fontSize="14px" fontWeight="700">
-										{selectedScenario.eventPeriod}
-									</Text>
-									<Text
-										mt="7px"
-										fontSize="13px"
-										lineHeight="1.7"
-										color="app.subtleText"
-										noOfLines={3}
-									>
-										{selectedScenario.summary}
-									</Text>
+  if (
+    launchingScenario
+  ) {
+    return (
+      <ScenarioLoadingScreen
+        scenario={
+          launchingScenario
+        }
+        progress={
+          launchProgress
+        }
+      />
+    );
+  }
 
-									<Stack mt="26px" spacing="17px" fontSize="13px">
-										<Flex>
-											<Text fontWeight="700">시작 시점</Text>
-											<Spacer />
-											<Text>{selectedScenario.eventPeriod}</Text>
-										</Flex>
-										<Flex>
-											<Text fontWeight="700">학습 난이도</Text>
-											<Spacer />
-											<Text color="brand.500">{selectedScenario.difficulty}</Text>
-										</Flex>
-										<Flex>
-											<Text fontWeight="700">플레이 시간</Text>
-											<Spacer />
-											<Text>약 {selectedScenario.estimatedMinutes}분</Text>
-										</Flex>
-										<Flex gap="20px">
-											<Text fontWeight="700" flexShrink={0}>시작 자산</Text>
-											<Spacer />
-											<Text textAlign="right">{selectedScenario.initialPortfolioLabel}</Text>
-										</Flex>
-										<Flex>
-											<Text fontWeight="700">학습 챕터</Text>
-											<Spacer />
-											<Text>{selectedScenario.chapterTitle}</Text>
-										</Flex>
-									</Stack>
+  /* =======================================================
+     PAGE
+  ======================================================= */
 
-									<Box
-										mt="30px"
-										p="18px"
-										borderWidth="1px"
-										borderColor="app.border"
-										borderRadius="8px"
-									>
-										<Text fontSize="14px" fontWeight="800" mb="14px">
-											학습 포인트
-										</Text>
-										<Stack spacing="11px">
-											{selectedScenario.learningPoints?.slice(0, 3).map((point) => (
-												<Flex key={point} gap="10px" align="flex-start">
-													<Box
-														mt="3px"
-														w="14px"
-														h="14px"
-														borderRadius="full"
-														borderWidth="1px"
-														borderColor="brand.500"
-														flexShrink={0}
-													/>
-													<Text fontSize="13px" lineHeight="1.55">
-														{point}
-													</Text>
-												</Flex>
-											))}
-										</Stack>
-									</Box>
+  return (
+    <Box
+      w="100%"
+      minH="100vh"
+      bg={BG}
+      color={TEXT}
+      px={{
+        base: "16px",
+        md: "22px",
+        xl: "28px",
+      }}
+      pt="22px"
+      pb="48px"
+    >
+      <Box
+        w="100%"
+        maxW="1540px"
+        mx="auto"
+      >
+        {/* =================================
+            PAGE TITLE
+        ================================= */}
 
-									<Box flex="1" minH="18px" />
-									<Button
-										h="56px"
-										bg="brand.500"
-										color="white"
-										fontSize="20px"
-										_hover={{ bg: "brand.600" }}
-										onClick={() => void handleStartScenario(selectedScenario)}
-										isLoading={isStartingScenario}
-										loadingText="세션 생성 중"
-									>
-										시나리오 시작하기
-									</Button>
-								</Flex>
-							) : (
-								<Flex h="100%" align="center" justify="center">
-									<Text color="app.muted">시나리오를 선택하세요.</Text>
-								</Flex>
-							)}
-						</CardBody>
-					</Card>
-				</GridItem>
-			</Grid>
+        <Box mb="18px">
+          <Text
+            fontSize={{
+              base: "25px",
+              md: "30px",
+            }}
+            fontWeight="900"
+            letterSpacing="-0.04em"
+            color={TEXT}
+          >
+            과거 시나리오
+          </Text>
 
-			<Card mt="24px">
-				<CardBody p={{ base: "18px", md: "24px" }}>
-					<Heading size="sm" mb="18px">
-						최근 플레이한 시나리오
-					</Heading>
-					<SimpleGrid columns={{ base: 1, lg: 3 }} spacing="16px">
-						{recentScenarios.map((scenario) => (
-							<Flex
-								key={`recent-${scenario.scenarioSlug}`}
-								borderWidth="1px"
-								borderColor="app.border"
-								borderRadius="8px"
-								p="14px"
-								gap="16px"
-								minH="150px"
-							>
-								<Box
-									w="118px"
-									flexShrink={0}
-									borderWidth="1px"
-									borderColor="app.border"
-									borderRadius="7px"
-									bg="app.background"
-								/>
-								<Flex direction="column" minW="0" flex="1">
-									<HStack>
-										<Badge colorScheme={statusColor[scenario.status]} variant="outline">
-											{statusLabel[scenario.status]}
-										</Badge>
-										<Text fontWeight="800" noOfLines={1}>
-											{scenario.title}
-										</Text>
-									</HStack>
-									<Text mt="8px" fontSize="12px" color="app.muted">
-										{scenario.eventPeriod}
-									</Text>
-									<Box flex="1" />
-									{scenario.status === "IN_PROGRESS" ? (
-										<Flex align="center" gap="8px">
-											<Progress
-												value={scenario.progressPercent ?? 0}
-												flex="1"
-												size="sm"
-												colorScheme="orange"
-												borderRadius="full"
-											/>
-											<Text fontSize="12px" color="brand.500">
-												{Math.round(scenario.progressPercent ?? 0)}%
-											</Text>
-										</Flex>
-									) : (
-										<Button
-											size="sm"
-											variant="outline"
-											borderColor={
-												scenario.status === "COMPLETED"
-													? "green.400"
-													: "brand.400"
-											}
-											onClick={() => void handleStartScenario(scenario)}
-										>
-											{scenario.status === "COMPLETED" ? "결과 보기" : "시작하기"}
-										</Button>
-									)}
-								</Flex>
-							</Flex>
-						))}
-					</SimpleGrid>
-					{scenarios.length === 0 && !isLoading && (
-						<Text color="app.muted">등록된 시나리오가 없습니다.</Text>
-					)}
-				</CardBody>
-			</Card>
-		</Box>
-	);
+          <Text
+            mt="5px"
+            fontSize="13px"
+            lineHeight="1.6"
+            color={MUTED}
+          >
+            역사적인 경제 사건
+            속으로 돌아가 당시
+            시장에서 투자 판단을
+            경험해보세요.
+          </Text>
+        </Box>
+
+        {/* =================================
+            FILTERS
+        ================================= */}
+
+        <Flex
+          mb="17px"
+          gap="10px"
+          align={{
+            base: "stretch",
+            md: "center",
+          }}
+          direction={{
+            base: "column",
+            md: "row",
+          }}
+        >
+          <HStack
+            spacing="7px"
+            flexWrap="wrap"
+          >
+            {/* 전체 */}
+
+            <Button
+              h="35px"
+              px="15px"
+              variant="outline"
+              borderColor={
+                selectedYear ===
+                "전체"
+                  ? ORANGE
+                  : BORDER
+              }
+              bg={
+                selectedYear ===
+                "전체"
+                  ? ORANGE_SOFT
+                  : WHITE
+              }
+              color={
+                selectedYear ===
+                "전체"
+                  ? ORANGE
+                  : MUTED
+              }
+              borderRadius="7px"
+              fontSize="12px"
+              fontWeight="800"
+              onClick={() =>
+                setSelectedYear(
+                  "전체",
+                )
+              }
+            >
+              전체
+            </Button>
+
+            {/* 연도 */}
+
+            {years.map(
+              (year) => (
+                <Button
+                  key={year}
+                  h="35px"
+                  px="15px"
+                  variant="outline"
+                  borderColor={
+                    selectedYear ===
+                    year
+                      ? ORANGE
+                      : BORDER
+                  }
+                  bg={
+                    selectedYear ===
+                    year
+                      ? ORANGE_SOFT
+                      : WHITE
+                  }
+                  color={
+                    selectedYear ===
+                    year
+                      ? ORANGE
+                      : MUTED
+                  }
+                  borderRadius="7px"
+                  fontSize="12px"
+                  fontWeight="800"
+                  onClick={() =>
+                    setSelectedYear(
+                      year,
+                    )
+                  }
+                >
+                  {year}년
+                </Button>
+              ),
+            )}
+          </HStack>
+
+          <Spacer />
+
+          {/* 난이도 */}
+
+          <Select
+            w={{
+              base: "100%",
+              md: "150px",
+            }}
+            h="36px"
+            value={
+              selectedDifficulty
+            }
+            bg={WHITE}
+            borderColor={BORDER}
+            borderRadius="7px"
+            fontSize="12px"
+            fontWeight="700"
+            onChange={(
+              event,
+            ) =>
+              setSelectedDifficulty(
+                event.target
+                  .value,
+              )
+            }
+          >
+            <option value="전체">
+              난이도 전체
+            </option>
+
+            <option value="쉬움">
+              쉬움
+            </option>
+
+            <option value="보통">
+              보통
+            </option>
+
+            <option value="어려움">
+              어려움
+            </option>
+          </Select>
+        </Flex>
+
+        {/* =================================
+            MAIN CONTENT
+        ================================= */}
+
+        <Grid
+          templateColumns={{
+            base: "1fr",
+
+            xl:
+              "minmax(0, 1fr) 390px",
+          }}
+          gap="16px"
+          alignItems="stretch"
+        >
+          {/* ===============================
+              SCENARIO MAP
+          =============================== */}
+
+          <GridItem minW="0">
+            {isLoading ? (
+              <Skeleton
+                h="580px"
+                borderRadius="12px"
+              />
+            ) : filteredScenarios
+                .length ===
+              0 ? (
+              <Flex
+                h="420px"
+                align="center"
+                justify="center"
+                bg={WHITE}
+                borderWidth="1px"
+                borderColor={BORDER}
+                borderRadius="12px"
+              >
+                <Text
+                  fontSize="13px"
+                  color={MUTED}
+                >
+                  조건에 맞는
+                  시나리오가 없습니다.
+                </Text>
+              </Flex>
+            ) : (
+              <>
+                {/* desktop */}
+
+                <Box
+                  display={{
+                    base: "none",
+                    xl: "block",
+                  }}
+                  position="relative"
+                  h="580px"
+                  bg="#FBF8F3"
+                  borderWidth="1px"
+                  borderColor="#EEE5DB"
+                  borderRadius="12px"
+                  overflow="hidden"
+                >
+                  <RaceTrackBackground />
+
+                  {/* 중앙 */}
+
+                  {selectedScenario && (
+                    <CenterScenarioBubble
+                      scenario={
+                        selectedScenario
+                      }
+                      onClick={() =>
+                        void handleStartScenario(
+                          selectedScenario,
+                        )
+                      }
+                    />
+                  )}
+
+                  {/* 주변 */}
+
+                  {orbitScenarios.map(
+                    (
+                      scenario,
+                      index,
+                    ) => (
+                      <OrbitScenarioBubble
+                        key={
+                          scenario.scenarioSlug
+                        }
+                        scenario={
+                          scenario
+                        }
+                        index={
+                          index
+                        }
+                        onSelect={() =>
+                          setSelectedScenario(
+                            scenario,
+                          )
+                        }
+                      />
+                    ),
+                  )}
+                </Box>
+
+                {/* mobile */}
+
+                <SimpleGrid
+                  display={{
+                    base: "grid",
+                    xl: "none",
+                  }}
+                  columns={{
+                    base: 1,
+                    md: 2,
+                  }}
+                  spacing="9px"
+                >
+                  {filteredScenarios.map(
+                    (scenario) => (
+                      <MobileScenarioCard
+                        key={
+                          scenario.scenarioSlug
+                        }
+                        scenario={
+                          scenario
+                        }
+                        selected={
+                          selectedScenario
+                            ?.scenarioSlug ===
+                          scenario.scenarioSlug
+                        }
+                        onClick={() =>
+                          setSelectedScenario(
+                            scenario,
+                          )
+                        }
+                      />
+                    ),
+                  )}
+                </SimpleGrid>
+              </>
+            )}
+          </GridItem>
+
+          {/* ===============================
+              DETAIL
+          =============================== */}
+
+          <GridItem minW="0">
+            {selectedScenario ? (
+              <ScenarioDetail
+                scenario={
+                  selectedScenario
+                }
+                isStarting={
+                  isStartingScenario
+                }
+                onStart={() =>
+                  void handleStartScenario(
+                    selectedScenario,
+                  )
+                }
+              />
+            ) : (
+              <Flex
+                minH="580px"
+                align="center"
+                justify="center"
+                bg={WHITE}
+                borderWidth="1px"
+                borderColor={BORDER}
+                borderRadius="12px"
+              >
+                <Text
+                  fontSize="13px"
+                  color={MUTED}
+                >
+                  시나리오를
+                  선택하세요.
+                </Text>
+              </Flex>
+            )}
+          </GridItem>
+        </Grid>
+
+        {/* =================================
+            RECENT SCENARIOS
+        ================================= */}
+
+        <Box mt="23px">
+          <Flex
+            mb="11px"
+            align="center"
+          >
+            <Text
+              fontSize="18px"
+              fontWeight="900"
+              color={TEXT}
+            >
+              최근 플레이한
+              시나리오
+            </Text>
+
+            {recentScenarios.length >
+              0 && (
+              <Text
+                ml="9px"
+                fontSize="10px"
+                color={MUTED}
+              >
+                최근 진행 기록 기준
+              </Text>
+            )}
+          </Flex>
+
+          {recentScenarios.length >
+          0 ? (
+            <SimpleGrid
+              columns={{
+                base: 1,
+                md: 2,
+                xl: 3,
+              }}
+              spacing="10px"
+            >
+              {recentScenarios.map(
+                (scenario) => (
+                  <RecentScenarioCard
+                    key={`recent-${scenario.scenarioSlug}`}
+                    scenario={
+                      scenario
+                    }
+                    onClick={() =>
+                      void handleStartScenario(
+                        scenario,
+                      )
+                    }
+                  />
+                ),
+              )}
+            </SimpleGrid>
+          ) : (
+            <Flex
+              minH="100px"
+              align="center"
+              justify="center"
+              bg={WHITE}
+              borderWidth="1px"
+              borderColor={BORDER}
+              borderRadius="9px"
+            >
+              <Text
+                fontSize="12px"
+                color={MUTED}
+              >
+                아직 플레이한
+                시나리오가 없습니다.
+              </Text>
+            </Flex>
+          )}
+        </Box>
+
+        {/* =================================
+            EMPTY
+        ================================= */}
+
+        {!isLoading &&
+          scenarios.length ===
+            0 && (
+            <Box
+              mt="12px"
+              p="11px"
+              bg="#FFF8F2"
+              borderRadius="8px"
+            >
+              <Text
+                fontSize="11px"
+                color={MUTED}
+              >
+                등록된 시나리오가
+                없습니다.
+              </Text>
+            </Box>
+          )}
+      </Box>
+    </Box>
+  );
 }

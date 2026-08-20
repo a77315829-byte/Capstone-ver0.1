@@ -45,6 +45,9 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import scenarioService from "../services/scenario.service";
+import ScenarioOrderSuccessModal from "../components/scenario/ScenarioOrderSuccessModal";
+import TurnFeedbackModal from "../components/scenario/TurnFeedbackModal";
+import FinalResultModal from "../components/scenario/FinalResultModal";
 
 /* ============================================================================
  * Types
@@ -1779,8 +1782,8 @@ function OrderPanel({
 			<Text mt="8px" fontSize="9px" color={UI.muted} textAlign="right">
 				{side === "BUY"
 					? `주문 가능 ${integer.format(maxQuantity)}주 · 보유 현금 ${formatWon(
-							portfolio?.cash,
-						)}`
+						portfolio?.cash,
+					)}`
 					: `매도 가능 ${integer.format(holdingQty)}주`}
 			</Text>
 
@@ -1854,9 +1857,8 @@ function ScenarioMiniInfo({
 					</Text>
 					<Text fontSize="10px" textAlign="right">
 						{progress?.next_market_date
-							? `${formatDate(progress.next_market_date)}${
-									delta != null ? ` (약 ${delta}일 후)` : ""
-								}`
+							? `${formatDate(progress.next_market_date)}${delta != null ? ` (약 ${delta}일 후)` : ""
+							}`
 							: "최종 평가"}
 					</Text>
 				</Flex>
@@ -1878,119 +1880,7 @@ function ScenarioMiniInfo({
  * Modals
  * ========================================================================== */
 
-function OrderSuccessModal({
-	isOpen,
-	onClose,
-	order,
-	assetName,
-}: {
-	isOpen: boolean;
-	onClose: () => void;
-	order: OrderRecord | null;
-	assetName: string;
-}) {
-	if (!order) return null;
 
-	const buy = order.side === "BUY";
-
-	return (
-		<Modal isOpen={isOpen} onClose={onClose} isCentered size="sm">
-			<ModalOverlay bg="rgba(35, 31, 27, 0.42)" />
-			<ModalContent
-				bg={UI.surface}
-				borderRadius="10px"
-				boxShadow="0 18px 48px rgba(0,0,0,0.18)"
-				overflow="hidden"
-			>
-				<ModalCloseButton top="12px" right="12px" />
-				<ModalBody px="24px" pt="22px" pb="0">
-					<Flex justify="center">
-						<Flex
-							w="36px"
-							h="36px"
-							borderRadius="full"
-							border="2px solid"
-							borderColor={UI.orange}
-							align="center"
-							justify="center"
-							color={UI.orange}
-						>
-							<FiCheck size={19} />
-						</Flex>
-					</Flex>
-
-					<Heading
-						mt="18px"
-						fontSize="18px"
-						textAlign="center"
-						letterSpacing="-0.03em"
-					>
-						{buy ? "매수" : "매도"} 주문이 접수되었습니다!
-					</Heading>
-
-					<Panel mt="16px" px="16px" py="13px" bg="#FFFCF8">
-						<Stack spacing="7px">
-							<Flex justify="space-between">
-								<Text fontSize="10px" color={UI.subtle}>
-									종목명
-								</Text>
-								<Text fontSize="10px" fontWeight="800">
-									{assetName} ({order.asset_id})
-								</Text>
-							</Flex>
-							<Flex justify="space-between">
-								<Text fontSize="10px" color={UI.subtle}>
-									주문 구분
-								</Text>
-								<Text fontSize="10px" fontWeight="800">
-									{buy ? "매수" : "매도"}
-								</Text>
-							</Flex>
-							<Flex justify="space-between">
-								<Text fontSize="10px" color={UI.subtle}>
-									주문 수량
-								</Text>
-								<Text fontSize="10px" fontWeight="800">
-									{order.quantity}주
-								</Text>
-							</Flex>
-							<Flex justify="space-between">
-								<Text fontSize="10px" color={UI.subtle}>
-									체결 가격
-								</Text>
-								<Text fontSize="10px" fontWeight="800">
-									{formatWon(order.execution_price)}
-								</Text>
-							</Flex>
-							<Flex justify="space-between">
-								<Text fontSize="10px" color={UI.subtle}>
-									주문 금액
-								</Text>
-								<Text fontSize="10px" fontWeight="900">
-									{formatWon(order.amount)}
-								</Text>
-							</Flex>
-						</Stack>
-					</Panel>
-				</ModalBody>
-
-				<ModalFooter px="24px" pt="16px" pb="18px">
-					<Button
-						w="100%"
-						h="41px"
-						bg={UI.orange}
-						color="white"
-						fontWeight="800"
-						_hover={{ bg: UI.orangeDark }}
-						onClick={onClose}
-					>
-						확인
-					</Button>
-				</ModalFooter>
-			</ModalContent>
-		</Modal>
-	);
-}
 
 function ScenarioInfoModal({
 	isOpen,
@@ -2439,11 +2329,10 @@ function TurnDecisionModal({
 												whiteSpace="nowrap"
 											>
 												{question.type === "multi"
-													? `복수 선택${
-															question.max_select
-																? ` · 최대 ${question.max_select}개`
-																: ""
-														}`
+													? `복수 선택${question.max_select
+														? ` · 최대 ${question.max_select}개`
+														: ""
+													}`
 													: "단일 선택"}
 											</Text>
 										</Flex>
@@ -2649,749 +2538,9 @@ function TurnDecisionModal({
 	);
 }
 
-function TurnFeedbackModal({
-	isOpen,
-	onContinue,
-	evaluation,
-	info,
-	isFinalTurn,
-}: {
-	isOpen: boolean;
-	onContinue: () => void;
-	evaluation: TurnEvaluation | null;
-	info: TransitionInfo | null;
-	isFinalTurn: boolean;
-}) {
-	if (!evaluation?.scorecard) return null;
 
-	const scorecard = evaluation.scorecard;
-	const feedback = normalizeTurnFeedback(scorecard.feedback);
-	const turnNo = evaluation.turn_no ?? info?.turnNo ?? 0;
-	const turnScore = numberValue(scorecard.turn_score);
-	const metrics = (scorecard.metrics ?? []).filter(
-		(item) => item.metric && Number.isFinite(numberValue(item.score)),
-	);
-	const goodPoints = (feedback.good_points ?? []).filter(Boolean);
-	const missedPoints = (feedback.missed_points ?? []).filter(Boolean);
-	const nextActions = (feedback.next_actions ?? []).filter(
-		(item) => Boolean(item?.message),
-	);
-	const previousReviews = (feedback.previous_guidance_review ?? []).filter(
-		(item) => Boolean(item?.message || item?.evidence),
-	);
 
-	const scoreColor =
-		turnScore >= 4
-			? UI.green
-			: turnScore >= 3
-				? UI.orange
-				: UI.red;
 
-	return (
-		<Modal
-			isOpen={isOpen}
-			onClose={() => undefined}
-			isCentered
-			size="4xl"
-			closeOnOverlayClick={false}
-			closeOnEsc={false}
-		>
-			<ModalOverlay bg="rgba(35, 31, 27, 0.50)" />
-			<ModalContent
-				bg={UI.surface}
-				borderRadius="12px"
-				maxW="820px"
-				maxH="92vh"
-				overflow="hidden"
-				boxShadow="0 22px 58px rgba(0,0,0,0.20)"
-			>
-				<ModalHeader
-					px={{ base: "20px", md: "28px" }}
-					pt="24px"
-					pb="18px"
-					borderBottom="1px solid"
-					borderColor="#EEE5DB"
-				>
-					<Flex align="flex-start" justify="space-between" gap="16px">
-						<Box>
-							<Text
-								display="inline-block"
-								px="8px"
-								py="4px"
-								borderRadius="6px"
-								bg={UI.orangeSoft}
-								color={UI.orange}
-								fontSize="9px"
-								fontWeight="900"
-							>
-								TURN {turnNo} 분석 완료
-							</Text>
-
-							<Heading
-								mt="10px"
-								fontSize={{ base: "21px", md: "24px" }}
-								letterSpacing="-0.035em"
-							>
-								이번 TURN 피드백
-							</Heading>
-
-							<Text
-								mt="6px"
-								fontSize="11px"
-								lineHeight="1.65"
-								color={UI.subtle}
-							>
-								이번 턴의 투자 판단, 근거, 실제 행동을 기준표에 따라 분석했습니다.
-							</Text>
-						</Box>
-
-						<Box textAlign="right" flexShrink={0}>
-							<Text fontSize="9px" color={UI.muted}>
-								이번 TURN 점수
-							</Text>
-							<Flex mt="4px" align="baseline" justify="flex-end">
-								<Text
-									fontSize="31px"
-									lineHeight="1"
-									fontWeight="900"
-									color={scoreColor}
-								>
-									{turnScore.toFixed(2)}
-								</Text>
-								<Text ml="4px" fontSize="11px" color={UI.muted}>
-									/ 5
-								</Text>
-							</Flex>
-						</Box>
-					</Flex>
-				</ModalHeader>
-
-				<ModalBody
-					px={{ base: "20px", md: "28px" }}
-					py="20px"
-					overflowY="auto"
-					sx={{
-						"&::-webkit-scrollbar": { width: "7px" },
-						"&::-webkit-scrollbar-thumb": {
-							background: "#D7CEC5",
-							borderRadius: "20px",
-						},
-					}}
-				>
-					{/* 평가 항목 */}
-					<Box>
-						<Flex align="center" justify="space-between" mb="10px">
-							<Heading fontSize="13px">평가 항목별 점수</Heading>
-							<Text fontSize="9px" color={UI.muted}>
-								점수는 수익률이 아니라 판단 과정 기준입니다.
-							</Text>
-						</Flex>
-
-						<SimpleGrid
-							columns={{
-								base: 2,
-								sm: 3,
-								md: metrics.length >= 6 ? 6 : 5,
-							}}
-							spacing="8px"
-						>
-							{metrics.map((metric) => {
-								const metricId = String(metric.metric ?? "");
-								const score = numberValue(metric.score);
-								const width = `${Math.max(
-									0,
-									Math.min(100, (score / 5) * 100),
-								)}%`;
-
-								return (
-									<Panel
-										key={metricId}
-										px="10px"
-										py="11px"
-										bg="#FFFCF8"
-										textAlign="center"
-										minW="0"
-									>
-										<Text
-											fontSize="8px"
-											fontWeight="800"
-											color={UI.subtle}
-											minH="23px"
-											noOfLines={2}
-										>
-											{metricLabels[metricId] ?? metricId}
-										</Text>
-
-										<Text mt="6px" fontSize="18px" fontWeight="900">
-											{score.toFixed(1)}
-											<Text
-												as="span"
-												ml="2px"
-												fontSize="8px"
-												fontWeight="600"
-												color={UI.muted}
-											>
-												/ 5
-											</Text>
-										</Text>
-
-										<Box
-											mt="8px"
-											h="4px"
-											borderRadius="full"
-											bg="#EEE7DF"
-											overflow="hidden"
-										>
-											<Box
-												w={width}
-												h="100%"
-												borderRadius="full"
-												bg={score >= 4 ? UI.green : score >= 3 ? UI.orange : UI.red}
-											/>
-										</Box>
-									</Panel>
-								);
-							})}
-						</SimpleGrid>
-					</Box>
-
-					{/* 종합 해설 */}
-					<Panel mt="12px" px="16px" py="14px" bg="#FFF9F4">
-						<Flex gap="9px" align="flex-start">
-							<Box mt="1px" color={UI.orange} flexShrink={0}>
-								<FiBookOpen size={15} />
-							</Box>
-							<Box>
-								<Text fontSize="11px" fontWeight="900">
-									이번 TURN 해설
-								</Text>
-								<Text
-									mt="6px"
-									fontSize="10px"
-									lineHeight="1.8"
-									color={UI.subtle}
-								>
-									{feedback.explanation ||
-										"이번 TURN의 점수와 판단 기록을 저장했습니다. 다음 턴에서는 낮은 평가 항목과 위험 요인을 함께 확인해보세요."}
-								</Text>
-							</Box>
-						</Flex>
-					</Panel>
-
-					<SimpleGrid mt="12px" columns={{ base: 1, md: 2 }} spacing="10px">
-						<Panel px="15px" py="14px" bg="#FFFCF8" minH="150px">
-							<Flex align="center" gap="7px">
-								<FiCheckCircle size={15} color={UI.green} />
-								<Heading fontSize="12px">잘 본 요소</Heading>
-							</Flex>
-
-							<Stack mt="11px" spacing="9px">
-								{goodPoints.length ? (
-									goodPoints.slice(0, 4).map((item, index) => (
-										<Flex
-											key={`${item}-${index}`}
-											gap="8px"
-											align="flex-start"
-										>
-											<Box
-												mt="5px"
-												w="4px"
-												h="4px"
-												borderRadius="full"
-												bg={UI.green}
-												flexShrink={0}
-											/>
-											<Text fontSize="9px" lineHeight="1.6" color={UI.subtle}>
-												{item}
-											</Text>
-										</Flex>
-									))
-								) : (
-									<Text fontSize="9px" lineHeight="1.65" color={UI.muted}>
-										이번 TURN에서 별도로 강조할 강점이 확인되지 않았습니다.
-									</Text>
-								)}
-							</Stack>
-						</Panel>
-
-						<Panel px="15px" py="14px" bg="#FFFCF8" minH="150px">
-							<Flex align="center" gap="7px">
-								<FiAlertTriangle size={15} color={UI.orange} />
-								<Heading fontSize="12px">보완할 요소</Heading>
-							</Flex>
-
-							<Stack mt="11px" spacing="9px">
-								{missedPoints.length ? (
-									missedPoints.slice(0, 4).map((item, index) => (
-										<Flex
-											key={`${item}-${index}`}
-											gap="8px"
-											align="flex-start"
-										>
-											<Box
-												mt="5px"
-												w="4px"
-												h="4px"
-												borderRadius="full"
-												bg={UI.orange}
-												flexShrink={0}
-											/>
-											<Text fontSize="9px" lineHeight="1.6" color={UI.subtle}>
-												{item}
-											</Text>
-										</Flex>
-									))
-								) : (
-									<Text fontSize="9px" lineHeight="1.65" color={UI.muted}>
-										이번 TURN에서 추가로 확인된 주요 누락이나 함정은 없습니다.
-									</Text>
-								)}
-							</Stack>
-						</Panel>
-					</SimpleGrid>
-
-					{/* 이전 조언 반영 여부 */}
-					{previousReviews.length > 0 && (
-						<Panel mt="10px" px="15px" py="13px" bg="#FFFCF8">
-							<Heading fontSize="11px">이전 TURN 피드백 반영</Heading>
-
-							<Stack mt="9px" spacing="8px">
-								{previousReviews.slice(0, 3).map((review, index) => {
-									const followed = review.status === "FOLLOWED";
-									const repeated = review.status === "REPEATED";
-
-									return (
-										<Flex
-											key={`${review.guidance_code ?? "review"}-${index}`}
-											gap="9px"
-											align="flex-start"
-										>
-											<Text
-												flexShrink={0}
-												fontSize="8px"
-												fontWeight="900"
-												color={
-													followed
-														? UI.green
-														: repeated
-															? UI.red
-															: UI.muted
-												}
-												bg={
-													followed
-														? "#EDF8F0"
-														: repeated
-															? "#FFF0EE"
-															: "#F2EFEB"
-												}
-												px="6px"
-												py="3px"
-												borderRadius="5px"
-											>
-												{followed
-													? "반영"
-													: repeated
-														? "반복"
-														: "확인 필요"}
-											</Text>
-
-											<Box>
-												<Text fontSize="9px" fontWeight="800">
-													{review.message}
-												</Text>
-												{review.evidence && (
-													<Text
-														mt="3px"
-														fontSize="8px"
-														lineHeight="1.55"
-														color={UI.muted}
-													>
-														{review.evidence}
-													</Text>
-												)}
-											</Box>
-										</Flex>
-									);
-								})}
-							</Stack>
-						</Panel>
-					)}
-
-					{/* 다음 턴 코칭 */}
-					<Panel mt="10px" px="15px" py="14px" bg={UI.orangeSoft}>
-						<Flex align="center" gap="7px">
-							<FiTarget size={15} color={UI.orange} />
-							<Heading fontSize="12px">
-								{isFinalTurn ? "다음 투자에서 적용할 점" : "다음 TURN에서 확인할 점"}
-							</Heading>
-						</Flex>
-
-						<Stack mt="10px" spacing="7px">
-							{nextActions.length ? (
-								nextActions.slice(0, 3).map((action, index) => (
-									<Flex
-										key={`${action.guidance_code ?? "action"}-${index}`}
-										gap="8px"
-										align="flex-start"
-									>
-										<Text
-											flexShrink={0}
-											fontSize="9px"
-											fontWeight="900"
-											color={UI.orange}
-										>
-											{index + 1}.
-										</Text>
-										<Text fontSize="9px" lineHeight="1.65" color={UI.text}>
-											{action.message}
-										</Text>
-									</Flex>
-								))
-							) : (
-								<Text fontSize="9px" lineHeight="1.65" color={UI.subtle}>
-									낮은 점수 항목이 있다면 해당 항목의 근거와 반대 시나리오를 다시 확인해보세요.
-								</Text>
-							)}
-						</Stack>
-					</Panel>
-
-					{!isFinalTurn && info && (
-						<Flex
-							mt="12px"
-							px="14px"
-							py="11px"
-							align="center"
-							justify="center"
-							gap="20px"
-							borderRadius="8px"
-							bg="#F8F4EF"
-						>
-							<Box textAlign="center">
-								<Text fontSize="10px" fontWeight="800">
-									{formatDate(info.currentDate)}
-								</Text>
-								<Text mt="2px" fontSize="8px" color={UI.muted}>
-									TURN {info.turnNo}
-								</Text>
-							</Box>
-
-							<FiArrowRight size={15} color={UI.orange} />
-
-							<Box textAlign="center">
-								<Text fontSize="10px" fontWeight="800">
-									{formatDate(info.nextDate)}
-								</Text>
-								<Text mt="2px" fontSize="8px" color={UI.muted}>
-									TURN {info.nextTurn}
-								</Text>
-							</Box>
-						</Flex>
-					)}
-				</ModalBody>
-
-				<ModalFooter
-					px={{ base: "20px", md: "28px" }}
-					py="17px"
-					borderTop="1px solid"
-					borderColor="#EEE5DB"
-					bg={UI.surface}
-				>
-					<Button
-						ml="auto"
-						w={{ base: "100%", md: "280px" }}
-						h="42px"
-						bg={UI.orange}
-						color="white"
-						fontSize="12px"
-						fontWeight="900"
-						rightIcon={<FiArrowRight size={16} />}
-						_hover={{ bg: UI.orangeDark }}
-						onClick={onContinue}
-					>
-						{isFinalTurn ? "종합 평가 결과 보기" : "다음 TURN으로"}
-					</Button>
-				</ModalFooter>
-			</ModalContent>
-		</Modal>
-	);
-}
-
-function MetricIcon({ metric }: { metric: string }) {
-	const common = { size: 29 };
-
-	if (metric === "M1") return <FiSearch {...common} color="#FF2D3D" />;
-	if (metric === "M2") return <FiBookOpen {...common} color="#FFB800" />;
-	if (metric === "M3") return <FiShield {...common} color="#27B65B" />;
-	if (metric === "M4") return <FiTarget {...common} color="#FF6A22" />;
-	return <FiCheckCircle {...common} color="#8B6BFF" />;
-}
-
-function ScoreStars({ score }: { score: number }) {
-	const rounded = Math.max(0, Math.min(5, Math.round(score)));
-
-	return (
-		<Text mt="4px" fontSize="14px" letterSpacing="1px" color={UI.orange}>
-			{"★".repeat(rounded)}
-			<Text as="span" color="#C8C3BC">
-				{"★".repeat(5 - rounded)}
-			</Text>
-		</Text>
-	);
-}
-
-function FinalResultModal({
-	isOpen,
-	onClose,
-	evaluation,
-	onGoMyPage,
-}: {
-	isOpen: boolean;
-	onClose: () => void;
-	evaluation: FinalEvaluation | null;
-	onGoMyPage: () => void;
-}) {
-	const metrics = extractMetricRows(evaluation);
-	const portfolio = evaluation?.portfolio_analysis;
-	const feedback = evaluation?.feedback;
-	const patterns = evaluation?.behavior_patterns ?? [];
-	const returnPct = numberValue(portfolio?.cumulative_return_pct);
-	const pnl = numberValue(portfolio?.profit_loss);
-	const overall = numberValue(evaluation?.decision_evaluation?.overall_score);
-
-	const strengths =
-		feedback?.strengths?.length
-			? feedback.strengths
-			: ["완료된 TURN의 판단 기록을 바탕으로 분석했습니다."];
-
-	const improvements =
-		feedback?.improvements?.length
-			? feedback.improvements
-			: patterns.slice(0, 3).map((item) => item.explanation || item.label || "");
-
-	const nextActions =
-		feedback?.next_actions?.filter(Boolean) ??
-		patterns
-			.map((item) => item.recommendation)
-			.filter((value): value is string => Boolean(value));
-
-	return (
-		<Modal isOpen={isOpen} onClose={onClose} isCentered size="4xl">
-			<ModalOverlay bg="rgba(35, 31, 27, 0.46)" />
-			<ModalContent
-				bg={UI.surface}
-				borderRadius="10px"
-				maxW="770px"
-				maxH="94vh"
-				overflowY="auto"
-				boxShadow="0 18px 48px rgba(0,0,0,0.18)"
-			>
-				<ModalCloseButton top="14px" right="14px" />
-
-				<ModalBody px="28px" pt="25px" pb="0">
-					<Flex justify="center">
-						<Flex
-							w="43px"
-							h="43px"
-							borderRadius="full"
-							border="3px solid"
-							borderColor={UI.orange}
-							align="center"
-							justify="center"
-							color={UI.orange}
-						>
-							<FiCheck size={23} />
-						</Flex>
-					</Flex>
-
-					<Heading
-						mt="12px"
-						fontSize="25px"
-						textAlign="center"
-						letterSpacing="-0.04em"
-					>
-						시나리오가 종료되었습니다!
-					</Heading>
-
-					<Text mt="8px" textAlign="center" fontSize="10px" lineHeight="1.65">
-						모든 TURN을 완료했습니다.
-						<br />
-						당신의 투자 여정을 종합 분석했습니다.
-					</Text>
-
-					<Grid
-						mt="20px"
-						templateColumns={{ base: "1fr", md: "190px minmax(0, 1fr)" }}
-						gap="10px"
-					>
-						<Panel px="15px" py="15px" bg="#FFFCF8">
-							<Text fontSize="11px" fontWeight="800">
-								판단 결과: 수익률
-							</Text>
-
-							<Text
-								mt="16px"
-								fontSize="29px"
-								fontWeight="900"
-								color={returnPct >= 0 ? UI.red : UI.blue}
-								textAlign="center"
-							>
-								{returnPct > 0 ? "+" : ""}
-								{returnPct.toFixed(2)}%
-							</Text>
-
-							<Text
-								mt="4px"
-								fontSize="11px"
-								fontWeight="800"
-								color={pnl >= 0 ? UI.red : UI.blue}
-								textAlign="center"
-							>
-								({pnl > 0 ? "+" : ""}
-								{formatWon(pnl)})
-							</Text>
-
-							<Stack mt="18px" spacing="7px">
-								<Flex justify="space-between">
-									<Text fontSize="9px" color={UI.subtle}>
-										최종 자산
-									</Text>
-									<Text fontSize="9px" fontWeight="800">
-										{formatWon(portfolio?.final_value)}
-									</Text>
-								</Flex>
-								<Flex justify="space-between">
-									<Text fontSize="9px" color={UI.subtle}>
-										초기 자산
-									</Text>
-									<Text fontSize="9px">
-										{formatWon(portfolio?.initial_value)}
-									</Text>
-								</Flex>
-								<Flex justify="space-between">
-									<Text fontSize="9px" color={UI.subtle}>
-										판단 평균
-									</Text>
-									<Text fontSize="9px" fontWeight="800">
-										{overall.toFixed(2)} / 5
-									</Text>
-								</Flex>
-							</Stack>
-						</Panel>
-
-						<Panel px="15px" py="15px" bg="#FFFCF8">
-							<Heading fontSize="12px">5가지 항목 별 점수</Heading>
-
-							<SimpleGrid mt="16px" columns={5} spacing="6px">
-								{metrics.map((metric) => (
-									<Box key={metric.key} textAlign="center">
-										<Text fontSize="8px" fontWeight="800" minH="24px">
-											{metric.label}
-										</Text>
-										<Flex mt="6px" justify="center">
-											<MetricIcon metric={metric.key} />
-										</Flex>
-										<Text mt="7px" fontSize="18px" fontWeight="900">
-											{metric.score.toFixed(1)}
-											<Text as="span" fontSize="9px" fontWeight="600">
-												{" "}
-												/ 5
-											</Text>
-										</Text>
-										<ScoreStars score={metric.score} />
-									</Box>
-								))}
-							</SimpleGrid>
-						</Panel>
-					</Grid>
-
-					<SimpleGrid mt="10px" columns={{ base: 1, md: 2 }} spacing="10px">
-						<Panel px="15px" py="14px" bg="#FFFCF8" minH="165px">
-							<Heading fontSize="12px">잘 본 요소</Heading>
-							<Stack mt="12px" spacing="11px">
-								{strengths.slice(0, 4).map((item, index) => (
-									<Flex key={`${item}-${index}`} gap="9px" align="flex-start">
-										<Box mt="1px" color={UI.orange} flexShrink={0}>
-											<FiCheckCircle size={14} />
-										</Box>
-										<Text fontSize="9px" lineHeight="1.55">
-											{item}
-										</Text>
-									</Flex>
-								))}
-							</Stack>
-						</Panel>
-
-						<Panel px="15px" py="14px" bg="#FFFCF8" minH="165px">
-							<Heading fontSize="12px">놓친 요소</Heading>
-							<Stack mt="12px" spacing="11px">
-								{improvements.length ? (
-									improvements.slice(0, 4).map((item, index) => (
-										<Flex key={`${item}-${index}`} gap="9px" align="flex-start">
-											<Box mt="1px" color={UI.orange} flexShrink={0}>
-												<FiAlertTriangle size={14} />
-											</Box>
-											<Text fontSize="9px" lineHeight="1.55">
-												{item}
-											</Text>
-										</Flex>
-									))
-								) : (
-									<Text fontSize="9px" color={UI.subtle}>
-										뚜렷하게 반복된 취약 패턴이 확인되지 않았습니다.
-									</Text>
-								)}
-							</Stack>
-						</Panel>
-					</SimpleGrid>
-
-					<Panel mt="10px" px="15px" py="14px" bg="#FFFCF8">
-						<Heading fontSize="12px">해설: 맞춤 피드백</Heading>
-
-						<Text mt="11px" fontSize="9px" lineHeight="1.7" color={UI.text}>
-							{feedback?.summary ||
-								"각 TURN의 판단 점수와 행동 패턴, 포트폴리오 결과를 종합했습니다."}
-						</Text>
-
-						{nextActions.length > 0 && (
-							<Box mt="10px" pt="10px" borderTop="1px solid #EEE5DB">
-								<Text fontSize="9px" fontWeight="800">
-									다음 투자에서 적용할 점
-								</Text>
-								{nextActions.slice(0, 3).map((item, index) => (
-									<Text
-										key={`${item}-${index}`}
-										mt="5px"
-										fontSize="9px"
-										lineHeight="1.55"
-										color={UI.subtle}
-									>
-										• {item}
-									</Text>
-								))}
-							</Box>
-						)}
-					</Panel>
-				</ModalBody>
-
-				<ModalFooter px="28px" pt="16px" pb="19px">
-					<Button
-						ml="auto"
-						w={{ base: "100%", md: "280px" }}
-						h="42px"
-						bg={UI.orange}
-						color="white"
-						fontSize="13px"
-						fontWeight="800"
-						_hover={{ bg: UI.orangeDark }}
-						onClick={onGoMyPage}
-					>
-						마이페이지로 이동
-					</Button>
-				</ModalFooter>
-			</ModalContent>
-		</Modal>
-	);
-}
 
 /* ============================================================================
  * Page
@@ -3631,9 +2780,9 @@ export default function ScenarioPlay() {
 			orderSide === "BUY"
 				? selectedAsset.current_price
 					? Math.floor(
-							numberValue(portfolio?.cash) /
-								numberValue(selectedAsset.current_price, 1),
-						)
+						numberValue(portfolio?.cash) /
+						numberValue(selectedAsset.current_price, 1),
+					)
 					: 0
 				: currentHoldingQuantity(portfolio, selectedAsset.asset_id);
 
@@ -3672,9 +2821,9 @@ export default function ScenarioPlay() {
 		const max =
 			orderSide === "BUY"
 				? Math.floor(
-						numberValue(portfolio?.cash) /
-							numberValue(selectedAsset.current_price, 1),
-					)
+					numberValue(portfolio?.cash) /
+					numberValue(selectedAsset.current_price, 1),
+				)
 				: currentHoldingQuantity(portfolio, selectedAsset.asset_id);
 
 		if (quantity > max) {
@@ -3706,10 +2855,10 @@ export default function ScenarioPlay() {
 			setTurnView((current) =>
 				current
 					? {
-							...current,
-							portfolio: result.portfolio,
-							orders: [...(current.orders ?? []), result.order],
-						}
+						...current,
+						portfolio: result.portfolio,
+						orders: [...(current.orders ?? []), result.order],
+					}
 					: current,
 			);
 
@@ -4195,9 +3344,8 @@ export default function ScenarioPlay() {
 
 					<Text fontSize="10px" color={UI.subtle}>
 						{progress.next_market_date
-							? `이번 TURN을 종료하고${
-									moveDays != null ? ` 약 ${moveDays}일 후` : ""
-								} 다음 실제 시장 시점으로 이동합니다.`
+							? `이번 TURN을 종료하고${moveDays != null ? ` 약 ${moveDays}일 후` : ""
+							} 다음 실제 시장 시점으로 이동합니다.`
 							: "이번 TURN을 제출하면 최종 평가가 생성됩니다."}
 					</Text>
 				</Flex>
@@ -4220,9 +3368,8 @@ export default function ScenarioPlay() {
 							</Text>
 							<Text mt="4px" fontSize="9px" fontWeight="500">
 								{progress.next_market_date
-									? `${
-											moveDays != null ? `약 ${moveDays}일 후` : "다음 시점"
-										}로 이동`
+									? `${moveDays != null ? `약 ${moveDays}일 후` : "다음 시점"
+									}로 이동`
 									: "최종 종합 평가 생성"}
 							</Text>
 						</Box>
@@ -4251,7 +3398,7 @@ export default function ScenarioPlay() {
 				portfolio={portfolio}
 			/>
 
-			<OrderSuccessModal
+			<ScenarioOrderSuccessModal
 				isOpen={orderSuccessModal.isOpen}
 				onClose={handleOrderSuccessClose}
 				order={lastOrder}
