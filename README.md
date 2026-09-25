@@ -108,13 +108,12 @@ py -3.11 run.py --status        # 다른 터미널에서 5개 HTTP 상태 확인
 자세한 분리 내역과 검증 범위는 [정리 기록](docs/CLEANUP.md), 평가엔진 도입 순서는
 [평가엔진 문서](docs/EVALUATION_ARCHITECTURE.md)를 참고하세요.
 
-## 새 GitHub 저장소에 올리기
+## GitHub 저장소
 
-이 작업본은 자체 `main` 커밋이 있는 독립 Git 저장소이며 아직 원격 주소가 없습니다. 개인 계정에 빈 저장소를 만든 뒤, 아래 URL을 새 저장소 주소로 바꾸고 압축을 푼 폴더에서 실행합니다.
+독립 저장소는 [stakewant/antitude](https://github.com/stakewant/antitude)에 있습니다. 다른 PC에서 내려받을 때는 다음 명령을 사용합니다.
 
 ```powershell
-git remote add origin https://github.com/YOUR_GITHUB_ID/YOUR_NEW_REPO.git
-git push -u origin main
+git clone https://github.com/stakewant/antitude.git
 ```
 
-원본 `a77315829-byte/Capstone-ver0.1`의 커밋 기록은 새 저장소로 가져오지 않았고, 출처와 기존 라이선스는 이 작업본에 기록했습니다.
+원본 `a77315829-byte/Capstone-ver0.1`의 커밋 기록은 가져오지 않았고, 출처와 기존 라이선스는 이 저장소에 기록했습니다.
