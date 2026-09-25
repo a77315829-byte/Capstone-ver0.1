@@ -73,6 +73,20 @@ Node.js/npm 및 Python 3.11을 준비하고 저장소 루트에서:
 
 기존 Atlas 데이터를 쓸 경우 `server/.env`의 `MONGO_DB_NAME`을 **실제 기존 DB 이름**으로 맞추세요. 템플릿의 `antitude`는 신규 DB 예시입니다. 시나리오 DB와 AI 판단 DB는 각자 별도 이름이므로, 새 `.env`를 복사했다고 이전 데이터가 자동으로 나타나지는 않습니다. 실제 비밀키나 `.env`는 Git에 올리지 않습니다.
 
+### 기존 환경변수 옮기기
+
+기존 프로젝트의 `.env`를 통째로 복사하면 제거한 Gemini/OpenAI·군 급여·커뮤니티 변수까지
+따라옵니다. 아래 도구는 새 코드가 사용하는 키만 골라 네 서비스의 `.env`를 만들고,
+Naver·KIS·MongoDB의 구형 키를 현재 이름으로 옮깁니다. 비밀값은 화면에 출력하지 않습니다.
+
+```powershell
+.\scripts\migrate-env.ps1 -SourceRoot C:\dev\PycharmProjects\Capstone-ver0.1
+```
+
+이미 새 `.env`가 있으면 작업을 중단합니다. 기존 파일을 백업하고 다시 만들려면 `-Force`를
+붙입니다. 생성 후 각 `.env`의 DB 이름과 Ollama 모델을 확인하고 `git status`에 `.env`가
+나타나지 않는지 확인하세요.
+
 시나리오 JSON 콘텐츠만 준비할 때는 아래 명령을 **대상 DB를 확인한 후** 실행합니다. 실행 시 기존 DB에 쓰기가 발생하므로 자동 시작 과정에는 넣지 않았습니다. 실제 과거 일봉 적재는 [시나리오 서버 안내](services/scenario-server/README.md)를 따릅니다.
 
 ```powershell
