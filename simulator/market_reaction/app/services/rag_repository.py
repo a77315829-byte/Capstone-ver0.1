@@ -10,7 +10,9 @@ embedding 필드는 float64 리스트 그대로 저장하면 BSON 배열 오버�
 13KB 가까이 차지한다(1024차원 기준). rag_index.build_index() 가 어차피 float32 로 변환해
 FAISS 인덱스를 만들기 때문에(코사인 유사도 계산 자체가 float32), 저장 시점에 float64 로
 들고 있는 건 정밀도 낭비다. 그래서 embedding 은 float32 로 packing 한 `bson.Binary`로
-저장한다(문서당 약 4KB, 56% 감소) — 검색 결과에는 영향 없음.
+저장한다 — 검색 결과에는 영향 없음.
+(임베딩 필드 13.2KB → 4.1KB 69% 감소, 문서 전체 평균 16.4KB → 6.8KB 58% 감소.
+ docs/RAG_MONGODB_MIGRATION_REPORT.md §4 측정값 기준.)
 """
 
 from __future__ import annotations
