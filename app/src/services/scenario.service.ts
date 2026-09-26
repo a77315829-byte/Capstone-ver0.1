@@ -38,6 +38,44 @@ export type ScenarioUserProgress = {
 	items: ScenarioProgressItem[];
 };
 
+export type LearningPatternChange = {
+	pattern_code: string;
+	label: string;
+	previous_occurrence_count: number;
+	current_occurrence_count: number;
+	previous_evidence_turns: number[];
+	current_evidence_turns: number[];
+	recommendation: string;
+};
+
+export type ScenarioLearningProgress = {
+	attempt_no: number;
+	status: "FIRST_ATTEMPT" | "COMPARABLE" | "VERSION_MISMATCH" | "INSUFFICIENT_DATA";
+	previous_evaluation_id: string | null;
+	previous_completed_at: string | null;
+	score_delta: number | null;
+	score_delta_pct_points: number | null;
+	repeated_patterns: LearningPatternChange[];
+	improved_patterns: LearningPatternChange[];
+	new_patterns: LearningPatternChange[];
+	metric_changes: Array<{ metric: string; previous_score: number; current_score: number; delta: number }>;
+	summary: string;
+};
+
+export type ScenarioEvaluationSummary = {
+	evaluation_id: string;
+	session_id: string;
+	scenario_id: string;
+	scenario_version: number;
+	completed_at: string;
+	evaluator_version?: string;
+	overall_score: number | null;
+	metric_averages?: Record<string, number>;
+	summary: string;
+	repeated_patterns: string[];
+	learning_progress?: ScenarioLearningProgress;
+};
+
 const unwrap = <T>(payload: any): T => payload?.data ?? payload;
 
 const scenarioService = {
@@ -66,6 +104,16 @@ const scenarioService = {
 		);
 
 		return unwrap<ScenarioUserProgress>(response.data);
+	},
+
+	async getEvaluations(userId: string): Promise<ScenarioEvaluationSummary[]> {
+		const response = await api.get(`/scenario-service/users/${encodeURIComponent(userId)}/evaluations`);
+		return unwrap<ScenarioEvaluationSummary[]>(response.data);
+	},
+
+	async getEvaluation(userId: string, evaluationId: string) {
+		const response = await api.get(`/scenario-service/users/${encodeURIComponent(userId)}/evaluations/${encodeURIComponent(evaluationId)}`);
+		return unwrap(response.data);
 	},
 
 	async getCurrentTurn(sessionId: string) {

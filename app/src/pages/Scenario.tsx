@@ -2236,10 +2236,9 @@ export default function Scenario() {
             lineHeight="1.6"
             color={MUTED}
           >
-            역사적인 경제 사건
-            속으로 돌아가 당시
-            시장에서 투자 판단을
-            경험해보세요.
+            시장 상황 속 투자 판단을 연습하고,
+            턴별 근거와 같은 시나리오의 반복 실수를
+            비교해 성장 과정을 확인하세요.
           </Text>
         </Box>
 

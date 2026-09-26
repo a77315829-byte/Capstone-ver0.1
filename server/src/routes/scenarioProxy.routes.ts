@@ -1,4 +1,6 @@
 import express from "express";
+import { verifyToken } from "../middleware/authJwt";
+import User from "../models/user.model";
 
 import {
 	DOWNSTREAM_HEALTH_TIMEOUT_MS,
@@ -13,6 +15,21 @@ const router = express.Router();
 const service = downstreamServices.scenario;
 const client = createDownstreamClient(service);
 const part = (value: string): string => encodeURIComponent(value);
+const requireOwnHistory: express.RequestHandler = async (req, res, next) => {
+	try {
+		const identity = req as express.Request & { userId?: string };
+		const user = identity.userId
+			? await User.findById(identity.userId).select("username").lean().exec()
+			: null;
+		if (!user || user.username !== req.params.userId) {
+			res.status(403).json({ message: "본인의 학습 이력만 조회할 수 있습니다." });
+			return;
+		}
+		next();
+	} catch (error) {
+		next(error);
+	}
+};
 
 router.get("/api/scenario-service/health", async (_req, res) =>
 	forwardDownstream(res, service, () =>
@@ -108,6 +125,28 @@ router.get(
 		forwardDownstream(res, service, () =>
 			client.get(
 				`/api/users/${part(req.params.userId)}/scenario-progress`,
+			),
+		),
+);
+
+router.get(
+	"/api/scenario-service/users/:userId/evaluations",
+	verifyToken,
+	requireOwnHistory,
+	async (req, res) =>
+		forwardDownstream(res, service, () =>
+			client.get(`/api/users/${part(req.params.userId)}/evaluations`),
+		),
+);
+
+router.get(
+	"/api/scenario-service/users/:userId/evaluations/:evaluationId",
+	verifyToken,
+	requireOwnHistory,
+	async (req, res) =>
+		forwardDownstream(res, service, () =>
+			client.get(
+				`/api/users/${part(req.params.userId)}/evaluations/${part(req.params.evaluationId)}`,
 			),
 		),
 );

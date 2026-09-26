@@ -45,6 +45,7 @@ import {
 } from "../services/learningProgress.service";
 import financeQuizzesData from "../data/financeQuizzes.json";
 import UsPortfolioMyPageSection from "../components/Profile/UsPortfolioMyPageSection";
+import ScenarioLearningHistory from "../components/Profile/ScenarioLearningHistory";
 
 type TradingOrderSide = "BUY" | "SELL";
 type TradingOrderType = "MARKET" | "LIMIT";
@@ -807,7 +808,7 @@ export default function MyPage() {
 						마이페이지
 					</Heading>
 					<Text mt="7px" fontSize="12px" color="app.subtleText">
-						나의 투자 현황과 학습 진행도를 한눈에 확인하세요.
+						시장 상황에서 투자 판단을 연습하고, 판단 근거와 반복 실수를 돌아보며 성장을 기록하는 투자 학습 시스템입니다.
 					</Text>
 					{lastUpdatedAt && (
 						<Text mt="5px" fontSize="10px" color="app.muted">
@@ -1144,6 +1145,8 @@ export default function MyPage() {
 					onQuizClick={() => navigate("/quiz")}
 				/>
 			</Grid>
+
+			<ScenarioLearningHistory key={username} userId={username} scenarioProgress={scenarioProgress} refreshKey={lastUpdatedAt?.getTime()} />
 
 			<Grid
 				templateColumns={{ base: "1fr", "2xl": "0.8fr 1.2fr" }}

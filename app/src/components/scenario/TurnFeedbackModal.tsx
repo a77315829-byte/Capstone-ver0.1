@@ -1,4 +1,9 @@
 import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
   Badge,
   Box,
   Button,
@@ -64,6 +69,7 @@ type TurnGuidanceReview = {
 };
 
 type TurnFeedbackData = {
+  summary?: string;
   good_points?: string[];
 
   missed_points?: string[];
@@ -414,7 +420,7 @@ function MetricCard({
         fontWeight="800"
         color={color}
       >
-        {scoreText(score)}
+        {Math.round(score * 20)}% · {scoreText(score)}
       </Text>
     </Box>
   );
@@ -706,6 +712,10 @@ export default function TurnFeedbackModal({
   const mainScoreColor =
     scoreColor(turnScore);
 
+  const explanation = feedback.explanation?.trim() ?? "";
+  const summary = feedback.summary?.trim() || explanation.split(/(?<=[.!?])\s+|\n/)[0]
+    || missedPoints[0] || goodPoints[0] || "저장된 항목별 평가에서 이번 판단을 확인하세요.";
+
   return (
     <Modal
       isOpen={isOpen}
@@ -910,7 +920,7 @@ export default function TurnFeedbackModal({
                   lineHeight="1.5"
                   color={MUTED}
                 >
-                  판단 과정 종합 평가
+                  만점 대비 {(turnScore * 20).toFixed(1)}%
                 </Text>
               </Box>
             </Flex>
@@ -941,7 +951,7 @@ export default function TurnFeedbackModal({
                   fontSize="8px"
                   color={MUTED}
                 >
-                  5점 만점
+                  5점 만점 · 백분율 = 점수 ÷ 5 × 100
                 </Text>
               </Flex>
 
@@ -1011,7 +1021,7 @@ export default function TurnFeedbackModal({
                   fontWeight="900"
                   color={TEXT}
                 >
-                  이번 TURN 해설
+                  이번 TURN 한눈에 보기
                 </Text>
 
                 <Text
@@ -1020,12 +1030,36 @@ export default function TurnFeedbackModal({
                   lineHeight="1.75"
                   color={SUBTLE}
                 >
-                  {feedback.explanation ||
-                    "이번 TURN의 판단 기록을 분석했습니다. 다음 TURN에서는 낮게 평가된 항목과 놓친 위험 요인을 함께 확인해보세요."}
+                  {summary}
                 </Text>
+                {nextActions[0]?.message && <Text mt="7px" fontSize="10px" fontWeight="800" color={ORANGE}>다음 행동 · {nextActions[0].message}</Text>}
               </Box>
             </Flex>
           </Box>
+
+          <Accordion mt="10px" allowToggle>
+            <AccordionItem borderWidth="1px" borderColor={BORDER} borderRadius="10px" overflow="hidden">
+              <AccordionButton _expanded={{ bg: "#FFF3EA" }}>
+                <Box flex="1" textAlign="left" fontSize="11px" fontWeight="900">왜 이 점수인가요? 해설과 판단 근거</Box>
+                <AccordionIcon />
+              </AccordionButton>
+              <AccordionPanel pb="14px">
+                {explanation && <Text fontSize="11px" lineHeight="1.8" color={SUBTLE} whiteSpace="pre-wrap">{explanation}</Text>}
+                <Stack mt="12px" spacing="12px">
+                  {metrics.map((metric) => (
+                    <Box key={metric.metric}>
+                      <Text fontSize="11px" fontWeight="900">{METRIC_LABELS[metric.metric ?? ""] ?? metric.metric} · {numberValue(metric.score).toFixed(1)} / 5</Text>
+                      <Text mt="3px" fontSize="11px" lineHeight="1.7" color={SUBTLE}>{metric.reason || metric.feedback || "이 평가에는 상세 판단 근거가 저장되지 않았습니다."}</Text>
+                      {(metric.penalties ?? []).filter((penalty) => penalty.evidence).map((penalty, index) => (
+                        <Text key={index} mt="4px" px="9px" py="6px" fontSize="10px" lineHeight="1.7" bg="#F6F1EC" borderRadius="6px">확인한 기록 · {penalty.evidence}</Text>
+                      ))}
+                    </Box>
+                  ))}
+                </Stack>
+                <Text mt="12px" fontSize="10px" color={MUTED}>등록된 평가 규칙으로 답변과 투자 행동을 확인한 점수입니다. 백분율은 만점 대비 점수이며 투자 성공 확률이나 AI 정답률을 뜻하지 않습니다.</Text>
+              </AccordionPanel>
+            </AccordionItem>
+          </Accordion>
 
           {/* =================================
               GOOD / MISSED

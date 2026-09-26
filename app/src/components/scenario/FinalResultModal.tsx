@@ -14,6 +14,8 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
+import type { ScenarioLearningProgress } from "../../services/scenario.service";
+import LearningComparison from "./LearningComparison";
 
 /* =========================================================
    TYPES
@@ -30,7 +32,8 @@ type BehaviorPattern = {
   recommendation?: string;
 };
 
-type FinalEvaluation = {
+export type FinalEvaluation = {
+  learning_progress?: ScenarioLearningProgress;
   evaluation_id?: string;
 
   user_id?: string;
@@ -909,7 +912,7 @@ export default function FinalResultModal({
                     {overallScore.toFixed(
                       2,
                     )}{" "}
-                    / 5
+                    / 5 · {(overallScore * 20).toFixed(1)}%
                   </Text>
                 </Flex>
               </Stack>
@@ -1166,6 +1169,9 @@ export default function FinalResultModal({
               </Box>
             )}
           </Box>
+          {evaluation?.learning_progress && (
+            <Box mt="14px"><LearningComparison progress={evaluation.learning_progress} /></Box>
+          )}
         </ModalBody>
 
         {/* =================================

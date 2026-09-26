@@ -13,6 +13,7 @@ from data.app_repository import AppRepository, NotFoundError
 from data.models import Action, Holding, QuestionAnswer, UserDecision
 from play.errors import DataUnavailableError, PlayError
 from play.final_evaluation_service import build_scenario_evaluation, rebuild_user_profile
+from play.learning_progress import enrich_evaluation
 from play.orderbook_service import (
     GENERATOR_VERSION,
     available_orderbook,
@@ -738,7 +739,7 @@ class ScenarioSessionService:
         value = self.repository.get_evaluation_by_session(session_id)
         if not value:
             raise PlayError("EVALUATION_NOT_READY", "종합평가가 아직 생성되지 않았습니다.", 503)
-        return value
+        return enrich_evaluation(self.repository, value)
 
     def finalize_session(self, session_id: str) -> dict:
         """마지막 턴 저장 이후 종합평가 생성을 재시도할 수 있게 분리한다."""
@@ -748,7 +749,7 @@ class ScenarioSessionService:
             if not existing:
                 raise PlayError("EVALUATION_NOT_READY", "종합평가가 없습니다.", 503)
             rebuild_user_profile(self.repository, session["user_id"], utc_now())
-            return existing
+            return enrich_evaluation(self.repository, existing)
         if session.get("status") != "FINALIZING":
             raise PlayError(
                 "SESSION_NOT_READY_TO_FINALIZE",
@@ -766,4 +767,4 @@ class ScenarioSessionService:
         session["final_evaluation_id"] = evaluation["evaluation_id"]
         self.repository.save_session(session)
         rebuild_user_profile(self.repository, session["user_id"], now)
-        return evaluation
+        return enrich_evaluation(self.repository, evaluation)

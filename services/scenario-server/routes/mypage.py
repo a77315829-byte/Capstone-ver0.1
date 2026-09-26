@@ -7,6 +7,7 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
 from data.app_repository import AppRepository, NotFoundError
+from play.learning_progress import enrich_evaluation, enrich_learning_history
 from routes.common import handled_error, ok
 
 
@@ -264,13 +265,14 @@ def record_quiz_progress_event(
 def list_evaluations(user_id: str):
     try:
         repository = AppRepository()
-        values = repository.list_user_evaluations(user_id)
+        values = enrich_learning_history(repository, repository.list_user_evaluations(user_id))
         summaries = [
             {
                 "evaluation_id": item["evaluation_id"],
                 "session_id": item["session_id"],
                 "scenario_id": item["scenario_id"],
                 "scenario_version": item["scenario_version"],
+                "evaluator_version": item.get("evaluator_version"),
                 "completed_at": item["completed_at"],
                 "overall_score": item.get("decision_evaluation", {}).get(
                     "overall_score"
@@ -279,6 +281,8 @@ def list_evaluations(user_id: str):
                     "portfolio_analysis", {}
                 ).get("cumulative_return_pct"),
                 "summary": item.get("feedback", {}).get("summary", ""),
+                "metric_averages": item.get("decision_evaluation", {}).get("metric_averages", {}),
+                "learning_progress": item["learning_progress"],
                 "repeated_patterns": [
                     pattern["label"]
                     for pattern in item.get("behavior_patterns", [])
@@ -295,10 +299,11 @@ def list_evaluations(user_id: str):
 @router.get("/{user_id}/evaluations/{evaluation_id}")
 def get_evaluation(user_id: str, evaluation_id: str):
     try:
-        value = AppRepository().get_scenario_evaluation(evaluation_id)
+        repository = AppRepository()
+        value = repository.get_scenario_evaluation(evaluation_id)
         if value.get("user_id") != user_id:
             raise NotFoundError("종합평가를 찾을 수 없습니다.")
-        return ok(value)
+        return ok(enrich_evaluation(repository, value))
     except Exception as exc:
         return handled_error(exc)
 

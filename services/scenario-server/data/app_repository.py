@@ -1,9 +1,13 @@
 """시나리오 실행 서비스의 데이터 접근 계층."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from data.store import DocumentStore, get_store
+
+
+logger = logging.getLogger(__name__)
 
 
 class NotFoundError(LookupError):
@@ -194,6 +198,12 @@ class AppRepository:
     # ── 실행 데이터 ──────────────────────────────────────────
     def create_session(self, session: dict) -> None:
         self.store.insert_one("scenario_sessions", session)
+        logger.info(
+            "persistence_event collection=scenario_sessions operation=insert "
+            "session_id=%s status=%s",
+            session.get("session_id"),
+            session.get("status"),
+        )
 
     def get_session(self, session_id: str) -> dict:
         value = self.store.find_one("scenario_sessions", {"session_id": session_id})
@@ -207,6 +217,13 @@ class AppRepository:
             {"session_id": session["session_id"]},
             session,
             upsert=False,
+        )
+        logger.info(
+            "persistence_event collection=scenario_sessions operation=replace "
+            "session_id=%s status=%s current_turn=%s",
+            session.get("session_id"),
+            session.get("status"),
+            session.get("current_turn"),
         )
 
     def list_user_sessions(self, user_id: str) -> list[dict]:
@@ -261,6 +278,12 @@ class AppRepository:
             record,
             upsert=True,
         )
+        logger.info(
+            "persistence_event collection=turn_records operation=upsert "
+            "session_id=%s turn_no=%s",
+            record.get("session_id"),
+            record.get("turn_no"),
+        )
 
     def get_turn_record(self, session_id: str, turn_no: int) -> dict | None:
         return self.store.find_one(
@@ -282,6 +305,13 @@ class AppRepository:
             evaluation,
             upsert=True,
         )
+        logger.info(
+            "persistence_event collection=turn_evaluations operation=upsert "
+            "session_id=%s turn_no=%s evaluator_version=%s",
+            evaluation.get("session_id"),
+            evaluation.get("turn_no"),
+            evaluation.get("evaluator_version"),
+        )
 
     def list_turn_evaluations(self, session_id: str) -> list[dict]:
         return self.store.find_many(
@@ -296,6 +326,12 @@ class AppRepository:
             {"evaluation_id": evaluation["evaluation_id"]},
             evaluation,
             upsert=True,
+        )
+        logger.info(
+            "persistence_event collection=scenario_evaluations operation=upsert "
+            "session_id=%s evaluator_version=%s",
+            evaluation.get("session_id"),
+            evaluation.get("evaluator_version"),
         )
 
     def get_scenario_evaluation(self, evaluation_id: str) -> dict:

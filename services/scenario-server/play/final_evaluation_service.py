@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from config import EVALUATOR_VERSION, SCHEMA_VERSION
 from data.app_repository import AppRepository
+from play.learning_progress import enrich_evaluation
 from scoring import coaching_tracker
 
 
@@ -286,7 +287,7 @@ def build_scenario_evaluation(
         if score < 3
     ]
     repeated = [item for item in patterns if item["classification"] == "REPEATED_PATTERN"]
-    summary_parts = [f"6턴 판단 과정의 평균 점수는 {overall_score:.2f}/5입니다."]
+    summary_parts = [f"{len(timeline)}턴 판단 과정의 평균 점수는 {overall_score:.2f}/5입니다."]
     if repeated:
         summary_parts.append(f"반복 행동으로 '{repeated[0]['label']}'이 확인됐습니다.")
     else:
@@ -304,7 +305,7 @@ def build_scenario_evaluation(
             next_actions.append(message)
         if len(next_actions) >= 3:
             break
-    return {
+    evaluation = {
         "schema_version": SCHEMA_VERSION,
         "evaluation_id": str(uuid4()),
         "user_id": session["user_id"],
@@ -312,6 +313,15 @@ def build_scenario_evaluation(
         "scenario_id": session["scenario_id"],
         "scenario_version": session["scenario_version"],
         "evaluator_version": EVALUATOR_VERSION,
+        "evaluation_coverage": {
+            "expected_turns": sorted(item["turn_no"] for item in scenario["turn_schedule"]),
+            "evaluated_turns": sorted(item["turn_no"] for item in evaluations),
+            "evaluator_versions": sorted({item.get("evaluator_version", "UNKNOWN") for item in evaluations}),
+            "snapshot_turns": sorted({
+                item["turn_no"] for item in snapshots
+                if item.get("kind") == "TURN_END" and item.get("turn_no") is not None
+            }),
+        },
         "completed_at": completed_at,
         "decision_evaluation": {
             "overall_score": overall_score,
@@ -329,6 +339,7 @@ def build_scenario_evaluation(
             "next_actions": next_actions,
         },
     }
+    return enrich_evaluation(repository, evaluation)
 
 
 def rebuild_user_profile(repository: AppRepository, user_id: str, updated_at: str) -> dict:
