@@ -1,13 +1,19 @@
 # RAG Ablation 실험 결과
 
-> 재현 방법: `simulator/market_reaction` 에서
-> `python -m scripts.ablation_rag --level a --trials 3`
-> `python -m scripts.ablation_rag --level b --trials 1`
-> 원자료: `data/ablation_rag_a.json`, `data/ablation_rag_b.json` (gitignored)
+> 재현 방법 (`simulator/market_reaction` 디렉터리에서):
+> ```
+> python -m scripts.ablation_rag --level a --trials 3                       # ②단계, 8B
+> python -m scripts.ablation_rag --level b --trials 3                       # 전체, 8B
+> OLLAMA_MODEL=qwen2.5:14b python -m scripts.ablation_rag --level a --trials 3
+> OLLAMA_MODEL=qwen2.5:14b python -m scripts.ablation_rag --level b --trials 3
+> ```
+> 원자료: `data/ablation_rag_a.json`, `data/abl_b_llama8b.json`,
+> `data/abl_a_qwen14b.json`, `data/abl_b_qwen14b.json` (gitignored)
 
 ## 1. 실험 설계
 
 **질문**: RAG(공시 문서 검색)가 실제로 분석 결과를 바꾸는가? 바꾼다면 어디를 바꾸는가?
+모델을 키우면 달라지는가?
 
 **방법**: 동일한 뉴스를 **사업 구조가 반대인 두 종목**에 각각 넣고, RAG on/off 두 조건으로
 실행해 비교한다. RAG off는 검색 함수만 빈 리스트를 반환하도록 치환하며, 그 외 경로는
@@ -15,11 +21,14 @@
 
 | 구분 | 설정 |
 |---|---|
-| LLM | `llama3.1:8b` (Ollama, 로컬) |
+| LLM | `llama3.1:8b` / `qwen2.5:14b` (Ollama, 로컬) |
 | temperature | **0** (`.env`의 0.3을 스크립트가 강제 덮어씀) |
 | 임베딩 | `bge-m3` (1024차원) |
 | 시세 | `stock_data` 미전달 → 전 조건 stub 고정 (RAG 외 변수 제거) |
-| fallback 발생 | 전체 32런 중 **0건** — 모든 비교가 정상 LLM 경로에서 이뤄짐 |
+| 반복 | 전 조건 **3회** |
+| 총 런 수 | 104런 (8B: 24+24, 14B: 24+24, 초기 탐색 8) |
+| fallback 발생 | **0건** — 모든 비교가 정상 LLM 경로에서 이뤄짐 |
+| 재현성 | **모든 조건에서 3회 결과가 완전히 동일** — 아래 차이는 표본 변동이 아니다 |
 
 **측정 단계 분리**
 
@@ -37,22 +46,21 @@
 
 ---
 
-## 2. level A — ②단계 (trials=3)
+## 2. level A — ②단계 (llama3.1:8b, 3회)
 
-| 케이스 | 종목 | 조건 | impact_direction | strength | 검색문서 | 3회 재현 |
-|---|---|---|---|---|---|---|
-| fx_won_weak | 현대차 | **rag_on** | `neutral` | medium | 3 | 동일 |
-| fx_won_weak | 현대차 | rag_off | `negative` | medium | 0 | 동일 |
-| fx_won_weak | 한국전력 | **rag_on** | `neutral` | low | 3 | 동일 |
-| fx_won_weak | 한국전력 | rag_off | `negative` | medium | 0 | 동일 |
-| rate_hike | KB금융 | **rag_on** | `positive` | medium | 2 | 동일 |
-| rate_hike | KB금융 | rag_off | `positive` | medium | 0 | 동일 |
-| rate_hike | LG에너지솔루션 | **rag_on** | `positive` | medium | 3 | 동일 |
-| rate_hike | LG에너지솔루션 | rag_off | `positive` | medium | 0 | 동일 |
+| 케이스 | 종목 | 조건 | impact_direction | strength | 검색문서 |
+|---|---|---|---|---|---|
+| fx_won_weak | 현대차 | **rag_on** | `neutral` | medium | 3 |
+| fx_won_weak | 현대차 | rag_off | `negative` | medium | 0 |
+| fx_won_weak | 한국전력 | **rag_on** | `neutral` | low | 3 |
+| fx_won_weak | 한국전력 | rag_off | `negative` | medium | 0 |
+| rate_hike | KB금융 | **rag_on** | `positive` | medium | 2 |
+| rate_hike | KB금융 | rag_off | `positive` | medium | 0 |
+| rate_hike | LG에너지솔루션 | **rag_on** | `positive` | medium | 3 |
+| rate_hike | LG에너지솔루션 | rag_off | `positive` | medium | 0 |
 
 - `impact_direction` 변화: **4케이스 중 2** (환율 케이스 2건, `negative` → `neutral`)
 - `impact_strength` 변화: 4케이스 중 1 (한국전력, medium → low)
-- **temperature 0에서 3회 반복이 전부 동일** — 아래 차이는 표본 변동이 아니다.
 
 ### 2.1 factors 본문 — 핵심 증거
 
@@ -61,7 +69,6 @@
 **한국전력 / rag_off** — 사실과 다른 기업 속성을 생성했다:
 ```
 (+) "원화 약세로 한국전력의 수출 비중이 증가할 수 있다."
-(−) "원화 약세로 한국전력의 수입 비중이 증가할 수 있다."
 (−) "원화 약세로 한국전력의 수출 수익이 감소할 수 있다."
 ```
 한국전력은 수출 기업이 아니다. 존재하지 않는 수출 구조를 전제했고, "수출 비중 증가"와
@@ -97,33 +104,35 @@
   위험을 호재로 넣은 오분류다.
 
 즉 RAG는 **사실 근거를 공급하지만, 그 근거를 호재/악재로 옳게 분류하는 능력은 별개**이며
-후자는 8B 모델에서 불안정하다.
+후자는 모델 쪽 문제다(4절 참고).
 
 ---
 
-## 3. level B — 전체 파이프라인 (trials=1)
+## 3. level B — 전체 파이프라인 (llama3.1:8b, 3회)
 
-| 케이스 | 종목 | 조건 | dir | 매수% | 매도% | 관망% | **우세** | 신뢰도 |
-|---|---|---|---|---|---|---|---|---|
-| fx_won_weak | 현대차 | **rag_on** | neutral | 0 | 32 | 68 | **hold** | 0.56 |
-| fx_won_weak | 현대차 | rag_off | negative | 0 | 68 | 32 | **sell** | 0.56 |
-| fx_won_weak | 한국전력 | rag_on | neutral | 17 | 0 | 83 | hold | 0.56 |
-| fx_won_weak | 한국전력 | rag_off | negative | 16 | 0 | 84 | hold | 0.56 |
-| rate_hike | KB금융 | rag_on | positive | 89 | 0 | 11 | buy | 0.56 |
-| rate_hike | KB금융 | rag_off | positive | 89 | 0 | 11 | buy | 0.56 |
-| rate_hike | LG에너지솔루션 | rag_on | positive | 68 | 0 | 32 | buy | **0.655** |
-| rate_hike | LG에너지솔루션 | rag_off | positive | 68 | 0 | 32 | buy | 0.56 |
+| 케이스 | 종목 | 조건 | 매수% | 매도% | 관망% | **우세** | 신뢰도 |
+|---|---|---|---|---|---|---|---|
+| fx_won_weak | 현대차 | **rag_on** | 0 | 32 | 68 | **hold** | 0.56 |
+| fx_won_weak | 현대차 | rag_off | 0 | 68 | 32 | **sell** | 0.56 |
+| fx_won_weak | 한국전력 | rag_on | 17 | 0 | 83 | hold | 0.56 |
+| fx_won_weak | 한국전력 | rag_off | 16 | 0 | 84 | hold | 0.56 |
+| rate_hike | KB금융 | rag_on | 89 | 0 | 11 | buy | 0.56 |
+| rate_hike | KB금융 | rag_off | 89 | 0 | 11 | buy | 0.56 |
+| rate_hike | LG에너지솔루션 | rag_on | 68 | 0 | 32 | buy | **0.655** |
+| rate_hike | LG에너지솔루션 | rag_off | 68 | 0 | 32 | buy | 0.56 |
 
-**최종 우세 방향이 뒤집힌 사례 — 현대차**: `rag_off` 는 **매도 우세**, `rag_on` 은 **관망 우세**.
+전 조건 3회 결과가 완전히 동일하다.
+
+**최종 우세 방향이 뒤집힌 사례 — 현대차**: `rag_off`는 **매도 우세**, `rag_on`은 **관망 우세**.
 에이전트 5개 방향을 보면 원인이 분명하다.
 
 ```
 rag_on : ['sell', 'hold', 'hold', 'sell', 'hold']   → sell 2 / hold 3 → hold 우세
 rag_off: ['sell', 'hold', 'sell', 'sell', 'hold']   → sell 3 / hold 2 → sell 우세
 ```
-에이전트 1개의 판단이 바뀌면서 최종 출력이 뒤집혔다.
+에이전트 1개의 판단이 바뀌면서 최종 출력이 뒤집혔고, **3회 모두 동일하게 재현**됐다.
 
-**정리**
+**정리 (8B 기준)**
 
 | 측정 지점 | RAG on/off 차이 |
 |---|---|
@@ -135,31 +144,83 @@ rag_off: ['sell', 'hold', 'sell', 'sell', 'hold']   → sell 3 / hold 2 → sell
 
 ---
 
-## 4. 결론
+## 4. 모델 비교 — qwen2.5:14b 로 반복
+
+"모델을 키우면 분류 오류가 줄어드는가"를 확인하기 위해 동일 실험을 `qwen2.5:14b`로
+반복했다. **결과는 개선이 아니라 악화였다.**
+
+### 4.1 level A — 8케이스 전부 `negative`
+
+| 케이스 | 종목 | rag_off | rag_on |
+|---|---|---|---|
+| fx_won_weak | 현대차 | `negative` | `negative` |
+| fx_won_weak | 한국전력 | `negative` | `negative` |
+| rate_hike | KB금융 | `negative` | `negative` |
+| rate_hike | LG에너지솔루션 | `negative` | `negative` |
+
+금리 인상 → KB금융처럼 명백한 호재 케이스까지 `negative`다. 원인은 명확하다.
+
+> **`positive_factors`가 8케이스 전부 빈 배열 `[]`이다.** fallback은 0건이므로 LLM 호출
+> 자체는 정상이었다. 즉 이 모델은 주어진 스키마에서 **호재 요인을 하나도 생성하지 못한다.**
+
+`impact_direction`이 factors 구성에 연동되므로, 호재가 비면 방향은 자동으로 `negative`로
+고정된다. RAG on/off 차이가 라벨에 전혀 드러나지 않는 이유다.
+
+### 4.2 level B — 전부 `sell` 우세
+
+| 케이스 | 종목 | 조건 | 매수% | 매도% | 관망% | 우세 | 신뢰도 |
+|---|---|---|---|---|---|---|---|
+| fx_won_weak | 현대차 | rag_on / rag_off | 0 | 89 / 89 | 11 / 11 | sell | 0.585 |
+| fx_won_weak | 한국전력 | rag_on / rag_off | 0 | 89 / 89 | 11 / 11 | sell | 0.585 |
+| rate_hike | KB금융 | **rag_on** | 0 | **89** | 11 | sell | 0.56 |
+| rate_hike | KB금융 | rag_off | 0 | **68** | 32 | sell | 0.56 |
+| rate_hike | LG에너지솔루션 | rag_on / rag_off | 0 | 68 / 68 | 32 / 32 | sell | 0.56 |
+
+매수 압력이 전 케이스 0%다. 우세 방향은 8/8 전부 `sell`. RAG가 수치를 바꾼 건 KB금융
+1건(매도 68 → 89)뿐이고, 그나마 **틀린 방향으로 더 확신을 키웠다.**
+
+### 4.3 다만 검색 내용 자체는 14B에서도 작동했다
+
+라벨은 망가졌지만 RAG가 공급한 근거는 유효했다.
+
+| 종목 | 조건 | negative_factors |
+|---|---|---|
+| 한국전력 | **rag_on** | "원화 약세로 인한 **외화 부채 부담 증가**" ← 한전의 실제 외화부채 구조를 반영한 정확한 지적 |
+| 한국전력 | rag_off | "원화 약세로 인한 수입원자재 가격 상승" (일반적) |
+
+즉 **검색 품질과 분류 능력은 분리된 문제**라는 2.2절의 관찰이 모델을 바꿔도 유지된다.
+
+---
+
+## 5. 결론
 
 **확인된 것**
 
 1. RAG off는 **기업 속성을 환각한다**(한국전력을 수출 기업으로 전제). temperature 0에서
    3회 모두 재현되므로 표본 변동이 아니다.
-2. RAG on은 실제 공시 문구·사업 부문 구조를 반영한다.
-3. RAG는 최종 출력까지 도달할 수 있다 — 4케이스 중 1건에서 우세 방향이 뒤집혔다.
+2. RAG on은 실제 공시 문구·사업 부문 구조를 반영한다. 모델을 바꿔도 이 효과는 유지된다
+   (14B에서 한전 외화부채를 정확히 지적).
+3. RAG는 최종 출력까지 도달할 수 있다 — 8B 기준 4케이스 중 1건에서 우세 방향이
+   뒤집혔고 3회 모두 재현됐다.
 
 **반증된 것(당초 가설)**
 
-4. "같은 뉴스가 종목 구조에 따라 **반대 부호**로 갈린다"는 재현되지 않았다. 환율 케이스에서
-   현대차·한국전력이 rag_on에서 둘 다 `neutral`, rag_off에서 둘 다 `negative`였다. RAG는
+4. "같은 뉴스가 종목 구조에 따라 **반대 부호**로 갈린다"는 재현되지 않았다. RAG는
    **부호를 갈라주지 못했다.**
-5. RAG의 효과는 균일하지 않다. 최종 수치가 전혀 변하지 않은 케이스가 4건 중 2건이다.
+5. RAG의 효과는 균일하지 않다. 8B 기준 최종 수치가 전혀 변하지 않은 케이스가 4건 중 2건이다.
+6. **"더 큰 모델을 쓰면 나아진다"도 반증됐다.** `qwen2.5:14b`는 `positive_factors`를
+   8/8 전부 비워 모든 판정을 `negative`로 고정시켰다. 8B보다 명백히 나쁘다.
 
-**드러난 구조적 약점 (향후 과제)**
+**드러난 구조적 약점 (향후 과제, 우선순위 순)**
 
-6. ②단계의 factors 본문이 4/4 바뀌는데도 최종 수치는 2/4에서 무변화였다. ②단계 → ⑤단계
-   에이전트로의 **정보 전달이 약하다.** 에이전트 프롬프트가 factors 본문보다
+7. **②단계 프롬프트가 호재/악재 분류를 제대로 유도하지 못한다.** 8B는 분류가 불안정하고
+   (위험 요인을 호재로 배치), 14B는 한쪽으로 완전히 쏠린다. 병목은 검색 품질이 아니라
+   **프롬프트·스키마 설계**다. RAG를 개선하기 전에 여기를 먼저 고쳐야 한다.
+8. ②단계의 factors 본문이 4/4 바뀌는데도 최종 수치는 8B에서 2/4 무변화였다. ②단계 →
+   ⑤단계 에이전트로의 **정보 전달이 약하다.** 에이전트 프롬프트가 factors 본문보다
    `impact_direction`·`impact_strength` 같은 거친 라벨에 주로 반응하는 것으로 보인다.
-   RAG 투자 대비 효과를 높이려면 이 연결을 강화하는 것이 우선이다.
-7. 사실 근거 공급(RAG의 몫)과 호재/악재 분류(모델의 몫)는 분리된 문제이며, 후자는 8B
-   모델에서 불안정하다. 더 큰 모델(예: `qwen2.5:14b`)로 같은 실험을 반복하면 이 둘을
-   분리해 평가할 수 있다.
+9. 모델 선택은 크기가 아니라 **이 스키마에 대한 적합성**으로 판단해야 한다. 프롬프트 수정
+   후 재평가가 필요하다.
 
-**표본 한계**: 4케이스 / 2뉴스 / level B는 1회 반복이다. 경향 확인 수준이며 통계적 주장은
-할 수 없다. level B를 3회 이상으로 늘리고 케이스를 확대하는 것이 다음 단계다.
+**표본 한계**: 4케이스 / 2뉴스 / 2모델이다. 전 조건 3회 반복으로 재현성은 확보했으나
+케이스 수가 적어 통계적 유의성을 주장할 수는 없다. 케이스 확대가 다음 단계다.
