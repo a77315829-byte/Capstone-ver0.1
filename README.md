@@ -46,6 +46,9 @@ Node는 로그인·주식·거래 API를 직접 처리하고, 시나리오와 �
 
 ## Windows에서 설치와 시작
 
+현재 PC에서 시나리오 기능만 확인하려면 Atlas나 `.env`를 다시 설정하지 말고
+[시나리오 실행 방법](docs/RUN_SCENARIO.md)을 따르세요.
+
 Node.js/npm 및 Python 3.11을 준비하고 저장소 루트에서:
 
 ```powershell
