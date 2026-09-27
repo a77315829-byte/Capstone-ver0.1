@@ -67,6 +67,35 @@ def _is_degenerate(text: str) -> bool:
     return len(set(lines)) / len(lines) < _DEGENERATE_UNIQUE_RATIO
 
 
+# 판단에 쓸모 있는 섹션만 인덱싱한다. 삼성전자 사업보고서(100만자) 실측 구성은
+# 상세표 37.0% / 재무제표 27.9% / 임원·직원 11.9% / 계열회사 6.5% 등으로, 뉴스 영향
+# 판단에 필요한 회사 개요·사업의 내용·경영진단은 합쳐서 7.9% 뿐이다. 나머지를 넣으면
+# 검색이 임원 명단이나 주식 발행 이력 같은 무관한 청크로 오염된다(실측: 검색 6건 중
+# 1건만 관련 있었음).
+_RELEVANT_SECTION_KEYWORDS = (
+    # DART 정기공시 대목차
+    "회사의 개요",
+    "사업의 내용",
+    "경영진단",
+    # SEC EDGAR Item
+    "business",
+    "risk factors",
+    "management's discussion",
+)
+
+
+def is_relevant_section(heading: str) -> bool:
+    """섹션을 인덱싱할지 결정한다.
+
+    제목이 비어 있으면(=문서에서 목차를 못 찾아 전체가 한 섹션으로 온 경우) 판단할
+    근거가 없으므로 보존한다. 걸러내면 8-K 처럼 항목 구조가 없는 문서가 통째로 사라진다.
+    """
+    if not heading.strip():
+        return True
+    lowered = heading.lower()
+    return any(keyword in lowered for keyword in _RELEVANT_SECTION_KEYWORDS)
+
+
 def _document_to_chunks(document: dict, heading_pattern: str) -> List[str]:
     """정규화된 문서 하나(document['content'])를 청크 텍스트 목록으로 나눈다.
 
@@ -85,7 +114,9 @@ def _document_to_chunks(document: dict, heading_pattern: str) -> List[str]:
     않는 경우가 있었다(실측 확인).
     """
     chunk_texts: List[str] = []
-    for _heading, body in split_into_sections(document["content"], heading_pattern):
+    for heading, body in split_into_sections(document["content"], heading_pattern):
+        if not is_relevant_section(heading):
+            continue
         paragraphs = [p for p in re.split(r"\n\s*\n", body.strip()) if p.strip()]
         clean_body = "\n\n".join(p for p in paragraphs if not _is_degenerate(p))
         for chunk in split_into_chunks(clean_body, DEFAULT_MAX_CHARS):

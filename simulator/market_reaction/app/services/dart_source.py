@@ -115,7 +115,10 @@ async def _fetch_filing_list(corp_code: str) -> List[dict]:
         "pblntf_ty": "A",
         "bgn_de": (today - timedelta(days=365 * 3)).strftime("%Y%m%d"),
         "end_de": today.strftime("%Y%m%d"),
-        "page_count": "5",
+        # 정기공시는 연 4건(사업+반기+분기2)이므로 3년이면 최대 12건이다. 20 이면
+        # 조회 기간 내 전부를 가져온다. 섹션 선별(build_rag_index.is_relevant_section)로
+        # 문서당 분량이 8% 수준으로 줄어 건수를 늘려도 저장 용량에 여유가 있다.
+        "page_count": "20",
     }
     async with httpx.AsyncClient(timeout=httpx.Timeout(30)) as client:
         resp = await client.get(url, params=params)

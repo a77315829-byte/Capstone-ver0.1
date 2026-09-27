@@ -185,3 +185,67 @@ async def test_rebuild_stock_keeps_existing_data_when_new_run_yields_zero_chunks
     remaining = [c for c in repo.chunks.values() if c.stock_code == "005930"]
     assert len(remaining) == 1
     assert remaining[0].text == "정상청크"
+
+
+# ---------------------------------------------------------------------------
+# 섹션 선별: 사업보고서의 92% 는 판단에 쓸모없는 내용이다(상세표 37%, 재무제표 28%,
+# 임원 명단 12% 등). 사업 구조를 담은 섹션만 인덱싱한다.
+# ---------------------------------------------------------------------------
+
+
+def test_keeps_company_overview_and_business_sections():
+    assert build_rag_index.is_relevant_section("I. 회사의 개요")
+    assert build_rag_index.is_relevant_section("II. 사업의 내용")
+
+
+def test_keeps_management_discussion_section():
+    assert build_rag_index.is_relevant_section("IV. 이사의 경영진단 및 분석의견")
+
+
+def test_drops_boilerplate_sections():
+    for heading in [
+        "III. 재무에 관한 사항",
+        "VIII. 임원 및 직원 등에 관한 사항",
+        "XII. 상세표",
+        "VII. 주주에 관한 사항",
+        "IX. 계열회사 등에 관한 사항",
+    ]:
+        assert not build_rag_index.is_relevant_section(heading), heading
+
+
+def test_keeps_edgar_business_and_mda_items():
+    assert build_rag_index.is_relevant_section("Item 1. Business")
+    assert build_rag_index.is_relevant_section("Item 1A. Risk Factors")
+    assert build_rag_index.is_relevant_section(
+        "Item 7. Management's Discussion and Analysis of Financial Condition"
+    )
+
+
+def test_drops_other_edgar_items():
+    assert not build_rag_index.is_relevant_section("Item 3. Legal Proceedings")
+    assert not build_rag_index.is_relevant_section("Item 10. Directors and Executive Officers")
+
+
+def test_keeps_document_when_no_heading_was_detected():
+    """제목을 못 찾으면 문서 전체가 제목 '' 인 섹션 하나로 온다.
+
+    이때 걸러내면 문서가 통째로 사라진다(8-K 등 항목 구조가 없는 문서). 판단할 근거가
+    없으므로 보존한다.
+    """
+    assert build_rag_index.is_relevant_section("")
+
+
+def test_document_to_chunks_only_indexes_relevant_sections():
+    """실제 청킹 경로에서 불필요한 섹션이 빠지는지 확인한다."""
+    content = (
+        "II. 사업의 내용\n\n" + "반도체 부문 매출 비중은 전체의 절반을 넘는다. " * 12 + "\n\n"
+        "VIII. 임원 및 직원 등에 관한 사항\n\n" + "홍길동 남 1970.01 부사장 상근 담당임원 " * 12
+    )
+    document = {"content": content}
+
+    chunks = build_rag_index._document_to_chunks(document, DART_HEADING_PATTERN)
+
+    assert chunks, "관련 섹션이 있는데 청크가 하나도 안 나왔다"
+    joined = " ".join(chunks)
+    assert "반도체 부문 매출" in joined
+    assert "부사장 상근 담당임원" not in joined
