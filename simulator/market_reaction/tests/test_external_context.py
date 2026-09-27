@@ -20,7 +20,7 @@ def _request(text="AI 반도체 수요 증가로 삼성전자 HBM 실적 개선�
 def _no_rag(monkeypatch):
     """기본적으로 RAG 검색은 빈 리스트를 반환하게 한다(테스트별로 필요하면 재정의)."""
 
-    async def _empty(_stock_code, _query_text):
+    async def _empty(_stock_code, _query_text, _published_before=None):
         return []
 
     monkeypatch.setattr(external_context, "retrieve_relevant_documents", _empty)
@@ -53,7 +53,7 @@ async def test_offline_direction_inference(offline):
 async def test_rag_sources_populated_from_retrieved_documents(offline, monkeypatch):
     """retrieve_relevant_documents 가 반환한 문서가 rag_sources 에 그대로 반영된다."""
 
-    async def _fake(_stock_code, _query_text):
+    async def _fake(_stock_code, _query_text, _published_before=None):
         return [
             {
                 "title": "삼성전자 2026년 2분기 실적발표",
@@ -88,3 +88,27 @@ async def test_rag_retrieval_exception_is_swallowed(offline, monkeypatch):
     ext, _, rag_sources = await analyze_external_context(_request())
     assert isinstance(ext, ExternalContext)
     assert rag_sources == []
+
+
+@pytest.mark.asyncio
+async def test_published_before_is_applied_to_retrieval(monkeypatch, offline):
+    """analyze_external_context 에 넘긴 기준일이 검색까지 전달돼, 이후 공시가 근거에서 빠진다."""
+    catalog = [
+        {"title": "미래공시", "source_type": "dart_periodic", "published_at": "2026-09-01",
+         "content": "가" * 50},
+        {"title": "과거공시", "source_type": "dart_periodic", "published_at": "2026-01-01",
+         "content": "나" * 50},
+    ]
+
+    async def _dated_retrieve(_stock_code, _query_text, published_before=None):
+        if published_before is None:
+            return catalog
+        return [d for d in catalog if d["published_at"] < published_before]
+
+    monkeypatch.setattr(external_context, "retrieve_relevant_documents", _dated_retrieve)
+
+    _ext, _fb, rag_sources = await analyze_external_context(
+        _request(), published_before="2026-06-01"
+    )
+
+    assert [s.title for s in rag_sources] == ["과거공시"]

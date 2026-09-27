@@ -187,3 +187,27 @@ async def test_mongo_config_error_returns_empty(monkeypatch):
     monkeypatch.setattr(document_retrieval, "embed_text", _embed)
     docs = await document_retrieval.retrieve_relevant_documents("005930", "삼성전자 실적")
     assert docs == []
+
+
+@pytest.mark.asyncio
+async def test_published_before_excludes_later_filings(monkeypatch):
+    """published_before 를 주면 그 날짜 이후 공시는 결과에서 빠진다(미래 정보 누출 방지)."""
+    repo = FakeRagRepository()
+    _seed(repo, "005930", [
+        ({"title": "미래공시", "source_type": "dart_periodic", "published_at": "2026-09-01",
+          "url": "http://x", "text": "가" * 100}, [1.0, 0.0]),
+        ({"title": "과거공시", "source_type": "dart_periodic", "published_at": "2026-01-01",
+          "url": "http://y", "text": "나" * 100}, [0.9, 0.1]),
+    ])
+    _inject_store(repo)
+
+    async def _embed(_text):
+        return [1.0, 0.0]
+
+    monkeypatch.setattr(document_retrieval, "embed_text", _embed)
+
+    docs = await document_retrieval.retrieve_relevant_documents(
+        "005930", "삼성전자 실적", published_before="2026-06-01"
+    )
+
+    assert [d["title"] for d in docs] == ["과거공시"]

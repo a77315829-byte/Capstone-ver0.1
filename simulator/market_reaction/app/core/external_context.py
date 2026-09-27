@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from ..schemas.analysis import ExternalContext, InputType, RagSource
 from ..schemas.request import SimulationRequest
@@ -65,10 +65,12 @@ _SCHEMA = {
 }
 
 
-async def _retrieve_documents_safe(stock_code: str, query_text: str) -> List[dict]:
+async def _retrieve_documents_safe(
+    stock_code: str, query_text: str, published_before: Optional[str] = None
+) -> List[dict]:
     """검색 실패는 삼키고 빈 리스트를 반환한다(RAG 는 항상 optional)."""
     try:
-        return await retrieve_relevant_documents(stock_code, query_text)
+        return await retrieve_relevant_documents(stock_code, query_text, published_before)
     except Exception:
         return []
 
@@ -107,15 +109,23 @@ def _ensure_uncertainty(ext: ExternalContext) -> ExternalContext:
 
 async def analyze_external_context(
     request: SimulationRequest,
+    published_before: Optional[str] = None,
 ) -> Tuple[ExternalContext, List[str], List[RagSource]]:
-    """ExternalContext, fallback_modules, rag_sources(검색된 근거 자료) 를 반환한다."""
+    """ExternalContext, fallback_modules, rag_sources(검색된 근거 자료) 를 반환한다.
+
+    published_before(ISO 날짜 문자열)를 주면 그 날짜 이전 공시만 근거로 검색한다.
+    과거 시점 평가에서 미래 정보가 섞이는 것을 막기 위한 인자이며, 실서비스 경로는
+    주지 않으므로 기존 동작 그대로다.
+    """
     industry = get_stock_context_stub(request.selected_stock).industry
     input_type = (
         request.input_type_hint.value
         if isinstance(request.input_type_hint, InputType)
         else "unknown"
     )
-    documents = await _retrieve_documents_safe(request.selected_stock.code, request.input_text)
+    documents = await _retrieve_documents_safe(
+        request.selected_stock.code, request.input_text, published_before
+    )
     rag_sources = [
         RagSource(
             title=doc["title"],

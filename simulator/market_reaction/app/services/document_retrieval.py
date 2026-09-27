@@ -42,11 +42,17 @@ def _reset_cache() -> None:
     _store = None
 
 
-async def retrieve_relevant_documents(stock_code: str, query_text: str) -> List[dict]:
+async def retrieve_relevant_documents(
+    stock_code: str, query_text: str, published_before: Optional[str] = None
+) -> List[dict]:
     """query_text 와 유사한 stock_code 청크를 예산 내에서 반환한다.
 
     반환 형식은 기존 계약과 동일한 dict 목록: {title, source_type, published_at, content}
     (content 는 청크 텍스트). 실패 시 예외를 던지지 않고 빈 리스트를 반환한다.
+
+    published_before(ISO 날짜 문자열)를 주면 그 날짜 이전에 공시된 청크만 검색한다.
+    과거 시점을 평가할 때 뉴스 시점 이후의 공시가 섞여 들어가는 미래 정보 누출을 막기
+    위한 것이며, 실서비스 경로는 이 인자를 주지 않아 기존 동작 그대로다.
     """
     try:
         query_vector = await embed_text(query_text)
@@ -60,7 +66,7 @@ async def retrieve_relevant_documents(stock_code: str, query_text: str) -> List[
         logger.warning("RAG store initialization failed: %s", exc)
         return []
 
-    chunks = await store.search(stock_code, query_vector, _TOP_K)
+    chunks = await store.search(stock_code, query_vector, _TOP_K, published_before)
 
     selected: List[dict] = []
     used_chars = 0

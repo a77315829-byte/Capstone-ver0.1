@@ -25,7 +25,11 @@ logger = logging.getLogger(__name__)
 
 class VectorStore(Protocol):
     async def search(
-        self, stock_code: str, query_embedding: List[float], top_k: int
+        self,
+        stock_code: str,
+        query_embedding: List[float],
+        top_k: int,
+        published_before: Optional[str] = None,
     ) -> List[Chunk]: ...
 
 
@@ -51,8 +55,18 @@ class FaissVectorStore:
             self._cache.pop(stock_code, None)
 
     async def search(
-        self, stock_code: str, query_embedding: List[float], top_k: int
+        self,
+        stock_code: str,
+        query_embedding: List[float],
+        top_k: int,
+        published_before: Optional[str] = None,
     ) -> List[Chunk]:
+        """published_before 를 주면 그 날짜 이전에 공시된 청크만 반환한다(ISO 날짜 문자열 비교).
+
+        과거 시점 평가에서 뉴스 시점 이후의 공시가 검색되는 미래 정보 누출을 막기 위한 것이다.
+        필터가 걸리면 상위 top_k 만 뽑아서 거르는 대신 전체 후보를 훑은 뒤 거른다 —
+        상위 유사도 청크가 전부 기준일 이후여도 과거 청크로 top_k 를 채우기 위함이다.
+        """
         entry = self._cache.get(stock_code)
         if entry is None:
             entry = await self._load(stock_code)
@@ -68,8 +82,12 @@ class FaissVectorStore:
             )
             return []
 
-        hits = rag_index.search(entry.index, query_embedding, top_k)
-        return [entry.chunks[row] for row, _score in hits]
+        candidate_k = entry.index.ntotal if published_before is not None else top_k
+        hits = rag_index.search(entry.index, query_embedding, candidate_k)
+        chunks = [entry.chunks[row] for row, _score in hits]
+        if published_before is not None:
+            chunks = [c for c in chunks if c.published_at < published_before]
+        return chunks[:top_k]
 
     async def _load(self, stock_code: str) -> Optional[_CacheEntry]:
         try:
