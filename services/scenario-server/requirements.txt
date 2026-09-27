@@ -1,7 +1,5 @@
-fastapi
-uvicorn
-pydantic
-python-dotenv
-google-genai
-openai
-pymongo[srv]
+fastapi==0.141.1
+uvicorn==0.53.0
+pydantic==2.13.5
+python-dotenv==1.2.3
+pymongo[srv]==4.18.2

@@ -9,8 +9,7 @@ export type FundingMarket =
 	| "US";
 
 export type FundingType =
-	| "MANUAL_TOP_UP"
-	| "SALARY_PLAN_MONTHLY";
+	| "MANUAL_TOP_UP";
 
 export interface FundingTransactionDocument
 	extends Document {
@@ -42,10 +41,7 @@ const FundingTransactionSchema =
 			},
 			type: {
 				type: String,
-				enum: [
-					"MANUAL_TOP_UP",
-					"SALARY_PLAN_MONTHLY",
-				],
+			enum: ["MANUAL_TOP_UP"],
 				required: true,
 				index: true,
 			},

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import unittest
-from unittest.mock import patch
 
-import config
 from data.app_repository import AppRepository
 from data.store import MemoryStore
 from play.session_service import ScenarioSessionService
@@ -33,10 +31,6 @@ ACTUAL_CLOSES = {
 
 class SvbScenarioTest(unittest.TestCase):
     def setUp(self) -> None:
-        gemini_key_patch = patch.object(config, "GEMINI_API_KEY", "")
-        gemini_key_patch.start()
-        self.addCleanup(gemini_key_patch.stop)
-
         self.store = MemoryStore()
         seed_scenario("svb_bank_run_2023", store=self.store)
         self.repository = AppRepository(self.store)

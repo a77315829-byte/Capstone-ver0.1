@@ -1,4 +1,3 @@
-from typing import Literal
 from urllib.parse import quote
 
 from pydantic import model_validator
@@ -7,18 +6,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # 통합 저장소에서는 server/.env의 Atlas 계정 정보를 재사용하고, 서비스별 .env가
-    # provider·DB 이름·명시적 MONGO_URI를 덮어쓸 수 있게 한다.
+    # DB 이름·명시적 MONGO_URI를 덮어쓸 수 있게 한다.
     model_config = SettingsConfigDict(
         env_file=("../../server/.env", ".env"),
         extra="ignore",
     )
 
-    # llm_provider="ollama"로 두면 OpenAI 유료 호출 없이 로컬 Ollama 모델로 테스트할 수 있다.
-    llm_provider: Literal["openai", "ollama"] = "openai"
-
-    openai_api_key: str = ""
-    openai_model: str = "gpt-4o"
-
+    # 이 독립 저장소는 공급자 선택 경로 없이 로컬 Ollama만 사용한다.
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen3.5:4b"
 

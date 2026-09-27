@@ -7,7 +7,6 @@ import {
 	cancelTradeOrder,
 	checkPendingOrders,
 	createTradeOrder,
-	enableSalaryPlanMonthlyFunding,
 	getPortfolio,
 	getTradeOrders,
 	getTradingAccountSummary,
@@ -366,39 +365,6 @@ export const topUp =
 		}
 	};
 
-export const enableSalaryFunding =
-	async (
-		req: Request,
-		res: Response,
-	) => {
-		try {
-			const result =
-				await enableSalaryPlanMonthlyFunding(
-					getRequestUserId(
-						req,
-					),
-				);
-
-			return res
-				.status(200)
-				.json({
-					success: true,
-					data: result,
-				});
-		} catch (error) {
-			console.error(
-				"enableSalaryFunding error:",
-				error,
-			);
-
-			return sendError(
-				res,
-				error,
-				"월 모의투자 입금 설정에 실패했습니다.",
-			);
-		}
-	};
-
 export const resetDemo =
 	async (
 		req: Request,
@@ -443,6 +409,5 @@ export default {
 	cancelOrder,
 	checkPending,
 	topUp,
-	enableSalaryFunding,
 	resetDemo,
 };

@@ -4,8 +4,6 @@ import NodeCache from "node-cache";
 
 dotenv.config();
 
-console.log("=== NAVER news.controller.ts loaded ===", __filename);
-
 interface NaverNewsItem {
   title: string;
   originallink?: string;

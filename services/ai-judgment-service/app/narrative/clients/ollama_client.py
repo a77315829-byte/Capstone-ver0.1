@@ -1,5 +1,6 @@
-"""로컬 Ollama 모델 클라이언트. gpt_client.py와 동일한 인터페이스를 제공해
-개발/테스트 단계에서 OpenAI 유료 호출 없이 파이프라인을 검증할 수 있게 한다.
+"""로컬 Ollama 모델 클라이언트.
+
+판단 근거 문장과 비교 문장은 이 클라이언트에서만 생성한다.
 사전에 `ollama pull <settings.ollama_model>`로 모델을 받아두고 `ollama serve`를 띄워야 한다.
 """
 import httpx

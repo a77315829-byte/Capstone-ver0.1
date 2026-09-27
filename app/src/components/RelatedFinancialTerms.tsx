@@ -78,7 +78,7 @@ export default function RelatedFinancialTerms({
     <Card
       mb="5"
       borderWidth="1px"
-      borderColor="army.200"
+      borderColor="brand.200"
       borderRadius="16px"
       bg="#FFFEFA"
       boxShadow="sm"
@@ -108,7 +108,7 @@ export default function RelatedFinancialTerms({
           <Box>
             <Heading
               size="sm"
-              color="army.900"
+              color="brand.900"
             >
               {title}
             </Heading>
@@ -131,7 +131,7 @@ export default function RelatedFinancialTerms({
             rightIcon={
               <ArrowForwardIcon />
             }
-            colorScheme="army"
+            colorScheme="brand"
             flexShrink={0}
             onClick={() =>
               navigate(
@@ -157,14 +157,14 @@ export default function RelatedFinancialTerms({
                 size="sm"
                 variant="outline"
                 borderRadius="full"
-                borderColor="army.300"
+                borderColor="brand.300"
                 bg="white"
-                color="army.800"
+                color="brand.800"
                 _hover={{
                   bg:
-                    "army.50",
+                    "brand.50",
                   borderColor:
-                    "army.500",
+                    "brand.500",
                 }}
                 onClick={() =>
                   navigate(

@@ -1,4 +1,4 @@
-# Anttitude Scenario Server — Beta v3
+# Anttitude Scenario Server — Beta v4
 
 AI 반도체 6턴, 2022 성장주·금리 충격 5턴, 2023 SVB 뱅크런 4턴 시나리오를
 실행하고 주문·판단·포트폴리오 변화를 기록한 뒤
@@ -190,7 +190,7 @@ uvicorn main:app --reload --port 8000
 M4 행동 파생은 요청 수량이 아니라 실제 체결 수량·금액만 사용합니다. 현재 턴 조회의
 `orders`에는 취소 주문을 포함한 전체 주문 이력이 들어갑니다.
 
-## 채점 방식 (`beta-v3-cross-turn-coaching`)
+## 채점 방식 (`beta-v4-local-feedback-contracts`)
 
 자유서술은 M5에만 사용하지 않고 M1~M5 전체에 반영합니다.
 
@@ -207,9 +207,11 @@ M4 행동 파생은 요청 수량이 아니라 실제 체결 수량·금액만 �
 M5는 1점으로 제한합니다. 분석 결과는 각 턴 `scorecard.rationale_analysis`에 요인,
 방향 오류, 위험·완화 요인, 추론한 행동과 실제 행동 강도로 함께 저장합니다.
 
-외부 LLM은 이 점수 계산에 필요하지 않습니다. 피드백 문장 생성에만 선택적으로 사용하며,
-호출 실패 시에도 규칙 기반 피드백으로 턴이 정상 진행됩니다. 기존 완료 결과는 자동 재평가하지
-않으므로 변경 후 확인할 때는 새 시나리오 세션을 시작해야 합니다.
+점수와 피드백 모두 상용 LLM API 없이 동작합니다. `evaluator`가 점수와 검증 결과를 만들고,
+`feedback_planner`가 표현할 내용을 고른 뒤 `feedback_renderer`가 결정론적 템플릿으로
+문장을 만듭니다. `output_validator`는 계획에 없는 근거 참조와 필드 변조를 거부합니다.
+기존 완료 결과는 자동 재평가하지 않으므로 변경 후 확인할 때는 새 시나리오 세션을 시작해야
+합니다. 자체 extractor와 로컬 렌더러를 연결할 내부 계약은 `scoring/contracts.py`에 있습니다.
 
 ## 턴 간 코칭 반영
 
@@ -229,6 +231,14 @@ M5는 1점으로 제한합니다. 분석 결과는 각 턴 `scorecard.rationale_
 
 ```powershell
 python -m unittest discover -v -s tests
+```
+
+실제 MongoDB의 답변 수, 평가 버전, `turn_records`와 `turn_evaluations` 연결률만
+읽기 전용으로 확인하려면 `.env`의 대상 DB를 검토한 뒤 실행합니다. 답변 원문과 접속 URI는
+출력하지 않습니다.
+
+```powershell
+python -m scripts.audit_evaluation_data
 ```
 
 현재 테스트는 현금 전용·주식 보유형 세션 시작, 주문, 4턴·5턴·6턴 제출, 최종평가,
