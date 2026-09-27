@@ -62,12 +62,29 @@ def _iso(yyyymmdd: str) -> str:
     return f"{yyyymmdd[:4]}-{yyyymmdd[4:6]}-{yyyymmdd[6:]}"
 
 
+# 공시 본문은 3,000자 내외라 그대로 넣어도 프롬프트에 부담이 없다.
+_BODY_CHAR_LIMIT = 3000
+
+
+def build_input_text(case: dict, stock_name: str) -> str:
+    """평가 입력 텍스트를 만든다. 본문이 있으면 본문을, 없으면 제목만 쓴다.
+
+    제목만 쓰면 방향을 가르는 정보가 빠진다 — 자기주식취득은 교과서적으로 호재지만
+    취득목적이 '임직원 주식보상' 이면 향후 유통물량 증가를 뜻해 성격이 다르다.
+    이 정보는 제목이 아니라 본문에만 있다.
+    """
+    body = (case.get("event_body") or "").strip()
+    if body:
+        return f"{stock_name} 공시: {case['event_title']}\n\n{body[:_BODY_CHAR_LIMIT]}"
+    return f"{stock_name} 공시: {case['event_title']}"
+
+
 def _make_request(case: dict) -> SimulationRequest:
     name = STOCK_NAMES.get(case["stock_code"], case["stock_code"])
     return SimulationRequest(
         user_id="eval",
         selected_stock=SelectedStock(code=case["stock_code"], name=name),
-        input_text=f"{name} 공시: {case['event_title']}",
+        input_text=build_input_text(case, name),
     )
 
 

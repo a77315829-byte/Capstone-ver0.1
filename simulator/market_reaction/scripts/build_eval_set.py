@@ -125,9 +125,36 @@ def fetch_events(dart_key: str, corp_code: str, bgn: str, end: str) -> List[dict
     if data.get("status") != "000":
         return []
     return [
-        {"date": it["rcept_dt"], "title": it["report_nm"].strip()}
+        {
+            "date": it["rcept_dt"],
+            "title": it["report_nm"].strip(),
+            "rcept_no": it["rcept_no"],
+        }
         for it in data.get("list", [])
     ]
+
+
+async def fetch_event_bodies(events: List[dict], concurrency: int = 3) -> None:
+    """각 이벤트의 공시 본문을 받아 event["body"] 에 채운다(실패하면 빈 문자열).
+
+    제목만으로는 방향을 가르는 정보(취득목적·금액 등)가 빠진다. 본문은 3,000자 내외라
+    프롬프트에 그대로 넣을 수 있다.
+    """
+    import asyncio
+
+    from app.services.dart_source import _fetch_filing_text
+
+    semaphore = asyncio.Semaphore(concurrency)
+
+    async def _one(ev: dict) -> None:
+        async with semaphore:
+            try:
+                raw = await _fetch_filing_text(ev["rcept_no"])
+            except Exception:
+                raw = ""
+        ev["body"] = " ".join((raw or "").split())
+
+    await asyncio.gather(*(_one(ev) for ev in events))
 
 
 def _kis_get(base: str, token: str, key: str, secret: str, path: str, tr_id: str, params: dict) -> dict:
@@ -207,6 +234,9 @@ def main() -> None:
     parser.add_argument("--end", default="20260930")
     parser.add_argument("--band", type=float, default=0.5)
     parser.add_argument("--out", default="data/eval_set.json")
+    parser.add_argument(
+        "--with-body", action="store_true", help="공시 본문도 함께 수집한다(건당 1회 추가 호출)"
+    )
     parser.add_argument("--token-cache", default=None, help="KIS 토큰 캐시 JSON 경로")
     args = parser.parse_args()
 
@@ -243,6 +273,8 @@ def main() -> None:
             print(f"[{i}/{len(KR_STOCKS)}] {code}: corp_code 없음, skip", flush=True)
             continue
         events = fetch_events(dart_key, corp_code, args.bgn, args.end)
+        if args.with_body and events:
+            asyncio.run(fetch_event_bodies(events))
         closes = fetch_daily_closes(kis_base, token, kis_key, kis_secret, code, args.bgn, args.end)
         made = 0
         for ev in events:
@@ -252,6 +284,7 @@ def main() -> None:
                 continue
             cases.append({
                 "stock_code": code, "event_date": ev["date"], "event_title": ev["title"],
+                "event_body": ev.get("body", ""),
                 **labeled,
             })
             made += 1
