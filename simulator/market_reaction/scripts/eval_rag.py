@@ -119,7 +119,16 @@ async def main() -> None:
     parser.add_argument("--eval-set", default="data/eval_set.json")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--out", default="data/eval_rag_result.json")
+    parser.add_argument(
+        "--top-k", type=int, default=None,
+        help="검색 청크 수 override. 입력이 충실할 때 검색이 결정적 정보를 희석하는지 확인용.",
+    )
     args = parser.parse_args()
+
+    if args.top_k is not None:
+        from app.services import document_retrieval
+        document_retrieval._TOP_K = args.top_k
+        print(f"검색 청크 수 override: top_k={args.top_k}", flush=True)
 
     data = json.loads(Path(args.eval_set).read_text(encoding="utf-8"))
     cases = data["cases"][: args.limit] if args.limit else data["cases"]
