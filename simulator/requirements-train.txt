@@ -1,7 +1,0 @@
-torch
-transformers
-datasets
-accelerate
-evaluate
-pandas
-numpy

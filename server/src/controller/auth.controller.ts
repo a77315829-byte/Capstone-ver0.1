@@ -30,17 +30,8 @@ const signup = (req: Request, res: Response) => {
 
 			newUser
 				.save()
-				.then((user: { save: () => Promise<any> }) => {
-					if (user) {
-						user
-							.save()
-							.then(() => {
-								res.send({ message: "User was registered successfully!" });
-							})
-							.catch((err: Error) => {
-								res.status(500).send({ message: err.message });
-							});
-					}
+				.then(() => {
+					res.send({ message: "User was registered successfully!" });
 				})
 				.catch((err: any) => {
 					res.status(500).send({ message: err });

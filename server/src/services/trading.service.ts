@@ -1,6 +1,5 @@
 import TradingAccount from "../models/tradingAccount.model";
 import FundingTransaction from "../models/fundingTransaction.model";
-import SalaryAiPlan from "../models/salaryAiPlan.model";
 import Holding from "../models/holding.model";
 import TradeOrder, {
 	TradeOrderDocument,
@@ -77,9 +76,6 @@ export const getOrCreateAccount = async (userIdInput?: string) => {
 			initialCash: DEFAULT_INITIAL_CASH,
 			totalDeposits: 0,
 			manualDeposits: 0,
-			salaryPlanDeposits: 0,
-			salaryPlanFundingEnabled: false,
-			salaryPlanFundingAmount: 0,
 			currency: "KRW",
 		});
 	}
@@ -92,57 +88,6 @@ const getAvailableCash = (account: any) => {
 };
 
 
-
-const getKoreaMonthKey = (date = new Date()): string => {
-	const koreaTime = new Date(
-		date.getTime() +
-			9 * 60 * 60 * 1000,
-	);
-
-	const year =
-		koreaTime.getUTCFullYear();
-	const month = String(
-		koreaTime.getUTCMonth() + 1,
-	).padStart(2, "0");
-
-	return `${year}-${month}`;
-};
-
-const isDuplicateKeyError = (
-	error: any,
-): boolean =>
-	Number(error?.code) === 11000;
-
-const getLatestSalaryPlanFunding = async (
-	userId: string,
-) => {
-	const plan =
-		await SalaryAiPlan.findOne({
-			userId,
-		})
-			.select(
-				"_id result generatedAt",
-			)
-			.lean();
-
-	const amount = Math.floor(
-		Number(
-			plan?.result
-				?.allocation
-				?.investmentPractice ??
-				0,
-		),
-	);
-
-	return {
-		plan,
-		amount:
-			Number.isFinite(amount) &&
-			amount > 0
-				? amount
-				: 0,
-	};
-};
 
 const serializeTradingAccount = (
 	account: any,
@@ -167,188 +112,9 @@ const serializeTradingAccount = (
 		manualDeposits: Number(
 			account.manualDeposits ?? 0,
 		),
-		salaryPlanDeposits: Number(
-			account.salaryPlanDeposits ?? 0,
-		),
-		salaryPlanFunding: {
-			enabled:
-				account.salaryPlanFundingEnabled ===
-				true,
-			amount: Number(
-				account.salaryPlanFundingAmount ??
-					0,
-			),
-			planId:
-				account.salaryPlanId ?? null,
-			lastAppliedPeriod:
-				account.lastSalaryFundingPeriod ??
-				null,
-		},
 		currency: account.currency,
 	};
 };
-
-export const applyMonthlySalaryPlanFundingIfDue =
-	async (
-		userIdInput?: string,
-	) => {
-		const userId = getUserId(
-			userIdInput,
-		);
-		const account =
-			await getOrCreateAccount(userId);
-
-		if (
-			account.salaryPlanFundingEnabled !==
-			true
-		) {
-			return {
-				applied: false,
-				reason: "DISABLED",
-			};
-		}
-
-		const { plan, amount } =
-			await getLatestSalaryPlanFunding(
-				userId,
-			);
-
-		if (!plan || amount <= 0) {
-			return {
-				applied: false,
-				reason: "NO_FUNDING_AMOUNT",
-			};
-		}
-
-		const periodKey =
-			getKoreaMonthKey();
-		const planId = String(plan._id);
-		const fundingKey =
-			`SALARY_PLAN_MONTHLY:${periodKey}`;
-
-		let fundingRecord: any;
-
-		try {
-			fundingRecord =
-				await FundingTransaction.create({
-					userId,
-					market: "KR",
-					type: "SALARY_PLAN_MONTHLY",
-					amount,
-					currency: "KRW",
-					fundingKey,
-					referenceId: planId,
-					periodKey,
-				});
-		} catch (error) {
-			if (isDuplicateKeyError(error)) {
-				return {
-					applied: false,
-					reason: "ALREADY_APPLIED",
-					periodKey,
-				};
-			}
-
-			throw error;
-		}
-
-		try {
-			await TradingAccount.updateOne(
-				{
-					_id: account._id,
-				},
-				{
-					$inc: {
-						cash: amount,
-						totalDeposits: amount,
-						salaryPlanDeposits:
-							amount,
-					},
-					$set: {
-						salaryPlanFundingAmount:
-							amount,
-						salaryPlanId: planId,
-						lastSalaryFundingPeriod:
-							periodKey,
-					},
-				},
-			);
-		} catch (error) {
-			await FundingTransaction.deleteOne({
-				_id: fundingRecord._id,
-			});
-			throw error;
-		}
-
-		return {
-			applied: true,
-			amount,
-			periodKey,
-			planId,
-		};
-	};
-
-export async function enableSalaryPlanMonthlyFunding(
-	userIdInput?: string,
-) {
-		const userId = getUserId(
-			userIdInput,
-		);
-		const { plan, amount } =
-			await getLatestSalaryPlanFunding(
-				userId,
-			);
-
-		if (!plan) {
-			throw createServiceError(
-				404,
-				"저장된 전역 자금 플랜이 없습니다.",
-			);
-		}
-
-		if (amount <= 0) {
-			throw createServiceError(
-				400,
-				"플랜의 모의투자 학습 금액이 0원입니다.",
-			);
-		}
-
-		const account =
-			await getOrCreateAccount(userId);
-
-		account.salaryPlanFundingEnabled =
-			true;
-		account.salaryPlanFundingAmount =
-			amount;
-		account.salaryPlanId = String(
-			plan._id,
-		);
-		await account.save();
-
-		const funding =
-			await applyMonthlySalaryPlanFundingIfDue(
-				userId,
-			);
-		const updatedAccount =
-			await TradingAccount.findOne({
-				userId,
-			});
-
-		if (!updatedAccount) {
-			throw createServiceError(
-				500,
-				"모의투자 계좌를 갱신하지 못했습니다.",
-			);
-		}
-
-		return {
-			funding,
-			account:
-				serializeTradingAccount(
-					updatedAccount,
-				),
-		};
-}
 
 export async function topUpTradingAccount(
 	userIdInput?: string,
@@ -1237,10 +1003,6 @@ export const checkAllPendingOrders =
 export const getTradingAccountSummary = async (userIdInput?: string) => {
 	const userId = getUserId(userIdInput);
 
-	await applyMonthlySalaryPlanFundingIfDue(
-		userId,
-	);
-
 	const account = await getOrCreateAccount(userId);
 
 	return serializeTradingAccount(account);
@@ -1251,10 +1013,6 @@ export const getPortfolio = async (
 	options?: { evaluate?: boolean },
 ) => {
 	const userId = getUserId(userIdInput);
-
-	await applyMonthlySalaryPlanFundingIfDue(
-		userId,
-	);
 
 	const account = await getOrCreateAccount(userId);
 

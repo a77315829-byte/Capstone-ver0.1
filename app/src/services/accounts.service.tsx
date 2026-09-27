@@ -1,6 +1,7 @@
-import { Position } from "../App";
 import api from "./api.service";
 import tokens from "./tokens.service";
+
+type Position = { symbol: string; quantity: number };
 
 function makeTransaction(
 	symbol: string,

@@ -3,9 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import unittest
-from unittest.mock import patch
 
-import config
 from data.models import Action, Holding, QuestionAnswer, UserDecision
 from scoring import engine, rationale_scorer
 
@@ -15,9 +13,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class RationaleScoringTest(unittest.TestCase):
     def setUp(self) -> None:
-        gemini_key_patch = patch.object(config, "GEMINI_API_KEY", "")
-        gemini_key_patch.start()
-        self.addCleanup(gemini_key_patch.stop)
         with (ROOT / "data/scenarios/semiconductor/rubric_turn3.json").open(
             encoding="utf-8"
         ) as file:

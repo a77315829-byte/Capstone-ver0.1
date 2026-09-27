@@ -140,6 +140,11 @@ JSON 파일은 콘텐츠 작성·검토·Git 이력용 원본이고, 서버 실�
 
 코칭 판정은 점수의 추가 가감에 사용하지 않습니다.
 
+`evaluator_version=beta-v4-local-feedback-contracts`부터 점수 계산, 피드백 계획,
+문장 렌더링을 내부 모듈로 분리했습니다. 기존 `scorecard` 및 `feedback` 저장 형태는
+유지하며, 피드백은 상용 LLM API 없이 템플릿으로 생성합니다. 향후 `Evidence`와
+`RelationEvidence`는 원문 span 검증을 통과한 자체 모델 결과만 저장합니다.
+
 ## 결과 컬렉션
 
 ### `scenario_evaluations`

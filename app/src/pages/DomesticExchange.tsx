@@ -172,13 +172,6 @@ type TradingAccountSummary = {
 	totalProfitLossRate?: number;
 	totalDeposits?: number;
 	manualDeposits?: number;
-	salaryPlanDeposits?: number;
-	salaryPlanFunding?: {
-		enabled: boolean;
-		amount: number;
-		planId?: string | null;
-		lastAppliedPeriod?: string | null;
-	};
 };
 
 type PortfolioHolding = {

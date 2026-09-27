@@ -1,86 +1,25 @@
-# -------------------------
-# Logs
-# -------------------------
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# -------------------------
-# Node / Front / Server
-# -------------------------
+# Dependencies and generated output
 node_modules/
-app/node_modules/
-server/node_modules/
 dist/
 dist-ssr/
-*.local
-server/src/swagger-output.json
-
-# -------------------------
-# Python
-# -------------------------
+.venv/
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-.python-version
-.venv/
-venv/
-env/
-ENV/
-
-# Jupyter / cache
-.ipynb_checkpoints/
 .pytest_cache/
 .mypy_cache/
+*.log
+server/src/swagger-output.json
+server/.kis-token-cache.json
+services/market-reaction/data/
 
-# -------------------------
-# Python outputs / model artifacts
-# -------------------------
-simulator/outputs/
-simulator/data/processed/
-simulator/__pycache__/
-simulator/agent-training/__pycache__/
-simulator/scripts/__pycache__/
-simulator/simulator/__pycache__/
-simulator/market_reaction/data/
-
-# 필요하면 raw/labeled도 제외 가능
-# simulator/data/raw/
-# simulator/data/labeled/
-
-# -------------------------
-# Environment / secrets
-# -------------------------
+# Local secrets; every service template remains versioned.
 .env
 .env.*
-!server/.env.example
-server/.env
-simulator/.env
+!**/.env.example
 
-# -------------------------
-# OS / Editor
-# -------------------------
-.vscode/*
-!.vscode/extensions.json
+# Editors and OS files
+.claude/
 .idea/
+.vscode/
 .DS_Store
 Thumbs.db
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-
-server/.kis-token-cache.json
-simulator/.venv311/
-
-# -------------------------
-# Personal study notes (not shared)
-# -------------------------
-docs/ANTITUDE-학습가이드.md
