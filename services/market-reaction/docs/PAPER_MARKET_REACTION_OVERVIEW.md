@@ -1,6 +1,6 @@
 # 과거시장시뮬(Market Reaction Simulator) 시스템 개요
 
-> 논문 작성용 자료. `simulator/market_reaction` 전체 시스템(RAG 서브시스템 포함)을 설명한다.
+> 논문 작성용 자료. `services/market-reaction` 전체 시스템(RAG 서브시스템 포함)을 설명한다.
 > 출처: `README.md`, `docs/market_reaction_backend_spec.md`, 실제 구현 코드(`app/`).
 
 ## 1. 개요 및 목적

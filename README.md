@@ -1,11 +1,11 @@
 # ANTITUDE
 
-투자 학습 웹의 국내·미국 모의투자, 과거 시나리오, 뉴스, 금융 퀴즈, AI 판단, 시장 반응 분석을 위한 코드입니다. [기존 Capstone-ver0.1](https://github.com/a77315829-byte/Capstone-ver0.1)의 `90fa87ef`에서 별도 작업본을 만들었습니다. 기존 저장소와 DB는 수정하지 않았습니다. 원본의 MIT 라이선스 고지를 보존합니다.
+투자 학습 웹의 국내·미국 모의투자, 과거 시나리오, 뉴스, 금융 퀴즈, AI 판단, 시장 반응 분석을 위한 코드입니다. 이 정리본은 [Capstone-ver0.1](https://github.com/a77315829-byte/Capstone-ver0.1)의 최신 `main`을 기준으로 `integration/clean-server-scenario` 브랜치에 통합했습니다. 국방 해커톤 코드는 제외하고 최신 AI 판단 신뢰도와 RAG 평가 코드는 보존했습니다.
 
 ## 프로젝트 디렉터리
 
 ```text
-antitude/
+Capstone-ver0.1/
 ├── app/          # 투자 학습 웹: 국내·미국 투자, 시나리오, 뉴스, 퀴즈
 ├── server/       # Node API: 인증, 시세·주문, Python 서비스 연결
 ├── services/
@@ -40,15 +40,15 @@ Node는 로그인·주식·거래 API를 직접 처리하고, 시나리오와 �
 통일했습니다. 자세한 코드 경계와 배포 전 확인 사항은 [서버 구조 문서](docs/SERVER_ARCHITECTURE.md)에
 정리했습니다.
 
-이 독립 저장소의 평가·설명 경로는 상용 LLM API를 사용하지 않습니다. 시나리오 평가는
+이 브랜치의 평가·설명 경로는 상용 LLM API를 사용하지 않습니다. 시나리오 평가는
 결정론적 규칙과 템플릿 피드백으로 동작하고, 실시간 AI 판단과 시장 반응의 문장 생성은
 로컬 Ollama만 사용합니다.
 
 ## Windows에서 설치와 시작
 
 현재 PC에서 전체 기능을 실행하려면 Atlas나 `.env`를 다시 설정하지 말고
-[전체 기능 로컬 실행 방법](docs/RUN_LOCAL.md)을 따르세요. 코드 변경 범위는 시나리오에만
-한정되어 있지만 실행은 기본 `start.bat`으로 다섯 앱 서버를 모두 켭니다.
+[전체 기능 로컬 실행 방법](docs/RUN_LOCAL.md)을 따르세요. 사용자 기능 변경은 시나리오 화면과
+평가·학습 이력에 집중되어 있으며, 기본 `start.bat`은 다섯 앱 서버를 모두 켭니다.
 
 Node.js/npm 및 Python 3.11을 준비하고 저장소 루트에서:
 
@@ -126,12 +126,14 @@ py -3.11 run.py --status        # 다른 터미널에서 5개 HTTP 상태 확인
 자세한 분리 내역과 검증 범위는 [정리 기록](docs/CLEANUP.md), 평가엔진 도입 순서는
 [평가엔진 문서](docs/EVALUATION_ARCHITECTURE.md)를 참고하세요.
 
-## GitHub 저장소
+## GitHub 브랜치
 
-독립 저장소는 [stakewant/antitude](https://github.com/stakewant/antitude)에 있습니다. 다른 PC에서 내려받을 때는 다음 명령을 사용합니다.
+팀 저장소의 통합 브랜치는 `integration/clean-server-scenario`입니다. 다른 PC에서는 다음처럼 받습니다.
 
 ```powershell
-git clone https://github.com/stakewant/antitude.git
+git clone https://github.com/a77315829-byte/Capstone-ver0.1.git
+cd Capstone-ver0.1
+git switch integration/clean-server-scenario
 ```
 
-원본 `a77315829-byte/Capstone-ver0.1`의 커밋 기록은 가져오지 않았고, 출처와 기존 라이선스는 이 저장소에 기록했습니다.
+기존 `main`의 커밋 기록을 유지하며, 실제 `.env`와 키는 브랜치에 포함하지 않습니다.

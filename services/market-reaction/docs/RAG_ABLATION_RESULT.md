@@ -1,6 +1,6 @@
 # RAG Ablation 실험 결과
 
-> 재현 방법 (`simulator/market_reaction` 디렉터리에서):
+> 재현 방법 (`services/market-reaction` 디렉터리에서):
 > ```
 > python -m scripts.ablation_rag --level a --trials 3                       # ②단계, 8B
 > python -m scripts.ablation_rag --level b --trials 3                       # 전체, 8B

@@ -1,20 +1,28 @@
 # 전체 기능 로컬 실행 방법
 
-이 문서는 `feature/scenario-learning-feedback` 브랜치에서 전체 투자 웹을 실행하는
-방법을 설명합니다. 코드 변경 범위는 시나리오 UI·시나리오 서버·시나리오 프록시뿐이지만,
+이 문서는 `integration/clean-server-scenario` 브랜치에서 전체 투자 웹을 실행하는
+방법을 설명합니다. 시나리오 UI·평가·학습 이력과 서버 실행 구조를 정리했으며,
 실행할 때는 기존 국내·미국 투자, 시장 반응, AI 판단 기능도 모두 함께 켭니다.
 
 ## 현재 PC의 준비 상태
 
-- 네 개의 `.env`, 두 Node 앱의 `node_modules`, 세 Python 서비스의 `.venv`가 있습니다.
-- MongoDB·JWT·Turnstile·KIS 설정이 기존 `Capstone-ver0.1`과 같은지 값 노출 없이 확인했습니다.
+- 실제 `.env`는 Git에서 제외되므로 새 worktree나 clone에는 자동으로 생기지 않습니다.
+- 아래 환경변수 이관 도구는 기존 MongoDB·JWT·Turnstile·KIS 값을 노출하지 않고 필요한 키만 옮깁니다.
 - 이번 시나리오 변경으로 새로 추가해야 하는 환경변수는 없습니다.
 - 기존 Atlas 클러스터와 데이터에 연결되므로 새 클러스터·사용자·라이선스를 만들 필요가 없습니다.
-- 실제 `.env`는 Git에서 제외되므로 브랜치 전환이나 푸시에 포함되지 않습니다.
+- 이관한 `.env`는 브랜치 전환이나 푸시에 포함되지 않습니다.
 - 저장소의 MIT `LICENSE`는 고지 파일이며 별도의 활성화·등록 절차가 없습니다.
 
-따라서 현재 PC에서는 `setup.bat`, `scripts/migrate-env.ps1`, DB 시드 명령을 다시
-실행하지 않습니다.
+새 작업 폴더에서는 한 번만 다음 명령을 실행합니다. 이미 `.env`가 있으면 이관 도구가
+덮어쓰지 않고 중단합니다.
+
+```powershell
+.\scripts\migrate-env.ps1 -SourceRoot C:\dev\PycharmProjects\antitude
+.\setup.bat
+```
+
+기존 의존성 폴더까지 직접 옮겼다면 `setup.bat`은 생략할 수 있습니다. DB 시드는 기존
+시나리오 데이터가 없는 경우에만 대상 DB 이름을 확인한 뒤 실행합니다.
 
 ## Ollama 상태
 
@@ -40,8 +48,8 @@ PC를 재시작한 뒤 Ollama가 꺼져 있을 때만 별도 PowerShell에서 `o
 그다음 PowerShell에서 실행합니다.
 
 ```powershell
-cd C:\dev\PycharmProjects\antitude
-git switch feature/scenario-learning-feedback
+cd C:\dev\PycharmProjects\Capstone-clean-server-scenario
+git switch integration/clean-server-scenario
 .\start.bat
 ```
 
@@ -64,7 +72,7 @@ PowerShell에서 `Ctrl+C`를 누르면 `start.bat`이 시작한 앱 서버 5개�
 전체 서버를 실행한 상태에서 새 PowerShell을 열고 다음을 실행합니다.
 
 ```powershell
-cd C:\dev\PycharmProjects\antitude
+cd C:\dev\PycharmProjects\Capstone-clean-server-scenario
 .\start.bat --status
 ```
 

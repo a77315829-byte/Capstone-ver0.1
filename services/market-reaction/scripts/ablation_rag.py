@@ -16,7 +16,7 @@
 
 사전 준비: .env (MongoDB/임베딩 설정), Ollama 실행 + llama3.1:8b / bge-m3 pull.
 
-실행 (simulator/market_reaction 디렉터리에서):
+실행 (services/market-reaction 디렉터리에서):
     python -m scripts.ablation_rag --level a --trials 2
     python -m scripts.ablation_rag --level b --trials 1
 """

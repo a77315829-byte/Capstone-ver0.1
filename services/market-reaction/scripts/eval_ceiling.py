@@ -3,7 +3,7 @@
 '우리 시스템의 정확도가 낮은 것이 모델 문제인가, 과제가 원래 예측 불가능해서인가'
 를 가르기 위한 측정이다. LLM 을 호출하지 않으며 data/eval_set.json 만 읽는다.
 
-실행 (simulator/market_reaction 디렉터리에서):
+실행 (services/market-reaction 디렉터리에서):
     python -m scripts.eval_ceiling
 """
 

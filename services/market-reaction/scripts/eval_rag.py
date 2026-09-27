@@ -6,7 +6,7 @@ scripts/build_eval_set.py 가 만든 data/eval_set.json 의 각 케이스에 대
 
 미래 정보 누출 방지: 검색 기준일을 공시 접수일로 고정해 그 이전 공시만 근거로 쓴다.
 
-실행 (simulator/market_reaction 디렉터리에서):
+실행 (services/market-reaction 디렉터리에서):
     python -m scripts.eval_rag --limit 20        # 빠른 확인
     python -m scripts.eval_rag                   # 전체
 """

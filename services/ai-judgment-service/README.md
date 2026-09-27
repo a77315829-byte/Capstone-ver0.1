@@ -20,7 +20,7 @@ Copy-Item .env.example .env
 기본 `.env.example`은 Ollama `qwen3.5:4b`를 사용합니다. `MONGO_URI`를 비워 두면
 통합 저장소의 `server/.env`에 있는 Atlas 계정을 노출 없이 재사용하고,
 `MONGO_DB_NAME=anttitude_ai_judgment`로 컬렉션을 분리합니다. 독립 실행에서는
-`MONGO_URI`를 직접 지정합니다. 이 독립 저장소는 상용 LLM 공급자 설정을 지원하지 않고
+`MONGO_URI`를 직접 지정합니다. 이 통합 브랜치는 상용 LLM 공급자 설정을 지원하지 않고
 로컬 Ollama만 사용합니다.
 
 ## 요인 카탈로그 시딩 (최초 1회)

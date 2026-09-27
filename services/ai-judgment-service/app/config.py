@@ -12,7 +12,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # 이 독립 저장소는 공급자 선택 경로 없이 로컬 Ollama만 사용한다.
+    # 이 통합 브랜치는 공급자 선택 경로 없이 로컬 Ollama만 사용한다.
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen3.5:4b"
 
