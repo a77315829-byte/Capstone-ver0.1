@@ -90,6 +90,14 @@ class Settings(BaseSettings):
     # 관망과 동률까지 갈 수 있는 무게).
     fuzzy_hold_baseline: float = 0.3
 
+    # TSK 가중평균(net)을 매수/매도/관망 3-way 확률로 바꾸는 마지막 단계의 softmax
+    # 온도. net을 그대로 max(0, net)/max(0, -net)으로 하드 클리핑하면 둘 중 하나가
+    # 항상 정확히 0%가 되는 문제가 있어(논문 10절 한계), 대신 세 raw score를
+    # softmax에 통과시켜 항상 세 값이 연속 분포하도록 완화한다. 값이 작을수록
+    # 원래의 하드 클리핑에 가깝게 날카로워지고, 클수록 균등분포에 가까워진다 -
+    # 데모 값, 실데이터로 튜닝 필요.
+    softmax_temperature: float = 30.0
+
     # 이전 이력과 라벨이 같아도, 매수/매도/관망 확률 중 하나라도 이 값(%p) 이상
     # 움직였으면 "변경"으로 기록한다 - 데모 값, 튜닝 필요.
     judge_change_threshold_pct: float = 15.0

@@ -1064,15 +1064,42 @@ export default function AiRamenPanel({
                   {/* AI 확률 분포 */}
 
                   <Box>
-                    <Text
-                      px="2px"
+                    <Flex
+                      align="center"
                       mb="7px"
-                      fontSize="10px"
-                      fontWeight="900"
-                      color={TEXT}
+                      px="2px"
                     >
-                      AI 판단 분포
-                    </Text>
+                      <Text
+                        fontSize="10px"
+                        fontWeight="900"
+                        color={TEXT}
+                      >
+                        AI 판단 분포
+                      </Text>
+
+                      <Spacer />
+
+                      <Badge
+                        px="7px"
+                        py="2px"
+                        borderRadius="5px"
+                        fontSize="9px"
+                        bg={`${decisionColor(
+                          comparedAiDecision,
+                        )}18`}
+                        color={decisionColor(
+                          comparedAiDecision,
+                        )}
+                      >
+                        신뢰도{" "}
+                        {formatPercent(
+                          comparedProbabilities[
+                            comparedAiDecision
+                          ],
+                        )}
+                        %
+                      </Badge>
+                    </Flex>
 
                     <Box
                       p="10px"
@@ -1158,15 +1185,42 @@ export default function AiRamenPanel({
             {tab === "판단근거" && (
               <Stack spacing="11px">
                 <Box>
-                  <Text
-                    px="2px"
+                  <Flex
+                    align="center"
                     mb="6px"
-                    fontSize="10px"
-                    fontWeight="900"
-                    color={TEXT}
+                    px="2px"
                   >
-                    AI 판단 요약
-                  </Text>
+                    <Text
+                      fontSize="10px"
+                      fontWeight="900"
+                      color={TEXT}
+                    >
+                      AI 판단 요약
+                    </Text>
+
+                    <Spacer />
+
+                    {judgment && (
+                      <Badge
+                        px="7px"
+                        py="2px"
+                        borderRadius="5px"
+                        fontSize="9px"
+                        bg={`${decisionColor(
+                          aiDecision,
+                        )}18`}
+                        color={decisionColor(
+                          aiDecision,
+                        )}
+                      >
+                        신뢰도{" "}
+                        {formatPercent(
+                          judgment.confidence,
+                        )}
+                        %
+                      </Badge>
+                    )}
+                  </Flex>
 
                   <Box
                     p="12px"

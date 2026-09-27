@@ -134,15 +134,22 @@ TSK(Takagi-Sugeno-Kang) 퍼지 추론 방식을 따른다 — 규칙의 결론�
 ```
 net = Σ(w_i·y_i) / Σ(w_i)
     = (Σ긍정weight - Σ부정weight) / (Σraw_strength + fuzzy_hold_baseline)
-
-매수% = max(0, net)
-매도% = max(0, -net)
-관망% = 100 - |net|
 ```
 `net`은 개별 결론값의 최댓값(100)을 넘지 않도록 자연스럽게 (-100, 100) 사이로 유계
-(bounded)이며, 별도의 비퍼지화 없이 이 하나의 값으로부터 3-way 확률이 곧바로 도출된다.
-대표 판단(judge)은 세 확률 중 최댓값에 해당하는 라벨로 정하고, 확신도(confidence)는 그
-최댓값을 그대로 사용한다.
+(bounded)이다. 이 값을 3-way 확률로 바꾸는 마지막 단계는 다음과 같다.
+```
+raw_매수 = max(0, net)
+raw_매도 = max(0, -net)
+raw_관망 = 100 - |net|
+
+(매수%, 매도%, 관망%) = softmax((raw_매수, raw_매도, raw_관망) / T)   (T = softmax_temperature)
+```
+raw score 세 개를 그대로 확률로 쓰면(=하드 클리핑) net의 부호에 따라 매수/매도 중
+하나가 항상 정확히 0%가 되므로(10절 한계), 대신 softmax에 한 번 통과시켜 우세하지
+않은 쪽도 항상 0이 아닌 연속적인 확률을 갖도록 완화했다 — raw score 사이의 상대적
+우열(net이 매기는 순서)은 softmax가 단조함수이므로 그대로 보존된다. 대표 판단(judge)은
+세 확률 중 최댓값에 해당하는 라벨로 정하고, 확신도(confidence)는 그 최댓값을 그대로
+사용한다.
 
 **(3) 근거 지표의 채택 이유.** RSI 70/30 기준선은 Wilder(1978, *New Concepts in Technical
 Trading Systems*)의 RSI 원전을 그대로 따르고, 이동평균 교차를 매매 신호로 채택한 것은
@@ -236,6 +243,8 @@ Properties of Stock Returns", *The Journal of Finance*)이 다우존스 90년치
 - 감시 대상이 늘어나면(여러 종목 동시 폴링) KIS API의 실제 rate limit(토큰 재발급 제한,
   초당 요청 제한)과 충돌할 수 있음을 라이브 테스트 중 실제로 확인했다 — 동시 폴링 종목
   수에 대한 상한 설계가 필요하다.
-- 확률 산출 방식(`매수=max(0,net)`, `매도=max(0,-net)`)은 net의 부호에 따라 둘 중 하나가
-  항상 정확히 0%가 되는 구조적 특성이 있다 — softmax 등으로 대체하면 항상 세 값이
-  연속적으로 분포하도록 완화할 수 있다.
+- (해결됨) 이전에는 확률 산출 마지막 단계가 `매수=max(0,net)`, `매도=max(0,-net)`
+  하드 클리핑이라 net의 부호에 따라 둘 중 하나가 항상 정확히 0%가 되는 구조적 한계가
+  있었다. softmax(5절 참고)로 대체해 세 값이 항상 연속적으로 분포하도록 완화했다.
+  다만 softmax 온도(`softmax_temperature`)는 다른 파라미터와 마찬가지로 실데이터
+  백테스트로 검증된 값이 아니라 설계 단계의 초기값이다.

@@ -33,8 +33,7 @@ async def _get_daily_features(symbol: str) -> dict:
     # kis_client.DAILY_CHART_MAX_ROWS - KIS가 1회 호출에 그 이상은 안 돌려준다
     # (그래서 week52_high/low는 실제로는 52주가 아니라 최근 100영업일 기준이다.
     #  진짜 52주가 필요하면 kis_client에 날짜 구간을 나눠 호출하는 페이지네이션 추가 필요).
-    closes = await kis_client.get_daily_closes(symbol, days=kis_client.DAILY_CHART_MAX_ROWS)
-    volumes = await kis_client.get_daily_volumes(symbol, days=kis_client.DAILY_CHART_MAX_ROWS)
+    closes, volumes = await kis_client.get_daily_chart(symbol, days=kis_client.DAILY_CHART_MAX_ROWS)
     foreign_flow = await kis_client.get_foreign_daily_net_buy(symbol, days=5)
 
     features: dict = {
