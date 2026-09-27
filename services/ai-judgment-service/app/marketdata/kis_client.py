@@ -123,6 +123,30 @@ async def get_daily_volumes(symbol: str, days: int = 30) -> list[float]:
     return [float(r["acml_vol"]) for r in rows][-days:]
 
 
+async def get_daily_chart(symbol: str, days: int = 30) -> tuple[list[float], list[float]]:
+    """종가·거래량을 KIS 호출 한 번으로 함께 가져온다 (오래된 날짜 -> 최신 날짜 순).
+    get_daily_closes와 get_daily_volumes를 따로 호출하면 완전히 동일한 엔드포인트를
+    연달아 두 번 부르게 되는데, KIS 모의투자 서버는 초당 요청 제한이 빡빡해서 이
+    중복 호출이 두 번째 요청의 500 에러 빈도를 실측으로 눈에 띄게 높였다 - 콜드
+    스타트·폴러 양쪽 다 이 함수로 한 번만 호출하도록 바꿨다. tr_id FHKST03010100.
+    """
+    end = datetime.now()
+    start = end - timedelta(days=days * 2)  # 주말/휴장일 감안해 넉넉히 조회
+    async with httpx.AsyncClient(base_url=settings.kis_base_url, timeout=10.0) as client:
+        data = await _get(client, DAILY_CHART_PATH, "FHKST03010100", {
+            "fid_cond_mrkt_div_code": "J",
+            "fid_input_iscd": symbol,
+            "fid_input_date_1": start.strftime("%Y%m%d"),
+            "fid_input_date_2": end.strftime("%Y%m%d"),
+            "fid_period_div_code": "D",
+            "fid_org_adj_prc": "1",
+        })
+    rows = sorted(data.get("output2", []), key=lambda r: r["stck_bsop_date"])
+    closes = [float(r["stck_clpr"]) for r in rows][-days:]
+    volumes = [float(r["acml_vol"]) for r in rows][-days:]
+    return closes, volumes
+
+
 async def get_foreign_daily_net_buy(symbol: str, days: int = 5) -> list[float]:
     """최근 며칠간 외국인 순매수 수량. 오래된 날짜 -> 최신 날짜 순으로 반환.
     tr_id FHKST01010900.

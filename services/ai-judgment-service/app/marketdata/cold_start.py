@@ -35,8 +35,7 @@ _last_freshness_check: dict[str, float] = {}
 
 
 async def _build_tick(symbol: str) -> dict:
-    closes = await kis_client.get_daily_closes(symbol, days=kis_client.DAILY_CHART_MAX_ROWS)
-    volumes = await kis_client.get_daily_volumes(symbol, days=kis_client.DAILY_CHART_MAX_ROWS)
+    closes, volumes = await kis_client.get_daily_chart(symbol, days=kis_client.DAILY_CHART_MAX_ROWS)
     foreign_flow = await kis_client.get_foreign_daily_net_buy(symbol, days=5)
     price = await kis_client.get_current_price(symbol)
 
@@ -71,7 +70,14 @@ async def cold_start(symbol: str) -> dict:
             _last_freshness_check[symbol] = time.time()
             return await run_judgment_pipeline(symbol, tick)
 
-        if was_active:
+        # symbol이 활성 구독 목록에 있다는 것만으로는 "이미 한 번은 신선도 확인에
+        # 성공했다"는 보장이 안 된다 - subscribe()는 이 함수 초입에서 무조건
+        # 실행되므로, 직전 시도가 KIS 호출 실패(레이트리밋 등)로 예외를 던지며
+        # 중간에 죽었어도 was_active는 True로 남는다. 그 상태에서 이 체크만 보고
+        # existing을 돌려주면, 실패했던 시도가 마치 성공한 것처럼 취급돼 이후
+        # 요청들이 재시도조차 안 하고 계속 묵은 값만 반환하게 된다. 성공적으로
+        # 확인한 이력(_last_freshness_check)이 있을 때만 이 지름길을 탄다.
+        if was_active and symbol in _last_freshness_check:
             return existing
 
         last_check = _last_freshness_check.get(symbol)
