@@ -99,7 +99,12 @@ def port_available(port: int) -> bool:
 def print_output(service: str, process: subprocess.Popen[str]) -> None:
     assert process.stdout is not None
     for line in process.stdout:
-        print(f"[{service}] {line.rstrip()}", flush=True)
+        message = f"[{service}] {line.rstrip()}"
+        encoding = sys.stdout.encoding or "utf-8"
+        safe_message = message.encode(encoding, errors="replace").decode(
+            encoding, errors="replace"
+        )
+        print(safe_message, flush=True)
 
 
 def stop_children(children: list[tuple[str, subprocess.Popen[str]]]) -> None:
@@ -165,7 +170,7 @@ def main() -> int:
     children: list[tuple[str, subprocess.Popen[str]]] = []
     environment = os.environ.copy()
     # This keeps the BFF URLs aligned with the ports actually started here.
-    environment.update(PORT="3010", SCENARIO_SERVICE_URL="http://127.0.0.1:8000",
+    environment.update(PYTHONUTF8="1", PORT="3010", SCENARIO_SERVICE_URL="http://127.0.0.1:8000",
                        MARKET_REACTION_URL="http://127.0.0.1:8002",
                        AI_JUDGMENT_SERVICE_URL="http://127.0.0.1:8003")
     try:

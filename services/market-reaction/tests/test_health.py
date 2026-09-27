@@ -34,7 +34,7 @@ def test_health_connected(monkeypatch):
     assert resp.json() == _expected("connected")
     # connected 케이스 명시 검증: 전체 문자열 + model 존재
     assert body["ollama"] == "connected"
-    assert body["model"] == "llama3.1:8b"
+    assert body["model"] == main.settings.ollama_model
     assert "model" in body
 
 
