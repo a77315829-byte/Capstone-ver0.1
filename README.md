@@ -9,6 +9,8 @@
 
 ![코드를 기준으로 정리한 처리 흐름](docs/portfolio/architecture.png)
 
+[구성도 SVG 원본](docs/portfolio/architecture.svg)
+
 ## 본인 기여
 
 투자자 Agent, 공시 기반 RAG, 판단 학습 피드백의 목적과 전체 흐름을 기획했습니다. 웹 화면과 API를 개발하고 팀이 구현한 AI 모듈을 서비스에 통합했습니다.

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="620" viewBox="0 0 1600 620">
+<rect width="100%" height="100%" fill="white"/>
+<g font-family="Malgun Gothic, Noto Sans CJK KR, sans-serif">
+<text x="35" y="38" font-size="30" fill="#4964ce" font-weight="700" text-anchor="start">RAG + PARALLEL AGENTS</text>
+<text x="35" y="71" font-size="22" fill="#64718a" font-weight="400" text-anchor="start">ANTITUDE / 공시 문맥을 공유하고 서로 다른 투자자 관점을 병렬로 생성</text>
+<rect x="605" y="88" width="310" height="493" rx="17" fill="#f3f6fc" stroke="#d3dced" stroke-width="2"/>
+<text x="625" y="123" font-size="23" fill="#64718a" font-weight="700" text-anchor="start">asyncio.gather / 5개 관점</text>
+<polyline points="260,212 295,212 295,292 335,292" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="335,292 324.1946347717679,297.21958640933474 324.1946347717679,286.78041359066526" fill="#4964ce"/>
+<polyline points="260,420 295,420 295,342 335,342" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="335,342 324.1946347717679,347.21958640933474 324.1946347717679,336.78041359066526" fill="#4964ce"/>
+<polyline points="555,317 590,317 590,167 640,167" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="640,167 629.1946347717678,172.21958640933477 629.1946347717678,161.78041359066523" fill="#4964ce"/>
+<polyline points="880,167 950,167 950,317 1000,317" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="1000,317 989.1946347717678,322.21958640933474 989.1946347717678,311.78041359066526" fill="#4964ce"/>
+<polyline points="555,317 590,317 590,253 640,253" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="640,253 629.1946347717678,258.21958640933474 629.1946347717678,247.78041359066523" fill="#4964ce"/>
+<polyline points="880,253 950,253 950,317 1000,317" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="1000,317 989.1946347717678,322.21958640933474 989.1946347717678,311.78041359066526" fill="#4964ce"/>
+<polyline points="555,317 590,317 590,339 640,339" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="640,339 629.1946347717678,344.21958640933474 629.1946347717678,333.78041359066526" fill="#4964ce"/>
+<polyline points="880,339 950,339 950,317 1000,317" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="1000,317 989.1946347717678,322.21958640933474 989.1946347717678,311.78041359066526" fill="#4964ce"/>
+<polyline points="555,317 590,317 590,425 640,425" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="640,425 629.1946347717678,430.21958640933474 629.1946347717678,419.78041359066526" fill="#4964ce"/>
+<polyline points="880,425 950,425 950,317 1000,317" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="1000,317 989.1946347717678,322.21958640933474 989.1946347717678,311.78041359066526" fill="#4964ce"/>
+<polyline points="555,317 590,317 590,511 640,511" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="640,511 629.1946347717678,516.2195864093347 629.1946347717678,505.78041359066526" fill="#4964ce"/>
+<polyline points="880,511 950,511 950,317 1000,317" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="1000,317 989.1946347717678,322.21958640933474 989.1946347717678,311.78041359066526" fill="#4964ce"/>
+<polyline points="1235,317 1320,317" fill="none" stroke="#4964ce" stroke-width="3"/>
+<polygon points="1320,317 1309.1946347717678,322.21958640933474 1309.1946347717678,311.78041359066526" fill="#4964ce"/>
+<rect x="35" y="165" width="225" height="95" rx="14" fill="#ffffff" stroke="#d3dced" stroke-width="2"/>
+<text x="147.5" y="207.5" font-size="28" fill="#172842" font-weight="700" text-anchor="middle">뉴스 · 시세</text>
+<text x="147.5" y="239.5" font-size="22" fill="#64718a" font-weight="400" text-anchor="middle">종목 / 시장 정보</text>
+<rect x="35" y="350" width="225" height="150" rx="14" fill="#ffffff" stroke="#d3dced" stroke-width="2"/>
+<text x="147.5" y="393.0" font-size="26" fill="#172842" font-weight="700" text-anchor="middle">공시 검색 / RAG</text>
+<text x="147.5" y="425.0" font-size="22" fill="#64718a" font-weight="400" text-anchor="middle">DART · SEC</text>
+<text x="147.5" y="451.0" font-size="22" fill="#64718a" font-weight="400" text-anchor="middle">Ollama 임베딩</text>
+<text x="147.5" y="477.0" font-size="22" fill="#64718a" font-weight="400" text-anchor="middle">MongoDB / FAISS</text>
+<rect x="335" y="255" width="220" height="125" rx="14" fill="#ffffff" stroke="#d3dced" stroke-width="2"/>
+<text x="445.0" y="299.5" font-size="28" fill="#172842" font-weight="700" text-anchor="middle">분석 문맥</text>
+<text x="445.0" y="331.5" font-size="22" fill="#64718a" font-weight="400" text-anchor="middle">표준 입력 +</text>
+<text x="445.0" y="357.5" font-size="22" fill="#64718a" font-weight="400" text-anchor="middle">관련 공시</text>
+<rect x="640" y="135" width="240" height="64" rx="14" fill="#ffffff" stroke="#d3dced" stroke-width="2"/>
+<text x="760.0" y="178.0" font-size="28" fill="#172842" font-weight="700" text-anchor="middle">개인 투자자</text>
+<rect x="640" y="221" width="240" height="64" rx="14" fill="#ffffff" stroke="#d3dced" stroke-width="2"/>
+<text x="760.0" y="264.0" font-size="28" fill="#172842" font-weight="700" text-anchor="middle">기관 투자자</text>
+<rect x="640" y="307" width="240" height="64" rx="14" fill="#ffffff" stroke="#d3dced" stroke-width="2"/>
+<text x="760.0" y="350.0" font-size="28" fill="#172842" font-weight="700" text-anchor="middle">외국인 투자자</text>
+<rect x="640" y="393" width="240" height="64" rx="14" fill="#ffffff" stroke="#d3dced" stroke-width="2"/>
+<text x="760.0" y="436.0" font-size="28" fill="#172842" font-weight="700" text-anchor="middle">단기 투자자</text>
+<rect x="640" y="479" width="240" height="64" rx="14" fill="#ffffff" stroke="#d3dced" stroke-width="2"/>
+<text x="760.0" y="522.0" font-size="28" fill="#172842" font-weight="700" text-anchor="middle">장기 투자자</text>
+<rect x="1000" y="260" width="235" height="115" rx="14" fill="#ffffff" stroke="#d3dced" stroke-width="2"/>
+<text x="1117.5" y="299.5" font-size="28" fill="#172842" font-weight="700" text-anchor="middle">Critic</text>
+<text x="1117.5" y="331.5" font-size="22" fill="#64718a" font-weight="400" text-anchor="middle">관점 차이 /</text>
+<text x="1117.5" y="357.5" font-size="22" fill="#64718a" font-weight="400" text-anchor="middle">논리적 모순 구분</text>
+<rect x="1320" y="260" width="245" height="115" rx="14" fill="#ffffff" stroke="#d3dced" stroke-width="2"/>
+<text x="1442.5" y="299.5" font-size="28" fill="#172842" font-weight="700" text-anchor="middle">반응 분석 응답</text>
+<text x="1442.5" y="331.5" font-size="22" fill="#64718a" font-weight="400" text-anchor="middle">근거 · 위험 요인</text>
+<text x="1442.5" y="357.5" font-size="22" fill="#64718a" font-weight="400" text-anchor="middle">불확실성 / fallback</text>
+<text x="1005" y="473" font-size="23" fill="#a36316" font-weight="400" text-anchor="start">실패한 단계만 규칙 처리로 대체</text>
+<text x="1005" y="509" font-size="21" fill="#64718a" font-weight="400" text-anchor="start">시나리오 규칙 채점·코칭은 별도 경로</text>
+</g>
+</svg>
