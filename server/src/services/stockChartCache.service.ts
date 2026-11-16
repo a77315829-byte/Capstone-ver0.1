@@ -102,6 +102,7 @@ export const getChartDataWithCache = async (
 	symbol: string,
 	periodInput?: string,
 	intervalInput?: string,
+	refresh = false,
 ) => {
 	const normalizedSymbol = normalizeStockSymbol(symbol);
 	const period = normalizeChartPeriod(periodInput);
@@ -114,7 +115,7 @@ export const getChartDataWithCache = async (
 		interval,
 	}).lean();
 
-	if (cached && cached.fetchedAt && isFresh(cached.fetchedAt, ttlMs)) {
+	if (!refresh && cached?.timestampVersion === 2 && cached.fetchedAt && isFresh(cached.fetchedAt, ttlMs)) {
 		return {
 			symbol: normalizedSymbol,
 			period,
@@ -129,6 +130,7 @@ export const getChartDataWithCache = async (
 		normalizedSymbol,
 		period,
 		interval,
+		refresh,
 	);
 
 	const points = normalizePoints(kisPoints);
@@ -148,6 +150,7 @@ export const getChartDataWithCache = async (
 				interval,
 				points,
 				source: "KIS",
+				timestampVersion: 2,
 				fetchedAt: now,
 			},
 		},

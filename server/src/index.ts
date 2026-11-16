@@ -4,6 +4,8 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit").rateLimit;
 import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
+import { createServer } from "http";
+import { attachStockStream } from "./services/stockStream.service";
 
 // Config/initialization
 const app = express();
@@ -56,7 +58,9 @@ app.use("/api/auth/signup", createAccountLimiter);
 // REST Routes
 app.use(require("./routes"));
 
-app.listen(PORT, async () => {
+const httpServer = createServer(app);
+attachStockStream(httpServer);
+httpServer.listen(PORT, async () => {
 	console.log(`Example app listening at http://0.0.0.0:${PORT}`);
 	swaggerDocs(app, PORT);
 });

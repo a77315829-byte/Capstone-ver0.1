@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
+		"test:chart": "node --experimental-strip-types --test tests/domesticChart.test.mts",
 		"lint": "eslint . --ext tsx,js,jsx --report-unused-disable-directives --max-warnings 0",
 		"preview": "vite preview"
 	},

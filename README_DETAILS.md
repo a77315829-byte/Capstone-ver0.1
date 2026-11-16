@@ -418,7 +418,7 @@ Python API 문서는 각각 `http://127.0.0.1:8000/docs`, `http://127.0.0.1:8002
 | `SCENARIO_SERVICE_URL` | 기본 `http://127.0.0.1:8000` |
 | `MARKET_REACTION_URL` | 기본 `http://127.0.0.1:8002` |
 | `AI_JUDGMENT_SERVICE_URL` | 기본 `http://127.0.0.1:8003` |
-| `STOTRA_KIS_APP_KEY`, `STOTRA_KIS_APP_SECRET` | KIS 시세 조회용 키. 예제 파일에는 없어 직접 추가 |
+| `STOTRA_KIS_APP_KEY`, `STOTRA_KIS_APP_SECRET` | KIS 시세·실시간 체결 조회용 키. 예제 파일의 빈 값을 설정 |
 | `STOTRA_KIS_ENV` | KIS 환경, 기본 `real` |
 | `STOTRA_KIS_BASE_URL` | KIS 기본 주소를 직접 지정할 때 사용 |
 | `STOTRA_NAVER_CLIENT_ID`, `STOTRA_NAVER_CLIENT_SECRET` | 뉴스 검색. 각각 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`도 대체 이름으로 지원 |
@@ -518,6 +518,8 @@ Node의 `STOTRA_KIS_APP_KEY`와 Python의 `KIS_APP_KEY`는 이름이 다릅니�
 | 관심 종목 | `GET /api/user/watchlist` |
 | 국내 검색·시세 | `GET /api/stocks/search/:query`, `GET /api/stocks/:symbol/info` |
 | 국내 차트·상세·호가 | `GET /api/stocks/:symbol/historical`, `GET /api/stocks/:symbol/detail`, `GET /api/stocks/:symbol/orderbook` |
+| 국내 실시간 체결 | `WS /api/stocks/:symbol/stream` — 최근 봉 우선 표시와 실시간 갱신은 [실시간 차트 문서](docs/realtime-chart.md) 참고 |
+| 국내 차트 구간 조회 | `GET /api/stocks/:symbol/candles?interval=1d&limit=100&before=...` — 일봉 기본, 과거 봉 추가 조회 |
 | 시장 운영 상태 | `GET /api/markets/KRX/status`, `GET /api/markets/US/status` |
 | 국내 계좌·포트폴리오 | `GET /api/trading/account`, `GET /api/trading/portfolio` |
 | 국내 주문 조회·생성 | `GET /api/trading/orders`, `POST /api/trading/orders` |

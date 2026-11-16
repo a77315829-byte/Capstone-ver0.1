@@ -5,6 +5,7 @@
 	"scripts": {
 		"start": "node ./dist/index.js",
 		"tsc": "tsc",
+		"test:realtime": "node --test -r ts-node/register tests/stockRealtime.test.ts tests/candleWindow.test.ts",
 		"postinstall": "npm run tsc",
 		"dev": "ts-node-dev --respawn --pretty --transpile-only --ignore-watch swagger-output.json ./src/index.ts",
 		"seed:scenarios": "ts-node --transpile-only src/scripts/seedScenarios.ts",
@@ -26,6 +27,7 @@
 		"node-cache": "^5.1.2",
 		"swagger-jsdoc": "^6.2.8",
 		"swagger-ui-express": "^5.0.0",
+		"ws": "^8.22.1",
 		"yahoo-finance2": "^2.4.3"
 	},
 	"devDependencies": {
@@ -36,6 +38,7 @@
 		"@types/node": "^20.5.0",
 		"@types/swagger-jsdoc": "^6.0.1",
 		"@types/swagger-ui-express": "^4.1.3",
+		"@types/ws": "^8.18.2",
 		"@typescript-eslint/parser": "^6.3.0",
 		"swagger-autogen": "^2.23.5",
 		"ts-node": "^10.9.1",

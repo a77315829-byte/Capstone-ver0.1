@@ -425,6 +425,7 @@ router.post("/api/ai-judgment/compare", async (req, res) => {
 router.get("/api/stocks/search/:query", stocksController.search);
 router.get("/api/stocks/:symbol/info", stocksController.getInfo);
 router.get("/api/stocks/:symbol/historical", stocksController.getHistorical);
+router.get("/api/stocks/:symbol/candles", stocksController.getCandles);
 router.get("/api/stocks/:symbol/detail", stocksController.getDetail);
 router.get("/api/stocks/:symbol/orderbook", stocksController.getOrderBook);
 router.get("/api/scenarios/chapters", scenarioController.getChapters);

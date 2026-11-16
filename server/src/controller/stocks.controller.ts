@@ -5,6 +5,7 @@ import { fetchOrderBookData } from "../utils/requests";
 import {
 	fetchStockData,
 	fetchHistoricalStockData,
+	fetchRecentDomesticChart,
 	fetchDomesticExecutionData,
 	fetchDomesticInvestorTrend,
 	normalizeStockSymbol,
@@ -19,6 +20,9 @@ import {
 	normalizeChartInterval,
 } from "../services/stockChartCache.service";
 import { getStockDetailWithCache } from "../services/stockDetail.service";
+import { getCandleWindow } from "../services/stockCandleWindow.service";
+import { candleIntervals } from "../utils/candleWindow";
+import type { CandleInterval } from "../utils/candleWindow";
 
 type Period = "1d" | "5d" | "1m" | "6m" | "YTD" | "1y" | "all";
 
@@ -147,6 +151,23 @@ const getInfo = async (req: Request, res: Response) => {
 	}
 };
 
+const getCandles = async (req: Request, res: Response) => {
+	const symbol = normalizeStockSymbol(req.params.symbol || "");
+	const interval = String(req.query.interval || "1d") as CandleInterval;
+	const limit = Number(req.query.limit || 100);
+	const before = req.query.before === undefined ? undefined : Number(req.query.before);
+	if (!/^\d{6}$/.test(symbol) || !candleIntervals.includes(interval) ||
+		!Number.isInteger(limit) || limit < 1 || limit > 500 ||
+		(before !== undefined && (!Number.isSafeInteger(before) || before < 315500000 || before > Date.now() / 1000 + 86400))) {
+		return res.status(400).json({ success: false, message: "종목·봉 단위·조회 개수·이전 시각을 확인해주세요." });
+	}
+	try {
+		const window = await getCandleWindow(symbol, interval, limit, before, req.query.refresh === "true");
+		return res.json({ success: true, symbol, interval, data: window.points, cumulativeVolume: window.cumulativeVolume,
+			snapshotDate: window.snapshotDate, hasMore: window.hasMore, nextCursor: window.nextCursor });
+	} catch (error) { return sendError(res, error, "차트 구간을 불러오지 못했습니다.", { symbol, interval }); }
+};
+
 const getHistorical = async (req: Request, res: Response) => {
 	/*
 	#swagger.tags = ['Stock Data']
@@ -164,7 +185,13 @@ const getHistorical = async (req: Request, res: Response) => {
 	}
 
 	try {
-		const chartResult = await getChartDataWithCache(symbol, period, interval);
+		if (period === "1d" && req.query.recent === "true") {
+			const snapshot = await fetchRecentDomesticChart(symbol, interval);
+			return res.json({ success: true, symbol, period, interval, source: "kis",
+				fetchedAt: new Date().toISOString(), data: snapshot.points,
+				cumulativeVolume: snapshot.cumulativeVolume, partial: true });
+		}
+		const chartResult = await getChartDataWithCache(symbol, period, interval, req.query.refresh === "true");
 
 		return res.status(200).json({
 			success: true,
@@ -397,6 +424,7 @@ const search = async (req: Request, res: Response) => {
 };
 
 export default {
+	getCandles,
 	getInfo,
 	getHistorical,
 	getDetail,

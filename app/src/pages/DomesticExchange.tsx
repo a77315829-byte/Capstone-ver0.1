@@ -42,7 +42,11 @@ import {
 	createChart,
 	HistogramData,
 	IChartApi,
+	ISeriesApi,
 } from "lightweight-charts";
+import { useDomesticStockChart } from "../hooks/useDomesticStockChart";
+import { DEFAULT_CHART_INTERVAL, formatCandleLabel, isCalendarInterval, preserveVisibleRange, VISIBLE_CANDLE_COUNT } from "../utils/domesticChart";
+import type { ChartInterval } from "../utils/domesticChart";
 import api from "../services/api.service";
 import type { MarketStatus } from "../types/marketSession.types";
 import AiRamenPanel from "../components/AiRamenPanel";
@@ -52,7 +56,6 @@ import CompactStockNews from "../components/CompactStockNews";
 
 
 type ChartPeriod = "1d" | "5d" | "1m" | "6m" | "YTD" | "1y" | "all";
-type ChartInterval = "1m" | "5m" | "15m" | "1h" | "4h" | "1d";
 
 type StockSummary = {
 	symbol: string;
@@ -259,9 +262,10 @@ const chartOptions: ChartOption[] = [
 	{ label: "15분", period: "1d", interval: "15m" },
 	{ label: "1시간", period: "1d", interval: "1h" },
 	{ label: "4시간", period: "1d", interval: "4h" },
-	{ label: "1주", period: "5d", interval: "1d" },
-	{ label: "1개월", period: "1m", interval: "1d" },
-	{ label: "1년", period: "1y", interval: "1d" },
+	{ label: "1일", period: "all", interval: "1d" },
+	{ label: "1주", period: "all", interval: "1wk" },
+	{ label: "1개월", period: "all", interval: "1mo" },
+	{ label: "1년", period: "all", interval: "1y" },
 ];
 
 const won = new Intl.NumberFormat("ko-KR", {
@@ -505,22 +509,31 @@ function formatDateTime(timestampSeconds: number) {
 function InteractiveStockChart({
 	data,
 	height = 390,
+	resetKey,
+	interval,
+	onNeedOlder,
 }: {
 	data: ChartPoint[];
 	height?: number;
+	resetKey: string;
+	interval: ChartInterval;
+	onNeedOlder: () => void;
 }) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const tooltipRef = useRef<HTMLDivElement | null>(null);
 	const chartRef = useRef<IChartApi | null>(null);
+	const candleRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+	const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+	const previousData = useRef<ChartPoint[]>([]);
+	const dataRef = useRef(data);
+	dataRef.current = data;
+	const onNeedOlderRef = useRef(onNeedOlder);
+	onNeedOlderRef.current = onNeedOlder;
 
 	useEffect(() => {
 		if (!containerRef.current) return;
 
 		containerRef.current.innerHTML = "";
-
-		if (data.length === 0) {
-			return;
-		}
 
 		const chart = createChart(containerRef.current, {
 			width: containerRef.current.clientWidth,
@@ -541,9 +554,11 @@ function InteractiveStockChart({
 			},
 			timeScale: {
 				borderColor: "#e2e8f0",
-				timeVisible: true,
 				secondsVisible: false,
+				timeVisible: !isCalendarInterval(interval),
+				tickMarkFormatter: (time: any) => formatCandleLabel(Number(time), interval, true),
 			},
+			localization: { timeFormatter: (time: any) => formatCandleLabel(Number(time), interval) },
 		});
 
 		chartRef.current = chart;
@@ -563,6 +578,17 @@ function InteractiveStockChart({
 			},
 			priceScaleId: "",
 		});
+		candleRef.current = candleSeries;
+		volumeRef.current = volumeSeries;
+		previousData.current = [];
+		let interacted = false;
+		const markInteraction = () => { interacted = true; };
+		containerRef.current.addEventListener("pointerdown", markInteraction, true);
+		containerRef.current.addEventListener("wheel", markInteraction, { capture: true, passive: true });
+		const requestOlder = (range: { from: number; to: number } | null) => {
+			if (interacted && range && range.from <= 30) onNeedOlderRef.current();
+		};
+		chart.timeScale().subscribeVisibleLogicalRangeChange(requestOlder);
 
 		volumeSeries.priceScale().applyOptions({
 			scaleMargins: {
@@ -570,24 +596,6 @@ function InteractiveStockChart({
 				bottom: 0,
 			},
 		});
-
-		const candleData: CandlestickData[] = data.map((item) => ({
-			time: item.time as any,
-			open: item.open,
-			high: item.high,
-			low: item.low,
-			close: item.close,
-		}));
-
-		const volumeData: HistogramData[] = data.map((item) => ({
-			time: item.time as any,
-			value: item.volume || 0,
-			color: item.close >= item.open ? "#e53e3e" : "#3182ce",
-		}));
-
-		candleSeries.setData(candleData);
-		volumeSeries.setData(volumeData);
-		chart.timeScale().fitContent();
 
 		const tooltip = document.createElement("div");
 		tooltip.style.position = "absolute";
@@ -627,7 +635,7 @@ function InteractiveStockChart({
 				return;
 			}
 
-			const currentPoint = data.find(
+			const currentPoint = dataRef.current.find(
 				(item) => Number(item.time) === Number(seriesData.time),
 			);
 
@@ -637,7 +645,7 @@ function InteractiveStockChart({
 
 			tooltipRef.current.innerHTML = `
 				<div style="font-weight:700; margin-bottom:4px;">
-					${formatDateTime(Number(seriesData.time))}
+					${formatCandleLabel(Number(seriesData.time), interval)}
 				</div>
 				<div>시가: <b>${won.format(seriesData.open)}</b></div>
 				<div>고가: <b style="color:#e53e3e;">${won.format(seriesData.high)}</b></div>
@@ -677,32 +685,58 @@ function InteractiveStockChart({
 
 		return () => {
 			resizeObserver.disconnect();
+			containerRef.current?.removeEventListener("pointerdown", markInteraction, true);
+			containerRef.current?.removeEventListener("wheel", markInteraction, true);
+			chart.timeScale().unsubscribeVisibleLogicalRangeChange(requestOlder);
 			chart.remove();
+			chartRef.current = null;
+			candleRef.current = null;
+			volumeRef.current = null;
 		};
-	}, [data, height]);
+	}, [height, resetKey, interval]);
 
-	if (data.length === 0) {
-		return (
-			<Flex
-				h={`${height}px`}
-				align="center"
-				justify="center"
-				bg="gray.50"
-				borderRadius="lg"
-			>
-				<Text color="gray.500">차트 데이터를 불러오면 이 영역에 표시됩니다.</Text>
-			</Flex>
-		);
-	}
+	useEffect(() => {
+		const candles = candleRef.current;
+		const volumes = volumeRef.current;
+		if (!candles || !volumes) return;
+		const previous = previousData.current;
+		const candle = (item: ChartPoint): CandlestickData => ({ time: item.time as any, open: item.open, high: item.high, low: item.low, close: item.close });
+		const volume = (item: ChartPoint): HistogramData => ({ time: item.time as any, value: item.volume || 0, color: item.close >= item.open ? "#e53e3e" : "#3182ce" });
+		const incremental = previous.length > 1 && data.length >= previous.length && data.length - previous.length <= 1 &&
+			previous[0] === data[0] && previous[previous.length - 2] === data[previous.length - 2];
+		if (incremental && data.length) {
+			// A buffered batch may finish the old candle and open a new one.
+			if (data.length > previous.length) {
+				candles.update(candle(data[data.length - 2]!));
+				volumes.update(volume(data[data.length - 2]!));
+			}
+			candles.update(candle(data[data.length - 1]!));
+			volumes.update(volume(data[data.length - 1]!));
+		} else {
+			const timeScale = chartRef.current?.timeScale();
+			const range = timeScale?.getVisibleLogicalRange();
+			candles.setData(data.map(candle));
+			volumes.setData(data.map(volume));
+			if (!previous.length && data.length) {
+				timeScale?.setVisibleLogicalRange({ from: Math.max(0, data.length - VISIBLE_CANDLE_COUNT), to: data.length + 1 });
+			} else if (range) {
+				const adjusted = preserveVisibleRange(previous, data, range);
+				timeScale?.setVisibleLogicalRange(adjusted);
+			}
+		}
+		previousData.current = data;
+	}, [data, height, resetKey]);
 
 	return (
-		<Box
-			ref={containerRef}
-			position="relative"
-			width="100%"
-			height={`${height}px`}
-			bg="white"
-		/>
+		<Box position="relative" width="100%" height={`${height}px`} bg="white">
+			<Box ref={containerRef} position="relative" width="100%" height="100%" />
+			{data.length > 0 && <Button size="xs" position="absolute" top="2" right="20" zIndex="2" onClick={() => {
+				chartRef.current?.timeScale().setVisibleLogicalRange({ from: Math.max(0, data.length - VISIBLE_CANDLE_COUNT), to: data.length + 1 });
+			}}>최신으로</Button>}
+			{data.length === 0 && <Flex position="absolute" inset="0" align="center" justify="center" pointerEvents="none">
+				<Text color="gray.500">차트 데이터를 기다리고 있습니다.</Text>
+			</Flex>}
+		</Box>
 	);
 }
 
@@ -2244,7 +2278,6 @@ export default function DomesticExchange({
 		stock?.market,
 	]);
 
-	const [chartPoints, setChartPoints] = useState<ChartPoint[]>([]);
 	const [detailHistory, setDetailHistory] = useState<ChartPoint[]>([]);
 	const [isLoadingStock, setIsLoadingStock] = useState(false);
 	const [isSearching, setIsSearching] = useState(false);
@@ -2262,8 +2295,22 @@ export default function DomesticExchange({
 
 	const [searchPrices, setSearchPrices] = useState<Record<string, SearchResultPrice>>({});
 
-	const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("1d");
-	const [chartInterval, setChartInterval] = useState<ChartInterval>("1m");
+	const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("all");
+	const [chartInterval, setChartInterval] = useState<ChartInterval>(DEFAULT_CHART_INTERVAL);
+	const { points: chartPoints, isLoading: isLoadingChart, status: chartStatus,
+		error: chartError, lastTrade, refresh: refreshChart, loadOlder, isLoadingOlder, hasMore,
+		historyError } = useDomesticStockChart(selectedSymbol, chartPeriod, chartInterval);
+	const stockRequestId = useRef(0);
+
+	useEffect(() => {
+		if (!lastTrade) return;
+		setStock((current) => current?.symbol === lastTrade.symbol ? {
+			...current, price: lastTrade.price, changePrice: lastTrade.changePrice,
+			changeRate: lastTrade.changeRate, volume: lastTrade.cumulativeVolume,
+			open: lastTrade.open, high: lastTrade.high, low: lastTrade.low,
+			fetchedAt: new Date(lastTrade.time * 1000).toISOString(),
+		} : current);
+	}, [lastTrade]);
 	const [rightPanelMode, setRightPanelMode] =
 		useState<RightPanelMode>("ORDER");
 	const [isMarketSimulatorOpen, setIsMarketSimulatorOpen] =
@@ -2295,11 +2342,7 @@ export default function DomesticExchange({
 
 			setSelectedSymbol(nextSymbol);
 
-			void fetchStockWithChartOption(
-				nextSymbol,
-				chartPeriod,
-				chartInterval,
-			);
+			void fetchStockSummary(nextSymbol);
 		};
 
 		window.addEventListener(
@@ -2402,19 +2445,17 @@ export default function DomesticExchange({
 			chartOptions.find(
 				(option) =>
 					option.period === chartPeriod && option.interval === chartInterval,
-			)?.label ?? "1분"
+			)?.label ?? "1일"
 		);
 	}, [chartPeriod, chartInterval]);
 
-	const fetchStockWithChartOption = async (
-		symbol: string,
-		period: ChartPeriod,
-		interval: ChartInterval,
-	) => {
+	const fetchStockSummary = async (symbol: string) => {
+		const requestId = ++stockRequestId.current;
 		try {
 			setIsLoadingStock(true);
 
 			const infoRes = await api.get(`/stocks/${symbol}/info`);
+			if (requestId !== stockRequestId.current) return;
 			const nextStock = normalizeStockInfo(symbol, infoRes.data);
 			setStock(nextStock);
 
@@ -2427,24 +2468,8 @@ export default function DomesticExchange({
 			void fetchMarketExecutions(symbol);
 			void fetchInvestorTrend(symbol, investorPeriod);
 
-			await new Promise((resolve) => setTimeout(resolve, 500));
-
-			try {
-				const historicalRes = await api.get(
-					`/stocks/${symbol}/historical?period=${period}&interval=${interval}`,
-				);
-				setChartPoints(normalizeHistorical(historicalRes.data));
-			} catch (chartError) {
-				console.error(chartError);
-				setChartPoints([]);
-				toast({
-					title: "차트 데이터를 불러오지 못했습니다.",
-					description: "잠시 후 다시 시도하세요.",
-					status: "warning",
-					isClosable: true,
-				});
-			}
 		} catch (error: any) {
+			if (requestId !== stockRequestId.current) return;
 			console.error(error);
 
 			const message =
@@ -2459,7 +2484,7 @@ export default function DomesticExchange({
 				isClosable: true,
 			});
 		} finally {
-			setIsLoadingStock(false);
+			if (requestId === stockRequestId.current) setIsLoadingStock(false);
 		}
 	};
 	const fetchOrderBook = async (symbol: string) => {
@@ -2545,7 +2570,7 @@ export default function DomesticExchange({
 	};
 
 	const fetchStock = async (symbol: string) => {
-		await fetchStockWithChartOption(symbol, chartPeriod, chartInterval);
+		await fetchStockSummary(symbol);
 	};
 	const loadTradingData = async () => {
 		try {
@@ -2901,13 +2926,12 @@ export default function DomesticExchange({
 		}
 
 		setSelectedSymbol(item.symbol);
-		fetchStockWithChartOption(item.symbol, chartPeriod, chartInterval);
+		void fetchStockSummary(item.symbol);
 	};
 
 	const changeChartOption = (period: ChartPeriod, interval: ChartInterval) => {
 		setChartPeriod(period);
 		setChartInterval(interval);
-		fetchStockWithChartOption(selectedSymbol, period, interval);
 	};
 
 	const priceStep = useMemo(() => {
@@ -3200,7 +3224,11 @@ export default function DomesticExchange({
 						<CardHeader pb="0">
 							<Flex align={{ base: "stretch", lg: "center" }} direction={{ base: "column", lg: "row" }} gap="4">
 								<Box>
-									<Heading size="md">차트</Heading>
+									<HStack><Heading size="md">차트</Heading>
+										<Badge colorScheme={chartStatus === "connected" ? "green" : "gray"}>
+											{chartStatus === "connected" ? (marketStatus?.isOpen ? "실시간" : "실시간 대기") : chartStatus === "unavailable" ? "연결 확인 필요" : chartStatus === "reconnecting" ? "다시 연결 중" : "연결 중"}
+										</Badge>
+									</HStack>
 									<Text mt="1" fontSize="11px" color="app.subtleText">
 										현재 선택: {selectedChartLabel}
 									</Text>
@@ -3222,7 +3250,7 @@ export default function DomesticExchange({
 												bg={active ? "orange.50" : "white"}
 												color={active ? "brand.600" : "app.subtleText"}
 												onClick={() => changeChartOption(option.period, option.interval)}
-												isDisabled={isLoadingStock}
+													isDisabled={isLoadingChart}
 											>
 												{option.label}
 											</Button>
@@ -3248,13 +3276,23 @@ export default function DomesticExchange({
 
 						<CardBody pt="4">
 							<Box minW="0">
-									{isLoadingStock ? (
+									{isLoadingChart && chartPoints.length === 0 ? (
 										<Flex h={{ base: "420px", xl: "540px" }} align="center" justify="center">
 											<Spinner color="brand.500" />
 										</Flex>
 									) : (
-										<InteractiveStockChart data={chartPoints} height={540} />
+										<InteractiveStockChart data={chartPoints} height={540} resetKey={`${selectedSymbol}:${chartPeriod}:${chartInterval}`} interval={chartInterval} onNeedOlder={loadOlder} />
 									)}
+								{chartError && <HStack mt="2" justify="space-between">
+									<Text fontSize="sm" color="orange.600">{chartError}</Text>
+									<Button size="xs" onClick={refreshChart}>다시 시도</Button>
+								</HStack>}
+								<HStack mt="2" justify="space-between" minH="24px">
+									<Text fontSize="xs" color={historyError ? "orange.600" : "app.subtleText"}>
+										{historyError ?? (isLoadingOlder ? "과거 차트를 불러오는 중…" : hasMore ? "왼쪽으로 이동하면 이전 봉을 불러옵니다." : chartPoints.length ? "불러올 수 있는 차트를 모두 표시했습니다." : "")}
+									</Text>
+									{hasMore && <Button size="xs" variant="ghost" isLoading={isLoadingOlder} onClick={loadOlder}>이전 봉 더 보기</Button>}
+								</HStack>
 							</Box>
 						</CardBody>
 					</Card>

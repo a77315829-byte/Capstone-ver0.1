@@ -5,6 +5,7 @@ import * as zlib from "zlib";
 import { TextDecoder } from "util";
 import * as fs from "fs";
 import * as path from "path";
+import { domesticTimestamp } from "./kisRealtime";
 
 import {
 	US_EXCHANGE_NAME,
@@ -110,7 +111,7 @@ const createHttpError = (statusCode: number, message: string) => {
 	return error;
 };
 
-const getKisConfig = () => {
+export const getKisConfig = () => {
 	const appKey = process.env.STOTRA_KIS_APP_KEY;
 	const appSecret = process.env.STOTRA_KIS_APP_SECRET;
 	const env = (process.env.STOTRA_KIS_ENV || "real") as KisEnv;
@@ -488,10 +489,10 @@ const dedupeOhlcvPoints = (points: OhlcvPoint[]): OhlcvPoint[] => {
 	return Array.from(map.values()).sort((a, b) => a.time - b.time);
 };
 
-const fetchIntradayStockDataPage = async (
+export const fetchIntradayStockDataSnapshot = async (
 	symbol: string,
 	anchorTime: string,
-): Promise<OhlcvPoint[]> => {
+): Promise<{ points: OhlcvPoint[]; cumulativeVolume: number | null }> => {
 	const res = await kisGet<any>(
 		"/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice",
 		"FHKST03010200",
@@ -504,24 +505,48 @@ const fetchIntradayStockDataPage = async (
 		},
 	);
 
-	return (res.output2 || [])
+	const points: OhlcvPoint[] = (res.output2 || [])
 		.map((item: any) => {
 			const price = parseNumber(item.stck_prpr);
-			const volume = parseNumber(item.cntg_vol || item.acml_vol);
+			const volume = parseNumber(item.cntg_vol);
 
 			return {
-				time: Math.floor(
-					parseKisDate(item.stck_bsop_date, item.stck_cntg_hour) / 1000,
-				),
-				open: price,
-				high: price,
-				low: price,
+				time: domesticTimestamp(item.stck_bsop_date, item.stck_cntg_hour),
+				open: parseNumber(item.stck_oprc) || price,
+				high: parseNumber(item.stck_hgpr) || price,
+				low: parseNumber(item.stck_lwpr) || price,
 				close: price,
 				volume,
 			};
 		})
-		.filter((point: OhlcvPoint) => point.close > 0)
+		.filter((point: OhlcvPoint) => Number.isFinite(point.time) && point.close > 0)
 		.sort((a: OhlcvPoint, b: OhlcvPoint) => a.time - b.time);
+	const cumulativeVolume = res.output1?.acml_vol;
+	return { points, cumulativeVolume: cumulativeVolume == null || cumulativeVolume === "" ? null : parseNumber(cumulativeVolume) };
+};
+
+export const fetchDomesticPeriodCandlePage = async (symbol: string, endDate: string, periodCode: "D" | "W" | "M" | "Y") => {
+	const response = await kisGet<any>("/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice", "FHKST03010100", {
+		FID_COND_MRKT_DIV_CODE: KIS_MARKET_DIV_CODE, FID_INPUT_ISCD: symbol,
+		FID_INPUT_DATE_1: "19800101", FID_INPUT_DATE_2: endDate,
+		FID_PERIOD_DIV_CODE: periodCode, FID_ORG_ADJ_PRC: "0",
+	});
+	const points: OhlcvPoint[] = (response.output2 || []).map((row: any) => ({
+		time: domesticTimestamp(row.stck_bsop_date), open: parseNumber(row.stck_oprc),
+		high: parseNumber(row.stck_hgpr), low: parseNumber(row.stck_lwpr),
+		close: parseNumber(row.stck_clpr), volume: parseNumber(row.acml_vol),
+	})).sort((a: OhlcvPoint, b: OhlcvPoint) => a.time - b.time);
+	const volume = response.output1?.acml_vol;
+	return { points, cumulativeVolume: volume == null || volume === "" ? null : parseNumber(volume) };
+};
+
+// A single recent page lets the UI paint before the full intraday backfill finishes.
+export const fetchRecentDomesticChart = async (symbol: string, interval: ChartInterval) => {
+	const hour = new Intl.DateTimeFormat("en-GB", {
+		timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
+	}).format(new Date()).replace(/:/g, "");
+	const snapshot = await fetchIntradayStockDataSnapshot(symbol, hour < "090000" ? "153000" : hour > "153000" ? "153000" : hour);
+	return { ...snapshot, points: aggregateOhlcv(snapshot.points, interval) };
 };
 
 const intervalToMinutes = (interval: ChartInterval): number => {
@@ -545,7 +570,7 @@ const aggregateOhlcv = (
 	const groups = new Map<number, OhlcvPoint[]>();
 
 	for (const point of points) {
-		const bucket = Math.floor(point.time / intervalSeconds) * intervalSeconds;
+		const bucket = Math.floor((point.time + 9 * 3600) / intervalSeconds) * intervalSeconds - 9 * 3600;
 
 		if (!groups.has(bucket)) {
 			groups.set(bucket, []);
@@ -1038,8 +1063,8 @@ const fetchIntradayStockData = async (
 
 	for (const anchorTime of anchorTimes) {
 		try {
-			const pagePoints = await fetchIntradayStockDataPage(symbol, anchorTime);
-			allPoints.push(...pagePoints);
+			const page = await fetchIntradayStockDataSnapshot(symbol, anchorTime);
+			allPoints.push(...page.points);
 		} catch (error: any) {
 			console.error(
 				`Failed to fetch intraday page: ${symbol} ${anchorTime}`,
@@ -1087,7 +1112,7 @@ const fetchDailyStockData = async (
 			const close = parseNumber(item.stck_clpr);
 
 			return {
-				time: Math.floor(parseKisDate(item.stck_bsop_date) / 1000),
+				time: domesticTimestamp(item.stck_bsop_date),
 				open: parseNumber(item.stck_oprc) || close,
 				high: parseNumber(item.stck_hgpr) || close,
 				low: parseNumber(item.stck_lwpr) || close,
@@ -1109,6 +1134,7 @@ export const fetchHistoricalStockData = async (
 	symbol: string,
 	period: ChartPeriod = "1d",
 	interval: ChartInterval = "1d",
+	refresh = false,
 ): Promise<OhlcvPoint[]> => {
 	const normalizedSymbol = normalizeStockSymbol(symbol);
 
@@ -1137,6 +1163,10 @@ export const fetchHistoricalStockData = async (
 
 	const cacheKey =
 		normalizedSymbol + "-historical-" + safePeriod + "-" + safeInterval;
+	if (refresh) {
+		stockCache.del(cacheKey);
+		stockCache.del(`${normalizedSymbol}-intraday-raw-expanded`);
+	}
 
 	if (!isKisQuoteSupportedSymbol(normalizedSymbol)) {
 		throw createHttpError(
