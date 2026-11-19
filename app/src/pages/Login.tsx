@@ -1,3 +1,5 @@
+import LegalLinks from "../components/LegalLinks";
+import { useAuthConfig } from "../hooks/useAuthConfig";
 import {
 	Flex,
 	Box,
@@ -20,11 +22,13 @@ import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import accounts from "../services/accounts.service";
 import tokens from "../services/tokens.service";
 import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
-import { useReducer } from "react";
+import { useReducer, useState } from "react";
 
 export default function Login() {
 	const toast = useToast();
 	const navigate = useNavigate();
+ const { config, error: configError } = useAuthConfig();
+ const [submitting, setSubmitting] = useState(false);
 
 	const turnstileRef = useRef<TurnstileInstance>(null);
 
@@ -46,6 +50,8 @@ export default function Login() {
 
 	const handleSubmit = async (e: { preventDefault: () => void }) => {
 		e.preventDefault();
+        if (submitting || !config || configError) return;
+        setSubmitting(true);
 		// Call login function from auth.js
 		accounts
 			.login(
@@ -57,7 +63,7 @@ export default function Login() {
 				// Show alert with status of login attempt
 				if (res === "success") {
 					toast({
-						title: `Logged in! Redirecting to dashboard...`,
+						title: "로그인되었습니다.",
 						status: "success",
 						isClosable: true,
 					});
@@ -76,7 +82,7 @@ export default function Login() {
 					status: "error",
 					isClosable: true,
 				});
-			});
+			}).finally(() => { setSubmitting(false); turnstileRef.current?.reset(); });
 	};
 
 	return (
@@ -100,6 +106,9 @@ export default function Login() {
 								<FormLabel>아이디</FormLabel>
 								<Input
 									type="text"
+                                    autoComplete="username"
+                                    minLength={1}
+                                    maxLength={40}
 									onChange={(e) =>
 										setLoginData({
 											username: e.target.value,
@@ -112,6 +121,9 @@ export default function Login() {
 								<InputGroup>
 									<Input
 										type={loginData.showPassword ? "text" : "password"}
+                                        autoComplete="current-password"
+
+                                        maxLength={72}
 										onChange={(e) =>
 											setLoginData({
 												password: e.target.value,
@@ -121,6 +133,9 @@ export default function Login() {
 									<InputRightElement h={"full"}>
 										<Button
 											variant={"ghost"}
+                                            type="button"
+                                            aria-label={loginData.showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                                            aria-pressed={loginData.showPassword}
 											onClick={() =>
 												setLoginData({
 													showPassword: !loginData.showPassword,
@@ -149,17 +164,19 @@ export default function Login() {
                     <Text>Forgot password?</Text>
                   </Link>
                 </Stack> */}
-								<Turnstile
+								{config?.captchaEnabled && <Turnstile
 									ref={turnstileRef}
-									siteKey="1x00000000000000000000AA"
-								/>
+									siteKey={config.captchaSiteKey}
+								/>}
 
-								<Button type="submit">
+								<Button type="submit" isLoading={submitting} isDisabled={!config || !!configError}>
 									로그인
 								</Button>
 							</Stack>
 						</Stack>
 					</form>
+                    {configError && <Text role="alert" mt="3" fontSize="sm">{configError}</Text>}
+                    <LegalLinks />
 				</Box>
 			</Stack>
 		</Flex>

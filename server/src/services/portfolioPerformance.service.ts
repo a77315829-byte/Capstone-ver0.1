@@ -1,3 +1,4 @@
+import { signedFundingAmount } from "../utils/fx";
 import mongoose from "mongoose";
 
 import TradingAccount from "../models/tradingAccount.model";
@@ -582,7 +583,7 @@ async function loadAccountPerformanceBase(
 				market: "KR",
 			})
 				.select(
-					"userId amount createdAt",
+					"userId amount type createdAt",
 				)
 				.lean(),
 			loadIdentityMap(userIds),
@@ -637,10 +638,7 @@ async function loadAccountPerformanceBase(
 		const userId = String(
 			transaction.userId,
 		);
-		const amount = Math.max(
-			0,
-			Number(transaction.amount || 0),
-		);
+		const amount = signedFundingAmount(transaction);
 
 		totalDepositsByUser.set(
 			userId,
@@ -738,22 +736,9 @@ async function loadAccountPerformanceBase(
 			0,
 			Number(account.initialCash || 0),
 		);
-		const totalDeposits = Math.max(
-			0,
-			totalDepositsByUser.get(
-				accountUserId,
-			) ?? 0,
-		);
-		const monthlyDeposits = Math.max(
-			0,
-			monthlyDepositsByUser.get(
-				accountUserId,
-			) ?? 0,
-		);
-		const depositsBeforeMonth = Math.max(
-			0,
-			totalDeposits - monthlyDeposits,
-		);
+		const totalDeposits = totalDepositsByUser.get(accountUserId) ?? 0;
+		const monthlyDeposits = monthlyDepositsByUser.get(accountUserId) ?? 0;
+		const depositsBeforeMonth = totalDeposits - monthlyDeposits;
 		const investedCapital =
 			initialCash + totalDeposits;
 

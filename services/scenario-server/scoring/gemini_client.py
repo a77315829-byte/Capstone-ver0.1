@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import json
+import os
 import logging
 from typing import Any, Iterable
 
@@ -57,6 +58,8 @@ def generate_json(
         return GeminiResult(ok=False, error_code="EMPTY_PROMPT")
     if not model_names:
         return GeminiResult(ok=False, error_code="NO_MODELS_CONFIGURED")
+    if os.getenv("AI_MODE") == "rules":
+        return GeminiResult(ok=False, error_code="RULES_MODE")
     if not config.GEMINI_API_KEY:
         return GeminiResult(ok=False, error_code="MISSING_API_KEY")
 
@@ -65,9 +68,6 @@ def generate_json(
         from google.genai import types
     except ImportError:
         return GeminiResult(ok=False, error_code="MISSING_SDK")
-
-    required = set(required_keys)
-
 
     required = set(required_keys)
     attempted: list[str] = []
@@ -79,6 +79,7 @@ def generate_json(
                     api_key=config.GEMINI_API_KEY,
                     http_options=types.HttpOptions(
                         timeout=int(config.LLM_TIMEOUT_SECONDS * 1000),
+                        retry_options=types.HttpRetryOptions(attempts=1),
                     ),
             ) as client:
                 response = client.models.generate_content(
@@ -87,6 +88,13 @@ def generate_json(
                     config=types.GenerateContentConfig(
                         temperature=temperature,
                         response_mime_type="application/json",
+                        max_output_tokens=1024,
+                        response_json_schema={
+                            "type": "object",
+                            "properties": {"explanation": {"type": "string", "maxLength": 600}},
+                            "required": ["explanation"],
+                            "additionalProperties": False,
+                        } if required == {"explanation"} else None,
                     ),
                 )
 
@@ -104,9 +112,10 @@ def generate_json(
         except Exception as exc:
             # 프롬프트나 API 키 등 민감한 값은 로그에 남기지 않는다.
             logger.warning(
-                "Gemini 호출 실패: model=%s, error=%s",
+                "Gemini 호출 실패: model=%s, error=%s, code=%s",
                 model_name,
                 type(exc).__name__,
+                getattr(exc, "code", "unknown"),
             )
 
     return GeminiResult(

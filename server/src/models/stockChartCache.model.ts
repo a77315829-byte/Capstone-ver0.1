@@ -15,6 +15,11 @@ export interface StockChartCacheDocument extends Document {
 	interval: string;
 	points: ChartPoint[];
 	source: string;
+	timestampVersion: number;
+	cumulativeVolume?: number | null;
+	snapshotDate?: string;
+	hasMore?: boolean;
+	nextCursor?: number | null;
 	fetchedAt: Date;
 	createdAt: Date;
 	updatedAt: Date;
@@ -73,6 +78,11 @@ const StockChartCacheSchema = new Schema<StockChartCacheDocument>(
 			type: String,
 			default: "KIS",
 		},
+		timestampVersion: { type: Number, default: 2 },
+		cumulativeVolume: { type: Number },
+		snapshotDate: { type: String },
+		hasMore: { type: Boolean },
+		nextCursor: { type: Number },
 		fetchedAt: {
 			type: Date,
 			required: true,

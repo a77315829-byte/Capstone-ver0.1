@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from app.history.repository import get_latest_judgment
 from app.models.schemas import JudgmentResponse, Factor
+from app.tracking.refresh import is_refreshing
 
 router = APIRouter(prefix="/judgment", tags=["judgment"])
 
@@ -19,4 +20,7 @@ async def get_judgment(symbol: str):
         summary=doc["reason"],
         factors=[Factor(**f) for f in doc["factors"]],
         computed_at=doc["time"],
+        source=doc.get("source", "ai-judgment"),
+        fallback_used=doc.get("fallback_used", False),
+        refreshing=is_refreshing(symbol),
     )

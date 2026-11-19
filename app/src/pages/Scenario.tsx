@@ -850,11 +850,14 @@ function MobileScenarioCard({
 function ScenarioDetail({
   scenario,
   onStart,
+  onRestart,
   isStarting,
 }: {
   scenario: ScenarioItem;
 
   onStart: () => void;
+
+  onRestart: () => void;
 
   isStarting: boolean;
 }) {
@@ -1219,31 +1222,53 @@ function ScenarioDetail({
           BUTTON
       ========================= */}
 
-      <Button
-        mt="17px"
-        w="100%"
-        h="50px"
-        bg={ORANGE}
-        color="white"
-        borderRadius="8px"
-        fontSize="15px"
-        fontWeight="900"
-        isLoading={
-          isStarting
-        }
-        loadingText="불러오는 중"
-        _hover={{
-          bg:
-            ORANGE_DARK,
-        }}
-        _active={{
-          bg:
-            ORANGE_DARK,
-        }}
-        onClick={onStart}
-      >
-        {buttonLabel}
-      </Button>
+      <Flex mt="17px" gap="8px">
+        <Button
+          flex="1"
+          minW="0"
+          h="50px"
+          bg={ORANGE}
+          color="white"
+          borderRadius="8px"
+          fontSize="15px"
+          fontWeight="900"
+          isLoading={
+            isStarting && scenario.status !== "COMPLETED"
+          }
+          isDisabled={isStarting}
+          loadingText="불러오는 중"
+          _hover={{
+            bg:
+              ORANGE_DARK,
+          }}
+          _active={{
+            bg:
+              ORANGE_DARK,
+          }}
+          onClick={onStart}
+        >
+          {buttonLabel}
+        </Button>
+        {scenario.status === "COMPLETED" && (
+          <Button
+            flex="1"
+            minW="0"
+            h="50px"
+            variant="outline"
+            borderColor={ORANGE}
+            color={ORANGE}
+            borderRadius="8px"
+            fontSize="15px"
+            fontWeight="900"
+            isLoading={isStarting}
+            loadingText="시작하는 중"
+            _hover={{ bg: ORANGE_SOFT }}
+            onClick={onRestart}
+          >
+            다시 하기
+          </Button>
+        )}
+      </Flex>
     </Flex>
   );
 }
@@ -1255,10 +1280,16 @@ function ScenarioDetail({
 function RecentScenarioCard({
   scenario,
   onClick,
+  onRestart,
+  isStarting,
 }: {
   scenario: ScenarioItem;
 
   onClick: () => void;
+
+  onRestart: () => void;
+
+  isStarting: boolean;
 }) {
   const completed =
     scenario.status ===
@@ -1433,35 +1464,60 @@ function RecentScenarioCard({
               borderRadius="6px"
               fontSize="11px"
               fontWeight="900"
+              isDisabled={isStarting}
               onClick={onClick}
             >
               이어하기
             </Button>
           </>
         ) : (
-          <Button
-            mt="11px"
-            h="32px"
-            variant="outline"
-            borderColor={
-              completed
-                ? GREEN
-                : ORANGE
-            }
-            color={
-              completed
-                ? GREEN
-                : ORANGE
-            }
-            borderRadius="6px"
-            fontSize="11px"
-            fontWeight="900"
-            onClick={onClick}
-          >
-            {completed
-              ? "결과 보기"
-              : "시작하기"}
-          </Button>
+          <Flex mt="11px" gap="8px">
+            <Button
+              flex="1"
+              minW="0"
+              px="8px"
+              h="32px"
+              variant="outline"
+              borderColor={
+                completed
+                  ? GREEN
+                  : ORANGE
+              }
+              color={
+                completed
+                  ? GREEN
+                  : ORANGE
+              }
+              borderRadius="6px"
+              fontSize="11px"
+              fontWeight="900"
+              isDisabled={isStarting}
+              onClick={onClick}
+            >
+              {completed
+                ? "결과 보기"
+                : "시작하기"}
+            </Button>
+            {completed && (
+              <Button
+                flex="1"
+                minW="0"
+                h="32px"
+                px="8px"
+                variant="outline"
+                borderColor={ORANGE}
+                color={ORANGE}
+                borderRadius="6px"
+                fontSize="11px"
+                fontWeight="900"
+                isDisabled={isStarting}
+                _hover={{ bg: ORANGE_SOFT }}
+                onClick={onRestart}
+              >
+                다시 하기
+              </Button>
+            )}
+          </Flex>
         )}
       </Flex>
     </Flex>
@@ -1997,6 +2053,7 @@ export default function Scenario() {
   const handleStartScenario =
     async (
       scenario: ScenarioItem,
+      restart = false,
     ) => {
       if (
         isStartingScenario
@@ -2005,10 +2062,11 @@ export default function Scenario() {
       }
 
       /**
-       * 진행 중 / 완료된 세션은
-       * 기존 sessionId로 이동.
+       * 다시 하기는 새 세션을 만들고,
+       * 이어하기 / 결과 보기는 기존 sessionId로 이동.
        */
       if (
+        !restart &&
         scenario.sessionId &&
         (scenario.status ===
           "IN_PROGRESS" ||
@@ -2549,6 +2607,9 @@ export default function Scenario() {
                     selectedScenario,
                   )
                 }
+                onRestart={() =>
+                  void handleStartScenario(selectedScenario, true)
+                }
               />
             ) : (
               <Flex
@@ -2624,6 +2685,10 @@ export default function Scenario() {
                         scenario,
                       )
                     }
+                    onRestart={() =>
+                      void handleStartScenario(scenario, true)
+                    }
+                    isStarting={isStartingScenario}
                   />
                 ),
               )}

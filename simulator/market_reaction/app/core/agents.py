@@ -1,7 +1,7 @@
 """시장참여자 에이전트.
 
-5개 에이전트를 asyncio.gather 로 병렬 실행한다. 각 에이전트는 LLM 으로 반응을
-생성하고, 실패 시 해당 에이전트만 build_fallback_agent_output 으로 대체한다.
+5개 관점을 한 번의 구조화 LLM 요청으로 생성한다. 관점별 검증 실패 시
+해당 에이전트만 build_fallback_agent_output 으로 대체한다.
 전체 Ollama 실패 시에도 항상 5개 AgentOutput 을 반환한다.
 
 base_weight 는 LLM 이 결정하지 않고 코드 상수로 주입한다(event_type 별 표는
@@ -11,7 +11,6 @@ fallback.py:EVENT_BASE_WEIGHTS 에 중앙화, LLM 은 이 표의 선택에 관�
 
 from __future__ import annotations
 
-import asyncio
 from typing import List, Tuple
 
 from ..schemas.agent import AgentOutput
@@ -83,9 +82,9 @@ _SCHEMA = {
         "reaction_direction": {"type": "string", "enum": ["buy", "sell", "hold"]},
         "reaction_strength": {"type": "string", "enum": ["low", "medium", "high"]},
         "input_relevance": {"type": "string", "enum": ["low", "normal", "high"]},
-        "key_reasons": {"type": "array", "items": {"type": "string"}},
-        "comment": {"type": "string"},
-        "risk_factors": {"type": "array", "items": {"type": "string"}},
+        "key_reasons": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"type": "string", "minLength": 1, "maxLength": 35}},
+        "comment": {"type": "string", "minLength": 1, "maxLength": 35},
+        "risk_factors": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"type": "string", "minLength": 1, "maxLength": 35}},
     },
     "required": [
         "reaction_direction", "reaction_strength", "input_relevance",
@@ -99,6 +98,7 @@ def _build_user_prompt(si: StandardInput) -> str:
     return (
         "=== Market Analysis ===\n"
         f"Stock: {si.selected_stock}\n"
+        f"Market: {csc.market}; currency: {csc.currency}. Interpret investors relative to this market, not automatically Korea.\n"
         f"Event:\n{wrap_user_content(si.event_summary)}\n"
         f"Event type: {si.event_type}\n"
         f"Impact: {si.impact_direction.value} / Strength: {si.impact_strength.value}\n"
@@ -108,7 +108,7 @@ def _build_user_prompt(si: StandardInput) -> str:
         f"Negative factors:\n{wrap_user_content(', '.join(si.negative_factors))}\n"
         f"Uncertainty:\n{wrap_user_content(', '.join(si.uncertainty_factors))}\n\n"
         "=== Current Stock State ===\n"
-        f"Price: {csc.current_price}\n"
+        f"Price: {csc.current_price} {csc.currency} (unknown means unavailable, not zero)\n"
         f"Daily change: {csc.daily_change_rate}%\n"
         f"Volume: {csc.volume_trend}\n"
         f"Price reflection: {si.price_reflection_level}\n"
@@ -153,7 +153,8 @@ async def run_agent(
     """단일 에이전트 실행. 실패 시 해당 에이전트만 fallback 으로 대체."""
     try:
         parsed = await chat_json(
-            system=_AGENT_SYSTEM[agent_type],
+            system=(_AGENT_SYSTEM[agent_type].replace("Korean", "US-market")
+                    if standard_input.current_stock_context.market == "US" else _AGENT_SYSTEM[agent_type]),
             user=_build_user_prompt(standard_input),
             schema=_SCHEMA,
         )
@@ -171,13 +172,44 @@ async def run_agent(
 async def run_all_agents(
     standard_input: StandardInput,
 ) -> Tuple[List[AgentOutput], List[str]]:
-    """5개 에이전트를 병렬 실행. 항상 5개 AgentOutput 을 고정 순서로 반환."""
-    results = await asyncio.gather(
-        *(run_agent(agent_type, standard_input) for agent_type in AGENT_ORDER)
-    )
+    """One inference for five perspectives; validate/fallback each independently.
+
+    A single CPU Ollama runner serializes five HTTP calls anyway. Sharing the
+    prompt avoids repeated prefill while preserving fixed weights and agent IDs.
+    """
+    item_schema = {
+        "type": "object",
+        "properties": {key: value for key, value in _SCHEMA["properties"].items()
+                       if key in ("reaction_direction", "reaction_strength", "input_relevance")},
+    }
+    item_schema["properties"].update({
+        "reason": {"type": "string", "minLength": 1, "maxLength": 28},
+        "risk": {"type": "string", "minLength": 1, "maxLength": 22},
+    })
+    item_schema["required"] = list(item_schema["properties"])
+    schema = {"type": "object", "properties": {agent.value: item_schema for agent in AGENT_ORDER},
+              "required": [agent.value for agent in AGENT_ORDER]}
+    focuses = ["뉴스·테마와 단기 기대", "실적·밸류에이션과 위험", "환율·글로벌 자금 흐름", "가격 모멘텀·거래량", "장기 성장·경쟁력"]
+    perspectives = "\n".join(f"{agent.value}: {focus}" for agent, focus in zip(AGENT_ORDER, focuses))
+    try:
+        parsed = await chat_json(
+            system=f"Analyze five investor perspectives independently. Korean reason/risk: short phrases, no advice or price forecasts. Relevance means how directly the event affects each perspective.\n{perspectives}\n{PROMPT_INJECTION_GUARD}",
+            user=_build_user_prompt(standard_input), schema=schema, num_predict=750,
+        )
+    except Exception:
+        parsed = {}
     outputs: List[AgentOutput] = []
     fallback_modules: List[str] = []
-    for output, modules in results:
-        outputs.append(output)
-        fallback_modules.extend(modules)
+    for agent in AGENT_ORDER:
+        try:
+            value = parsed[agent.value]
+            reason, risk = value["reason"], value["risk"]
+            if not isinstance(reason, str) or not reason.strip() or not isinstance(risk, str) or not risk.strip():
+                raise ValueError("Missing agent reasoning")
+            outputs.append(_to_agent_output(agent, {**value, "comment": reason,
+                "key_reasons": [reason], "risk_factors": [risk]}, standard_input.event_type))
+        except (KeyError, TypeError, ValueError):
+            outputs.append(build_fallback_agent_output(agent, standard_input.impact_direction,
+                standard_input.price_reflection_level, standard_input.event_type))
+            fallback_modules.append(f"agent:{agent.value}")
     return outputs, fallback_modules

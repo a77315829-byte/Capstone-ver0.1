@@ -158,6 +158,7 @@ function SidebarItem({
     <Flex
       as={RouterLink}
       to={item.to}
+      aria-current={active ? "page" : undefined}
       position="relative"
       h="46px"
       px="16px"
@@ -272,7 +273,7 @@ function SidebarContent({
           NAVIGATION
       =========================== */}
 
-      <Stack spacing="4px">
+      <Stack as="nav" aria-label="주요 메뉴" spacing="4px">
         {NAVIGATION_ITEMS.map(
           (item) => (
             <SidebarItem
@@ -313,7 +314,7 @@ function SidebarContent({
             fontWeight="900"
             color="#29231E"
           >
-            연속 학습 3일째!
+            오늘도 학습을 이어가요!
           </Text>
         </Flex>
 
@@ -336,7 +337,7 @@ function SidebarContent({
             fontWeight="800"
             color="#29231E"
           >
-            3일 연속
+            꾸준히 한 걸음씩
           </Text>
 
           <Flex gap="3px">
@@ -404,7 +405,7 @@ export default function Sidebar({
       >
         <DrawerOverlay />
 
-        <DrawerContent
+        <DrawerContent aria-label="주요 메뉴"
           bg="#FBF7EE"
         >
           <DrawerBody p="0">

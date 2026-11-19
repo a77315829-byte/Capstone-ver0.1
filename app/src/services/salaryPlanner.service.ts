@@ -17,8 +17,7 @@ function isCurrentSalaryPlan(
 	return Boolean(
 		plan?.snapshot &&
 			plan?.result &&
-			plan.result.source ===
-				"LLM" &&
+			["LLM", "RULES"].includes(plan.result.source) &&
 			plan.result.diagnosis &&
 			plan.result.goalAssessment &&
 			plan.result.monthlyPlan &&

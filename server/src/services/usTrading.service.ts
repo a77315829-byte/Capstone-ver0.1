@@ -1,5 +1,9 @@
+import { fundedCapital } from "../utils/accountPerformance";
+import { holdingCost, splitHoldingCost } from "../utils/usCostBasis";
+import { withAccountMutation } from "./accountMutationLock";
 import {
 	US_EXCHANGE_NAME,
+	US_STOCK_CATALOG,
 	UsExchangeCode,
 	UsMarketName,
 } from "../data/usStocks";
@@ -23,8 +27,10 @@ import UsTradeOrder, {
 
 import {
 	fetchUsStockData,
+	fetchUsExtendedQuote,
 	normalizeUsStockSymbol,
 } from "../utils/requests";
+import { isFreshSessionQuote } from '../utils/extendedQuote';
 
 import {
 	getUsMarketStatus,
@@ -156,7 +162,7 @@ function roundUsd(
 	);
 }
 
-async function getOrCreateAccount(
+async function getOrCreateAccountUnlocked(
 	userId: string,
 ): Promise<UsTradingAccountDocument> {
 	let account =
@@ -220,6 +226,7 @@ function getAvailableQuantity(
 async function getQuote(
 	symbol: string,
 	exchange: UsExchangeCode,
+	forExecution = false,
 ) {
 	const quote =
 		await fetchUsStockData(
@@ -229,7 +236,8 @@ async function getQuote(
 
 	if (
 		!quote ||
-		Number(quote.price) <= 0
+		!Number.isFinite(Number(quote.price)) ||
+		roundUsd(Number(quote.price)) <= 0
 	) {
 		throw createServiceError(
 			502,
@@ -237,12 +245,18 @@ async function getQuote(
 		);
 	}
 
+	const status = getUsMarketStatus();
+	const extended = forExecution && ['PRE', 'POST'].includes(status.sessionType)
+		? await fetchUsExtendedQuote(symbol, exchange).catch(() => null) : null;
+	const currentStatus = getUsMarketStatus();
+	const canExecute = currentStatus.orderAllowedByOverride || (status.sessionType === currentStatus.sessionType &&
+		(currentStatus.isOpen || (!!extended && isFreshSessionQuote(extended, currentStatus, new Date()))));
 	return {
-		...quote,
+		...quote, canExecute,
 		price:
-			roundUsd(
+			extended?.price ?? roundUsd(
 				Number(
-					quote.price,
+						quote.price,
 				),
 			),
 	};
@@ -305,12 +319,7 @@ async function upsertBuyHolding(
 				0,
 		);
 
-	const oldTotal =
-		Number(
-			holding.totalBuyAmount ||
-				holding.avgPrice *
-					oldQuantity,
-		);
+	const oldTotal = holdingCost(holding);
 
 	const newTotal =
 		roundUsd(
@@ -328,13 +337,7 @@ async function upsertBuyHolding(
 	holding.totalBuyAmount =
 		newTotal;
 
-	holding.avgPrice =
-		newQuantity > 0
-			? roundUsd(
-					newTotal /
-						newQuantity,
-				)
-			: 0;
+	holding.avgPrice = newQuantity > 0 ? newTotal / newQuantity : 0;
 
 	holding.name = name;
 	holding.market = market;
@@ -623,18 +626,8 @@ async function executeSell(
 		);
 	}
 
-	const avgPrice =
-		Number(
-			holding.avgPrice ||
-				0,
-		);
-
-	const realizedProfit =
-		roundUsd(
-			(price -
-				avgPrice) *
-				quantity,
-		);
+	const { soldCost, remainingCost } = splitHoldingCost(holdingCost(holding), holding.quantity, quantity);
+	const realizedProfit = roundUsd(roundUsd(price * quantity) - soldCost);
 
 	holding.quantity -=
 		quantity;
@@ -644,14 +637,8 @@ async function executeSell(
 			_id: holding._id,
 		});
 	} else {
-		holding.totalBuyAmount =
-			roundUsd(
-				Number(
-					holding.avgPrice ||
-						0,
-				) *
-					holding.quantity,
-			);
+		holding.totalBuyAmount = remainingCost;
+		holding.avgPrice = remainingCost / holding.quantity;
 
 		await holding.save();
 	}
@@ -853,7 +840,7 @@ async function createPendingOrder(
 	});
 }
 
-export async function createUsTradeOrder(
+async function createUsTradeOrderUnlocked(
 	input: CreateUsOrderInput,
 ) {
 	const userId =
@@ -926,7 +913,7 @@ export async function createUsTradeOrder(
 	const quote =
 		await getQuote(
 			symbol,
-			exchange,
+			exchange, true,
 		);
 
 	const name =
@@ -943,6 +930,7 @@ export async function createUsTradeOrder(
 		input.orderType ===
 			"MARKET"
 	) {
+		if (!quote.canExecute) throw createServiceError(409, "거래시간이 종료되어 시장가 주문을 체결하지 않았습니다.");
 		if (
 			input.side === "BUY"
 		) {
@@ -988,7 +976,7 @@ export async function createUsTradeOrder(
 				limitPrice;
 
 	if (
-		executionAllowed &&
+		quote.canExecute &&
 		conditionMet
 	) {
 		if (
@@ -1036,7 +1024,7 @@ export async function createUsTradeOrder(
 	});
 }
 
-export async function cancelUsTradeOrder(
+async function cancelUsTradeOrderUnlocked(
 	params: {
 		userId?: string;
 		orderId: string;
@@ -1129,7 +1117,7 @@ export async function cancelUsTradeOrder(
 	return order;
 }
 
-export async function checkUsPendingOrders(
+async function checkUsPendingOrdersUnlocked(
 	userIdInput?: string,
 ) {
 	const userId =
@@ -1141,7 +1129,7 @@ export async function checkUsPendingOrders(
 		getUsMarketStatus();
 
 	const executionAllowed =
-		marketStatus.isOpen ||
+		marketStatus.limitOrderAllowed ||
 		marketStatus
 			.orderAllowedByOverride;
 
@@ -1184,9 +1172,10 @@ export async function checkUsPendingOrders(
 			const quote =
 				await getQuote(
 					order.symbol,
-					order.exchange,
+					order.exchange, true,
 				);
 
+			if (!quote.canExecute) continue;
 			const limitPrice =
 				Number(
 					order.limitPrice ||
@@ -1288,7 +1277,7 @@ export async function checkAllUsPendingOrders() {
 		getUsMarketStatus();
 
 	const executionAllowed =
-		marketStatus.isOpen ||
+		marketStatus.limitOrderAllowed ||
 		marketStatus
 			.orderAllowedByOverride;
 
@@ -1449,6 +1438,7 @@ export async function getUsPortfolio(
 						);
 
 					let changeRate = 0;
+					let isEvaluated = false;
 
 					if (
 						options?.evaluate
@@ -1462,6 +1452,7 @@ export async function getUsPortfolio(
 
 							currentPrice =
 								quote.price;
+							isEvaluated = true;
 							changeRate =
 								Number(
 									quote.changeRate ||
@@ -1481,14 +1472,7 @@ export async function getUsPortfolio(
 								holding.quantity,
 						);
 
-					const buyAmount =
-						roundUsd(
-							Number(
-								holding.avgPrice ||
-									0,
-							) *
-								holding.quantity,
-						);
+					const buyAmount = holdingCost(holding);
 
 					const profitLoss =
 						roundUsd(
@@ -1513,7 +1497,7 @@ export async function getUsPortfolio(
 						symbol:
 							holding.symbol,
 						name:
-							holding.name,
+							US_STOCK_CATALOG.find(item => item.symbol === holding.symbol)?.nameKo || holding.name,
 						exchange:
 							holding.exchange,
 						market:
@@ -1533,6 +1517,7 @@ export async function getUsPortfolio(
 								holding.avgPrice,
 							),
 						currentPrice,
+						isEvaluated,
 						changeRate,
 						evaluationAmount,
 						buyAmount,
@@ -1591,11 +1576,8 @@ export async function getUsPortfolio(
 				totalDeposits,
 		);
 
-	const investedCapital =
-		roundUsd(
-			initialCash +
-				totalDeposits,
-		);
+	const funding = await FundingTransaction.find({ userId, market: 'US' }).sort({ createdAt: 1, _id: 1 }).select('type amount').lean();
+	const investedCapital = roundUsd(fundedCapital(initialCash, totalDeposits, funding));
 
 	return {
 		account: {
@@ -1678,7 +1660,7 @@ export async function getUsTradeOrders(
 		.lean();
 }
 
-export async function topUpUsTradingAccount(
+async function topUpUsTradingAccountUnlocked(
 	userIdInput?: string,
 ) {
 	const userId =
@@ -1746,7 +1728,7 @@ export async function topUpUsTradingAccount(
 	};
 }
 
-export async function resetUsTradingAccount(
+async function resetUsTradingAccountUnlocked(
 	userIdInput?: string,
 ) {
 	const userId =
@@ -1798,3 +1780,21 @@ export async function resetUsTradingAccount(
 		account,
 	);
 }
+
+const getOrCreateAccount = (...args: Parameters<typeof getOrCreateAccountUnlocked>): ReturnType<typeof getOrCreateAccountUnlocked> =>
+  withAccountMutation(getUserId(args[0]), () => getOrCreateAccountUnlocked(...args));
+
+export const createUsTradeOrder = (...args: Parameters<typeof createUsTradeOrderUnlocked>): ReturnType<typeof createUsTradeOrderUnlocked> =>
+  withAccountMutation(getUserId(args[0].userId), () => createUsTradeOrderUnlocked(...args));
+
+export const cancelUsTradeOrder = (...args: Parameters<typeof cancelUsTradeOrderUnlocked>): ReturnType<typeof cancelUsTradeOrderUnlocked> =>
+  withAccountMutation(getUserId(args[0].userId), () => cancelUsTradeOrderUnlocked(...args));
+
+export const checkUsPendingOrders = (...args: Parameters<typeof checkUsPendingOrdersUnlocked>): ReturnType<typeof checkUsPendingOrdersUnlocked> =>
+  withAccountMutation(getUserId(args[0]), () => checkUsPendingOrdersUnlocked(...args));
+
+export const topUpUsTradingAccount = (...args: Parameters<typeof topUpUsTradingAccountUnlocked>): ReturnType<typeof topUpUsTradingAccountUnlocked> =>
+  withAccountMutation(getUserId(args[0]), () => topUpUsTradingAccountUnlocked(...args));
+
+export const resetUsTradingAccount = (...args: Parameters<typeof resetUsTradingAccountUnlocked>): ReturnType<typeof resetUsTradingAccountUnlocked> =>
+  withAccountMutation(getUserId(args[0]), () => resetUsTradingAccountUnlocked(...args));

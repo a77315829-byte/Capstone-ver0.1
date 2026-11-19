@@ -146,5 +146,21 @@ async def test_schema_passed_as_format(monkeypatch):
         llm_client.httpx, "AsyncClient", _make_fake_client(captured, '{"ok": true}')
     )
     await chat_json("sys", "user", schema=schema)
-    assert captured["payload"]["format"] == schema
+    assert captured["payload"]["format"] == {**schema, "additionalProperties": False}
+    assert "additionalProperties" not in schema
+    assert captured["payload"]["options"]["num_predict"] == llm_client.settings.ollama_num_predict
     assert captured["payload"]["stream"] is False
+
+
+def test_output_bounds_keep_required_fields_and_explicit_limits():
+    schema = {"type": "object", "required": ["reasons"], "properties": {
+        "reasons": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "summary": {"type": "string", "maxLength": 200},
+        "direction": {"type": "string", "enum": ["buy", "sell"]},
+    }}
+    bounded = llm_client.bounded_schema(schema)
+    assert bounded["required"] == ["reasons"]
+    assert bounded["properties"]["reasons"]["maxItems"] == 2
+    assert bounded["properties"]["reasons"]["items"]["maxLength"] == 70
+    assert bounded["properties"]["summary"]["maxLength"] == 200
+    assert bounded["properties"]["direction"] == schema["properties"]["direction"]

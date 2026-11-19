@@ -3,6 +3,7 @@ import {
 	Response,
 } from "express";
 
+import { validSalarySnapshot } from "../middleware/salaryValidation";
 import SalaryAiPlan from "../models/salaryAiPlan.model";
 
 import salaryAiService from "../services/salaryAi.service";
@@ -40,23 +41,9 @@ const analyze = async (
 			...snapshot
 		} = req.body;
 
-		if (
-			!snapshot ||
-			typeof snapshot.salary !==
-				"number" ||
-			!snapshot.goal ||
-			!Array.isArray(
-				snapshot.fixedItems,
-			) ||
-			!Array.isArray(
-				snapshot.variableItems,
-			)
-		) {
-			return res.status(400).json({
-				message:
-					"급여 분석 입력값이 올바르지 않습니다.",
-			});
-		}
+        if (!validSalarySnapshot(snapshot)) {
+            return res.status(400).json({ message: "급여 분석 입력 금액과 기간을 확인해주세요." });
+        }
 
 		const analysis =
 			await salaryAiService.analyzeSalaryPlan(

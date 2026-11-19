@@ -15,8 +15,8 @@ function makeTransaction(
 			return res.data.message;
 		})
 		.catch((err) => {
-			console.log(err.response.data.message);
-			throw new Error(err.response.data.message);
+			console.log(err.response?.data?.message || "서버에 연결하지 못했습니다.");
+			throw new Error(err.response?.data?.message || "서버에 연결하지 못했습니다.");
 		});
 }
 
@@ -29,7 +29,7 @@ function getPositions(): Promise<Position[]> {
 		.catch((err) => {
 			console.log(err);
 			if (err.response) {
-				throw new Error(err.response.data.message);
+				throw new Error(err.response?.data?.message || "서버에 연결하지 못했습니다.");
 			} else {
 				throw new Error(err as string);
 			}
@@ -57,7 +57,7 @@ function editWatchlist(
 		})
 		.catch((err) => {
 			if (err.response) {
-				throw new Error(err.response.data.message);
+				throw new Error(err.response?.data?.message || "서버에 연결하지 못했습니다.");
 			} else {
 				throw new Error(err as string);
 			}
@@ -88,7 +88,7 @@ function getBuyingPower(): Promise<number> {
 		})
 		.catch((err) => {
 			if (err.response) {
-				throw new Error(err.response.data.message);
+				throw new Error(err.response?.data?.message || "서버에 연결하지 못했습니다.");
 			} else {
 				throw new Error(err as string);
 			}
@@ -110,7 +110,7 @@ function getAvailableShares(symbol: string): Promise<number> {
 		})
 		.catch((err) => {
 			if (err.response) {
-				throw new Error(err.response.data.message);
+				throw new Error(err.response?.data?.message || "서버에 연결하지 못했습니다.");
 			} else {
 				throw new Error(err as string);
 			}
@@ -132,7 +132,7 @@ function signup(
 			return "success";
 		})
 		.catch((err) => {
-			throw new Error(err.response.data.message);
+			throw new Error(err.response?.data?.message || "서버에 연결하지 못했습니다.");
 		});
 }
 
@@ -150,7 +150,7 @@ function login(
 		.then((res) => {
 			if (res.data.accessToken !== undefined) {
 				// Store jwt and username in localStorage
-				tokens.setTokenAndUsername(res.data.accessToken, username);
+				tokens.setTokenAndUsername(res.data.accessToken, res.data.username);
 				return "success";
 			} else {
 				return "Invalid credentials.";
@@ -158,7 +158,7 @@ function login(
 		})
 		.catch((err) => {
 			if (err.response) {
-				throw new Error(err.response.data.message);
+				throw new Error(err.response?.data?.message || "서버에 연결하지 못했습니다.");
 			} else {
 				throw new Error(err as string);
 			}

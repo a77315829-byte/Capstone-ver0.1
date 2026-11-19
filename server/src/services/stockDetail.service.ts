@@ -1,4 +1,6 @@
+import { fetchNaverFinancials } from "./naverFinancial.service";
 import StockDetailCache from "../models/stockDetailCache.model";
+import { financialCacheTtlMs, mergeReportedPeriods } from "../utils/financialData";
 
 import {
 	fetchStockData,
@@ -9,13 +11,9 @@ import {
 import {
 	fetchDartStockDetail,
 	isDartConfigured,
-	FinancialPeriodSummary,
 } from "./dartStockDetail.service";
 
-const DETAIL_TTL_MS =
-	6 * 60 * 60 * 1000;
-
-const DATA_VERSION = 2;
+const DATA_VERSION = 5;
 
 const isFresh = (
 	fetchedAt: Date,
@@ -70,30 +68,6 @@ const buildSummary = (
 	)}주입니다.`;
 };
 
-const mergeLatestRoe = (
-	periods:
-		FinancialPeriodSummary[],
-	roe: number | null,
-): FinancialPeriodSummary[] => {
-	if (
-		periods.length === 0 ||
-		roe === null
-	) {
-		return periods;
-	}
-
-	return periods.map(
-		(period, index) =>
-			index === 0 &&
-			period.roe === null
-				? {
-					...period,
-					roe,
-				}
-				: period,
-	);
-};
-
 export const getStockDetailWithCache =
 	async (
 		symbol: string,
@@ -118,7 +92,7 @@ export const getStockDetailWithCache =
 				cached.fetchedAt &&
 				isFresh(
 					cached.fetchedAt,
-					DETAIL_TTL_MS,
+					financialCacheTtlMs(cached),
 				) &&
 				Number(
 					cached.dataVersion ||
@@ -165,30 +139,22 @@ export const getStockDetailWithCache =
 			),
 		]);
 
+        const supplemental = !dartDetail?.annualFinancials?.length || !dartDetail?.quarterlyFinancials?.length || financial.roe == null || financial.revenue == null
+            ? await fetchNaverFinancials(normalizedSymbol) : null;
+        const latestReported = supplemental?.annualFinancials[0];
+        const providerSource = ["KIS", ...(dartDetail ? ["DART"] : []), ...(supplemental ? ["NAVER"] : [])].join("+");
+
 		const now =
 			new Date();
 
 		const roe =
 			toNumberOrNull(
-				financial.roe ??
+				financial.roe ?? latestReported?.roe ??
 					stock.roe,
 			);
 
-		const annualFinancials =
-			mergeLatestRoe(
-				dartDetail
-					?.annualFinancials ??
-					[],
-				roe,
-			);
-
-		const quarterlyFinancials =
-			mergeLatestRoe(
-				dartDetail
-					?.quarterlyFinancials ??
-					[],
-				roe,
-			);
+        const annualFinancials = mergeReportedPeriods(dartDetail?.annualFinancials ?? [], supplemental?.annualFinancials ?? []);
+        const quarterlyFinancials = mergeReportedPeriods(dartDetail?.quarterlyFinancials ?? [], supplemental?.quarterlyFinancials ?? []);
 
 		const detailData = {
 			symbol:
@@ -255,7 +221,7 @@ export const getStockDetailWithCache =
 			marketCap:
 				toNumberOrNull(
 					financial.marketCap ??
-						stock.marketCap,
+						(stock.marketCap == null ? null : stock.marketCap * 100_000_000),
 				),
 			per:
 				toNumberOrNull(
@@ -280,17 +246,17 @@ export const getStockDetailWithCache =
 			roe,
 			revenue:
 				toNumberOrNull(
-					financial.revenue ??
+					dartDetail?.annualFinancials[0]?.revenue ?? financial.revenue ?? latestReported?.revenue ??
 						stock.revenue,
 				),
 			operatingProfit:
 				toNumberOrNull(
-					financial.operatingProfit ??
+					dartDetail?.annualFinancials[0]?.operatingProfit ?? financial.operatingProfit ?? latestReported?.operatingProfit ??
 						stock.operatingProfit,
 				),
 			netIncome:
 				toNumberOrNull(
-					financial.netIncome ??
+					dartDetail?.annualFinancials[0]?.netIncome ?? financial.netIncome ?? latestReported?.netIncome ??
 						stock.netIncome,
 				),
 
@@ -348,9 +314,7 @@ export const getStockDetailWithCache =
 				DATA_VERSION,
 
 			source:
-				dartDetail
-					? "KIS+DART"
-					: "KIS",
+				providerSource,
 			fetchedAt: now,
 			dartFetchedAt:
 				dartDetail?.fetchedAt ??
@@ -393,9 +357,7 @@ export const getStockDetailWithCache =
 
 		return {
 			source:
-				dartDetail
-					? "kis+dart"
-					: "kis",
+				providerSource.toLowerCase(),
 			detail: saved,
 		};
 	};

@@ -17,7 +17,14 @@ from .config import settings
 SERVICE_NAME = "market-reaction"
 SERVICE_VERSION = "0.1.0"
 
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "services"))
+from service_security import install_service_security
 app = FastAPI(title=SERVICE_NAME, version=SERVICE_VERSION)
+install_service_security(app)
+
 app.include_router(router)
 
 # /health 의 Ollama 확인은 빠르게 끝나야 하므로 짧은 timeout 사용

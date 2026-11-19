@@ -51,11 +51,59 @@ export const US_PRODUCT_TYPE_CODE:
  */
 export const US_STOCK_CATALOG:
 	UsStockCatalogItem[] = [
+	// Korean display names retain ticker identity. Leverage targets are DAILY.
+	// Verified 2026-11-17 against issuer product pages:
+	// https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs
+	// https://www.proshares.com/our-etfs/leveraged-and-inverse/{tqqq,sqqq,qld,qid}
+	{
+		symbol: "SOXL", name: "Direxion Daily Semiconductor Bull 3X ETF",
+		nameKo: "디렉시온 미국 반도체 3배 ETF", exchange: "AMS", market: "AMEX",
+		keywords: ["DIREXION", "디렉시온", "반도체", "3배", "레버리지", "ETF"],
+		assetType: "ETF", category: "미국 반도체 일간 3배 레버리지 ETF",
+		benchmark: "뉴욕증권거래소 반도체 지수 (NYSE Semiconductor Index)", issuer: "디렉시온",
+		summary: "미국 상장 반도체 기업으로 구성된 NYSE 반도체 지수의 일간 수익률 3배를 목표로 하는 ETF입니다. 여러 날 보유한 수익률은 지수 누적 수익률의 3배와 다를 수 있습니다.",
+	},
+	{
+		symbol: "SOXS", name: "Direxion Daily Semiconductor Bear 3X ETF",
+		nameKo: "디렉시온 미국 반도체 인버스 3배 ETF", exchange: "AMS", market: "AMEX",
+		keywords: ["DIREXION", "디렉시온", "반도체", "인버스", "3배", "ETF"],
+		assetType: "ETF", category: "미국 반도체 일간 -3배 인버스 ETF",
+		benchmark: "뉴욕증권거래소 반도체 지수 (NYSE Semiconductor Index)", issuer: "디렉시온",
+		summary: "NYSE 반도체 지수의 일간 수익률과 반대 방향으로 3배(-3배)의 수익률을 목표로 하는 ETF입니다. 여러 날 보유한 수익률은 지수 누적 수익률의 -3배와 다를 수 있습니다.",
+	},
+	{
+		symbol: "TQQQ", name: "ProShares UltraPro QQQ",
+		nameKo: "프로셰어즈 나스닥100 3배 ETF", exchange: "NAS", market: "NASDAQ",
+		keywords: ["PROSHARES", "프로셰어즈", "나스닥", "나스닥100", "3배", "레버리지", "ETF"],
+		assetType: "ETF", category: "나스닥100 일간 3배 레버리지 ETF", benchmark: "나스닥100 지수", issuer: "프로셰어즈",
+		summary: "나스닥100 지수의 일간 수익률 3배를 목표로 하는 ETF입니다. 여러 날 보유한 수익률은 지수 누적 수익률의 3배와 다를 수 있습니다.",
+	},
+	{
+		symbol: "SQQQ", name: "ProShares UltraPro Short QQQ",
+		nameKo: "프로셰어즈 나스닥100 인버스 3배 ETF", exchange: "NAS", market: "NASDAQ",
+		keywords: ["PROSHARES", "프로셰어즈", "나스닥", "나스닥100", "인버스", "3배", "ETF"],
+		assetType: "ETF", category: "나스닥100 일간 -3배 인버스 ETF", benchmark: "나스닥100 지수", issuer: "프로셰어즈",
+		summary: "나스닥100 지수의 일간 수익률과 반대 방향으로 3배(-3배)의 수익률을 목표로 하는 ETF입니다. 여러 날 보유한 수익률은 지수 누적 수익률의 -3배와 다를 수 있습니다.",
+	},
+	{
+		symbol: "QLD", name: "ProShares Ultra QQQ",
+		nameKo: "프로셰어즈 나스닥100 2배 ETF", exchange: "AMS", market: "AMEX",
+		keywords: ["PROSHARES", "프로셰어즈", "나스닥", "나스닥100", "2배", "레버리지", "ETF"],
+		assetType: "ETF", category: "나스닥100 일간 2배 레버리지 ETF", benchmark: "나스닥100 지수", issuer: "프로셰어즈",
+		summary: "나스닥100 지수의 일간 수익률 2배를 목표로 하는 ETF입니다. 여러 날 보유한 수익률은 지수 누적 수익률의 2배와 다를 수 있습니다.",
+	},
+	{
+		symbol: "QID", name: "ProShares UltraShort QQQ",
+		nameKo: "프로셰어즈 나스닥100 인버스 2배 ETF", exchange: "AMS", market: "AMEX",
+		keywords: ["PROSHARES", "프로셰어즈", "나스닥", "나스닥100", "인버스", "2배", "ETF"],
+		assetType: "ETF", category: "나스닥100 일간 -2배 인버스 ETF", benchmark: "나스닥100 지수", issuer: "프로셰어즈",
+		summary: "나스닥100 지수의 일간 수익률과 반대 방향으로 2배(-2배)의 수익률을 목표로 하는 ETF입니다. 여러 날 보유한 수익률은 지수 누적 수익률의 -2배와 다를 수 있습니다.",
+	},
 
 	{
 		symbol: "SPY",
 		name: "SPDR S&P 500 ETF Trust",
-		nameKo: "SPDR S&P 500 ETF",
+		nameKo: "SPDR 미국 S&P500 ETF",
 		exchange: "AMS",
 		market: "AMEX",
 		keywords: [
@@ -66,8 +114,8 @@ export const US_STOCK_CATALOG:
 		],
 		assetType: "ETF",
 		category: "미국 대형주 지수 ETF",
-		benchmark: "S&P 500 Index",
-		issuer: "State Street Global Advisors",
+		benchmark: "S&P500 지수",
+		issuer: "스테이트스트리트",
 		summary:
 			"미국 대형주 시장을 대표하는 S&P 500 지수의 흐름을 추종하도록 설계된 ETF입니다.",
 	},
@@ -85,8 +133,8 @@ export const US_STOCK_CATALOG:
 		],
 		assetType: "ETF",
 		category: "미국 대형주 지수 ETF",
-		benchmark: "S&P 500 Index",
-		issuer: "Vanguard",
+		benchmark: "S&P500 지수",
+		issuer: "뱅가드",
 		summary:
 			"미국 대형주로 구성된 S&P 500 지수의 성과를 추종하는 장기 투자형 ETF입니다.",
 	},
@@ -104,15 +152,15 @@ export const US_STOCK_CATALOG:
 		],
 		assetType: "ETF",
 		category: "미국 대형주 지수 ETF",
-		benchmark: "S&P 500 Index",
-		issuer: "BlackRock",
+		benchmark: "S&P500 지수",
+		issuer: "블랙록",
 		summary:
 			"미국 대형주에 폭넓게 투자하도록 S&P 500 지수를 추종하는 ETF입니다.",
 	},
 	{
 		symbol: "QQQ",
 		name: "Invesco QQQ Trust",
-		nameKo: "인베스코 QQQ",
+		nameKo: "인베스코 나스닥100 ETF",
 		exchange: "NAS",
 		market: "NASDAQ",
 		keywords: [
@@ -123,8 +171,8 @@ export const US_STOCK_CATALOG:
 		],
 		assetType: "ETF",
 		category: "나스닥 대형 성장주 ETF",
-		benchmark: "Nasdaq-100 Index",
-		issuer: "Invesco",
+		benchmark: "나스닥100 지수",
+		issuer: "인베스코",
 		summary:
 			"나스닥에 상장된 대형 비금융 기업 중심의 Nasdaq-100 지수를 추종하는 ETF입니다.",
 	},
@@ -142,8 +190,8 @@ export const US_STOCK_CATALOG:
 		],
 		assetType: "ETF",
 		category: "미국 우량주 지수 ETF",
-		benchmark: "Dow Jones Industrial Average",
-		issuer: "State Street Global Advisors",
+		benchmark: "다우존스 산업평균지수",
+		issuer: "스테이트스트리트",
 		summary:
 			"미국 대표 우량주 30개로 구성된 다우존스 산업평균지수를 추종하는 ETF입니다.",
 	},
@@ -161,8 +209,8 @@ export const US_STOCK_CATALOG:
 		],
 		assetType: "ETF",
 		category: "미국 중소형주 지수 ETF",
-		benchmark: "Russell 2000 Index",
-		issuer: "BlackRock",
+		benchmark: "러셀2000 지수",
+		issuer: "블랙록",
 		summary:
 			"미국 중소형주 시장을 대표하는 Russell 2000 지수를 추종하는 ETF입니다.",
 	},
@@ -180,8 +228,8 @@ export const US_STOCK_CATALOG:
 		],
 		assetType: "ETF",
 		category: "미국 전체시장 ETF",
-		benchmark: "CRSP US Total Market Index",
-		issuer: "Vanguard",
+		benchmark: "CRSP 미국 전체 주식시장 지수",
+		issuer: "뱅가드",
 		summary:
 			"미국 대형주부터 중소형주까지 주식시장 전반에 분산 투자하는 ETF입니다.",
 	},
@@ -199,8 +247,8 @@ export const US_STOCK_CATALOG:
 		],
 		assetType: "ETF",
 		category: "미국 배당주 ETF",
-		benchmark: "Dow Jones U.S. Dividend 100 Index",
-		issuer: "Charles Schwab",
+		benchmark: "다우존스 미국 배당100 지수",
+		issuer: "찰스슈왑",
 		summary:
 			"배당의 지속성과 재무 건전성을 고려한 미국 배당주 지수를 추종하는 ETF입니다.",
 	},
@@ -283,7 +331,7 @@ export const US_STOCK_CATALOG:
 	{
 		symbol: "AMD",
 		name: "Advanced Micro Devices, Inc.",
-		nameKo: "AMD",
+		nameKo: "AMD(에이엠디)",
 		exchange: "NAS",
 		market: "NASDAQ",
 		keywords: ["ADVANCED MICRO DEVICES", "CPU", "GPU", "반도체"],
@@ -427,7 +475,7 @@ export const US_STOCK_CATALOG:
 	{
 		symbol: "IBM",
 		name: "International Business Machines Corporation",
-		nameKo: "IBM",
+		nameKo: "IBM(아이비엠)",
 		exchange: "NYS",
 		market: "NYSE",
 		keywords: ["IBM", "클라우드"],

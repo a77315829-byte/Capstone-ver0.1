@@ -97,6 +97,9 @@ def build_realtime_context(
     # RealtimeContext.agent_focus(dict[str, str]) 에 맞게 문자열로 합친다.
     focus_lists = fallback_agent_focus(external.impact_direction, price_reflection_level)
     agent_focus = {key: ", ".join(items) for key, items in focus_lists.items()}
+    risks = _internal_risk_factors(price_reflection_level, short_term_momentum, volatility_level)
+    if current_stock.current_price is None:
+        risks = ["현재 시세를 확보하지 못해 가격 반영 수준·모멘텀·변동성을 확인할 수 없습니다."]
 
     return RealtimeContext(
         current_stock_context=current_stock,
@@ -104,7 +107,5 @@ def build_realtime_context(
         short_term_momentum=short_term_momentum,
         volatility_level=volatility_level,
         agent_focus=agent_focus,
-        internal_risk_factors=_internal_risk_factors(
-            price_reflection_level, short_term_momentum, volatility_level
-        ),
+        internal_risk_factors=risks,
     )

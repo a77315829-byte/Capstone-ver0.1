@@ -9,7 +9,7 @@ from app.config import settings
 @lru_cache
 def _client() -> OpenAI:
     # llm_provider="ollama"일 때는 이 함수가 호출되지 않으므로 OPENAI_API_KEY가 없어도 된다.
-    return OpenAI(api_key=settings.openai_api_key)
+    return OpenAI(api_key=settings.openai_api_key, timeout=15, max_retries=0)
 
 
 def call_gpt4o_json(system_prompt: str, user_prompt: str) -> str:

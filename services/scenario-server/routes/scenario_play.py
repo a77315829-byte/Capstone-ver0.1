@@ -1,7 +1,8 @@
 """시나리오 조회·세션·주문·턴 진행 API."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
+from urllib.parse import unquote
 from pydantic import BaseModel, Field
 
 from config import DEFAULT_USER_ID
@@ -50,9 +51,9 @@ def list_scenarios():
 
 
 @router.post("/scenarios/{scenario_id}/sessions", status_code=201)
-def start_session(scenario_id: str, body: StartSessionIn):
+def start_session(scenario_id: str, body: StartSessionIn, request: Request):
     try:
-        return ok(service().start_session(body.user_id, scenario_id))
+        return ok(service().start_session(unquote(request.headers["x-user-id"]), scenario_id))
     except Exception as exc:
         return handled_error(exc)
 

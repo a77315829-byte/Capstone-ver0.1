@@ -196,7 +196,11 @@ class CurrentStockContext(BaseModel):
     code: str = Field(description="종목 코드")
     name: str = Field(description="종목명")
     industry: str = Field(description="산업")
-    current_price: Optional[int] = Field(default=None, description="현재가")
+    current_price: Optional[float] = Field(default=None, description="현재가(해당 시장 통화)")
+    market: str = "KR"
+    currency: str = "KRW"
+    exchange: Optional[str] = None
+    market_cap_usd: Optional[float] = None
     daily_change_rate: Optional[float] = Field(default=None, description="등락률(%)")
     volume_trend: str = Field(
         description="거래량 추세. 허용값: increasing, stable, decreasing"

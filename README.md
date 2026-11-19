@@ -1,4 +1,10 @@
+﻿> 최신 수정: 장 마감 후 순위 유지·재시작 복원·지연 시 저장 결과 우선 표시. [순위 검증 안내](docs/RANKING-CLOSED-20261117.txt)
+
+> 최신 수정: 시간외 지정가 자동체결 및 현금과 분리한 보유 수익률. 검증 범위와 기록 방식은 [상세 안내](docs/EXTENDED-HOLDINGS-20261117.txt)를 확인하세요.
+
 # ANTITUDE
+
+전시 준비: [한 PC에서 웹·AI 함께 실행](docs/EXHIBITION.md) · [최종 보완·검증·남은 항목](docs/FINAL_REVIEW.md)
 
 **공시 검색과 투자자 Agent를 연결한 투자 판단 학습 플랫폼**
 

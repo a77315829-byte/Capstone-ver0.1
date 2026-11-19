@@ -1,17 +1,32 @@
 {
-	"name": "stotra",
-	"version": "1.0.0",
-	"description": "Multiplayer stock trading simulator allowing real-time virtual trading of stocks, currencies, and cryptocurrencies",
-	"prettier": {
-		"useTabs": true,
-		"importOrder": [
-			"^components/(.*)$",
-			"^[./]"
-		],
-		"importOrderSeparation": true,
-		"importOrderSortSpecifiers": true
-	},
-	"devDependencies": {
-		"@trivago/prettier-plugin-sort-imports": "^4.2.0"
-	}
+  "name": "stotra",
+  "version": "1.0.0",
+  "description": "Multiplayer stock trading simulator allowing real-time virtual trading of stocks, currencies, and cryptocurrencies",
+  "prettier": {
+    "useTabs": true,
+    "importOrder": [
+      "^components/(.*)$",
+      "^[./]"
+    ],
+    "importOrderSeparation": true,
+    "importOrderSortSpecifiers": true
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.2.0"
+  },
+  "scripts": {
+    "setup:school": "node scripts/exhibition.cjs school-setup",
+    "setup:models": "node scripts/exhibition.cjs models",
+    "setup": "node scripts/exhibition.cjs setup",
+    "setup:web": "node scripts/exhibition.cjs setup --profile=web",
+    "setup:services": "node scripts/exhibition.cjs setup --profile=services",
+    "build": "node scripts/exhibition.cjs build",
+    "start": "node scripts/exhibition.cjs start",
+    "start:web": "node scripts/exhibition.cjs start --profile=web",
+    "start:services": "node scripts/exhibition.cjs start --profile=services",
+    "doctor": "node scripts/exhibition.cjs doctor",
+    "lan": "node scripts/exhibition.cjs lan",
+    "seed:scenario": "node scripts/exhibition.cjs seed",
+    "test": "node --test scripts/exhibition.test.cjs scripts/lan.test.cjs && npm run test:exhibition --prefix server && npm run test:realtime --prefix server && npm run test:chart --prefix app && npm run test:holdings --prefix app"
+  }
 }

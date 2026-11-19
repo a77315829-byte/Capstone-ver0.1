@@ -138,6 +138,7 @@ export const getUserPortfolio =
 					userId,
 					{
 						evaluate,
+						performance: req.query.performance === "true",
 					},
 				);
 

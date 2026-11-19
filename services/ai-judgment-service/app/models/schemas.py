@@ -12,6 +12,9 @@ class Factor(BaseModel):
 
 
 class JudgmentResponse(BaseModel):
+    source: str = "ai-judgment"
+    fallback_used: bool = False
+    refreshing: bool = False
     symbol: str
     judge: Judgment
     confidence: float = Field(ge=0, le=100)
@@ -35,6 +38,7 @@ class CompareRequest(BaseModel):
 
 
 class CompareResponse(BaseModel):
+    computed_at: str | None = None
     user_judge: Judgment
     ai_judge: Judgment
     ai_probabilities: dict[Judgment, float]

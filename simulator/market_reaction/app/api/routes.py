@@ -8,12 +8,15 @@ Ollama 실패는 500 이 아니라 fallback 으로 200 처리된다(service 계�
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+import asyncio
+
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
 from ..schemas.request import SimulationRequest
 from ..schemas.response import RejectedResponse, SimulationResponse
 from ..service import SimulationRejectedError, run_market_reaction_simulation
+from ..config import settings
 
 router = APIRouter()
 
@@ -21,7 +24,14 @@ router = APIRouter()
 @router.post("/simulate", response_model=SimulationResponse)
 async def simulate(request: SimulationRequest):
     try:
-        return await run_market_reaction_simulation(request)
+        return await asyncio.wait_for(
+            run_market_reaction_simulation(request),
+            timeout=settings.market_pipeline_timeout_seconds,
+        )
+    except asyncio.TimeoutError:
+        # Cancellation propagates to in-flight httpx calls and agent tasks.
+        # The gateway returns its explicit rule-based response on this 504.
+        raise HTTPException(status_code=504, detail="Market analysis time limit exceeded")
     except SimulationRejectedError as exc:
         rejected = RejectedResponse(reason_code=exc.reason_code, message=exc.message)
         return JSONResponse(status_code=422, content=rejected.model_dump())

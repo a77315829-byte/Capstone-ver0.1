@@ -16,7 +16,11 @@ export interface MarketStatus {
 	localTime: string;
 	weekday: string;
 
-	sessionType: "REGULAR";
+	sessionType: "REGULAR" | "POST" | "CLOSED";
+	limitOrderAllowed: boolean;
+	sessionStartTime: string | null;
+	sessionEndTime: string | null;
+	sessionLabel: string;
 	openTime: string;
 	closeTime: string;
 
@@ -417,6 +421,9 @@ export function getKrxMarketStatus(
 			nextOpenAt;
 	}
 
+	const afterOpen = !weekend && !holidayName && local.date >= '2026-09-14' && currentMinutes >= 16 * 60 && currentMinutes < 20 * 60;
+	if (afterOpen) message = '국내 애프터마켓 운영 중 (16:00~20:00). KRX 대상 주식의 최신 시세가 확인될 때 지정가만 체결합니다.';
+	if (afterOpen) countdownTargetAt = toKrxIso(local.date, '20:00');
 	return {
 		market: "KRX",
 		marketName:
@@ -430,7 +437,11 @@ export function getKrxMarketStatus(
 				local.weekday
 			] ?? local.weekday,
 
-		sessionType: "REGULAR",
+		sessionType: isOpen ? 'REGULAR' : afterOpen ? 'POST' : 'CLOSED',
+		limitOrderAllowed: isOpen || afterOpen,
+		sessionStartTime: isOpen ? '09:00' : afterOpen ? '16:00' : null,
+		sessionEndTime: isOpen ? '15:30' : afterOpen ? '20:00' : null,
+		sessionLabel: isOpen ? '정규장' : afterOpen ? '애프터마켓 · 지정가' : '장 마감',
 		openTime: "09:00",
 		closeTime: "15:30",
 

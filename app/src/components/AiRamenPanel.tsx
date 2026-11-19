@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Badge,
   Box,
@@ -161,7 +161,7 @@ function ProbabilityPanel({
           >
             <Flex align="center">
               <Text
-                fontSize="9px"
+                fontSize={{ base: "12px", md: "9px" }}
                 fontWeight="800"
                 color={MUTED}
               >
@@ -171,7 +171,7 @@ function ProbabilityPanel({
               <Spacer />
 
               <Text
-                fontSize="11px"
+                fontSize={{ base: "12px", md: "11px" }}
                 fontWeight="900"
                 color={color}
               >
@@ -226,7 +226,7 @@ function FactorCard({
             px="7px"
             py="2px"
             borderRadius="5px"
-            fontSize="9px"
+            fontSize={{ base: "12px", md: "9px" }}
             bg={`${accent}18`}
             color={accent}
           >
@@ -237,7 +237,7 @@ function FactorCard({
         <Text
           flex="1"
           minW="0"
-          fontSize="11px"
+          fontSize={{ base: "12px", md: "11px" }}
           fontWeight="800"
           color={TEXT}
           noOfLines={2}
@@ -247,7 +247,7 @@ function FactorCard({
 
         <Text
           flexShrink={0}
-          fontSize="9px"
+          fontSize={{ base: "12px", md: "9px" }}
           fontWeight="800"
           color={MUTED}
         >
@@ -281,6 +281,9 @@ function HistoryProbabilities({
 }: {
   probabilities: AiProbabilities;
 }) {
+  if (Object.values(probabilities ?? {}).every(value => !value)) {
+    return <Text mt="7px" fontSize="8px" color={MUTED}>이전 기록 · 판단 비중 정보 없음</Text>;
+  }
   return (
     <Flex
       mt="7px"
@@ -316,6 +319,8 @@ export default function AiRamenPanel({
   onClose,
   stock,
 }: Props) {
+  const compareRequest = useRef(0);
+
   /**
    * 최초 진입은 비교 화면.
    */
@@ -389,113 +394,69 @@ export default function AiRamenPanel({
    * 동안 화면에는 절대 보여주지 않는다.
    */
   useEffect(() => {
-    if (!isOpen || !stock?.symbol) {
-      setJudgment(null);
-      setHistory([]);
-      setUserDecision(null);
-      setCompareResult(null);
-      setHasSubmittedDecision(false);
-      setTab("비교");
-
-      return;
-    }
-
-    const symbol = stock.symbol;
-
-    let cancelled = false;
-
-    /**
-     * 종목이 바뀔 때는 완전히 초기화.
-     *
-     * 삼성전자에서 매수를 골랐더라도
-     * SK하이닉스로 이동하면 다시 질문한다.
-     */
-    setJudgment(null);
-    setHistory([]);
+    compareRequest.current += 1;
     setUserDecision(null);
     setCompareResult(null);
     setHasSubmittedDecision(false);
+    setIsComparing(false);
     setTab("비교");
+    if (!isOpen || !stock?.symbol) {
+      setJudgment(null);
+      setHistory([]);
+      return;
+    }
+    const symbol = stock.symbol;
+    const cached = judgmentService.getCachedSnapshot(symbol);
+    setJudgment(cached?.judgment ?? null);
+    setHistory(cached?.history ?? []);
+    setIsLoadingJudgment(!cached?.judgment);
+    setIsLoadingHistory(!cached);
+    let cancelled = false;
+    let lastWatch = 0;
+    let timer: number | undefined;
+    let lastComputed = cached?.judgment?.computed_at;
+    const controller = new AbortController();
 
-    const refresh = async (
-      showLoading: boolean,
-    ) => {
-      if (showLoading) {
-        setIsLoadingJudgment(true);
-        setIsLoadingHistory(true);
-      }
-
+    const refresh = async () => {
+      let pending = false;
       try {
-        /**
-         * 감시 등록.
-         *
-         * 최초 종목이라면 백엔드에서
-         * cold start까지 처리한다.
-         */
-        await judgmentService
-          .watchSymbol(symbol)
-          .catch(() => {});
-
-        /**
-         * AI 결과는 미리 가져온다.
-         *
-         * 단, 사용자 선택 전까지
-         * 화면에는 표시하지 않는다.
-         */
-        const [
-          nextJudgment,
-          nextHistory,
-        ] = await Promise.all([
-          judgmentService
-            .getJudgment(symbol)
-            .catch(() => null),
-
-          judgmentService
-            .getHistory(symbol)
-            .catch(() => []),
+        // 저장된 결과 조회는 감시 등록/AI 생성 완료를 기다리지 않는다.
+        const watching = Date.now() - lastWatch >= 30_000;
+        if (watching) lastWatch = Date.now();
+        const [next, rows, watch] = await Promise.all([
+          judgmentService.getJudgment(symbol, controller.signal).catch(() => null),
+          judgmentService.getHistory(symbol, 20, controller.signal).catch(() => null),
+          watching ? judgmentService.watchSymbol(symbol, controller.signal).catch(() => null) : null,
         ]);
-
         if (cancelled) return;
-
-        setJudgment(nextJudgment);
-        setHistory(nextHistory);
+        pending = Boolean(next?.refreshing || watch?.refreshing);
+        if (next) {
+          setJudgment({ ...next, refreshing: pending });
+          if (lastComputed && lastComputed !== next.computed_at) {
+            compareRequest.current += 1;
+            setCompareResult(null);
+            setIsComparing(false);
+          }
+          lastComputed = next.computed_at;
+        } else {
+          setJudgment(previous => previous ? { ...previous, refresh_error: true, refreshing: false } : null);
+        }
+        if (rows) setHistory(rows);
       } finally {
-        if (
-          !cancelled &&
-          showLoading
-        ) {
+        if (!cancelled) {
           setIsLoadingJudgment(false);
           setIsLoadingHistory(false);
+          timer = window.setTimeout(() => void refresh(), pending ? 3_000 : 30_000);
         }
       }
     };
-
-    void refresh(true);
-
-    /**
-     * 30초마다:
-     *
-     * watch heartbeat
-     * +
-     * 최신 판단
-     * +
-     * 최신 history
-     *
-     * 조회
-     */
-    const heartbeat =
-      window.setInterval(() => {
-        void refresh(false);
-      }, 30_000);
-
+    void refresh();
     return () => {
       cancelled = true;
-
-      window.clearInterval(heartbeat);
-
-      void judgmentService
-        .unwatchSymbol(symbol)
-        .catch(() => {});
+      compareRequest.current += 1;
+      controller.abort();
+      window.clearTimeout(timer);
+      void judgmentService.unwatchSymbol(symbol).catch(() => {});
     };
   }, [isOpen, stock?.symbol]);
 
@@ -509,42 +470,25 @@ export default function AiRamenPanel({
   ) => {
     if (!stock?.symbol) return;
 
+    const symbol = stock.symbol;
+    const request = ++compareRequest.current;
     setUserDecision(decision);
-
     setCompareResult(null);
-
+    setHasSubmittedDecision(true);
+    setTab("비교");
     setIsComparing(true);
-
     try {
-      /**
-       * 사용자의 판단을 AI 현재 판단과 비교.
-       */
-      const result =
-        await judgmentService.compare(
-          stock.symbol,
-          decision,
-        );
-
+      const result = await judgmentService.compare(symbol, decision);
+      const latest = judgmentService.getCachedSnapshot(symbol)?.judgment;
+      if (request !== compareRequest.current) return;
+      // 느린 비교 해설이 더 최신인 판단을 덮어쓰지 않게 한다.
+      if (result.computed_at && latest && result.computed_at !== latest.computed_at) return;
+      if (result.fallback_used && latest && !latest.fallback_used) return;
       setCompareResult(result);
-
-      /**
-       * 비교가 정상적으로 끝난 시점부터
-       * AI 판단 공개.
-       */
-      setHasSubmittedDecision(true);
-
-      setTab("비교");
-    } catch (error) {
-      console.error(
-        "AI 판단 비교 실패:",
-        error,
-      );
-
-      setCompareResult(null);
-
-      setHasSubmittedDecision(false);
+    } catch {
+      // 비교 해설 실패 시에도 이미 받은 판단/근거는 계속 표시한다.
     } finally {
-      setIsComparing(false);
+      if (request === compareRequest.current) setIsComparing(false);
     }
   };
 
@@ -552,6 +496,8 @@ export default function AiRamenPanel({
    * 다시 선택
    */
   const handleRetryDecision = () => {
+    compareRequest.current += 1;
+    setIsComparing(false);
     setHasSubmittedDecision(false);
 
     setUserDecision(null);
@@ -622,6 +568,11 @@ export default function AiRamenPanel({
     compareResult?.ai_probabilities ??
     probabilities;
 
+  const ruleJudgment = judgment?.source === "rule-based" || judgment?.fallback_used === true;
+  const ruleComparison = compareResult
+    ? compareResult.source === "rule-based" || compareResult.fallback_used === true
+    : ruleJudgment;
+
   return (
     <Box
       w="100%"
@@ -658,7 +609,7 @@ export default function AiRamenPanel({
 
             <Text
               mt="2px"
-              fontSize="9px"
+              fontSize={{ base: "12px", md: "9px" }}
               color={MUTED}
               noOfLines={1}
             >
@@ -706,7 +657,7 @@ export default function AiRamenPanel({
 
             <Text
               mt="6px"
-              fontSize="9px"
+              fontSize={{ base: "12px", md: "9px" }}
               lineHeight="1.7"
               color={MUTED}
             >
@@ -751,7 +702,7 @@ export default function AiRamenPanel({
                   color={decisionColor(
                     decision,
                   )}
-                  fontSize="11px"
+                  fontSize={{ base: "12px", md: "11px" }}
                   fontWeight="900"
                   isLoading={
                     isComparing &&
@@ -803,7 +754,7 @@ export default function AiRamenPanel({
         ================================= */}
 
         {hasSubmittedDecision &&
-          compareResult && (
+          judgment && (
             <>
               <Grid
                 mt="15px"
@@ -861,7 +812,7 @@ export default function AiRamenPanel({
                   justify="center"
                 >
                   <Text
-                    fontSize="9px"
+                    fontSize={{ base: "12px", md: "9px" }}
                     fontWeight="900"
                     color="#B4AAA1"
                   >
@@ -887,7 +838,7 @@ export default function AiRamenPanel({
                     fontSize="8px"
                     color={MUTED}
                   >
-                    AI 판단
+                    {ruleComparison ? "규칙 기반 판단" : "AI 판단"}
                   </Text>
 
                   <Flex
@@ -909,7 +860,7 @@ export default function AiRamenPanel({
                     </Text>
 
                     <Text
-                      fontSize="10px"
+                      fontSize={{ base: "12px", md: "10px" }}
                       fontWeight="900"
                       color={decisionColor(
                         comparedAiDecision,
@@ -941,7 +892,7 @@ export default function AiRamenPanel({
                 borderRadius="9px"
               >
                 <Text
-                  fontSize="10px"
+                  fontSize={{ base: "12px", md: "10px" }}
                   fontWeight="900"
                   color={TEXT}
                 >
@@ -956,10 +907,12 @@ export default function AiRamenPanel({
                   fontSize="8px"
                   color={MUTED}
                 >
-                  최근 AI 분석{" "}
+                  {ruleJudgment ? "최근 규칙 분석" : "최근 AI 분석"}{" "}
                   {formatComputedTime(
-                    judgment?.computed_at,
+                    compareResult?.computed_at ?? judgment?.computed_at,
                   )}
+                  {judgment?.refresh_error ? " · 연결 지연, 최근 결과 유지" : judgment?.refreshing ? " · 최신 분석 갱신 중" : ""}
+                  {isComparing ? " · 비교 해설 갱신 중" : ""}
                 </Text>
               </Box>
             </>
@@ -990,7 +943,7 @@ export default function AiRamenPanel({
                 h="42px"
                 variant="ghost"
                 borderRadius="0"
-                fontSize="10px"
+                fontSize={{ base: "12px", md: "10px" }}
                 fontWeight={
                   tab === item
                     ? "900"
@@ -1026,13 +979,13 @@ export default function AiRamenPanel({
             ============================= */}
 
             {tab === "비교" &&
-              compareResult && (
+              judgment && (
                 <Stack spacing="12px">
                   <Box>
                     <Text
                       px="2px"
                       mb="7px"
-                      fontSize="10px"
+                      fontSize={{ base: "12px", md: "10px" }}
                       fontWeight="900"
                       color={TEXT}
                     >
@@ -1050,12 +1003,12 @@ export default function AiRamenPanel({
                       borderRadius="10px"
                     >
                       <Text
-                        fontSize="9px"
+                        fontSize={{ base: "12px", md: "9px" }}
                         lineHeight="1.75"
                         color="#625950"
                       >
                         {
-                          compareResult.explanation
+                          compareResult?.explanation ?? summary
                         }
                       </Text>
                     </Box>
@@ -1070,11 +1023,11 @@ export default function AiRamenPanel({
                       px="2px"
                     >
                       <Text
-                        fontSize="10px"
+                        fontSize={{ base: "12px", md: "10px" }}
                         fontWeight="900"
                         color={TEXT}
                       >
-                        AI 판단 분포
+                        {ruleComparison ? "규칙 점수 분포" : "AI 판단 분포"}
                       </Text>
 
                       <Spacer />
@@ -1083,7 +1036,7 @@ export default function AiRamenPanel({
                         px="7px"
                         py="2px"
                         borderRadius="5px"
-                        fontSize="9px"
+                        fontSize={{ base: "12px", md: "9px" }}
                         bg={`${decisionColor(
                           comparedAiDecision,
                         )}18`}
@@ -1091,7 +1044,7 @@ export default function AiRamenPanel({
                           comparedAiDecision,
                         )}
                       >
-                        신뢰도{" "}
+                        {ruleComparison ? "규칙 점수" : "신뢰도"}{" "}
                         {formatPercent(
                           comparedProbabilities[
                             comparedAiDecision
@@ -1118,25 +1071,23 @@ export default function AiRamenPanel({
 
                   {/* 중요 요인 */}
 
-                  {compareResult
-                    .highlighted_factors
-                    ?.length > 0 && (
+                  {(compareResult?.highlighted_factors ?? factors.map(factor => factor.factor)).length > 0 && (
                     <Box>
                       <Text
                         px="2px"
                         mb="7px"
-                        fontSize="10px"
+                        fontSize={{ base: "12px", md: "10px" }}
                         fontWeight="900"
                         color={TEXT}
                       >
-                        AI가 중요하게 본 요인
+                        {ruleComparison ? "규칙에 사용한 요인" : "AI가 중요하게 본 요인"}
                       </Text>
 
                       <Flex
                         gap="6px"
                         wrap="wrap"
                       >
-                        {compareResult.highlighted_factors.map(
+                        {(compareResult?.highlighted_factors ?? factors.map(factor => factor.factor)).map(
                           (
                             factor,
                             index,
@@ -1168,7 +1119,7 @@ export default function AiRamenPanel({
                     borderColor={BORDER}
                     bg="white"
                     color={MUTED}
-                    fontSize="9px"
+                    fontSize={{ base: "12px", md: "9px" }}
                     onClick={
                       handleRetryDecision
                     }
@@ -1191,11 +1142,11 @@ export default function AiRamenPanel({
                     px="2px"
                   >
                     <Text
-                      fontSize="10px"
+                      fontSize={{ base: "12px", md: "10px" }}
                       fontWeight="900"
                       color={TEXT}
                     >
-                      AI 판단 요약
+                      {ruleJudgment ? "규칙 기반 판단 요약" : "AI 판단 요약"}
                     </Text>
 
                     <Spacer />
@@ -1205,7 +1156,7 @@ export default function AiRamenPanel({
                         px="7px"
                         py="2px"
                         borderRadius="5px"
-                        fontSize="9px"
+                        fontSize={{ base: "12px", md: "9px" }}
                         bg={`${decisionColor(
                           aiDecision,
                         )}18`}
@@ -1213,9 +1164,9 @@ export default function AiRamenPanel({
                           aiDecision,
                         )}
                       >
-                        신뢰도{" "}
+                        {ruleJudgment ? "규칙 점수" : "신뢰도"}{" "}
                         {formatPercent(
-                          judgment.confidence,
+                          ruleJudgment ? judgment.probabilities[judgment.judge] : judgment.confidence,
                         )}
                         %
                       </Badge>
@@ -1228,7 +1179,7 @@ export default function AiRamenPanel({
                     borderRadius="9px"
                   >
                     <Text
-                      fontSize="10px"
+                      fontSize={{ base: "12px", md: "10px" }}
                       lineHeight="1.75"
                       color="#625950"
                     >
@@ -1248,7 +1199,7 @@ export default function AiRamenPanel({
                       px="2px"
                     >
                       <Text
-                        fontSize="10px"
+                        fontSize={{ base: "12px", md: "10px" }}
                         fontWeight="900"
                         color={TEXT}
                       >
@@ -1297,7 +1248,7 @@ export default function AiRamenPanel({
                       px="2px"
                     >
                       <Text
-                        fontSize="10px"
+                        fontSize={{ base: "12px", md: "10px" }}
                         fontWeight="900"
                         color={TEXT}
                       >
@@ -1346,7 +1297,7 @@ export default function AiRamenPanel({
                       px="2px"
                     >
                       <Text
-                        fontSize="10px"
+                        fontSize={{ base: "12px", md: "10px" }}
                         fontWeight="900"
                         color={TEXT}
                       >
@@ -1391,7 +1342,7 @@ export default function AiRamenPanel({
                       textAlign="center"
                     >
                       <Text
-                        fontSize="10px"
+                        fontSize={{ base: "12px", md: "10px" }}
                         color={MUTED}
                       >
                         현재 감지된 주요 시장
@@ -1415,7 +1366,7 @@ export default function AiRamenPanel({
                   borderRadius="9px"
                 >
                   <Text
-                    fontSize="10px"
+                    fontSize={{ base: "12px", md: "10px" }}
                     fontWeight="800"
                     color="#7A4E31"
                   >
@@ -1429,7 +1380,7 @@ export default function AiRamenPanel({
                 {isLoadingHistory ? (
                   <Text
                     py="24px"
-                    fontSize="10px"
+                    fontSize={{ base: "12px", md: "10px" }}
                     color={MUTED}
                     textAlign="center"
                   >
@@ -1440,7 +1391,7 @@ export default function AiRamenPanel({
                   0 ? (
                   <Text
                     py="24px"
-                    fontSize="10px"
+                    fontSize={{ base: "12px", md: "10px" }}
                     color={MUTED}
                     textAlign="center"
                   >
@@ -1500,7 +1451,7 @@ export default function AiRamenPanel({
                         >
                           <Flex align="center">
                             <Text
-                              fontSize="9px"
+                              fontSize={{ base: "12px", md: "9px" }}
                               color={MUTED}
                             >
                               {formatHistoryTime(
@@ -1549,7 +1500,7 @@ export default function AiRamenPanel({
 
                           <Text
                             mt="7px"
-                            fontSize="9px"
+                            fontSize={{ base: "12px", md: "9px" }}
                             lineHeight="1.65"
                             color="#625950"
                           >

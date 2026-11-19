@@ -50,6 +50,15 @@ def get_stock_context_stub(selected_stock: SelectedStock) -> CurrentStockContext
     알려진 종목(005930, 000660)은 고정 stub, 그 외에는 default stub 을 사용한다.
     항상 data_source="stub", is_realtime=False, observed_at=None.
     """
+    if selected_stock.market == "US":
+        # Never substitute a KRW fixture for an unavailable US quote.
+        return CurrentStockContext(
+            code=selected_stock.code, name=selected_stock.name, industry="확인되지 않음",
+            market="US", currency="USD", exchange=selected_stock.exchange,
+            current_price=None, daily_change_rate=None, volume_trend="unknown",
+            market_cap_trillion=None, market_cap_usd=None,
+            data_source=DataSource.UNKNOWN, is_realtime=False, observed_at=None,
+        )
     stub = _STUB_STOCKS.get(selected_stock.code)
 
     if stub is not None:
@@ -101,5 +110,8 @@ def get_stock_context(
         update["volume_trend"] = external.volume_trend
     if external.market_cap_trillion is not None:
         update["market_cap_trillion"] = external.market_cap_trillion
+    if selected_stock.market == "US":
+        update["market_cap_trillion"] = None
+        update["market_cap_usd"] = external.market_cap_usd
 
     return stub.model_copy(update=update)

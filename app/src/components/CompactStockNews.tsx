@@ -1,4 +1,4 @@
-import React, {
+import {
 	useEffect,
 	useState,
 } from "react";
@@ -23,6 +23,7 @@ type Props = {
 	symbol: string;
 	name: string;
 	market?: string;
+	marketType?: "KR" | "US";
 };
 
 type NewsItem = {
@@ -137,6 +138,7 @@ export default function CompactStockNews({
 	symbol,
 	name,
 	market = "KOSPI",
+	marketType = "KR",
 }: Props) {
 	const navigate =
 		useNavigate();
@@ -222,7 +224,7 @@ export default function CompactStockNews({
 				symbol,
 				name,
 				market,
-				marketType: "KR",
+				marketType,
 			});
 
 		navigate(

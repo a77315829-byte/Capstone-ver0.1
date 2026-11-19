@@ -197,7 +197,7 @@ export interface SalaryAiResult {
 	allocationReason: string;
 	actions: string[];
 
-	source: "LLM";
+	source: "LLM" | "RULES";
 }
 
 export interface SavedSalaryPlan {

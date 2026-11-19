@@ -1,5 +1,4 @@
-"""프론트가 지금 보고 있는 차트 종목만 실시간 폴링 대상으로 삼기 위한 동적
-구독 목록. 정적 settings.watch_symbols 대신 이걸 poller.py가 매 주기 조회한다.
+"""서버 고정 감시와 패널의 임시 감시를 합친 구독 목록.
 
 구독은 하트비트 방식이다: 프론트가 차트를 보는 동안 주기적으로 /watch를
 호출해 subscribe()를 갱신하고, watch_ttl_sec 동안 갱신이 없으면(화면 이탈,
@@ -25,4 +24,5 @@ def active_symbols() -> list[str]:
     expired = [symbol for symbol, last_seen in _subscriptions.items() if last_seen < cutoff]
     for symbol in expired:
         del _subscriptions[symbol]
-    return list(_subscriptions.keys())
+    # 패널 닫기/TTL 만료로는 고정 감시 종목이 제거되지 않는다.
+    return list(dict.fromkeys([*settings.always_watch_symbols, *_subscriptions.keys()]))

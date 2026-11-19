@@ -66,7 +66,11 @@ const capstoneTheme = extendTheme(
 				"*": {
 					boxSizing: "border-box",
 				},
-				"::selection": {
+				"a:focus-visible, button:focus-visible, [tabindex]:focus-visible": {
+                    outline: "2px solid currentColor",
+                    outlineOffset: "3px",
+                },
+                "::selection": {
 					bg: "brand.100",
 					color: "brand.900",
 				},

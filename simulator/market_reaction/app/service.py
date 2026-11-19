@@ -41,7 +41,7 @@ from .schemas.request import SimulationRequest
 from .schemas.response import ImpactAnalysis, SimulationResponse
 from .services.stock_data import get_stock_context
 
-# LLM 호출 단계 총 개수: validator(1) + external_context(1) + agents(5) + critic(1) + summary(1) = 9
+# Logical analysis stages; five agent perspectives share one inference request.
 _TOTAL_LLM_MODULES = 9
 
 _IMPACT_DIRECTION_KO = {
@@ -136,7 +136,7 @@ async def run_market_reaction_simulation(
     standard_input = build_standard_input(request, external_context, realtime_context)
     uncertainty_factors = standard_input.uncertainty_factors
 
-    # 5) 5개 에이전트 실행(기존과 동일하게 병렬)
+    # 5) 5개 관점 일괄 생성, 관점별 검증/대체
     agent_outputs, fb_agents = await run_all_agents(standard_input)
     fallback_modules.extend(fb_agents)
 

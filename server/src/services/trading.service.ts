@@ -1,3 +1,5 @@
+import { accountPerformance, fundedCapital } from "../utils/accountPerformance";
+import { withAccountMutation } from "./accountMutationLock";
 import TradingAccount from "../models/tradingAccount.model";
 import FundingTransaction from "../models/fundingTransaction.model";
 import SalaryAiPlan from "../models/salaryAiPlan.model";
@@ -8,7 +10,8 @@ import TradeOrder, {
 	TradeSide,
 } from "../models/tradeOrder.model";
 
-import { fetchStockData, normalizeStockSymbol } from "../utils/requests";
+import { fetchStockData, fetchKrxExtendedQuote, normalizeStockSymbol } from "../utils/requests";
+import { isFreshSessionQuote } from '../utils/extendedQuote';
 import { getKrxMarketStatus } from "./marketSession.service";
 
 const DEFAULT_INITIAL_CASH = 0;
@@ -64,7 +67,7 @@ const createServiceError = (statusCode: number, message: string) => {
 	return error;
 };
 
-export const getOrCreateAccount = async (userIdInput?: string) => {
+const getOrCreateAccountUnlocked = async (userIdInput?: string) => {
 	const userId = getUserId(userIdInput);
 
 	let account = await TradingAccount.findOne({ userId });
@@ -188,7 +191,7 @@ const serializeTradingAccount = (
 	};
 };
 
-export const applyMonthlySalaryPlanFundingIfDue =
+const applyMonthlySalaryPlanFundingIfDueUnlocked =
 	async (
 		userIdInput?: string,
 	) => {
@@ -288,7 +291,7 @@ export const applyMonthlySalaryPlanFundingIfDue =
 		};
 	};
 
-export async function enableSalaryPlanMonthlyFunding(
+async function enableSalaryPlanMonthlyFundingUnlocked(
 	userIdInput?: string,
 ) {
 		const userId = getUserId(
@@ -350,7 +353,7 @@ export async function enableSalaryPlanMonthlyFunding(
 		};
 }
 
-export async function topUpTradingAccount(
+async function topUpTradingAccountUnlocked(
 	userIdInput?: string,
 ) {
 		const userId = getUserId(
@@ -420,11 +423,17 @@ const getAvailableQuantity = (holding: any) => {
 	);
 };
 
-const getCurrentQuote = async (symbol: string) => {
+const getCurrentQuote = async (symbol: string, forExecution = false) => {
 	const normalizedSymbol = normalizeStockSymbol(symbol);
 	const stock = await fetchStockData(normalizedSymbol);
 
-	const price = Number(stock.price ?? stock.regularMarketPrice ?? 0);
+	const status = getKrxMarketStatus();
+	const extended = forExecution && status.sessionType === 'POST'
+		? await fetchKrxExtendedQuote(normalizedSymbol).catch(() => null) : null;
+	const currentStatus = getKrxMarketStatus();
+	const canExecute = currentStatus.orderAllowedByOverride || (status.sessionType === currentStatus.sessionType &&
+		(currentStatus.isOpen || (!!extended && isFreshSessionQuote(extended, currentStatus, new Date()))));
+	const price = Number(extended?.price ?? stock.price ?? stock.regularMarketPrice ?? 0);
 
 	if (!Number.isFinite(price) || price <= 0) {
 		throw createServiceError(502, "현재가를 불러오지 못했습니다.");
@@ -432,6 +441,7 @@ const getCurrentQuote = async (symbol: string) => {
 
 	return {
 		symbol: normalizedSymbol,
+		canExecute,
 		name: stock.name ?? stock.longName ?? stock.shortName ?? normalizedSymbol,
 		market: stock.market ?? "KRX",
 		price,
@@ -698,7 +708,7 @@ const createPendingLimitOrder = async (params: {
 	});
 };
 
-export const createTradeOrder = async (
+const createTradeOrderUnlocked = async (
 	input: CreateOrderInput,
 ) => {
 	const userId =
@@ -763,7 +773,7 @@ export const createTradeOrder = async (
 	}
 
 	const quote =
-		await getCurrentQuote(symbol);
+		await getCurrentQuote(symbol, true);
 
 	const name =
 		input.name || quote.name;
@@ -774,6 +784,7 @@ export const createTradeOrder = async (
 	if (
 		input.orderType === "MARKET"
 	) {
+		if (!quote.canExecute) throw createServiceError(409, "거래시간이 종료되어 시장가 주문을 체결하지 않았습니다.");
 		if (input.side === "BUY") {
 			return fillMarketBuy({
 				userId,
@@ -807,11 +818,11 @@ export const createTradeOrder = async (
 			: quote.price >= limitPrice;
 
 	/*
-	 * 지정가 주문은 장이 닫혀 있으면 현재가가 조건을
-	 * 만족해도 즉시 체결하지 않고 PENDING으로 예약합니다.
+	 * 정규장 또는 최신 애프터마켓 체결 시세가 확인될 때만 체결합니다.
+	 * 시간외 시세 미확인·대상 제외 종목은 PENDING을 유지합니다.
 	 */
 	const shouldFillNow =
-		marketExecutionAllowed &&
+		quote.canExecute &&
 		priceConditionMet;
 
 	if (shouldFillNow) {
@@ -869,7 +880,7 @@ export const createTradeOrder = async (
 	});
 };
 
-export const cancelTradeOrder = async (params: {
+const cancelTradeOrderUnlocked = async (params: {
 	userId?: string;
 	orderId: string;
 }) => {
@@ -913,7 +924,7 @@ export const cancelTradeOrder = async (params: {
 	return order;
 };
 
-export const checkPendingOrders = async (
+const checkPendingOrdersUnlocked = async (
 	userIdInput?: string,
 ) => {
 	const userId =
@@ -923,7 +934,7 @@ export const checkPendingOrders = async (
 		getKrxMarketStatus();
 
 	const marketExecutionAllowed =
-		marketStatus.isOpen ||
+		marketStatus.limitOrderAllowed ||
 		marketStatus
 			.orderAllowedByOverride;
 
@@ -963,9 +974,10 @@ export const checkPendingOrders = async (
 		try {
 			const quote =
 				await getCurrentQuote(
-					order.symbol,
+					order.symbol, true,
 				);
 
+			if (!quote.canExecute) continue;
 			const limitPrice =
 				Number(
 					order.limitPrice || 0,
@@ -1176,7 +1188,7 @@ export const checkAllPendingOrders =
 			getKrxMarketStatus();
 
 		const marketExecutionAllowed =
-			marketStatus.isOpen ||
+			marketStatus.limitOrderAllowed ||
 			marketStatus
 				.orderAllowedByOverride;
 
@@ -1248,7 +1260,7 @@ export const getTradingAccountSummary = async (userIdInput?: string) => {
 
 export const getPortfolio = async (
 	userIdInput?: string,
-	options?: { evaluate?: boolean },
+	options?: { evaluate?: boolean; performance?: boolean },
 ) => {
 	const userId = getUserId(userIdInput);
 
@@ -1273,6 +1285,7 @@ export const getPortfolio = async (
 
 		let currentPrice = avgPrice;
 		let changeRate = 0;
+		let isEvaluated = false;
 
 		// 느린 KIS 현재가 조회는 evaluate=true일 때만 실행
 		if (shouldEvaluate) {
@@ -1280,6 +1293,7 @@ export const getPortfolio = async (
 				const quote = await getCurrentQuote(holding.symbol);
 				currentPrice = quote.price;
 				changeRate = quote.changeRate;
+				isEvaluated = true;
 			} catch {
 				currentPrice = avgPrice;
 				changeRate = 0;
@@ -1310,40 +1324,46 @@ export const getPortfolio = async (
 			buyAmount,
 			profitLoss,
 			profitLossRate,
-			isEvaluated: shouldEvaluate,
+			isEvaluated,
 		});
 	}
 
-	const totalAsset = Number(account.cash || 0) + totalEvaluationAmount;
-	const totalProfitLoss = totalEvaluationAmount - totalBuyAmount;
-	const totalProfitLossRate =
-		totalBuyAmount > 0 ? (totalProfitLoss / totalBuyAmount) * 100 : 0;
-
+	const funding = await FundingTransaction.find({ userId, market: 'KR' }).sort({ createdAt: 1, _id: 1 }).select('type amount').lean();
+	const initialCash = Number(account.initialCash || 0), netDeposits = Number(account.totalDeposits || 0);
+	const totals = accountPerformance(Number(account.cash || 0), totalEvaluationAmount, totalBuyAmount,
+		initialCash, netDeposits, fundedCapital(initialCash, netDeposits, funding));
+	let performance;
+	if (options?.performance) {
+		const rows = await TradeOrder.aggregate([
+			{ $match: { userId, status: 'FILLED' } },
+			{ $facet: {
+				summary: [{ $group: { _id: null, filledTradeCount: { $sum: 1 },
+					realizedProfit: { $sum: { $cond: [{ $eq: ['$side', 'SELL'] }, '$realizedProfit', 0] } },
+					winningProfit: { $sum: { $cond: [{ $and: [{ $eq: ['$side', 'SELL'] }, { $gt: ['$realizedProfit', 0] }] }, '$realizedProfit', 0] } },
+					losingProfit: { $sum: { $cond: [{ $and: [{ $eq: ['$side', 'SELL'] }, { $lt: ['$realizedProfit', 0] }] }, '$realizedProfit', 0] } },
+					winningCount: { $sum: { $cond: [{ $and: [{ $eq: ['$side', 'SELL'] }, { $gt: ['$realizedProfit', 0] }] }, 1, 0] } },
+					losingCount: { $sum: { $cond: [{ $and: [{ $eq: ['$side', 'SELL'] }, { $lt: ['$realizedProfit', 0] }] }, 1, 0] } },
+				} }],
+				history: [{ $match: { side: 'SELL' } }, { $group: {
+					_id: { $dateToString: { format: '%Y-%m-%d', date: { $ifNull: ['$executedAt', '$createdAt'] }, timezone: 'Asia/Seoul' } },
+					profit: { $sum: '$realizedProfit' },
+				} }, { $sort: { _id: 1 } }],
+			} },
+		]);
+		const summary = rows[0]?.summary[0] || {};
+		performance = { filledTradeCount: summary.filledTradeCount || 0, realizedProfit: summary.realizedProfit || 0,
+			payoffRatio: summary.winningCount > 0 && summary.losingCount > 0
+				? (summary.winningProfit / summary.winningCount) / Math.abs(summary.losingProfit / summary.losingCount) : null,
+			history: (rows[0]?.history || []).map((day: any) => ({ date: day._id, profit: day.profit })),
+		};
+	}
 	return {
 		account: {
-			...serializeTradingAccount(account),
-			totalAsset,
-			totalEvaluationAmount,
-			totalBuyAmount,
-			totalProfitLoss,
-			totalProfitLossRate,
-			adjustedProfit:
-				totalAsset -
-				Number(account.initialCash ?? 0) -
-				Number(account.totalDeposits ?? 0),
-			adjustedReturnRate:
-				Number(account.initialCash ?? 0) +
-					Number(account.totalDeposits ?? 0) >
-				0
-					? ((totalAsset -
-						Number(account.initialCash ?? 0) -
-						Number(account.totalDeposits ?? 0)) /
-						(Number(account.initialCash ?? 0) +
-							Number(account.totalDeposits ?? 0))) *
-						100
-					: 0,
-			isEvaluated: shouldEvaluate,
+			...serializeTradingAccount(account), ...totals,
+			totalEvaluationAmount, totalBuyAmount,
+			isEvaluated: shouldEvaluate && evaluatedHoldings.every(holding => holding.isEvaluated),
 		},
+		...(performance ? { performance } : {}),
 		holdings: evaluatedHoldings,
 	};
 };
@@ -1365,7 +1385,7 @@ export const getTradeOrders = async (params: {
 	return TradeOrder.find(query).sort({ createdAt: -1 }).limit(limit).lean();
 };
 
-export const resetDemoTradingAccount = async (userIdInput?: string) => {
+const resetDemoTradingAccountUnlocked = async (userIdInput?: string) => {
 	const userId = getUserId(userIdInput);
 
 	await TradingAccount.deleteOne({ userId });
@@ -1378,3 +1398,26 @@ export const resetDemoTradingAccount = async (userIdInput?: string) => {
 
 	return getTradingAccountSummary(userId);
 };
+export const getOrCreateAccount = (...args: Parameters<typeof getOrCreateAccountUnlocked>): ReturnType<typeof getOrCreateAccountUnlocked> =>
+  withAccountMutation(getUserId(args[0]), () => getOrCreateAccountUnlocked(...args));
+
+export const applyMonthlySalaryPlanFundingIfDue = (...args: Parameters<typeof applyMonthlySalaryPlanFundingIfDueUnlocked>): ReturnType<typeof applyMonthlySalaryPlanFundingIfDueUnlocked> =>
+  withAccountMutation(getUserId(args[0]), () => applyMonthlySalaryPlanFundingIfDueUnlocked(...args));
+
+export const enableSalaryPlanMonthlyFunding = (...args: Parameters<typeof enableSalaryPlanMonthlyFundingUnlocked>): ReturnType<typeof enableSalaryPlanMonthlyFundingUnlocked> =>
+  withAccountMutation(getUserId(args[0]), () => enableSalaryPlanMonthlyFundingUnlocked(...args));
+
+export const topUpTradingAccount = (...args: Parameters<typeof topUpTradingAccountUnlocked>): ReturnType<typeof topUpTradingAccountUnlocked> =>
+  withAccountMutation(getUserId(args[0]), () => topUpTradingAccountUnlocked(...args));
+
+export const createTradeOrder = (...args: Parameters<typeof createTradeOrderUnlocked>): ReturnType<typeof createTradeOrderUnlocked> =>
+  withAccountMutation(getUserId(args[0].userId), () => createTradeOrderUnlocked(...args));
+
+export const cancelTradeOrder = (...args: Parameters<typeof cancelTradeOrderUnlocked>): ReturnType<typeof cancelTradeOrderUnlocked> =>
+  withAccountMutation(getUserId(args[0].userId), () => cancelTradeOrderUnlocked(...args));
+
+export const checkPendingOrders = (...args: Parameters<typeof checkPendingOrdersUnlocked>): ReturnType<typeof checkPendingOrdersUnlocked> =>
+  withAccountMutation(getUserId(args[0]), () => checkPendingOrdersUnlocked(...args));
+
+export const resetDemoTradingAccount = (...args: Parameters<typeof resetDemoTradingAccountUnlocked>): ReturnType<typeof resetDemoTradingAccountUnlocked> =>
+  withAccountMutation(getUserId(args[0]), () => resetDemoTradingAccountUnlocked(...args));

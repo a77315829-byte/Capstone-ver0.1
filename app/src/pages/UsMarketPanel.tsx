@@ -1592,7 +1592,7 @@ export default function UsMarketPanel({
 					description:
 						order.status ===
 						"PENDING"
-							? "다음 미국 정규장 중 지정 가격 조건을 충족하면 자동 체결됩니다."
+							? "정규장·프리마켓·애프터마켓에서 최신 시세가 지정가 조건을 충족하면 자동 체결됩니다. 시세 미확인 시에는 대기합니다."
 							: `${order.name} ${order.quantity}주 주문이 체결되었습니다.`,
 					status:
 						"success",
@@ -1686,11 +1686,11 @@ export default function UsMarketPanel({
 					title:
 						result.marketOpen
 							? "미체결 주문 확인 완료"
-							: "현재 미국 정규장이 닫혀 있습니다.",
+							: "현재 미국 거래시간이 아닙니다.",
 					description:
 						result.marketOpen
 							? `${result.filledCount}건 체결, ${result.pendingCount}건 대기 중`
-							: "예약 지정가 주문은 다음 정규장에 다시 확인됩니다.",
+							: "예약 지정가는 다음 거래시간에 자동 확인됩니다.",
 					status:
 						result.marketOpen
 							? "success"
@@ -2088,7 +2088,7 @@ export default function UsMarketPanel({
 								</Box>
 								<Spacer />
 								<Badge colorScheme={marketStatus?.isOpen ? "green" : "orange"} borderRadius="full">
-									{marketStatus?.isOpen ? "장 운영 중" : "장 마감"}
+									{marketStatus?.sessionLabel?.replace(' · 지정가', '') ?? '장 마감'}
 								</Badge>
 							</Flex>
 						</CardHeader>
@@ -2214,7 +2214,7 @@ export default function UsMarketPanel({
 										isLoading={isSubmitting}
 										isDisabled={!quote || isMarketOrderBlocked}
 									>
-										{orderType === "LIMIT" && isMarketClosed ? "예약 " : ""}
+										{orderType === "LIMIT" && !marketStatus?.limitOrderAllowed && !marketStatus?.orderAllowedByOverride ? "예약 " : ""}
 										{orderPanelMode === "BUY" ? "매수 주문하기" : "매도 주문하기"}
 									</Button>
 

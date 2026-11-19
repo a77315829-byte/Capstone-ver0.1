@@ -1,6 +1,5 @@
-import React, {
+import {
 	useCallback,
-	useEffect,
 	useMemo,
 	useState,
 } from "react";
@@ -35,6 +34,7 @@ import {
 import { RepeatIcon } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
 
+import { usePortfolioRefresh } from "../../hooks/usePortfolioRefresh";
 import api from "../../services/api.service";
 
 import type {
@@ -203,9 +203,7 @@ export default function UsPortfolioMyPageSection() {
 			}
 		}, [toast]);
 
-	useEffect(() => {
-		void loadData();
-	}, [loadData]);
+	usePortfolioRefresh(loadData, "US");
 
 	const account =
 		portfolio?.account;
@@ -362,7 +360,7 @@ export default function UsPortfolioMyPageSection() {
 							<CardBody>
 								<Stat>
 									<StatLabel>
-										평가손익
+										총 손익
 									</StatLabel>
 									<StatNumber
 										color={
@@ -420,7 +418,7 @@ export default function UsPortfolioMyPageSection() {
 						</CardHeader>
 
 						<CardBody>
-							<TableContainer>
+							<TableContainer maxW="100%" tabIndex={0} aria-label="미국 표 좌우 스크롤">
 								<Table size="sm">
 									<Thead>
 										<Tr>
@@ -579,7 +577,7 @@ export default function UsPortfolioMyPageSection() {
 						</CardHeader>
 
 						<CardBody>
-							<TableContainer>
+							<TableContainer maxW="100%" tabIndex={0} aria-label="미국 표 좌우 스크롤">
 								<Table size="sm">
 									<Thead>
 										<Tr>

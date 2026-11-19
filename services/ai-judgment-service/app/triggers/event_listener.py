@@ -10,7 +10,6 @@ from app.triggers.conditions import (
     price_move_exceeds, rsi_crossed_overbought_exit,
     supply_demand_flipped, volume_surged, ma_crossed, week52_extreme_hit,
 )
-from app.pipeline import run_judgment_pipeline
 
 _last_state: dict[str, dict] = {}
 _last_run_at: dict[str, float] = {}
@@ -43,17 +42,22 @@ def seed_state(symbol: str, tick: dict) -> None:
 
 async def on_market_tick(symbol: str, tick: dict):
     prev = _last_state.get(symbol, {})
+    if not prev:
+        seed_state(symbol, tick)
+        return
     triggered = (
         price_move_exceeds(prev.get("price", tick["price"]), tick["price"])
         or rsi_crossed_overbought_exit(prev.get("rsi_14", tick.get("rsi_14", 0)), tick.get("rsi_14", 0))
         or supply_demand_flipped(prev.get("foreign_net_flow", 0), tick.get("foreign_net_flow", 0))
-        or volume_surged(tick.get("volume_ratio"))
-        or ma_crossed(tick.get("golden_cross", False), tick.get("dead_cross", False))
-        or week52_extreme_hit(tick.get("week52_high", False), tick.get("week52_low", False))
+        or (volume_surged(tick.get("volume_ratio")) and not volume_surged(prev.get("volume_ratio")))
+        or (ma_crossed(tick.get("golden_cross", False), tick.get("dead_cross", False))
+            and not ma_crossed(prev.get("golden_cross", False), prev.get("dead_cross", False)))
+        or (week52_extreme_hit(tick.get("week52_high", False), tick.get("week52_low", False))
+            and not week52_extreme_hit(prev.get("week52_high", False), prev.get("week52_low", False)))
     )
-    _last_state[symbol] = tick
+    # 직전 조회가 아닌 마지막 분석 시점과 비교: 완만한 누적 변동도 놓치지 않는다.
     if not triggered or _cooldown_active(symbol):
         return
 
-    _last_run_at[symbol] = time.time()
-    await run_judgment_pipeline(symbol, tick)
+    from app.tracking.refresh import request_refresh
+    request_refresh(symbol, tick)

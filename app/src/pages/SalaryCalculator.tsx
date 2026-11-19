@@ -1510,7 +1510,7 @@ export default function SalaryCalculator() {
 					if (!silent) {
 						toast({
 							title:
-								"AI 플랜이 생성되었습니다.",
+								plan.result.source === "RULES" ? "규칙 기반 플랜이 생성되었습니다." : "AI 플랜이 생성되었습니다.",
 							description:
 								"현재 소비 패턴과 전역 목표를 반영했습니다.",
 							status:
@@ -4075,7 +4075,7 @@ export default function SalaryCalculator() {
 												fontSize="sm"
 												fontWeight="900"
 											>
-												AI 권장 비율 · 보조 지표
+												{aiResult?.source === "RULES" ? "규칙 기반 비율 · 입력값 기준" : "AI 권장 비율 · 보조 지표"}
 											</Text>
 
 											<Stack spacing="4">

@@ -2588,6 +2588,8 @@ export default function ScenarioPlay() {
 
 	const [finalEvaluation, setFinalEvaluation] =
 		useState<FinalEvaluation | null>(null);
+	const [isResultLoading, setIsResultLoading] = useState(false);
+	const [resultError, setResultError] = useState<string | null>(null);
 
 	const assets = turnView?.assets ?? [];
 	const portfolio = turnView?.portfolio;
@@ -2628,14 +2630,18 @@ export default function ScenarioPlay() {
 
 	const showFinalEvaluation = useCallback(
 		(evaluation: FinalEvaluation) => {
+			setResultError(null);
 			setFinalEvaluation(evaluation);
 			finalResultModal.onOpen();
 		},
-		[finalResultModal],
+		[finalResultModal.onOpen],
 	);
 
 	const loadResult = useCallback(async () => {
 		if (!sessionId) return;
+
+		setIsResultLoading(true);
+		setResultError(null);
 
 		try {
 			const result = (await scenarioService.getResult(
@@ -2645,6 +2651,9 @@ export default function ScenarioPlay() {
 			showFinalEvaluation(result);
 		} catch (error) {
 			console.error("최종 평가 조회 실패:", error);
+			setResultError(errorMessage(error, "저장된 최종 결과를 불러오지 못했습니다."));
+		} finally {
+			setIsResultLoading(false);
 		}
 	}, [sessionId, showFinalEvaluation]);
 
@@ -2666,6 +2675,9 @@ export default function ScenarioPlay() {
 				}
 
 				if (value?.finalizing) {
+					setTurnView(value);
+					setIsResultLoading(true);
+					setResultError(null);
 					try {
 						const finalized = (await scenarioService.finalize(
 							sessionId,
@@ -2673,6 +2685,9 @@ export default function ScenarioPlay() {
 						showFinalEvaluation(finalized);
 					} catch (error) {
 						console.error("최종화 재시도 실패:", error);
+						setResultError(errorMessage(error, "최종 결과 준비를 완료하지 못했습니다."));
+					} finally {
+						setIsResultLoading(false);
 					}
 					return;
 				}
@@ -3079,6 +3094,67 @@ export default function ScenarioPlay() {
 		);
 	}
 
+	// 완료된 세션에는 TURN 정보가 없으므로, 결과를 TURN 화면보다 먼저 표시한다.
+	if (finalEvaluation) {
+		return (
+			<Box minH="calc(100vh - 80px)" bg={UI.bg}>
+				<FinalResultModal
+					isOpen={finalResultModal.isOpen}
+					onClose={() => {
+						finalResultModal.onClose();
+						navigate("/scenario");
+					}}
+					evaluation={finalEvaluation}
+					onGoMyPage={() => navigate("/mypage")}
+				/>
+			</Box>
+		);
+	}
+
+	if (isResultLoading || resultError || turnView?.result_ready || turnView?.finalizing) {
+		const isLoading = isResultLoading || isTurnLoading;
+
+		return (
+			<Flex
+				minH="calc(100vh - 80px)"
+				bg={UI.bg}
+				align="center"
+				justify="center"
+				px="20px"
+			>
+				<Panel maxW="540px" w="100%" px="28px" py="30px" textAlign="center">
+					{isLoading ? (
+						<>
+							<Spinner color={UI.orange} thickness="3px" />
+							<Text mt="12px" fontSize="12px" color={UI.subtle}>
+								최종 결과를 불러오는 중입니다.
+							</Text>
+						</>
+					) : (
+						<>
+							<Heading fontSize="18px">최종 결과를 불러오지 못했습니다.</Heading>
+							<Text mt="9px" fontSize="12px" color={UI.subtle}>
+								{resultError ?? "다시 불러오기를 눌러 결과를 확인해주세요."}
+							</Text>
+							<Button
+								mt="18px"
+								variant="outline"
+								borderColor={UI.orange}
+								color={UI.orange}
+								onClick={() => void loadTurn()}
+							>
+								다시 불러오기
+							</Button>
+						</>
+					)}
+					<Button mt="18px" ml="8px" variant="ghost" onClick={() => navigate("/scenario")}>
+						시나리오 목록으로
+					</Button>
+				</Panel>
+			</Flex>
+		);
+	}
+
 	if (isTurnLoading && !turnView) {
 		return (
 			<Flex
@@ -3426,12 +3502,6 @@ export default function ScenarioPlay() {
 				isFinalTurn={progress.current_turn === progress.total_turns}
 			/>
 
-			<FinalResultModal
-				isOpen={finalResultModal.isOpen}
-				onClose={finalResultModal.onClose}
-				evaluation={finalEvaluation}
-				onGoMyPage={() => navigate("/mypage")}
-			/>
 		</Box>
 	);
 }

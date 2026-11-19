@@ -1,0 +1,57 @@
+ANTITUDE 학교 로컬 네트워크 접속 / 2026-11-17
+
+변경 사항
+- 학교 ZIP의 웹 서버: HOST=0.0.0.0, NETWORK_ACCESS=lan, PORT=3010.
+- 웹/API/WebSocket은 실제 소켓 주소를 기준으로 실행 PC와 연결된 사설 IPv4 서브넷만 허용.
+  X-Forwarded-For 헤더로 허용 범위를 우회하지 못하도록 처리.
+  알려진 가상/VPN 어댑터는 안내 주소와 허용 서브넷에서 제외.
+- Python 8000/8002/8003 및 Ollama 11434는 127.0.0.1에서만 수신.
+- 브라우저는 웹 서버 한 곳을 통해 API/AI를 사용. 방문 기기에는 별도 설치 불필요.
+- 기존 UI 배치·색상 변경 없음. AI 최근 결과 조회와 감시 heartbeat는 생성 요청용
+  낮은 호출 한도에서 제외하되 일반 API 호출 제한은 유지.
+- 다른 PC의 같은 포트 사용은 충돌하지 않음. 같은 서버 PC에서의 충돌은 시작 전에 안내.
+- .env.exhibition의 PORT를 변경하면 표시 주소와 방화벽 도우미가 같은 설정을 읽음.
+  자동으로 다른 포트를 선택하지 않으므로 안내 주소가 실행할 때마다 임의 변경되지 않음.
+
+학교에서 실행
+1. README-SCHOOL.txt 순서대로 Node.js / Python / Ollama 설치, setup-exhibition.bat 실행.
+2. 학교 Wi-Fi에 연결하고 enable-school-lan.bat을 관리자 권한으로 실행.
+3. start-exhibition.bat 실행. 별도 npm/uvicorn 콘솔은 불필요.
+4. show-school-address.bat의 Wi-Fi 주소를 같은 네트워크의 다른 기기에 입력.
+5. check-exhibition.bat에서 상태 확인.
+포트 변경: 전시 서버 종료 → .env.exhibition의 PORT 변경 → 방화벽 도우미 재실행 → 서버 시작.
+
+방화벽 범위
+- 도우미는 ANTITUDE-School-LAN-Web이라는 전용 규칙만 생성/수정/제거.
+- 현재 Node.js 실행 파일, 설정한 TCP 웹 포트, RemoteAddress=LocalSubnet으로 한정.
+- 학교 Wi-Fi가 Windows의 공용 네트워크 프로필이어도 적용되도록 Profile=Any 사용.
+  이는 인터넷 전체 허용이 아니라 LocalSubnet 주소 제한과 함께 적용됨.
+- 방화벽 끄기, 프로필 전체 변경, 공유기 설정, 포트 포워딩, 외부 터널은 실행하지 않음.
+- 이번 개발 PC 검증에서는 -WhatIf 미리보기만 실행했으며 실제 방화벽은 변경하지 않음.
+- 비활성화: 서버 종료, NETWORK_ACCESS=local 및 HOST=127.0.0.1 설정,
+  disable-school-lan.bat 관리자 실행 후 서버 재시작. 다른 앱의 방화벽 규칙은 유지.
+
+검증 결과
+- npm test: 73개 통과, 0개 실패. 네트워크 주소 판별/서브넷 경계/HTTP/WS 검사 포함.
+- 서버 TypeScript 빌드 성공. 프런트엔드 코드는 이번 네트워크 변경에서 수정하지 않음.
+- 현재 PC의 실제 Wi-Fi IPv4 주소로 웹, 직접 페이지 경로, 로그인, 계좌 조회,
+  과거 시나리오 목록, 국내/미국 순위 30행, 웹/판단 DB 연결 확인.
+- AI 저장 결과 연속 30회 조회 성공. 동일 출처 WebSocket 연결 성공,
+  다른 출처 WebSocket 연결 거부 확인. 테스트 가입 계정만 생성 후 삭제.
+- 3010 사용 중 중복 실행 시 명확한 오류 확인. 기존 실행 서버는 유지.
+- 별도 웹 테스트 서버를 3020으로 실행하여 웹/판단 DB health 정상 확인 후 종료.
+- 방화벽 도우미는 3010 및 변경한 3020 설정을 정확히 읽는 -WhatIf 검사 통과.
+- 최종 리스너: 웹 0.0.0.0:3010, AI/Python/Ollama 127.0.0.1.
+
+검증의 한계
+- 다른 물리적 PC/휴대폰 또는 학교 Wi-Fi에서는 아직 실제 접속을 시험하지 못함.
+  현재 PC에서 자기 Wi-Fi 주소로 HTTP/브라우저 접근한 결과임.
+- 같은 SSID여도 AP 격리, VLAN/서브넷 분리 또는 학교 보안 정책으로 접속이 차단될 수 있음.
+  이 경우 학교 담당자가 허용한 전시용 네트워크가 필요함.
+- 웹 공유가 외부 API/Atlas의 인터넷 연결을 대신하지는 않음.
+- 이번 작업은 네트워크 변경 검증. 이전 환전/매매/실제 AI 통합 검증 기록은
+  INTEGRATION-20261117.txt와 ALWAYS-WATCH-20261117.txt를 함께 참고.
+- 기존 프런트 전체 타입 검사 오류는 별도 미해결 사항이며 이번 성공 항목에 포함하지 않음.
+
+Windows 방화벽 공식 참고
+https://learn.microsoft.com/en-us/powershell/module/netsecurity/new-netfirewallrule?view=windowsserver2025-ps

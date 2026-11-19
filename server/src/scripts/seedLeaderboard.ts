@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 
-import "../utils/db";
+import { connectDatabase } from "../utils/db";
+const databaseReady = connectDatabase();
 
 import User from "../models/user.model";
 import MilitaryProfile, {
@@ -314,7 +315,7 @@ async function removeStaleDemoUsers(
 }
 
 async function seedLeaderboard(): Promise<void> {
-	await mongoose.connection.asPromise();
+	await databaseReady;
 
 	const definitions =
 		buildDemoDefinitions();

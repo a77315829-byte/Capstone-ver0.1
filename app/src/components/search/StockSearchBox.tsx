@@ -2,7 +2,6 @@ import {
 	Badge,
 	Box,
 	Button,
-	ButtonGroup,
 	Flex,
 	Input,
 	InputGroup,
@@ -220,12 +219,12 @@ function normalizeResults(
 
 export default function StockSearchBox({
 	marketType,
-	onMarketTypeChange,
 	onSelect,
 	compact = false,
 	placeholder,
 }: StockSearchBoxProps) {
 	const toast = useToast();
+	const searchRequest = useRef<AbortController | null>(null);
 	const containerRef =
 		useRef<HTMLDivElement | null>(
 			null,
@@ -243,9 +242,12 @@ export default function StockSearchBox({
 		useState(false);
 
 	useEffect(() => {
+		searchRequest.current?.abort();
+		setIsSearching(false);
 		setQuery("");
 		setResults([]);
 		setIsOpen(false);
+		return () => searchRequest.current?.abort();
 	}, [marketType]);
 
 	useEffect(() => {
@@ -276,14 +278,18 @@ export default function StockSearchBox({
 	}, []);
 
 	const runSearch = async () => {
+		searchRequest.current?.abort();
 		const keyword = query.trim();
 
 		if (!keyword) {
+			setIsSearching(false);
 			setResults([]);
 			setIsOpen(false);
 			return;
 		}
 
+		const controller = new AbortController();
+		searchRequest.current = controller;
 		try {
 			setIsSearching(true);
 
@@ -297,7 +303,8 @@ export default function StockSearchBox({
 						)}`;
 
 			const response =
-				await api.get(endpoint);
+				await api.get(endpoint, { signal: controller.signal, timeout: 15000 });
+			if (controller.signal.aborted) return;
 
 			const nextResults =
 				normalizeResults(
@@ -324,6 +331,7 @@ export default function StockSearchBox({
 				});
 			}
 		} catch (error: any) {
+			if (controller.signal.aborted) return;
 			console.error(
 				"종목 검색 실패:",
 				error,
@@ -341,13 +349,15 @@ export default function StockSearchBox({
 				isClosable: true,
 			});
 		} finally {
-			setIsSearching(false);
+			if (!controller.signal.aborted) setIsSearching(false);
 		}
 	};
 
 	const selectResult = (
 		stock: StockSearchSelection,
 	) => {
+		searchRequest.current?.abort();
+		setIsSearching(false);
 		setQuery(stock.name);
 		setResults([]);
 		setIsOpen(false);
@@ -391,7 +401,7 @@ export default function StockSearchBox({
 							/>
 						</InputLeftElement>
 
-						<Input
+						<Input aria-label="종목명 또는 종목코드 검색"
 							h={compact
 								? "40px"
 								: "44px"}
@@ -461,12 +471,7 @@ export default function StockSearchBox({
 				<Box
 					position="absolute"
 					top="calc(100% + 8px)"
-					left={{
-						base: 0,
-						md: compact
-							? "104px"
-							: "156px",
-					}}
+					left="0"
 					right="0"
 					zIndex={1700}
 					bg="white"
