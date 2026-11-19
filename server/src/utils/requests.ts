@@ -1,4 +1,5 @@
 import Cache from "node-cache";
+import { financialNumber, financialCacheTtlMs } from "./financialData";
 import axios from "axios";
 import dotenv from "dotenv";
 import * as zlib from "zlib";
@@ -6,6 +7,11 @@ import { TextDecoder } from "util";
 import * as fs from "fs";
 import * as path from "path";
 import { domesticTimestamp } from "./kisRealtime";
+import { krExtendedQuote, usExtendedQuote, isFreshSessionQuote, ExtendedQuote } from './extendedQuote';
+import { getKrxMarketStatus } from '../services/marketSession.service';
+import { getUsMarketStatus } from '../services/usMarketSession.service';
+import { US_INTRADAY_MINUTES, parseUsIntradayRows } from "./usIntraday";
+import type { RankingSort } from './marketOverview';
 
 import {
 	US_EXCHANGE_NAME,
@@ -151,12 +157,12 @@ export const normalizeStockSymbol = (symbol: string): string => {
 		.toUpperCase()
 		.replace(/\.(KS|KQ)$/, "");
 
-	const domesticCode = normalized.match(/^Q?(\d{6})/);
+	const domesticCode = normalized.match(/^Q?(\d[A-Z0-9]{5})$/);
 	return domesticCode ? domesticCode[1] : normalized;
 };
 
 const isKisQuoteSupportedSymbol = (symbol: string): boolean => {
-	return /^\d{6}$/.test(symbol);
+	return /^\d[A-Z0-9]{5}$/.test(symbol);
 };
 
 const getKisErrorMessage = (error: any): string => {
@@ -257,6 +263,7 @@ const requestNewKisAccessToken = async (
 				appsecret: appSecret,
 			},
 			{
+				timeout: 10000,
 				headers: {
 					"Content-Type": "application/json",
 					Accept: "application/json",
@@ -328,6 +335,7 @@ const kisGet = async <T>(
 	pathName: string,
 	trId: string,
 	params: Record<string, string>,
+	timeoutMs?: number,
 ): Promise<KisResponse<T>> => {
 	return enqueueKisRequest(async () => {
 		const runRequest = async (): Promise<KisResponse<T>> => {
@@ -335,6 +343,7 @@ const kisGet = async <T>(
 			const accessToken = await getKisAccessToken();
 
 			const res = await axios.get<KisResponse<T>>(`${baseUrl}${pathName}`, {
+				timeout: timeoutMs ?? 10000,
 				params,
 				headers: {
 					"Content-Type": "application/json; charset=utf-8",
@@ -712,6 +721,7 @@ export const fetchStockData = async (symbol: string): Promise<any> => {
 
 			market: masterStock?.market || stockInfo?.mket_id_cd || "KRX",
 			assetType: masterStock?.assetType || "STOCK",
+			extendedEligible: masterStock?.assetType === 'STOCK' && quote.temp_stop_yn === 'N' && quote.vi_cls_code !== 'Y' && quote.ovtm_vi_cls_code !== 'Y' && quote.mang_issu_cls_code !== 'Y' && !['02', '03'].includes(quote.mrkt_warn_cls_code),
 			tradable: true,
 
 			price: regularMarketPrice,
@@ -878,9 +888,9 @@ const pickNumber = (source: any, keys: string[]): number | null => {
 		const value = source[key];
 
 		if (value !== undefined && value !== null && value !== "") {
-			const parsed = parseNumber(value);
+			const parsed = financialNumber(value);
 
-			if (Number.isFinite(parsed)) {
+			if (parsed !== null) {
 				return parsed;
 			}
 		}
@@ -912,19 +922,11 @@ const fetchFinanceEndpoint = async (
 ): Promise<any | null> => {
 	try {
 		const res = await kisGet<any>(pathName, trId, {
-			FID_COND_MRKT_DIV_CODE: KIS_MARKET_DIV_CODE,
-			FID_INPUT_ISCD: symbol,
-			FID_DIV_CLS_CODE: "0",
+			// The finance APIs use case-sensitive parameter names (KIS official samples).
+			fid_cond_mrkt_div_code: KIS_MARKET_DIV_CODE,
+			fid_input_iscd: symbol,
+			[trId === "FHKST66430500" ? "fid_div_cls_code" : "FID_DIV_CLS_CODE"]: "0",
 		});
-
-		console.log("================================");
-		console.log("PATH:", pathName);
-		console.log("TR_ID:", trId);
-		console.log(
-			"OUTPUT:",
-			JSON.stringify(firstOutput(res), null, 2),
-		);
-		console.log("================================");
 
 		return firstOutput(res);
 	} catch (error: any) {
@@ -1042,7 +1044,7 @@ export const fetchStockFinancialData = async (symbol: string): Promise<any> => {
 		fetchedAt: new Date().toISOString(),
 	};
 
-	stockCache.set(cacheKey, financialData, 60 * 60 * 6);
+	stockCache.set(cacheKey, financialData, financialCacheTtlMs(financialData) / 1000);
 
 	return financialData;
 };
@@ -1294,16 +1296,18 @@ const fetchMasterFile = async (
 	return text
 		.split(/\r?\n/)
 		.map((row) => {
-			const header = row.slice(0, Math.max(row.length - tailLength, 0));
+			// Official Python widths include the newline; split() above has removed it.
+			const header = row.slice(0, Math.max(row.length - (tailLength - 1), 0));
+			const group = row.slice(-(tailLength - 1), -(tailLength - 3));
 			const symbol = header.slice(0, 9).trim();
 			const name = header.slice(21).trim();
-			const tradable = /^\d{6}$/.test(symbol);
+			const tradable = /^\d[A-Z0-9]{5}$/.test(symbol);
 
 			return {
 				symbol,
 				name,
 				market,
-				assetType: tradable ? "STOCK" : "UNKNOWN",
+				assetType: group === 'EF' ? 'ETF' : group === 'EN' ? 'ETN' : group === 'ST' ? 'STOCK' : 'UNKNOWN',
 				tradable,
 			};
 		})
@@ -1386,7 +1390,7 @@ export const searchStocks = async (query: string): Promise<any> => {
 			return results;
 		}
 
-		if (/^Q?\d{6}$/.test(normalizedQuery)) {
+		if (/^Q?\d[A-Z0-9]{5}$/.test(normalizedQuery)) {
 			const normalizedSymbol = normalizeStockSymbol(normalizedQuery);
 			const info = await fetchExactStockInfo(normalizedSymbol).catch(() => null);
 
@@ -1417,6 +1421,7 @@ export const searchStocks = async (query: string): Promise<any> => {
 };
 
 export type UsChartPeriod =
+	| keyof typeof US_INTRADAY_MINUTES
 	| "1m"
 	| "6m"
 	| "1y";
@@ -1592,9 +1597,7 @@ export const searchUsStocks = async (
 					item.nameKo ||
 					item.name,
 				longname: item.name,
-				name: item.nameKo
-					? `${item.nameKo} (${item.name})`
-					: item.name,
+				name: item.nameKo || item.name,
 				exchange: item.exchange,
 				exchDisp: item.market,
 				market: item.market,
@@ -1927,6 +1930,10 @@ export const fetchUsStockData = async (
 				: "STOCK"
 		);
 
+	const extendedStatus = getUsMarketStatus();
+	const extendedQuote = ['PRE', 'POST'].includes(extendedStatus.sessionType)
+		? await fetchUsExtendedQuote(normalizedSymbol, actualExchange).catch(() => null) : null;
+	const displayPrice = extendedQuote?.price ?? price;
 	const result = {
 		symbol: normalizedSymbol,
 		name,
@@ -1955,10 +1962,10 @@ export const fetchUsStockData = async (
 			null,
 		tradable: true,
 
-		price,
-		changePrice,
-		changeRate,
-		previousClose,
+		price: displayPrice,
+		changePrice: extendedQuote && previousClose > 0 ? displayPrice - previousClose : changePrice,
+		changeRate: extendedQuote && previousClose > 0 ? (displayPrice - previousClose) / previousClose * 100 : changeRate,
+		previousClose, extendedQuote,
 
 		open:
 			parseNumber(
@@ -2123,6 +2130,22 @@ export const fetchUsHistoricalStockData =
 				? period
 				: "1m";
 
+		if (Object.prototype.hasOwnProperty.call(US_INTRADAY_MINUTES, period)) {
+			if (!normalizedSymbol) throw createHttpError(400, "미국 종목 티커가 필요합니다.");
+			const minuteKey = `us-intraday-${exchange}-${normalizedSymbol}-${period}`;
+			const cached = stockCache.get<OhlcvPoint[]>(minuteKey);
+			if (cached) return cached;
+			const response = await kisGet<any>(
+				"/uapi/overseas-price/v1/quotations/inquire-time-itemchartprice", "HHDFS76950200",
+				{ AUTH: "", EXCD: exchange, SYMB: normalizedSymbol,
+					NMIN: String(US_INTRADAY_MINUTES[period as keyof typeof US_INTRADAY_MINUTES]),
+					PINC: "1", NEXT: "", NREC: "120", FILL: "", KEYB: "" },
+			);
+			const points = parseUsIntradayRows(response.output2);
+			stockCache.set(minuteKey, points, 10);
+			return points;
+		}
+
 		if (!normalizedSymbol) {
 			throw createHttpError(
 				400,
@@ -2285,7 +2308,7 @@ const getSeoulTimeText = (): string => {
 	const numeric = Number(raw);
 
 	if (!Number.isFinite(numeric) || numeric < 90000) return "090000";
-	if (numeric > 153000) return "153000";
+	if (numeric > 200000) return "200000";
 	return raw;
 };
 
@@ -2300,6 +2323,43 @@ const directionFromSign = (signCode: unknown, change: number): PriceDirection =>
 	if (sign === "1" || sign === "2" || change > 0) return "UP";
 	return "FLAT";
 };
+
+export async function fetchKrxExtendedQuote(symbol: string): Promise<ExtendedQuote | null> {
+ const status = getKrxMarketStatus();
+ if (status.sessionType !== 'POST') return null;
+ const code = normalizeStockSymbol(symbol);
+ const key = `extended-kr-${code}`;
+ const cached = stockCache.get<ExtendedQuote>(key);
+ if (cached && isFreshSessionQuote(cached, status, new Date())) return cached;
+ const stock = await fetchStockData(code);
+ if (!stock?.extendedEligible) return null;
+ // Always KRX (J), never mix NXT executions into KRX aftermarket fills.
+ const hour = getSeoulTimeText();
+ const bars = await kisGet<any>('/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice', 'FHKST03010200', {
+  FID_COND_MRKT_DIV_CODE: 'J', FID_INPUT_ISCD: code, FID_INPUT_HOUR_1: hour, FID_PW_DATA_INCU_YN: 'N', FID_ETC_CLS_CODE: '',
+ });
+ const trades = await kisGet<any>('/uapi/domestic-stock/v1/quotations/inquire-time-itemconclusion', 'FHPST01060000', {
+  FID_COND_MRKT_DIV_CODE: 'J', FID_INPUT_ISCD: code, FID_INPUT_HOUR_1: getSeoulTimeText(),
+ });
+ const quote = krExtendedQuote(trades.output2, bars.output2, getKrxMarketStatus(), new Date());
+ if (quote) stockCache.set(key, quote, 5);
+ return quote;
+}
+
+export async function fetchUsExtendedQuote(symbol: string, exchangeInput: string): Promise<ExtendedQuote | null> {
+ const status = getUsMarketStatus();
+ if (!['PRE', 'POST'].includes(status.sessionType)) return null;
+ const exchange = assertUsExchange(exchangeInput), code = normalizeUsStockSymbol(symbol);
+ const key = `extended-us-${exchange}-${code}`;
+ const cached = stockCache.get<ExtendedQuote>(key);
+ if (cached && isFreshSessionQuote(cached, status, new Date())) return cached;
+ const response = await kisGet<any>('/uapi/overseas-price/v1/quotations/inquire-time-itemchartprice', 'HHDFS76950200', {
+  AUTH: '', EXCD: exchange, SYMB: code, NMIN: '1', PINC: '0', NEXT: '', NREC: '5', FILL: '', KEYB: '',
+ });
+ const quote = usExtendedQuote(response.output2, getUsMarketStatus(), new Date());
+ if (quote) stockCache.set(key, quote, 5);
+ return quote;
+}
 
 export const fetchDomesticExecutionData = async (
 	symbol: string,
@@ -2583,11 +2643,7 @@ export const fetchUsExecutionData = async (
 		{ EXCD: exchange, TDAY: day, SYMB: normalizedSymbol, AUTH: "", KEYB: "" },
 	);
 
-	const rows = Array.isArray(response.output1)
-		? response.output1
-		: response.output1
-			? [response.output1]
-			: [];
+	const rows = Array.isArray(response.output2) ? response.output2 : [];
 
 	const items = rows
 		.map((item: any): UsExecutionItem => {
@@ -2619,3 +2675,53 @@ export const fetchUsExecutionData = async (
 	stockCache.set(cacheKey, data, 5);
 	return data;
 };
+
+// KIS official master: X / FX@KRW = KRW per USD.
+export async function fetchUsdKrwQuotation() {
+    const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0,10).replace(/-/g, '');
+    const start = new Date(Date.now() - 7 * 86400000).toISOString().slice(0,10).replace(/-/g, '');
+    const data = await kisGet<any>('/uapi/overseas-price/v1/quotations/inquire-daily-chartprice', 'FHKST03030100', {
+        FID_COND_MRKT_DIV_CODE: 'X', FID_INPUT_ISCD: 'FX@KRW', FID_INPUT_DATE_1: start,
+        FID_INPUT_DATE_2: today, FID_PERIOD_DIV_CODE: 'D',
+    }, 8000);
+    const rows = Array.isArray(data.output2) ? data.output2 : [];
+    const latest = rows.filter((row: any) => /^\d{8}$/.test(row.stck_bsop_date || '') && Number(row.ovrs_nmix_prpr) > 0)
+        .sort((a: any,b: any) => String(b.stck_bsop_date).localeCompare(String(a.stck_bsop_date)))[0];
+    const stamp = String(latest?.stck_bsop_date || '');
+    return { rate: Number(data.output1?.ovrs_nmix_prpr), date: `${stamp.slice(0,4)}-${stamp.slice(4,6)}-${stamp.slice(6,8)}` };
+}
+
+export async function fetchKrMarketRanking(sort: RankingSort = 'volume') {
+    if (sort === 'gainers' || sort === 'losers') return kisGet<any>('/uapi/domestic-stock/v1/ranking/fluctuation', 'FHPST01700000', {
+        FID_COND_MRKT_DIV_CODE: 'J', FID_COND_SCR_DIV_CODE: '20170', FID_INPUT_ISCD: '0000',
+        // 1 compares with the previous close; 0 ranks against intraday low/high.
+        FID_RANK_SORT_CLS_CODE: sort === 'gainers' ? '0' : '1', FID_INPUT_CNT_1: '0', FID_PRC_CLS_CODE: '1',
+        FID_INPUT_PRICE_1: '', FID_INPUT_PRICE_2: '', FID_VOL_CNT: '', FID_TRGT_CLS_CODE: '0',
+        FID_TRGT_EXLS_CLS_CODE: '0', FID_DIV_CLS_CODE: '0', FID_RSFL_RATE1: '', FID_RSFL_RATE2: '',
+    }, 10000);
+    return kisGet<any>('/uapi/domestic-stock/v1/quotations/volume-rank', 'FHPST01710000', {
+        FID_COND_MRKT_DIV_CODE: 'J', FID_COND_SCR_DIV_CODE: '20171', FID_INPUT_ISCD: '0000',
+        FID_DIV_CLS_CODE: '0', FID_BLNG_CLS_CODE: sort === 'turnover' ? '3' : '0', FID_TRGT_CLS_CODE: '111111111',
+        FID_TRGT_EXLS_CLS_CODE: '0000000000', FID_INPUT_PRICE_1: '', FID_INPUT_PRICE_2: '',
+        FID_VOL_CNT: '', FID_INPUT_DATE_1: '',
+    }, 10000);
+}
+export async function fetchUsMarketRanking(exchange: UsExchangeCode, sort: RankingSort = 'volume', period: '0' | '1' = '0') {
+    if (sort === 'gainers' || sort === 'losers') return kisGet<any>('/uapi/overseas-stock/v1/ranking/updown-rate', 'HHDFS76290000', {
+        EXCD: exchange, NDAY: period, GUBN: sort === 'gainers' ? '1' : '0', VOL_RANG: '0', KEYB: '', AUTH: '',
+    }, 10000);
+    return kisGet<any>(`/uapi/overseas-stock/v1/ranking/${sort === 'turnover' ? 'trade-pbmn' : 'trade-vol'}`, sort === 'turnover' ? 'HHDFS76320010' : 'HHDFS76310010', {
+        EXCD: exchange, NDAY: period, VOL_RANG: '0', KEYB: '', AUTH: '', PRC1: '', PRC2: '',
+    }, 10000);
+}
+export async function fetchMarketIndex(code: string, domestic: boolean) {
+    if (domestic) return kisGet<any>('/uapi/domestic-stock/v1/quotations/inquire-index-price', 'FHPUP02100000', {
+        FID_COND_MRKT_DIV_CODE: 'U', FID_INPUT_ISCD: code,
+    }, 10000);
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const start = new Date(Date.now() - 45 * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
+    return kisGet<any>('/uapi/overseas-price/v1/quotations/inquire-daily-chartprice', 'FHKST03030100', {
+        FID_COND_MRKT_DIV_CODE: 'N', FID_INPUT_ISCD: code, FID_INPUT_DATE_1: start,
+        FID_INPUT_DATE_2: today, FID_PERIOD_DIV_CODE: 'D',
+    }, 10000);
+}

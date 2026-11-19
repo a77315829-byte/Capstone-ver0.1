@@ -1,3 +1,4 @@
+import Legal from "./pages/Legal";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import AppLayout from "./layouts/AppLayout";
@@ -33,6 +34,8 @@ function EntryRoute() {
 function App() {
 	return (
 		<Routes>
+            <Route path="/privacy" element={<Legal type="privacy" />} />
+            <Route path="/terms" element={<Legal type="terms" />} />
 			<Route path="/login" element={<Login />} />
 			<Route path="/signup" element={<Signup />} />
 

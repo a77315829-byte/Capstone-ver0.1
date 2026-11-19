@@ -1,3 +1,6 @@
+import type { RealizedDay, HoldingDay } from "../utils/performanceChart";
+import PerformanceChart from "../components/PerformanceChart";
+import { usePortfolioRefresh } from "../hooks/usePortfolioRefresh";
 import React, {
 	useCallback,
 	useEffect,
@@ -60,6 +63,9 @@ type TradingAccountSummary = {
 	reservedCash: number;
 	availableCash: number;
 	initialCash: number;
+	investedCapital?: number;
+	unrealizedProfitLossRate?: number;
+	isEvaluated?: boolean;
 	currency?: string;
 	totalAsset?: number;
 	totalEvaluationAmount?: number;
@@ -88,6 +94,15 @@ type PortfolioHolding = {
 type PortfolioData = {
 	account: TradingAccountSummary;
 	holdings: PortfolioHolding[];
+	performance?: { filledTradeCount: number; realizedProfit: number; payoffRatio: number | null; history: RealizedDay[] };
+};
+
+type CombinedPerformance = {
+ totalCash: number; holdingBuyAmount: number; holdingEvaluationAmount: number; holdingProfitLoss: number; holdingReturnRate: number | null;
+ realizedProfitLoss: number; holdingsHistory: HoldingDay[]; historyWarning: string | null;
+ totalAsset: number; totalProfitLoss: number; totalProfitLossRate: number; investedCapital: number;
+ filledTradeCount: number; holdingCount: number; isEvaluated: boolean; history: RealizedDay[]; firstDate: string; computedAt: string;
+ exchangeRate: { rate: number; date: string; stale: boolean } | null;
 };
 
 type TradeOrderData = {
@@ -219,169 +234,13 @@ function StatCell({
 				fontSize={{ base: "17px", xl: "20px" }}
 				fontWeight="900"
 				color={color}
-				whiteSpace="nowrap"
-				overflow="hidden"
+				whiteSpace={{ base: "normal", md: "nowrap" }}
+				wordBreak="break-word"
+				overflow={{ base: "visible", md: "hidden" }}
 				textOverflow="ellipsis"
 			>
 				{value}
 			</Text>
-		</Box>
-	);
-}
-
-function PerformanceChart({
-	orders,
-	initialCash,
-	period,
-}: {
-	orders: TradeOrderData[];
-	initialCash: number;
-	period: PeriodKey;
-}) {
-	const points = useMemo(() => {
-		const selectedPeriod = periodOptions.find((item) => item.key === period);
-		const cutoff = selectedPeriod?.days
-			? Date.now() - selectedPeriod.days * 24 * 60 * 60 * 1000
-			: 0;
-
-		const filled = orders
-			.filter((order) => order.status === "FILLED")
-			.filter((order) => {
-				const date = new Date(
-					order.executedAt ?? order.createdAt,
-				).getTime();
-				return cutoff === 0 || date >= cutoff;
-			})
-			.sort(
-				(first, second) =>
-					new Date(
-						first.executedAt ?? first.createdAt,
-					).getTime() -
-					new Date(
-						second.executedAt ?? second.createdAt,
-					).getTime(),
-			);
-
-		let cumulativeProfit = 0;
-		const result = filled.map((order, index) => {
-			cumulativeProfit += Number(order.realizedProfit ?? 0);
-			return {
-				label: new Date(
-					order.executedAt ?? order.createdAt,
-				).toLocaleDateString("ko-KR", {
-					month: "2-digit",
-					day: "2-digit",
-				}),
-				value:
-					initialCash > 0
-						? (cumulativeProfit / initialCash) * 100
-						: 0,
-				index,
-			};
-		});
-
-		if (result.length === 0) {
-			return [
-				{ label: "시작", value: 0, index: 0 },
-				{ label: "현재", value: 0, index: 1 },
-			];
-		}
-
-		return [{ label: "시작", value: 0, index: -1 }, ...result];
-	}, [orders, initialCash, period]);
-
-	const width = 820;
-	const height = 250;
-	const padding = {
-		top: 24,
-		right: 22,
-		bottom: 34,
-		left: 45,
-	};
-	const values = points.map((point) => point.value);
-	const minValue = Math.min(-4, Math.floor(Math.min(...values) - 1));
-	const maxValue = Math.max(8, Math.ceil(Math.max(...values) + 1));
-	const range = maxValue - minValue || 1;
-	const chartWidth = width - padding.left - padding.right;
-	const chartHeight = height - padding.top - padding.bottom;
-	const x = (index: number) =>
-		padding.left +
-		(index / Math.max(points.length - 1, 1)) * chartWidth;
-	const y = (value: number) =>
-		padding.top + ((maxValue - value) / range) * chartHeight;
-	const path = points
-		.map(
-			(point, index) =>
-				`${index === 0 ? "M" : "L"}${x(index)} ${y(point.value)}`,
-		)
-		.join(" ");
-
-	return (
-		<Box w="100%" overflowX="auto">
-			<svg
-				width="100%"
-				height="250"
-				viewBox={`0 0 ${width} ${height}`}
-				preserveAspectRatio="none"
-			>
-				{[-4, -2, 0, 2, 4, 6, 8].map((tick) => {
-					if (tick < minValue || tick > maxValue) return null;
-					return (
-						<g key={tick}>
-							<line
-								x1={padding.left}
-								x2={width - padding.right}
-								y1={y(tick)}
-								y2={y(tick)}
-								stroke="#EEE4D8"
-								strokeWidth="1"
-							/>
-							<text
-								x="6"
-								y={y(tick) + 4}
-								fontSize="11"
-								fill="#827A72"
-							>
-								{tick > 0 ? "+" : ""}
-								{tick}%
-							</text>
-						</g>
-					);
-				})}
-
-				<path
-					d={path}
-					fill="none"
-					stroke="#F66B24"
-					strokeWidth="2"
-					strokeLinejoin="round"
-					strokeLinecap="round"
-				/>
-
-				{points.map((point, index) => (
-					<g key={`${point.label}-${index}`}>
-						<circle
-							cx={x(index)}
-							cy={y(point.value)}
-							r="4"
-							fill="#F66B24"
-						/>
-						{(index === 0 ||
-							index === points.length - 1 ||
-							index % 3 === 0) && (
-							<text
-								x={x(index)}
-								y={height - 8}
-								fontSize="10"
-								textAnchor="middle"
-								fill="#827A72"
-							>
-								{point.label}
-							</text>
-						)}
-					</g>
-				))}
-			</svg>
 		</Box>
 	);
 }
@@ -593,6 +452,8 @@ export default function MyPage() {
 	const username = tokens.getUsername() ?? "훈련생";
 
 	const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
+	const [combined, setCombined] = useState<CombinedPerformance | null>(null);
+	const [combinedWarning, setCombinedWarning] = useState<string | null>(null);
 	const [tradeOrders, setTradeOrders] = useState<TradeOrderData[]>([]);
 	const [scenarioProgress, setScenarioProgress] =
 		useState<ScenarioUserProgress | null>(null);
@@ -600,6 +461,7 @@ export default function MyPage() {
 		getCachedQuizProgress(username, TOTAL_QUIZ_COUNT),
 	);
 	const [isLoading, setIsLoading] = useState(true);
+	const [loadError, setLoadError] = useState<string | null>(null);
 	const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
 	const [period, setPeriod] = useState<PeriodKey>("7d");
 
@@ -624,28 +486,32 @@ export default function MyPage() {
 
 			const [portfolioResponse, orderResponse, scenarioData] =
 				await Promise.all([
-					api.get("/trading/portfolio?evaluate=true"),
+					api.get("/trading/performance"),
 					api.get("/trading/orders?limit=50"),
 					scenarioRequest,
 				]);
 
-			const portfolioData = unwrapApiData<PortfolioData>(
-				portfolioResponse.data,
-			);
+			const combinedData = unwrapApiData<{ domestic: PortfolioData; combined: CombinedPerformance | null; warning: string | null }>(portfolioResponse.data);
+			const portfolioData = combinedData.domestic;
+			setCombined(combinedData.combined);
+			setCombinedWarning(combinedData.warning);
 			const orderData = unwrapApiData<TradeOrderData[]>(orderResponse.data);
 
 			setPortfolio({
 				account: portfolioData.account,
+				performance: portfolioData.performance,
 				holdings: Array.isArray(portfolioData.holdings)
 					? portfolioData.holdings
 					: [],
 			});
 			setTradeOrders(Array.isArray(orderData) ? orderData : []);
-			setScenarioProgress(scenarioData);
+			if (scenarioData) setScenarioProgress(scenarioData);
 			await refreshQuizProgress();
 			setLastUpdatedAt(new Date());
+			setLoadError(null);
 		} catch (error: any) {
 			console.error("마이페이지 데이터 조회 실패:", error);
+			setLoadError("현재 데이터를 불러오지 못했습니다. 마지막 조회 결과가 있으면 그대로 표시합니다.");
 
 			if (error?.response?.status === 401) {
 				toast({
@@ -672,9 +538,7 @@ export default function MyPage() {
 		}
 	}, [navigate, refreshQuizProgress, toast, username]);
 
-	useEffect(() => {
-		void loadMyPageData();
-	}, [loadMyPageData]);
+	usePortfolioRefresh(loadMyPageData, "ALL");
 
 	useEffect(() => {
 		const handleProgressUpdated = () => {
@@ -743,13 +607,8 @@ export default function MyPage() {
 			? (getHoldingValue(largestHolding) / totalAsset) * 100
 			: 0;
 	const cashRatio = totalAsset > 0 ? (cash / totalAsset) * 100 : 0;
-	const averageHoldingRate =
-		holdings.length > 0
-			? holdings.reduce(
-					(sum, holding) => sum + holding.profitLossRate,
-					0,
-				) / holdings.length
-			: 0;
+	const averageHoldingRate = Number(account?.unrealizedProfitLossRate ?? 0);
+	const filledTradeCount = portfolio?.performance?.filledTradeCount ?? filledOrders.length;
 	const bestHolding = [...holdings].sort(
 		(first, second) =>
 			second.profitLossRate - first.profitLossRate,
@@ -792,6 +651,8 @@ export default function MyPage() {
 		);
 	}
 
+	if (!portfolio) return <Box p="6"><Text role="alert">{loadError ?? "계좌 정보를 확인할 수 없습니다."}</Text><Button mt="3" onClick={() => void loadMyPageData()}>다시 불러오기</Button></Box>;
+
 	return (
 		<Box
 			w="100%"
@@ -821,22 +682,24 @@ export default function MyPage() {
 					variant="outline"
 					leftIcon={<RepeatIcon />}
 					isLoading={isLoading}
-					onClick={() => void loadMyPageData()}
+					onClick={() => window.dispatchEvent(new Event("antitude:mypage-refresh"))}
 				>
 					새로고침
 				</Button>
 			</Flex>
 
+			{loadError && <Text role="alert" color="orange.700" fontSize="sm" mb="3">{loadError}</Text>}
+			{account?.isEvaluated === false && <Text role="status" color="orange.700" fontSize="sm" mb="3">일부 현재가를 불러오지 못해 매입가로 임시 계산했습니다. 새로고침 후 평가손익을 확인해 주세요.</Text>}
 			<Grid
-				templateColumns={{ base: "1fr", xl: "540px minmax(0, 1fr)" }}
+				templateColumns={{ base: "minmax(0, 1fr)", xl: "540px minmax(0, 1fr)" }}
 				gap="18px"
 				mb="18px"
 			>
-				<Card>
+				<Card minW="0">
 					<CardBody p="22px">
-						<Flex align="center" gap="22px">
+						<Flex align="center" gap={{ base: "12px", md: "22px" }}>
 							<Avatar
-								size="xl"
+								size={{ base: "md", md: "xl" }}
 								name={username}
 								bg="#D9D9D9"
 								color="gray.700"
@@ -851,13 +714,13 @@ export default function MyPage() {
 									fontSize="12px"
 									color="app.subtleText"
 								>
-									<Flex gap="18px">
+									<Flex gap={{ base: "6px", md: "18px" }} wrap={{ base: "wrap", md: "nowrap" }}>
 										<Text minW="72px">계정 ID</Text>
 										<Text fontWeight="700" noOfLines={1}>
 											{account?.userId ?? "-"}
 										</Text>
 									</Flex>
-									<Flex gap="18px">
+									<Flex gap={{ base: "6px", md: "18px" }} wrap={{ base: "wrap", md: "nowrap" }}>
 										<Text minW="72px">계정 유형</Text>
 										<Text fontWeight="700">
 											모의투자 학습 계정
@@ -869,37 +732,37 @@ export default function MyPage() {
 					</CardBody>
 				</Card>
 
-				<Card>
+				<Card minW="0">
 					<CardBody p="20px 8px">
 						<SimpleGrid
 							columns={{ base: 2, md: 3, "2xl": 5 }}
-							spacing="0"
+							spacingX="0" spacingY={{ base: "18px", md: "0" }}
 						>
 							<StatCell
-								label="총 자산(국내 모의자산)"
-								value={won.format(totalAsset)}
+								label="총 자산(국내·미국 합산)"
+								value={combined ? won.format(combined.totalAsset) : "-"}
 							/>
 							<StatCell
-								label="총 수익률"
-								value={`${totalProfitRate >= 0 ? "+" : ""}${totalProfitRate.toFixed(2)}%`}
+								label="보유 수익률(국내·미국)"
+								value={combined?.holdingReturnRate != null ? `${combined.holdingReturnRate >= 0 ? "+" : ""}${combined.holdingReturnRate.toFixed(2)}%` : "-"}
 								accent={
-									totalProfitRate >= 0 ? "positive" : "negative"
+									(combined?.holdingReturnRate ?? 0) >= 0 ? "positive" : "negative"
 								}
 							/>
 							<StatCell
-								label="총 수익"
-								value={`${totalProfitLoss >= 0 ? "+" : ""}${won.format(totalProfitLoss)}`}
+								label="보유 평가손익(국내·미국)"
+								value={combined ? `${combined.holdingProfitLoss >= 0 ? "+" : ""}${won.format(combined.holdingProfitLoss)}` : "-"}
 								accent={
-									totalProfitLoss >= 0 ? "positive" : "negative"
+									(combined?.holdingProfitLoss ?? 0) >= 0 ? "positive" : "negative"
 								}
 							/>
 							<StatCell
 								label="거래 횟수"
-								value={`${filledOrders.length}회`}
+								value={combined ? `${combined.filledTradeCount}회` : "-"}
 							/>
 							<StatCell
 								label="보유종목"
-								value={`${holdings.length}개`}
+								value={combined ? `${combined.holdingCount}개` : "-"}
 							/>
 						</SimpleGrid>
 					</CardBody>
@@ -907,11 +770,11 @@ export default function MyPage() {
 			</Grid>
 
 			<Grid
-				templateColumns={{ base: "1fr", "2xl": "1.05fr 0.95fr" }}
+				templateColumns={{ base: "minmax(0, 1fr)", "2xl": "1.05fr 0.95fr" }}
 				gap="18px"
 				mb="18px"
 			>
-				<Card>
+				<Card minW="0">
 					<CardBody p={{ base: "18px", md: "24px" }}>
 						<Heading size="sm" mb="18px">
 							투자 성과 요약
@@ -944,21 +807,29 @@ export default function MyPage() {
 									borderRadius="0"
 									_first={{ borderLeftRadius: "7px" }}
 									_last={{ borderRightRadius: "7px" }}
+									aria-pressed={period === item.key}
 									onClick={() => setPeriod(item.key)}
 								>
 									{item.label}
 								</Button>
 							))}
 						</SimpleGrid>
-						<PerformanceChart
-							orders={tradeOrders}
-							initialCash={initialCash}
-							period={period}
-						/>
+						<Text fontSize="12px" color="app.muted" mb="2">국내·미국 보유 평가손익 ÷ 보유 주식 매입금액 · 현금과 매도한 주식의 손익 제외</Text>
+                        {combined && <Text fontSize="12px" color="app.muted" mb="2">보유 매입금액 {won.format(combined.holdingBuyAmount)} · 투입 원금 {won.format(combined.investedCapital)} · 현금 {won.format(combined.totalCash)} · 매도 실현손익 {won.format(combined.realizedProfitLoss)}</Text>}
+                        {combined?.historyWarning && <Text role="status" fontSize="12px" color="orange.700">{combined.historyWarning}</Text>}
+                        {combinedWarning && <Text role="alert" fontSize="sm" color="orange.700">{combinedWarning}</Text>}
+                        {combined?.exchangeRate && <Text fontSize="12px" color="app.muted" mb="2">미국 금액은 {combined.exchangeRate.date} 기준 1달러={combined.exchangeRate.rate.toLocaleString('ko-KR')}원으로 참고 환산 · 환차손익 제외{combined.exchangeRate.stale ? ' · 환율 갱신 지연' : ''}</Text>}
+                        {combined?.isEvaluated === false && <Text role="status" fontSize="12px" color="orange.700">일부 시세를 조회하지 못해 매입가로 임시 평가했습니다.</Text>}
+                        {combined && <PerformanceChart
+                            history={combined.holdingsHistory} capital={combined.holdingBuyAmount} currentProfit={combined.holdingProfitLoss} currentRate={combined.holdingReturnRate}
+                            days={periodOptions.find(item => item.key === period)?.days}
+                            computedAt={combined.computedAt}
+                        />}
+
 					</CardBody>
 				</Card>
 
-				<Card>
+				<Card minW="0">
 					<CardBody p={{ base: "18px", md: "24px" }}>
 						<Flex align="center" mb="14px">
 							<Heading size="sm">보유 종목 현황</Heading>
@@ -967,7 +838,7 @@ export default function MyPage() {
 								전체 {holdings.length}개
 							</Text>
 						</Flex>
-						<TableContainer>
+						<TableContainer maxW="100%" tabIndex={0} aria-label="표 좌우 스크롤">
 							<Table size="sm">
 								<Thead>
 									<Tr>
@@ -1025,6 +896,7 @@ export default function MyPage() {
 						</TableContainer>
 						<Flex
 							mt="14px"
+							wrap={{ base: "wrap", md: "nowrap" }} gap={{ base: "8px", md: "0" }}
 							pt="14px"
 							borderTopWidth="1px"
 							borderColor="app.borderSoft"
@@ -1042,19 +914,19 @@ export default function MyPage() {
 								borderColor="app.borderSoft"
 							/>
 							<Text fontSize="12px" color="app.muted">
-								총 수익률
+								보유 수익률
 							</Text>
 							<Text
 								ml="12px"
 								fontWeight="900"
 								color={
-									totalProfitRate >= 0
+									averageHoldingRate >= 0
 										? "app.positive"
 										: "app.negative"
 								}
 							>
-								{totalProfitRate >= 0 ? "+" : ""}
-								{totalProfitRate.toFixed(2)}%
+								{averageHoldingRate >= 0 ? "+" : ""}
+								{averageHoldingRate.toFixed(2)}%
 							</Text>
 						</Flex>
 					</CardBody>
@@ -1062,24 +934,24 @@ export default function MyPage() {
 			</Grid>
 
 			<Grid
-				templateColumns={{ base: "1fr", "2xl": "0.85fr 1.15fr" }}
+				templateColumns={{ base: "minmax(0, 1fr)", "2xl": "0.85fr 1.15fr" }}
 				gap="18px"
 				mb="18px"
 			>
-				<Card>
+				<Card minW="0">
 					<CardBody p="22px">
 						<Flex align="center" mb="12px">
-							<Heading size="sm">최근 거래 기록</Heading>
+							<Heading size="sm">최근 주문 기록</Heading>
 							<Spacer />
 							<Text fontSize="11px" color="app.muted">
 								최근 {sortedOrders.length}건
 							</Text>
 						</Flex>
-						<TableContainer>
+						<TableContainer maxW="100%" tabIndex={0} aria-label="표 좌우 스크롤">
 							<Table size="sm">
 								<Thead>
 									<Tr>
-										<Th>체결 시간</Th>
+										<Th>주문/체결 시간</Th>
 										<Th>종목</Th>
 										<Th>구분</Th>
 										<Th isNumeric>수량</Th>
@@ -1111,6 +983,7 @@ export default function MyPage() {
 													fontWeight="800"
 												>
 													{order.side === "BUY" ? "매수" : "매도"}
+													{order.status !== "FILLED" && <Badge ml="1" colorScheme="gray">{order.status === "PENDING" ? "미체결" : order.status === "CANCELED" ? "취소" : "거절"}</Badge>}
 												</Td>
 												<Td isNumeric>
 													{numberFormat.format(order.quantity)}주
@@ -1146,18 +1019,18 @@ export default function MyPage() {
 			</Grid>
 
 			<Grid
-				templateColumns={{ base: "1fr", "2xl": "0.8fr 1.2fr" }}
+				templateColumns={{ base: "minmax(0, 1fr)", "2xl": "0.8fr 1.2fr" }}
 				gap="18px"
 				mb="18px"
 			>
-				<Card>
+				<Card minW="0">
 					<CardBody p="22px">
 						<Heading size="sm" mb="18px">
 							투자 통계
 						</Heading>
 						<Stack spacing="17px" fontSize="13px">
 							<Flex>
-								<Text color="app.muted">평균 수익률</Text>
+								<Text color="app.muted">보유 평가수익률</Text>
 								<Spacer />
 								<Text
 									color={
@@ -1172,14 +1045,14 @@ export default function MyPage() {
 								</Text>
 							</Flex>
 							<Flex>
-								<Text color="app.muted">평균 보유 종목 수</Text>
+								<Text color="app.muted">현재 보유 종목 수</Text>
 								<Spacer />
 								<Text fontWeight="800">{holdings.length}개</Text>
 							</Flex>
 							<Flex>
-								<Text color="app.muted">최고 수익률</Text>
+								<Text color="app.muted">보유 최고 수익률</Text>
 								<Spacer />
-								<Text color="app.positive" fontWeight="800">
+								<Text color={bestHolding && bestHolding.profitLossRate < 0 ? "app.negative" : "app.positive"} fontWeight="800">
 									{bestHolding
 										? `${
 												bestHolding.profitLossRate >= 0 ? "+" : ""
@@ -1188,23 +1061,23 @@ export default function MyPage() {
 								</Text>
 							</Flex>
 							<Flex>
-								<Text color="app.muted">최대 손실률</Text>
+								<Text color="app.muted">보유 최저 수익률</Text>
 								<Spacer />
-								<Text color="app.negative" fontWeight="800">
+								<Text color={worstHolding && worstHolding.profitLossRate >= 0 ? "app.positive" : "app.negative"} fontWeight="800">
 									{worstHolding
 										? `${worstHolding.profitLossRate.toFixed(2)}%`
 										: "-"}
 								</Text>
 							</Flex>
 							<Flex>
-								<Text color="app.muted">손익비</Text>
+								<Text color="app.muted">매도 손익비</Text>
 								<Spacer />
 								<Text fontWeight="800">
-									{Math.max(0, totalProfitRate + 100).toFixed(1)}
+									{portfolio?.performance?.payoffRatio == null ? "-" : portfolio.performance.payoffRatio.toFixed(2)}
 								</Text>
 							</Flex>
 							<Flex>
-								<Text color="app.muted">최대 거래 종목</Text>
+								<Text color="app.muted">최대 보유 종목</Text>
 								<Spacer />
 								<Text fontWeight="800">
 									{largestHolding?.name ?? "-"}
@@ -1214,9 +1087,9 @@ export default function MyPage() {
 					</CardBody>
 				</Card>
 
-				<Card>
+				<Card minW="0">
 					<CardBody p="22px">
-						<Heading size="sm">AI 라면 ?</Heading>
+						<Heading size="sm">보유자산 점검</Heading>
 						<Box
 							mt="14px"
 							p="18px"
@@ -1225,7 +1098,7 @@ export default function MyPage() {
 							borderRadius="8px"
 						>
 							<Text fontSize="12px" color="app.muted">
-								최근 투자 현황을 기준으로 분석했습니다.
+								현재 국내 보유 비중에 따른 자동 점검입니다.
 							</Text>
 							<Stack mt="16px" spacing="16px">
 								<Box>
@@ -1267,7 +1140,7 @@ export default function MyPage() {
 							w="100%"
 							size="sm"
 							variant="outline"
-							onClick={() => navigate("/exchange")}
+							onClick={() => navigate(largestHolding ? `/exchange?market=KR&symbol=${encodeURIComponent(largestHolding.symbol)}&name=${encodeURIComponent(largestHolding.name)}` : "/exchange")}
 						>
 							AI 분석 자세히 보기
 						</Button>
@@ -1278,7 +1151,7 @@ export default function MyPage() {
 			<Card mb="18px">
 				<CardBody p="22px">
 					<Heading size="sm" mb="18px">
-						시뮬레이션 요약
+						국내 모의투자 요약
 					</Heading>
 					<SimpleGrid columns={{ base: 2, md: 4 }} spacing="0">
 						<StatCell
@@ -1297,7 +1170,7 @@ export default function MyPage() {
 						/>
 						<StatCell
 							label="거래 횟수"
-							value={`${filledOrders.length}회`}
+							value={`${filledTradeCount}회`}
 						/>
 						<StatCell label="보유 현금" value={won.format(cash)} />
 					</SimpleGrid>

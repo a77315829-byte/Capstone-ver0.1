@@ -109,6 +109,9 @@ export async function getHistorical(
 				req.query.period ||
 					"1m",
 			) as UsChartPeriod;
+		if (!["1min", "5min", "15min", "1h", "4h", "1m", "6m", "1y"].includes(period)) {
+			return res.status(400).json({ success: false, message: "지원하지 않는 차트 간격입니다." });
+		}
 
 		const data =
 			await fetchUsHistoricalStockData(

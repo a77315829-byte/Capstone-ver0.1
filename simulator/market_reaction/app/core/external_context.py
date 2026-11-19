@@ -39,7 +39,7 @@ Output the analysis in the required JSON format."""
 _SCHEMA = {
     "type": "object",
     "properties": {
-        "event_summary": {"type": "string"},
+        "event_summary": {"type": "string", "maxLength": 80},
         "event_type": {
             "type": "string",
             "enum": [
@@ -50,10 +50,10 @@ _SCHEMA = {
             ],
         },
         "impact_strength": {"type": "string", "enum": ["low", "medium", "high"]},
-        "related_industries": {"type": "array", "items": {"type": "string"}},
-        "positive_factors": {"type": "array", "items": {"type": "string"}},
-        "negative_factors": {"type": "array", "items": {"type": "string"}},
-        "uncertainty_factors": {"type": "array", "items": {"type": "string"}},
+        "related_industries": {"type": "array", "maxItems": 1, "items": {"type": "string", "maxLength": 40}},
+        "positive_factors": {"type": "array", "maxItems": 1, "items": {"type": "string", "maxLength": 40}},
+        "negative_factors": {"type": "array", "maxItems": 1, "items": {"type": "string", "maxLength": 40}},
+        "uncertainty_factors": {"type": "array", "maxItems": 1, "items": {"type": "string", "maxLength": 40}},
         "time_horizon": {"type": "string", "enum": ["short_term", "mid_term", "long_term"]},
     },
     "required": [
@@ -78,7 +78,7 @@ def _format_reference_docs(documents: List[dict]) -> str:
     if not documents:
         return ""
     lines = [
-        f"- [{doc['published_at']}] {doc['title']}: {doc['content']}" for doc in documents
+        f"- [{doc['published_at']}] {doc['title']}: {doc['content'][:500]}" for doc in documents[:2]
     ]
     return (
         "\n\nReference IR/earnings materials for this stock (background context, "
@@ -91,6 +91,7 @@ def _build_user_prompt(
 ) -> str:
     return (
         f"Stock: {request.selected_stock.name}\n"
+        f"Market: {request.selected_stock.market}; currency: {request.selected_stock.currency}\n"
         f"Industry: {industry}\n"
         f"Input type: {input_type}\n"
         f"Content:\n{wrap_user_content(request.input_text)}"
@@ -142,6 +143,7 @@ async def analyze_external_context(
     documents = await _retrieve_documents_safe(
         request.selected_stock.code, request.input_text, published_before
     )
+    documents = documents[:2]
     rag_sources = [
         RagSource(
             title=doc["title"],

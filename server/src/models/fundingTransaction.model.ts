@@ -10,7 +10,9 @@ export type FundingMarket =
 
 export type FundingType =
 	| "MANUAL_TOP_UP"
-	| "SALARY_PLAN_MONTHLY";
+	| "SALARY_PLAN_MONTHLY"
+	| "FX_IN"
+	| "FX_OUT";
 
 export interface FundingTransactionDocument
 	extends Document {
@@ -45,6 +47,7 @@ const FundingTransactionSchema =
 				enum: [
 					"MANUAL_TOP_UP",
 					"SALARY_PLAN_MONTHLY",
+					"FX_IN", "FX_OUT",
 				],
 				required: true,
 				index: true,

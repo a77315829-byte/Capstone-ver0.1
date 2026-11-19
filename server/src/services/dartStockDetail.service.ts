@@ -1,3 +1,4 @@
+import { dartAnnualPeriod, dartQuarterAmount } from "../utils/financialData";
 import axios from "axios";
 import * as fs from "fs";
 import * as path from "path";
@@ -697,18 +698,6 @@ const calculateOperatingMargin = (
 	) * 100;
 };
 
-const cleanPeriodLabel = (
-	value: unknown,
-	fallback: string,
-): string => {
-	const label =
-		String(value ?? "")
-			.replace(/\s+/g, " ")
-			.trim();
-
-	return label || fallback;
-};
-
 const buildAnnualPeriods = (
 	rows: any[],
 	year: number,
@@ -729,26 +718,17 @@ const buildAnnualPeriods = (
 		{
 			key: "thstrm_amount",
 			label:
-				cleanPeriodLabel(
-					sample.thstrm_nm,
-					String(year),
-				),
+				dartAnnualPeriod(sample.thstrm_dt, year),
 		},
 		{
 			key: "frmtrm_amount",
 			label:
-				cleanPeriodLabel(
-					sample.frmtrm_nm,
-					String(year - 1),
-				),
+				dartAnnualPeriod(sample.frmtrm_dt, year - 1),
 		},
 		{
 			key: "bfefrmtrm_amount",
 			label:
-				cleanPeriodLabel(
-					sample.bfefrmtrm_nm,
-					String(year - 2),
-				),
+				dartAnnualPeriod(sample.bfefrmtrm_dt, year - 2),
 		},
 	] as const;
 
@@ -894,14 +874,7 @@ const buildQuarterPeriod = (
 			rows,
 		);
 
-	const readCurrent =
-		(account: any):
-			number | null =>
-			toNumberOrNull(
-				account
-					?.thstrm_add_amount ??
-				account?.thstrm_amount,
-			);
+	const readCurrent = dartQuarterAmount;
 
 	const revenue =
 		readCurrent(
@@ -920,7 +893,7 @@ const buildQuarterPeriod = (
 
 	return {
 		period:
-			`${year} ${reportLabel}`,
+			`${year}.${reportLabel === "3분기" ? "09" : reportLabel === "반기" ? "06" : "03"}`,
 		revenue,
 		operatingProfit,
 		netIncome,
@@ -1184,7 +1157,7 @@ export const fetchDartStockDetail =
 	} catch (error) {
 		console.warn(
 			`OpenDART 상세 조회 실패: ${symbol}`,
-			error,
+			error instanceof Error ? error.name : "Request failed",
 		);
 
 		return null;

@@ -6,7 +6,7 @@ import httpx
 
 from app.config import settings
 
-_TIMEOUT = httpx.Timeout(120.0)
+_TIMEOUT = httpx.Timeout(15.0, connect=3.0)
 
 
 def _chat(system_prompt: str, user_prompt: str, *, json_mode: bool) -> str:

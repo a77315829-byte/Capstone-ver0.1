@@ -1,3 +1,4 @@
+import { financialColumns, type FinancialPeriod } from "../utils/financialPeriods";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Badge,
@@ -73,6 +74,9 @@ type StockSummary = {
 	fetchedAt?: string;
 };
 type StockDetail = {
+	annualFinancials?: FinancialPeriod[];
+	quarterlyFinancials?: FinancialPeriod[];
+	source?: string;
 	symbol: string;
 	name: string;
 	market: string;
@@ -471,7 +475,10 @@ function normalizeStockDetail(raw: any): StockDetail | null {
 		low: Number(data.low ?? 0),
 		volume: Number(data.volume ?? 0),
 
-		marketCap: data.marketCap ?? null,
+		annualFinancials: data.annualFinancials ?? [],
+        quarterlyFinancials: data.quarterlyFinancials ?? [],
+        source: data.source,
+        marketCap: data.marketCap ?? null,
 		per: data.per ?? null,
 		pbr: data.pbr ?? null,
 		eps: data.eps ?? null,
@@ -1474,16 +1481,20 @@ function CompanyMetric({
 function FinanceSummaryRow({
 	label,
 	current,
+    previous = "-",
+    comparison = "-",
 }: {
 	label: string;
 	current: React.ReactNode;
+    previous?: React.ReactNode;
+    comparison?: React.ReactNode;
 }) {
 	return (
 		<Grid templateColumns="1.15fr repeat(3, 1fr)" alignItems="center" minH="44px">
 			<Text px="12px" fontSize="10px" color="#5D554D">{label}</Text>
 			<Text px="8px" textAlign="center" fontSize="10px" fontWeight="800">{current}</Text>
-			<Text px="8px" textAlign="center" fontSize="10px" color="app.subtleText">-</Text>
-			<Text px="8px" textAlign="center" fontSize="10px" color="app.subtleText">-</Text>
+			<Text px="8px" textAlign="center" fontSize="10px" color="app.subtleText">{previous}</Text>
+			<Text px="8px" textAlign="center" fontSize="10px" color="app.subtleText">{comparison}</Text>
 		</Grid>
 	);
 }
@@ -1497,6 +1508,8 @@ function StockDetailPanel({
 	isLoading: boolean;
 	historyPoints: ChartPoint[];
 }) {
+    const [financePeriod, setFinancePeriod] = useState<"annual" | "quarter">("annual");
+
 	if (isLoading) {
 		return (
 			<Flex h="420px" align="center" justify="center">
@@ -1530,6 +1543,13 @@ function StockDetailPanel({
 	const operatingMargin = Number(detail.revenue ?? 0) > 0
 		? (Number(detail.operatingProfit ?? 0) / Number(detail.revenue)) * 100
 		: null;
+    const reported = financePeriod === "annual" ? detail.annualFinancials ?? [] : detail.quarterlyFinancials ?? [];
+    const columns = financialColumns(reported.length || financePeriod === "quarter" ? reported : [{ ...detail, period: "최근", operatingMargin }], financePeriod);
+    const financialCell = (field: keyof Omit<FinancialPeriod, "period">, index: number) => {
+        const value = columns[index]?.[field];
+        if (value == null) return "-";
+        return field === "roe" || field === "operatingMargin" ? `${value.toFixed(2)}%` : formatCompactKrw(value);
+    };
 	const sparkline = buildPriceSparkline(validHistory);
 
 	return (
@@ -1601,27 +1621,25 @@ function StockDetailPanel({
 			>
 				<Heading size="sm">재무 요약</Heading>
 				<HStack mt="18px" spacing="0">
-					<Button size="xs" px="22px" borderRadius="7px 0 0 7px" bg="white" color="brand.600" borderWidth="1px" borderColor="#E8CDB7">연간</Button>
-					<Button size="xs" px="22px" borderRadius="0 7px 7px 0" variant="outline" borderColor="#E8CDB7" color="app.subtleText">분기</Button>
+					<Button size="xs" px="22px" borderRadius="7px 0 0 7px" bg="white" color="brand.600" borderWidth="1px" borderColor="#E8CDB7" aria-pressed={financePeriod === "annual"} onClick={() => setFinancePeriod("annual")}>연간</Button>
+					<Button size="xs" px="22px" borderRadius="0 7px 7px 0" variant="outline" borderColor="#E8CDB7" color="app.subtleText" aria-pressed={financePeriod === "quarter"} onClick={() => setFinancePeriod("quarter")}>분기</Button>
 				</HStack>
 
 				<Box mt="10px" borderWidth="1px" borderColor="#E8D8C8" borderRadius="8px" overflow="hidden">
 					<Grid templateColumns="1.15fr repeat(3, 1fr)" minH="46px" alignItems="center" bg="#FFFCF8" borderBottomWidth="1px" borderColor="#E8D8C8">
 						<Text px="12px" fontSize="9px" color="app.subtleText">구분</Text>
-						<Text textAlign="center" fontSize="9px" color="app.subtleText">최근</Text>
-						<Text textAlign="center" fontSize="9px" color="app.subtleText">전기</Text>
-						<Text textAlign="center" fontSize="9px" color="app.subtleText">전년</Text>
+						<Text textAlign="center" fontSize="9px" color="app.subtleText">{columns[0]?.period ?? "최근"}</Text>
+						<Text textAlign="center" fontSize="9px" color="app.subtleText">{columns[1]?.period ?? "전기"}</Text>
+						<Text textAlign="center" fontSize="9px" color="app.subtleText">{columns[2]?.period ?? "전년"}</Text>
 					</Grid>
 					<Stack spacing="0" divider={<Divider borderColor="#EFE4D9" />}>
-						<FinanceSummaryRow label="매출액" current={formatOptionalNumber(detail.revenue)} />
-						<FinanceSummaryRow label="영업이익" current={formatOptionalNumber(detail.operatingProfit)} />
-						<FinanceSummaryRow label="당기순이익" current={formatOptionalNumber(detail.netIncome)} />
-						<FinanceSummaryRow label="영업이익률" current={operatingMargin === null ? "-" : `${operatingMargin.toFixed(2)}%`} />
-						<FinanceSummaryRow label="ROE" current={formatOptionalNumber(detail.roe, "%")} />
+                        {([['매출액', 'revenue'], ['영업이익', 'operatingProfit'], ['당기순이익', 'netIncome'], ['영업이익률', 'operatingMargin'], ['ROE', 'roe']] as const).map(([label, field]) => (
+                            <FinanceSummaryRow key={field} label={label} current={financialCell(field, 0)} previous={financialCell(field, 1)} comparison={financialCell(field, 2)} />
+                        ))}
 					</Stack>
 				</Box>
 				<Text mt="14px" fontSize="9px" color="app.subtleText">
-					현재 KIS 응답에서 제공되는 최신 재무값만 표시하며, 비교 기간 데이터는 제공되지 않으면 -로 표시됩니다.
+					출처: {detail.source ?? "KIS"}. 발표된 실적만 표시하며, 제공되지 않는 기간은 -로 표시됩니다.
 				</Text>
 			</Box>
 
@@ -2695,7 +2713,7 @@ export default function DomesticExchange({
 					order.orderType === "MARKET"
 						? "시장가 주문이 처리되었습니다."
 						: order.status === "PENDING"
-							? "지정가 예약 주문이 등록되었습니다. 다음 정규장 중 지정 가격 조건을 충족하면 자동 체결됩니다."
+							? "지정가가 등록되었습니다. 정규장·애프터마켓에서 최신 시세가 조건을 충족하면 자동 체결됩니다. 시세 미확인·대상 제외 종목은 대기합니다."
 							: "지정가 주문이 체결되었습니다.",
 				status: "success",
 				isClosable: true,
@@ -3005,6 +3023,12 @@ export default function DomesticExchange({
 			isClosable: true,
 		});
 	};
+
+    useEffect(() => {
+        const refresh = () => { void loadTradingData(); };
+        window.addEventListener('antitude:fx-converted', refresh);
+        return () => window.removeEventListener('antitude:fx-converted', refresh);
+    }, []);
 
 	useEffect(() => {
 		fetchStock(selectedSymbol);
@@ -3338,7 +3362,7 @@ export default function DomesticExchange({
 								</Flex>
 								<Spacer />
 								<Badge colorScheme={marketStatus?.isOpen ? "green" : "orange"} borderRadius="full">
-									{marketStatus?.isOpen ? "장 운영 중" : "장 마감"}
+									{marketStatus?.sessionLabel?.replace(' · 지정가', '') ?? '장 마감'}
 								</Badge>
 							</Flex>
 						</CardHeader>
@@ -3578,7 +3602,7 @@ export default function DomesticExchange({
 										isLoading={isSubmittingOrder}
 										isDisabled={!stock || isCurrentOrderBlocked}
 									>
-										{orderType === "LIMIT" && isMarketClosed ? "예약 " : ""}
+										{orderType === "LIMIT" && !marketStatus?.limitOrderAllowed && !marketStatus?.orderAllowedByOverride ? "예약 " : ""}
 										{orderPanelMode === "BUY" ? "매수 주문하기" : "매도 주문하기"}
 									</Button>
 

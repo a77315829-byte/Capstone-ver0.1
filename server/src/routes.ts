@@ -1,3 +1,6 @@
+import fxController from "./controller/fx.controller";
+import { combinedPerformance } from "./controller/combinedPerformance.controller";
+import { marketOverview } from "./controller/marketOverview.controller";
 import express from "express";
 const router = express.Router();
 import { verifySignUp, authJwt } from "./middleware";
@@ -20,14 +23,26 @@ import usTradingController from "./controller/usTrading.controller";
 import salaryAiController from "./controller/salaryAi.controller";
 import onboardingController from "./controller/onboarding.controller";
 import axios from "axios";
+import { validateCredentials } from "./middleware/credentials";
+import scenarioProxy from "./controller/scenarioProxy";
+import * as judgmentProxy from "./controller/judgmentProxy.controller";
+import { timeoutMs, aiMode } from "./utils/runtime";
+
+router.get("/api/fx/rate", fxController.rate);
+router.get("/api/markets/overview", marketOverview);
+router.get("/api/fx/wallet", authJwt.verifyToken, fxController.wallet);
+router.get("/api/trading/performance", authJwt.verifyToken, combinedPerformance);
+router.post("/api/fx/quote", authJwt.verifyToken, fxController.quote);
+router.post("/api/fx/convert", authJwt.verifyToken, fxController.convert);
+router.get("/api/fx/history", authJwt.verifyToken, fxController.history);
 
 // Auth routes
 router.post(
 	"/api/auth/signup",
-	[verifySignUp.checkDuplicateUsername],
+	[validateCredentials, verifySignUp.checkDuplicateUsername],
 	authController.signup,
 );
-router.post("/api/auth/login", authController.login);
+router.post("/api/auth/login", validateCredentials, authController.login);
 
 
 // User data routes
@@ -82,344 +97,14 @@ router.get(
 	"/api/markets/KRX/status",
 	marketSessionController.getKrxStatus,
 );
-// ================================
-// Scenario Service
-// ================================
-const SCENARIO_SERVICE_URL =
-	process.env.SCENARIO_SERVICE_URL || "http://127.0.0.1:8000";
-
-const handleScenarioError = (res: any, error: any) => {
-	console.error(
-		"Scenario Service request failed:",
-		error.response?.data || error.message,
-	);
-
-	return res.status(error.response?.status || 502).json(
-		error.response?.data || {
-			error: "Scenario Service 연결 실패",
-		},
-	);
-};
-
-// 시나리오 서버 상태 확인
-router.get("/api/scenario-service/health", async (req, res) => {
-	try {
-		const response = await axios.get(`${SCENARIO_SERVICE_URL}/`);
-		return res.json(response.data);
-	} catch (error: any) {
-		return handleScenarioError(res, error);
-	}
-});
-
-// 시나리오 목록
-router.get("/api/scenario-service/scenarios", async (req, res) => {
-	try {
-		const response = await axios.get(
-			`${SCENARIO_SERVICE_URL}/api/scenarios`,
-		);
-
-		return res.json(response.data);
-	} catch (error: any) {
-		return handleScenarioError(res, error);
-	}
-});
-
-// 시나리오 플레이 세션 생성
-router.post(
-	"/api/scenario-service/scenarios/:scenarioId/sessions",
-	async (req, res) => {
-		try {
-			const response = await axios.post(
-				`${SCENARIO_SERVICE_URL}/api/scenarios/${req.params.scenarioId}/sessions`,
-				req.body,
-			);
-
-			return res.status(response.status).json(response.data);
-		} catch (error: any) {
-			return handleScenarioError(res, error);
-		}
-	},
-);
-
-// 현재 턴 조회
-router.get(
-	"/api/scenario-service/sessions/:sessionId/turn",
-	async (req, res) => {
-		try {
-			const response = await axios.get(
-				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/turn`,
-			);
-
-			return res.json(response.data);
-		} catch (error: any) {
-			return handleScenarioError(res, error);
-		}
-	},
-);
-
-// 종목 차트 조회
-router.get(
-	"/api/scenario-service/sessions/:sessionId/chart/:assetId",
-	async (req, res) => {
-		try {
-			const response = await axios.get(
-				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/chart/${req.params.assetId}`,
-				{
-					params: req.query,
-				},
-			);
-
-			return res.json(response.data);
-		} catch (error: any) {
-			return handleScenarioError(res, error);
-		}
-	},
-);
-
-// 매수 / 매도
-router.post(
-	"/api/scenario-service/sessions/:sessionId/orders",
-	async (req, res) => {
-		try {
-			const response = await axios.post(
-				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/orders`,
-				req.body,
-			);
-
-			return res.status(response.status).json(response.data);
-		} catch (error: any) {
-			return handleScenarioError(res, error);
-		}
-	},
-);
-
-// 턴 판단 제출
-router.post(
-	"/api/scenario-service/sessions/:sessionId/turn/submit",
-	async (req, res) => {
-		try {
-			const response = await axios.post(
-				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/turn/submit`,
-				req.body,
-			);
-
-			return res.json(response.data);
-		} catch (error: any) {
-			return handleScenarioError(res, error);
-		}
-	},
-);
-
-// 최종 결과 조회
-router.get(
-	"/api/scenario-service/sessions/:sessionId/result",
-	async (req, res) => {
-		try {
-			const response = await axios.get(
-				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/result`,
-			);
-
-			return res.json(response.data);
-		} catch (error: any) {
-			return handleScenarioError(res, error);
-		}
-	},
-);
-
-// 세션 최종 완료
-router.post(
-	"/api/scenario-service/sessions/:sessionId/finalize",
-	async (req, res) => {
-		try {
-			const response = await axios.post(
-				`${SCENARIO_SERVICE_URL}/api/sessions/${req.params.sessionId}/finalize`,
-			);
-
-			return res.json(response.data);
-		} catch (error: any) {
-			return handleScenarioError(res, error);
-		}
-	},
-);
-// 사용자별 시나리오 진행도
-router.get(
-    "/api/scenario-service/users/:userId/scenario-progress",
-    async (req, res) => {
-        try {
-            const response = await axios.get(
-                `${SCENARIO_SERVICE_URL}/api/users/${encodeURIComponent(
-                    req.params.userId,
-                )}/scenario-progress`,
-            );
-
-            return res.json(response.data);
-        } catch (error: any) {
-            return handleScenarioError(res, error);
-        }
-    },
-);
-
-// 사용자별 퀴즈 진행도 조회
-router.get(
-    "/api/scenario-service/users/:userId/quiz-progress",
-    async (req, res) => {
-        try {
-            const response = await axios.get(
-                `${SCENARIO_SERVICE_URL}/api/users/${encodeURIComponent(
-                    req.params.userId,
-                )}/quiz-progress`,
-                {
-                    params: req.query,
-                },
-            );
-
-            return res.json(response.data);
-        } catch (error: any) {
-            return handleScenarioError(res, error);
-        }
-    },
-);
-
-// 퀴즈 풀이/세션 완료 이벤트 저장
-router.post(
-    "/api/scenario-service/users/:userId/quiz-progress/events",
-    async (req, res) => {
-        try {
-            const response = await axios.post(
-                `${SCENARIO_SERVICE_URL}/api/users/${encodeURIComponent(
-                    req.params.userId,
-                )}/quiz-progress/events`,
-                req.body,
-            );
-
-            return res.status(response.status).json(response.data);
-        } catch (error: any) {
-            return handleScenarioError(res, error);
-        }
-    },
-);
-// ================================
-// AI Judgment Service
-// ================================
-
-const AI_JUDGMENT_SERVICE_URL =
-	process.env.AI_JUDGMENT_SERVICE_URL || "http://127.0.0.1:8003";
-
-router.get("/api/ai-judgment/health", async (req, res) => {
-	try {
-		const response = await axios.get(`${AI_JUDGMENT_SERVICE_URL}/health`);
-
-		return res.json(response.data);
-	} catch (error) {
-		console.error("AI Judgment health check failed:", error);
-
-		return res.status(502).json({
-			error: "AI Judgment Service 연결 실패",
-		});
-	}
-});
-router.get("/api/ai-judgment/:symbol", async (req, res) => {
-	try {
-		const response = await axios.get(
-			`${AI_JUDGMENT_SERVICE_URL}/judgment/${req.params.symbol}`,
-		);
-
-		return res.json(response.data);
-	} catch (error: any) {
-		console.error(
-			"AI Judgment request failed:",
-			error.response?.data || error.message,
-		);
-
-		return res.status(error.response?.status || 502).json(
-			error.response?.data || {
-				error: "AI Judgment Service 연결 실패",
-			},
-		);
-	}
-});
-router.post("/api/ai-judgment/:symbol/watch", async (req, res) => {
-	try {
-		const response = await axios.post(
-			`${AI_JUDGMENT_SERVICE_URL}/judgment/${req.params.symbol}/watch`,
-		);
-
-		return res.json(response.data);
-	} catch (error: any) {
-		console.error(
-			"AI Judgment watch request failed:",
-			error.response?.data || error.message,
-		);
-
-		return res.status(error.response?.status || 502).json(
-			error.response?.data || {
-				error: "AI Judgment Service 연결 실패",
-			},
-		);
-	}
-});
-router.delete("/api/ai-judgment/:symbol/watch", async (req, res) => {
-	try {
-		const response = await axios.delete(
-			`${AI_JUDGMENT_SERVICE_URL}/judgment/${req.params.symbol}/watch`,
-		);
-
-		return res.json(response.data);
-	} catch (error: any) {
-		console.error(
-			"AI Judgment unwatch request failed:",
-			error.response?.data || error.message,
-		);
-
-		return res.status(error.response?.status || 502).json(
-			error.response?.data || {
-				error: "AI Judgment Service 연결 실패",
-			},
-		);
-	}
-});
-router.get("/api/ai-judgment/:symbol/history", async (req, res) => {
-	try {
-		const response = await axios.get(
-			`${AI_JUDGMENT_SERVICE_URL}/judgment/${req.params.symbol}/history`,
-			{ params: req.query },
-		);
-
-		return res.json(response.data);
-	} catch (error: any) {
-		console.error(
-			"AI Judgment history request failed:",
-			error.response?.data || error.message,
-		);
-
-		return res.status(error.response?.status || 502).json(
-			error.response?.data || {
-				error: "AI Judgment Service 연결 실패",
-			},
-		);
-	}
-});
-router.post("/api/ai-judgment/compare", async (req, res) => {
-	try {
-		const response = await axios.post(
-			`${AI_JUDGMENT_SERVICE_URL}/judgment/compare`,
-			req.body,
-		);
-
-		return res.json(response.data);
-	} catch (error: any) {
-		console.error(
-			"AI Judgment compare request failed:",
-			error.response?.data || error.message,
-		);
-
-		return res.status(error.response?.status || 502).json(
-			error.response?.data || {
-				error: "AI Judgment Service 연결 실패",
-			},
-		);
-	}
-});
+// Authenticated gateway: Python ports do not need to be exposed to browsers.
+router.use("/api/scenario-service", scenarioProxy);
+router.get("/api/ai-judgment/health", judgmentProxy.judgmentHealth);
+router.get("/api/ai-judgment/:symbol", judgmentProxy.getJudgment);
+router.post("/api/ai-judgment/:symbol/watch", judgmentProxy.watchJudgment);
+router.delete("/api/ai-judgment/:symbol/watch", judgmentProxy.watchJudgment);
+router.get("/api/ai-judgment/:symbol/history", judgmentProxy.judgmentHistory);
+router.post("/api/ai-judgment/compare", judgmentProxy.compareJudgment);
 
 // Stocks routes
 router.get("/api/stocks/search/:query", stocksController.search);
@@ -428,6 +113,9 @@ router.get("/api/stocks/:symbol/historical", stocksController.getHistorical);
 router.get("/api/stocks/:symbol/candles", stocksController.getCandles);
 router.get("/api/stocks/:symbol/detail", stocksController.getDetail);
 router.get("/api/stocks/:symbol/orderbook", stocksController.getOrderBook);
+router.get("/api/stocks/:symbol/executions", stocksController.getExecutions);
+router.get("/api/stocks/:symbol/investors", stocksController.getInvestors);
+router.use("/api/scenarios", authJwt.verifyToken);
 router.get("/api/scenarios/chapters", scenarioController.getChapters);
 router.get("/api/scenarios/recommended", scenarioController.getRecommended);
 router.get(
@@ -634,6 +322,8 @@ router.get(
 	"/api/us-stocks/:exchange/:symbol/historical",
 	usStocksController.getHistorical,
 );
+router.get("/api/us-stocks/:exchange/:symbol/orderbook", usStocksController.getOrderBook);
+router.get("/api/us-stocks/:exchange/:symbol/executions", usStocksController.getExecutions);
 
 // ================================
 // 미국 시장 운영 상태
@@ -712,8 +402,6 @@ router.get("/api/news/:symbol", newsController.getNews);
 
 // History explanation AI route
 router.post("/api/ai/history-explanation", async (req, res) => {
-	console.log("=== /api/ai/history-explanation HIT ===");
-	console.log("body:", req.body);
 
 	const { scenarioText, marketDataText, userAnswerText } = req.body;
 
@@ -759,13 +447,14 @@ ${userAnswerText}
 `;
 
 	try {
-		const response = await fetch("http://localhost:11434/api/generate", {
+		const response = await fetch((process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434") + "/api/generate", {
+            signal: AbortSignal.timeout(timeoutMs("AI_SERVICE_TIMEOUT_MS", 20000)),
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 			},
 			body: JSON.stringify({
-				model: "qwen2.5:7b",
+				model: process.env.OLLAMA_MODEL || "qwen2.5:7b",
 				prompt,
 				stream: false,
 				format: "json",
@@ -773,7 +462,7 @@ ${userAnswerText}
 		});
 
 		const data = await response.json();
-		console.log("Ollama raw response:", data);
+
 
 		if (!response.ok) {
 			return res.status(500).json({

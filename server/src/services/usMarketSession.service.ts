@@ -14,7 +14,11 @@ export interface UsMarketStatus {
 	localTime: string;
 	weekday: string;
 
-	sessionType: "REGULAR";
+	sessionType: "PRE" | "REGULAR" | "POST" | "CLOSED";
+	limitOrderAllowed: boolean;
+	sessionStartTime: string | null;
+	sessionEndTime: string | null;
+	sessionLabel: string;
 	openTime: string;
 	closeTime: string;
 
@@ -456,6 +460,12 @@ export function getUsMarketStatus(
 			`${nextDate} ${DEFAULT_OPEN_TIME} ET`;
 	}
 
+	const preOpen = !weekend && !holidayName && currentMinutes >= 4 * 60 && currentMinutes < openMinutes;
+	const postEnd = earlyClose ? '17:00' : '20:00';
+	const postOpen = !weekend && !holidayName && currentMinutes >= closeMinutes && currentMinutes < timeToMinutes(postEnd);
+	const sessionType = isOpen ? 'REGULAR' : preOpen ? 'PRE' : postOpen ? 'POST' : 'CLOSED';
+	const sessionLabel = isOpen ? '정규장' : preOpen ? '프리마켓 · 지정가' : postOpen ? '애프터마켓 · 지정가' : '장 마감';
+	if (preOpen || postOpen) message = `미국 ${sessionLabel} 운영 중 (뉴욕 ${preOpen ? '04:00~09:30' : closeTime + '~' + postEnd}). 최신 시간외 시세가 확인될 때 체결합니다.`;
 	return {
 		market: "US",
 		marketName:
@@ -473,8 +483,10 @@ export function getUsMarketStatus(
 			] ??
 			local.weekday,
 
-		sessionType:
-			"REGULAR",
+		sessionType, sessionLabel,
+		limitOrderAllowed: isOpen || preOpen || postOpen,
+		sessionStartTime: isOpen ? '09:30' : preOpen ? '04:00' : postOpen ? closeTime : null,
+		sessionEndTime: isOpen ? closeTime : preOpen ? '09:30' : postOpen ? postEnd : null,
 		openTime:
 			DEFAULT_OPEN_TIME,
 		closeTime,

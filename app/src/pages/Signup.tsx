@@ -1,3 +1,5 @@
+import LegalLinks from "../components/LegalLinks";
+import { useAuthConfig } from "../hooks/useAuthConfig";
 import {
 	Flex,
 	Box,
@@ -25,6 +27,8 @@ import tokens from "../services/tokens.service";
 export default function Signup() {
 	const toast = useToast();
 	const navigate = useNavigate();
+ const { config, error: configError } = useAuthConfig();
+ const [submitting, setSubmitting] = useState(false);
 
 	const turnstileRef = useRef<TurnstileInstance>(null);
 
@@ -47,6 +51,8 @@ export default function Signup() {
 
 	const handleSubmit = async (e: { preventDefault: () => void }) => {
 		e.preventDefault();
+        if (submitting || !config || configError) return;
+        setSubmitting(true);
 		// Call signup function from auth.js
 		accounts
 			.signup(username, password, turnstileRef.current?.getResponse()!)
@@ -54,7 +60,7 @@ export default function Signup() {
 				// Show alert with status of signup attempt
 				if (res === "success") {
 					toast({
-						title: `Account created! Redirecting to login...`,
+						title: "회원가입이 완료되었습니다.",
 						status: "success",
 						isClosable: true,
 					});
@@ -73,7 +79,7 @@ export default function Signup() {
 					status: "error",
 					isClosable: true,
 				});
-			});
+			}).finally(() => { setSubmitting(false); turnstileRef.current?.reset(); });
 	};
 
 	return (
@@ -85,12 +91,15 @@ export default function Signup() {
 					</Heading>
 				</Stack>
 				<Box rounded={"lg"} boxShadow={"lg"} p={8} pt={{ base: 4, md: 8 }}>
-					<form>
+					<form onSubmit={handleSubmit}>
 						<Stack spacing={4}>
 							<FormControl id="username" isRequired>
 								<FormLabel>아이디</FormLabel>
 								<Input
 									type="text"
+                                    autoComplete="username"
+                                    minLength={3}
+                                    maxLength={40}
 									onChange={(e) => setUsername(e.target.value)}
 								/>
 							</FormControl>
@@ -99,11 +108,17 @@ export default function Signup() {
 								<InputGroup>
 									<Input
 										type={showPassword ? "text" : "password"}
+                                        autoComplete="new-password"
+                                        minLength={8}
+                                        maxLength={72}
 										onChange={(e) => setPassword(e.target.value)}
 									/>
 									<InputRightElement h={"full"}>
 										<Button
 											variant={"ghost"}
+                                            type="button"
+                                            aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                                            aria-pressed={showPassword}
 											onClick={() =>
 												setShowPassword((showPassword) => !showPassword)
 											}
@@ -114,14 +129,15 @@ export default function Signup() {
 								</InputGroup>
 							</FormControl>
 							<Stack spacing={5} pt={2}>
-								<Turnstile
+								{config?.captchaEnabled && <Turnstile
 									ref={turnstileRef}
-									siteKey="1x00000000000000000000AA"
-								/>
+									siteKey={config.captchaSiteKey}
+								/>}
 								<Button
-									loadingText="Submitting"
+									loadingText="가입 중"
+                                    isLoading={submitting}
+                                    isDisabled={!config || !!configError}
 									size="lg"
-									onClick={handleSubmit}
 									type="submit"
 								>
 									회원가입
@@ -135,6 +151,8 @@ export default function Signup() {
 							</HStack>
 						</Stack>
 					</form>
+                    {configError && <Text role="alert" mt="3" fontSize="sm">{configError}</Text>}
+                    <LegalLinks />
 				</Box>
 			</Stack>
 		</Flex>

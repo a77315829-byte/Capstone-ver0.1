@@ -24,6 +24,8 @@ _client: AsyncMongoClient | None = None
 
 
 def _build_uri() -> str:
+    if settings.mongodb_uri:
+        return settings.mongodb_uri
     username = settings.stotra_mongodb_username
     password = settings.stotra_mongodb_password
     cluster = settings.stotra_mongodb_cluster

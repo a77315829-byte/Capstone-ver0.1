@@ -1,7 +1,7 @@
 from typing import Literal
 from urllib.parse import quote
 
-from pydantic import model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -56,20 +56,26 @@ class Settings(BaseSettings):
     kis_app_secret: str = ""
     kis_base_url: str = "https://openapivts.koreainvestment.com:29443"  # 모의투자 도메인
 
-    # REST 폴링 주기. 감시 대상 종목 자체는 고정 리스트가 아니라 tracking.registry의
-    # 동적 구독 목록(사용자가 지금 보고 있는 차트)을 따른다.
-    poll_interval_sec: int = 10
+    # 고정 5종목 + 패널의 임시 구독. 장중 시세 조회는 기본 60초 간격이다.
+    always_watch_symbols: list[str] = Field(
+        default_factory=lambda: ["005930", "000660", "005380", "035420", "035720"],
+        max_length=10,
+    )
+    poll_interval_sec: int = Field(default=60, ge=10, le=3600)
+    krx_closed_dates: str = ""
+
+    @field_validator("always_watch_symbols")
+    @classmethod
+    def validate_watch_symbols(cls, symbols: list[str]) -> list[str]:
+        import re
+        if any(not re.fullmatch(r"\d[A-Z0-9]{5}", symbol) for symbol in symbols):
+            raise ValueError("상시 감시에는 국내 종목 코드만 지정할 수 있습니다")
+        return list(dict.fromkeys(symbols))
 
     # 구독 하트비트 TTL(초) - 프론트가 이 시간 안에 /watch를 다시 호출하지 않으면
     # (화면 이탈, 브라우저 종료 등) 감시 대상에서 자동으로 빠진다. 프론트의 하트비트
     # 주기보다 여유 있게 길어야 한다 - 데모 값, 프론트 폴링 주기 확정 후 재조정 필요.
     watch_ttl_sec: float = 60.0
-
-    # 감시가 끊겼다가 /watch로 다시 시작될 때, 최신 시세로 트리거를 재확인하기 위해
-    # KIS를 호출하는 "신선도 체크"의 최소 간격(초). 사용자가 종목에 짧은 간격으로
-    # 들락날락해도 이 시간 안에는 재확인용 KIS 호출 자체를 하지 않고 기존 값을
-    # 그대로 반환한다 - 프론트 하트비트 주기(30초)와 맞춰둔 데모 값.
-    watch_refresh_guard_sec: float = 30.0
 
     # 트리거 임계치 (이벤트 발생 조건) - 전부 데모 값, 실데이터로 튜닝 필요
     price_move_threshold_pct: float = 0.5   # 가격 변동 0.5% 이상

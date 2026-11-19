@@ -34,7 +34,7 @@ Rules:
 
 _SCHEMA = {
     "type": "object",
-    "properties": {"summary": {"type": "string"}},
+    "properties": {"summary": {"type": "string", "minLength": 1, "maxLength": 140}},
     "required": ["summary"],
 }
 

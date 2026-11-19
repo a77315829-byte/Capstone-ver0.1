@@ -18,8 +18,7 @@ const checkDuplicateUsername = (
 			next();
 		})
 		.catch((err) => {
-			console.log("err", err);
-			res.status(500).send({ message: err });
+			res.status(503).send({ message: "회원정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요." });
 		});
 };
 

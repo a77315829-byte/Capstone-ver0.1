@@ -38,7 +38,7 @@ export function parseDomesticTrades(message: string): DomesticTrade[] {
 		const price = value(2);
 		const quantity = value(12);
 		const cumulativeVolume = value(13);
-		if (!/^\d{6}$/.test(row[0]) || !Number.isFinite(time) || price <= 0 ||
+		if (!/^\d[A-Z0-9]{5}$/.test(row[0]) || !Number.isFinite(time) || price <= 0 ||
 			!Number.isFinite(price) || quantity < 0 || !Number.isFinite(quantity) ||
 			cumulativeVolume < 0 || !Number.isFinite(cumulativeVolume)) continue;
 		const sign = ["4", "5"].includes(row[3]) ? -1 : row[3] === "3" ? 0 : 1;

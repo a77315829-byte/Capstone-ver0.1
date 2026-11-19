@@ -3,6 +3,7 @@ import axios from "axios";
 import WebSocket, { WebSocketServer } from "ws";
 import { getKisConfig } from "../utils/requests";
 import { parseDomesticTrades } from "../utils/kisRealtime";
+import { networkPeerAllowed } from "../utils/networkAccess";
 
 type StreamStatus = "connecting" | "connected" | "reconnecting" | "unavailable";
 
@@ -122,6 +123,9 @@ export function attachStockStream(server: Server) {
 	};
 
 	server.on("upgrade", (request, socket, head) => {
+		if (!networkPeerAllowed(request.socket.remoteAddress)) {
+			socket.end("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n"); return;
+		}
 		if (request.headers.origin) {
 			try {
 				if (new URL(request.headers.origin).host !== request.headers.host) {
@@ -129,7 +133,7 @@ export function attachStockStream(server: Server) {
 				}
 			} catch { socket.destroy(); return; }
 		}
-		const match = /^\/api\/stocks\/(\d{6})\/stream$/.exec((request.url || "").split("?")[0]);
+		const match = /^\/api\/stocks\/(\d[A-Z0-9]{5})\/stream$/.exec((request.url || "").split("?")[0]);
 		if (!match) { socket.destroy(); return; }
 		const symbol = match[1];
 		if (!clients.has(symbol) && clients.size >= 40) {

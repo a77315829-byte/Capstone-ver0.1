@@ -12,6 +12,10 @@ export type AiJudgmentFactor = {
 };
 
 export type AiJudgment = {
+	refreshing?: boolean;
+	refresh_error?: boolean;
+	source?: string;
+	fallback_used?: boolean;
 	symbol: string;
 	judge: AiJudgmentLabel;
 	confidence: number;
@@ -30,6 +34,9 @@ export type AiHistoryEntry = {
 };
 
 export type AiCompareResult = {
+	computed_at?: string;
+	source?: string;
+	fallback_used?: boolean;
 	user_judge: AiJudgmentLabel;
 	ai_judge: AiJudgmentLabel;
 	ai_probabilities: AiProbabilities;
@@ -49,22 +56,43 @@ function unwrap<T>(payload: any): T {
 	return payload as T;
 }
 
+type Snapshot = { judgment: AiJudgment | null; history: AiHistoryEntry[] };
+const snapshots = new Map<string, Snapshot>();
+function remember(symbol: string, update: Partial<Snapshot>) {
+	const snapshot = { judgment: null, history: [], ...snapshots.get(symbol), ...update };
+	snapshots.delete(symbol);
+	snapshots.set(symbol, snapshot);
+	if (snapshots.size > 16) snapshots.delete(snapshots.keys().next().value!);
+}
+
 const judgmentService = {
-	async getJudgment(symbol: string): Promise<AiJudgment> {
+	getCachedSnapshot(symbol: string): Snapshot | undefined {
+		return snapshots.get(symbol.trim().toUpperCase());
+	},
+	async getJudgment(symbol: string, signal?: AbortSignal): Promise<AiJudgment> {
 		const normalized = symbol.trim().toUpperCase();
 
 		const response = await api.get(
 			`/ai-judgment/${encodeURIComponent(normalized)}`,
+			{ signal },
 		);
 
-		return unwrap<AiJudgment>(response.data);
+		const next = unwrap<AiJudgment>(response.data);
+		const previous = snapshots.get(normalized)?.judgment;
+		// 연결 실패 시 이미 받은 실제 분석을 지우지 않고 조회 시각과 함께 유지한다.
+		if (next.fallback_used && previous && !previous.fallback_used) {
+			return { ...previous, refreshing: false, refresh_error: true };
+		}
+		remember(normalized, { judgment: next });
+		return next;
 	},
 
 	// 종목 화면을 보는 동안 백엔드의 실시간 감시 대상으로 등록(하트비트).
 	// 이력이 없는 종목이면 백엔드가 콜드스타트로 첫 판단까지 만들어준다.
-	async watchSymbol(symbol: string): Promise<void> {
+	async watchSymbol(symbol: string, signal?: AbortSignal): Promise<{refreshing?: boolean}> {
 		const normalized = symbol.trim().toUpperCase();
-		await api.post(`/ai-judgment/${encodeURIComponent(normalized)}/watch`);
+		const response = await api.post(`/ai-judgment/${encodeURIComponent(normalized)}/watch`, undefined, { signal });
+		return response.data;
 	},
 
 	// 종목 화면을 벗어날 때 감시 대상에서 해제.
@@ -73,15 +101,17 @@ const judgmentService = {
 		await api.delete(`/ai-judgment/${encodeURIComponent(normalized)}/watch`);
 	},
 
-	async getHistory(symbol: string, limit = 20): Promise<AiHistoryEntry[]> {
+	async getHistory(symbol: string, limit = 20, signal?: AbortSignal): Promise<AiHistoryEntry[]> {
 		const normalized = symbol.trim().toUpperCase();
 
 		const response = await api.get(
 			`/ai-judgment/${encodeURIComponent(normalized)}/history`,
-			{ params: { limit } },
+			{ params: { limit }, signal },
 		);
 
-		return unwrap<AiHistoryEntry[]>(response.data);
+		const history = unwrap<AiHistoryEntry[]>(response.data);
+		remember(normalized, { history });
+		return history;
 	},
 
 	async compare(symbol: string, userJudge: AiJudgmentLabel): Promise<AiCompareResult> {

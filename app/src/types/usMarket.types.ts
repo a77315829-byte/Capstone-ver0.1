@@ -29,7 +29,11 @@ export interface UsMarketStatus {
 	localTime: string;
 	weekday: string;
 
-	sessionType: "REGULAR";
+	sessionType: "PRE" | "REGULAR" | "POST" | "CLOSED";
+	limitOrderAllowed: boolean;
+	sessionLabel: string;
+	sessionStartTime: string | null;
+	sessionEndTime: string | null;
 	openTime: string;
 	closeTime: string;
 

@@ -1,7 +1,8 @@
-import React, {
+import MarketOverview from "../components/MarketOverview";
+import { FxProvider, FxToolbar } from "../components/FxExchange";
+import {
 	useCallback,
 	useEffect,
-	useState,
 } from "react";
 
 import {
@@ -18,6 +19,7 @@ import {
 
 import DomesticExchange from "./DomesticExchange";
 import UsMarketPanel from "../components/UsMarketPanel";
+import HoldingsPanel from "../components/HoldingsPanel";
 
 type MarketView =
 	| "KR"
@@ -32,22 +34,6 @@ export interface SelectedExchangeStock {
 const SELECTED_STOCK_STORAGE_KEY =
 	"antitude:selectedStock";
 
-function getDefaultStock(
-	market: MarketView,
-): SelectedExchangeStock {
-	return market === "US"
-		? {
-			symbol: "NVDA",
-			name: "엔비디아",
-			market: "NASDAQ",
-		}
-		: {
-			symbol: "005930",
-			name: "삼성전자",
-			market: "KOSPI",
-		};
-}
-
 function rememberSelectedStock(
 	stock: SelectedExchangeStock,
 ) {
@@ -61,7 +47,7 @@ function rememberSelectedStock(
 	}
 }
 
-export default function Exchange() {
+function ExchangeContent() {
 	const [
 		searchParams,
 		setSearchParams,
@@ -74,13 +60,8 @@ export default function Exchange() {
 			? "US"
 			: "KR";
 
-	const [
-		marketView,
-		setMarketView,
-	] =
-		useState<MarketView>(
-			queryMarket,
-		);
+	const marketView = queryMarket;
+	const selectedSymbol = searchParams.get("symbol")?.trim() || "";
 
 	const handleSelectedStockChange =
 		useCallback(
@@ -96,32 +77,12 @@ export default function Exchange() {
 		);
 
 	useEffect(() => {
-		setMarketView(
-			queryMarket,
-		);
+		if (!selectedSymbol) {
+			try { sessionStorage.removeItem(SELECTED_STOCK_STORAGE_KEY); } catch { /* optional storage */ }
+		}
+	}, [selectedSymbol]);
 
-		rememberSelectedStock(
-			getDefaultStock(
-				queryMarket,
-			),
-		);
-	}, [queryMarket]);
-
-	const changeMarket = (
-		market: MarketView,
-	) => {
-		setMarketView(market);
-
-		rememberSelectedStock(
-			getDefaultStock(
-				market,
-			),
-		);
-
-		setSearchParams({
-			market,
-		});
-	};
+	const changeMarket = (market: MarketView) => setSearchParams({ market, ...(searchParams.get('ranking') ? { ranking: searchParams.get('ranking')! } : {}) });
 
 	return (
 		<Box
@@ -162,12 +123,11 @@ export default function Exchange() {
 						fontSize="xs"
 						color="gray.600"
 					>
-						선택한 시장의 데이터만
-						불러와 속도 저하를
-						줄입니다.
+						시장 순위에서 종목을 선택하거나 상단에서 검색하세요.
 					</Text>
 				</Box>
 
+				<FxToolbar />
 				<ButtonGroup
 					ml={{
 						base: 0,
@@ -264,8 +224,10 @@ export default function Exchange() {
 				</ButtonGroup>
 			</Flex>
 
-			{marketView === "KR" ? (
-				<DomesticExchange
+			{!selectedSymbol ? <MarketOverview market={marketView} /> : <>
+                <Box px={{ base: 4, md: 8 }} pt="4"><Button size="sm" variant="ghost" colorScheme="orange" onClick={() => changeMarket(marketView)}>← 시장 둘러보기</Button></Box>
+                {marketView === "KR" ? (
+				<DomesticExchange key={selectedSymbol}
 					onStockChange={
 						handleSelectedStockChange
 					}
@@ -276,7 +238,10 @@ export default function Exchange() {
 						handleSelectedStockChange
 					}
 				/>
-			)}
+			)}</>}
+			<HoldingsPanel market={queryMarket} />
 		</Box>
 	);
 }
+
+export default function Exchange() { return <FxProvider><ExchangeContent /></FxProvider>; }

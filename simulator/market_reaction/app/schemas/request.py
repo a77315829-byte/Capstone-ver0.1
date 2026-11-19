@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -15,6 +15,12 @@ class SelectedStock(BaseModel):
 
     code: str = Field(description="종목 코드")
     name: str = Field(description="종목명")
+    market: Literal["KR", "US"] = "KR"
+    exchange: Optional[Literal["NAS", "NYS", "AMS"]] = None
+
+    @property
+    def currency(self) -> str:
+        return "USD" if self.market == "US" else "KRW"
 
 
 class ExternalStockData(BaseModel):
@@ -23,7 +29,7 @@ class ExternalStockData(BaseModel):
     필드별로 있는 값만 stub 위에 덮어쓴다. current_price 가 없으면 전체를 stub 으로 대체한다.
     """
 
-    current_price: Optional[int] = Field(default=None, description="현재가")
+    current_price: Optional[float] = Field(default=None, gt=0, allow_inf_nan=False, description="현재가(해당 시장 통화)")
     daily_change_rate: Optional[float] = Field(default=None, description="등락률(%)")
     volume_trend: Optional[str] = Field(
         default=None, description="거래량 추세. 허용값: increasing, stable, decreasing"
@@ -31,6 +37,7 @@ class ExternalStockData(BaseModel):
     market_cap_trillion: Optional[float] = Field(
         default=None, description="시가총액(조원)"
     )
+    market_cap_usd: Optional[float] = Field(default=None, description="미국 종목 시가총액(USD)")
     observed_at: Optional[datetime] = Field(default=None, description="시세 관측 시각")
 
 

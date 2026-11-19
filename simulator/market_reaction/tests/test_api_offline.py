@@ -4,7 +4,11 @@ from fastapi.testclient import TestClient
 
 import app.main as main
 
-client = TestClient(main.app)
+import pytest
+@pytest.fixture(autouse=True)
+def service_key(monkeypatch):
+    monkeypatch.setenv("EXHIBITION_SERVICE_KEY", "offline-test-key")
+client = TestClient(main.app, headers={"X-Service-Key": "offline-test-key"})
 
 _VALID_BODY = {
     "user_id": "test_user_001",
@@ -55,3 +59,22 @@ def test_get_simulations_not_implemented():
     resp = client.get("/simulations/sim_abc123")
     assert resp.status_code == 501
     assert "stateless" in resp.json()["message"]
+
+
+def test_slow_pipeline_is_cancelled_before_gateway_fallback(monkeypatch):
+    import asyncio
+    from app.api import routes
+
+    cancelled = []
+
+    async def slow_pipeline(_request):
+        try:
+            await asyncio.sleep(10)
+        finally:
+            cancelled.append(True)
+
+    monkeypatch.setattr(routes, "run_market_reaction_simulation", slow_pipeline)
+    monkeypatch.setattr(routes.settings, "market_pipeline_timeout_seconds", 0.02)
+    resp = client.post("/simulate", json=_VALID_BODY)
+    assert resp.status_code == 504
+    assert cancelled == [True]

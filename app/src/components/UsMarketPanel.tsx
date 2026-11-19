@@ -1,9 +1,11 @@
-import React, {
+import { KrwEquivalent } from "./FxExchange";
+import {
 	useEffect,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import {
 	Badge,
@@ -18,23 +20,14 @@ import {
 	GridItem,
 	Heading,
 	HStack,
-	Input,
 	NumberInput,
 	NumberInputField,
 	SimpleGrid,
 	Spacer,
 	Spinner,
 	Stack,
-	Stat,
-	StatLabel,
-	StatNumber,
 	Table,
 	TableContainer,
-	Tabs,
-	TabList,
-	TabPanels,
-	Tab,
-	TabPanel,
 	Tbody,
 	Td,
 	Text,
@@ -44,21 +37,17 @@ import {
 	useToast,
 } from "@chakra-ui/react";
 
-import {
-	CandlestickData,
-	createChart,
-	HistogramData,
-	IChartApi,
-} from "lightweight-charts";
 
 import api from "../services/api.service";
+import UsMarketDetails from "./UsMarketDetails";
+import UsStockChart from "./UsStockChart";
+import MarketSimulatorPanel from "./MarketSimulatorPanel";
 
 import RelatedFinancialTerms from "../components/RelatedFinancialTerms";
 
 import type {
 	UsChartPoint,
 	UsExchangeCode,
-	UsHolding,
 	UsMarketStatus,
 	UsOrderSide,
 	UsOrderStatus,
@@ -70,19 +59,23 @@ import type {
 } from "../types/usMarket.types";
 
 type UsChartPeriod =
+	| "1min" | "5min" | "15min" | "1h" | "4h"
 	| "1m"
 	| "6m"
 	| "1y";
+
+const chartOptions = [
+  ['1분', '1min'], ['5분', '5min'], ['15분', '15min'], ['1시간', '1h'], ['4시간', '4h'],
+  ['1일', '1m'], ['6개월', '6m'], ['1년', '1y'],
+] as const;
+const isIntradayPeriod = (period: UsChartPeriod) => ['1min', '5min', '15min', '1h', '4h'].includes(period);
 
 type UsOrderPanelMode =
 	| "BUY"
 	| "SELL"
 	| "MANAGE";
 
-type UsDetailSection =
-	| "information"
-	| "holdings"
-	| "orders";
+type UsDetailSection = "holdings" | "orders" | null;
 
 const usd =
 	new Intl.NumberFormat(
@@ -99,29 +92,6 @@ const numberFormat =
 	new Intl.NumberFormat(
 		"en-US",
 	);
-
-const compactUsd =
-	new Intl.NumberFormat(
-		"en-US",
-		{
-			style: "currency",
-			currency: "USD",
-			notation: "compact",
-			maximumFractionDigits: 2,
-		},
-	);
-
-function formatRatio(
-	value?: number | null,
-): string {
-	const number =
-		Number(value ?? 0);
-
-	return Number.isFinite(number) &&
-		number !== 0
-		? number.toFixed(2)
-		: "-";
-}
 
 function formatUsdOrDash(
 	value?: number | null,
@@ -222,678 +192,6 @@ function formatDateTime(
 	);
 }
 
-function UsCandlestickChart({
-	data,
-	height = 340,
-}: {
-	data: UsChartPoint[];
-	height?: number;
-}) {
-	const containerRef =
-		useRef<HTMLDivElement | null>(
-			null,
-		);
-
-	const chartRef =
-		useRef<IChartApi | null>(
-			null,
-		);
-
-	useEffect(() => {
-		if (
-			!containerRef.current
-		) {
-			return;
-		}
-
-		containerRef.current.innerHTML =
-			"";
-
-		if (data.length === 0) {
-			return;
-		}
-
-		const chart =
-			createChart(
-				containerRef.current,
-				{
-					width:
-						containerRef
-							.current
-							.clientWidth,
-					height,
-					layout: {
-						background: {
-							color:
-								"#ffffff",
-						},
-						textColor:
-							"#1A202C",
-					},
-					grid: {
-						vertLines: {
-							color:
-								"#edf2f7",
-						},
-						horzLines: {
-							color:
-								"#edf2f7",
-						},
-					},
-					rightPriceScale: {
-						borderColor:
-							"#e2e8f0",
-					},
-					timeScale: {
-						borderColor:
-							"#e2e8f0",
-						timeVisible:
-							false,
-					},
-				},
-			);
-
-		chartRef.current =
-			chart;
-
-		const candles =
-			chart.addCandlestickSeries(
-				{
-					upColor:
-						"#38A169",
-					downColor:
-						"#E53E3E",
-					borderUpColor:
-						"#38A169",
-					borderDownColor:
-						"#E53E3E",
-					wickUpColor:
-						"#38A169",
-					wickDownColor:
-						"#E53E3E",
-				},
-			);
-
-		const volume =
-			chart.addHistogramSeries(
-				{
-					priceFormat: {
-						type:
-							"volume",
-					},
-					priceScaleId:
-						"",
-				},
-			);
-
-		volume
-			.priceScale()
-			.applyOptions({
-				scaleMargins: {
-					top: 0.82,
-					bottom: 0,
-				},
-			});
-
-		candles.setData(
-			data.map(
-				(point) => ({
-					time:
-						point.time as any,
-					open:
-						point.open,
-					high:
-						point.high,
-					low:
-						point.low,
-					close:
-						point.close,
-				}),
-			) as CandlestickData[],
-		);
-
-		volume.setData(
-			data.map(
-				(point) => ({
-					time:
-						point.time as any,
-					value:
-						point.volume ||
-						0,
-					color:
-						point.close >=
-						point.open
-							? "#38A169"
-							: "#E53E3E",
-				}),
-			) as HistogramData[],
-		);
-
-		chart
-			.timeScale()
-			.fitContent();
-
-		const resizeObserver =
-			new ResizeObserver(
-				(entries) => {
-					const entry =
-						entries[0];
-
-					if (!entry) {
-						return;
-					}
-
-					chart.applyOptions({
-						width:
-							entry
-								.contentRect
-								.width,
-					});
-				},
-			);
-
-		resizeObserver.observe(
-			containerRef.current,
-		);
-
-		return () => {
-			resizeObserver.disconnect();
-			chart.remove();
-			chartRef.current =
-				null;
-		};
-	}, [
-		data,
-		height,
-	]);
-
-	if (data.length === 0) {
-		return (
-			<Flex
-				h={`${height}px`}
-				align="center"
-				justify="center"
-				color="gray.500"
-			>
-				차트 데이터가 없습니다.
-			</Flex>
-		);
-	}
-
-	return (
-		<Box
-			ref={containerRef}
-			w="100%"
-			h={`${height}px`}
-		/>
-	);
-}
-
-
-function UsStockDetailPanel({
-	quote,
-	isLoading,
-}: {
-	quote:
-		| UsStockQuote
-		| null;
-	isLoading: boolean;
-}) {
-	if (isLoading) {
-		return (
-			<Flex
-				h="320px"
-				align="center"
-				justify="center"
-			>
-				<Spinner />
-			</Flex>
-		);
-	}
-
-	if (!quote) {
-		return (
-			<Flex
-				h="260px"
-				align="center"
-				justify="center"
-				color="gray.500"
-			>
-				종목 상세정보를 불러오지 못했습니다.
-			</Flex>
-		);
-	}
-
-	const isEtf =
-		quote.assetType === "ETF";
-
-	return (
-		<Stack spacing="5">
-			<Box>
-				<Flex
-					align="center"
-					gap="2"
-					wrap="wrap"
-				>
-					<Heading size="md">
-						{quote.name}
-					</Heading>
-
-					<Badge
-						colorScheme={
-							isEtf
-								? "teal"
-								: "blue"
-						}
-					>
-						{isEtf
-							? "ETF"
-							: "주식"}
-					</Badge>
-				</Flex>
-
-				<Text
-					mt="1"
-					fontSize="sm"
-					color="gray.500"
-				>
-					{quote.symbol}
-					{" · "}
-					{quote.market}
-					{" · "}
-					{quote.longName}
-				</Text>
-			</Box>
-
-			<Box
-				p="4"
-				borderWidth="1px"
-				borderRadius="lg"
-				bg="gray.50"
-			>
-				<Text
-					fontWeight="900"
-					mb="2"
-				>
-					{isEtf
-						? "ETF 설명"
-						: "기업 설명"}
-				</Text>
-
-				<Text
-					color="gray.700"
-					lineHeight="1.8"
-				>
-					{quote.summary ??
-						(isEtf
-							? "여러 종목에 분산 투자하도록 설계된 미국 상장지수펀드입니다."
-							: "미국 증시에 상장된 기업입니다. 가격 흐름뿐 아니라 수익성과 기업가치 지표를 함께 확인하세요.")}
-				</Text>
-			</Box>
-
-			{isEtf ? (
-				<SimpleGrid
-					columns={{
-						base: 1,
-						md: 3,
-					}}
-					spacing="4"
-				>
-					<Box
-						p="4"
-						borderWidth="1px"
-						borderRadius="lg"
-					>
-						<Text
-							fontSize="sm"
-							color="gray.500"
-						>
-							ETF 분류
-						</Text>
-						<Text
-							mt="1"
-							fontWeight="900"
-						>
-							{quote.category ??
-								quote.etpTypeName ??
-								"미국 ETF"}
-						</Text>
-					</Box>
-
-					<Box
-						p="4"
-						borderWidth="1px"
-						borderRadius="lg"
-					>
-						<Text
-							fontSize="sm"
-							color="gray.500"
-						>
-							추종 지수
-						</Text>
-						<Text
-							mt="1"
-							fontWeight="900"
-						>
-							{quote.benchmark ??
-								"정보 없음"}
-						</Text>
-					</Box>
-
-					<Box
-						p="4"
-						borderWidth="1px"
-						borderRadius="lg"
-					>
-						<Text
-							fontSize="sm"
-							color="gray.500"
-						>
-							운용사
-						</Text>
-						<Text
-							mt="1"
-							fontWeight="900"
-						>
-							{quote.issuer ??
-								"정보 없음"}
-						</Text>
-					</Box>
-				</SimpleGrid>
-			) : (
-				<SimpleGrid
-					columns={{
-						base: 2,
-						md: 4,
-					}}
-					spacing="4"
-				>
-					<Stat>
-						<StatLabel>
-							시가총액
-						</StatLabel>
-						<StatNumber fontSize="lg">
-							{Number(
-								quote.marketCap ??
-									0,
-							) > 0
-								? compactUsd.format(
-										Number(
-											quote.marketCap,
-										),
-									)
-								: "-"}
-						</StatNumber>
-					</Stat>
-
-					<Stat>
-						<StatLabel>PER</StatLabel>
-						<StatNumber fontSize="lg">
-							{formatRatio(
-								quote.per,
-							)}
-						</StatNumber>
-					</Stat>
-
-					<Stat>
-						<StatLabel>PBR</StatLabel>
-						<StatNumber fontSize="lg">
-							{formatRatio(
-								quote.pbr,
-							)}
-						</StatNumber>
-					</Stat>
-
-					<Stat>
-						<StatLabel>EPS</StatLabel>
-						<StatNumber fontSize="lg">
-							{formatUsdOrDash(
-								quote.eps,
-							)}
-						</StatNumber>
-					</Stat>
-				</SimpleGrid>
-			)}
-
-			<SimpleGrid
-				columns={{
-					base: 2,
-					md: 4,
-				}}
-				spacing="4"
-			>
-				<Stat>
-					<StatLabel>
-						52주 최고
-					</StatLabel>
-					<StatNumber fontSize="lg">
-						{formatUsdOrDash(
-							quote.fiftyTwoWeekHigh,
-						)}
-					</StatNumber>
-				</Stat>
-
-				<Stat>
-					<StatLabel>
-						52주 최저
-					</StatLabel>
-					<StatNumber fontSize="lg">
-						{formatUsdOrDash(
-							quote.fiftyTwoWeekLow,
-						)}
-					</StatNumber>
-				</Stat>
-
-				<Stat>
-					<StatLabel>
-						거래량
-					</StatLabel>
-					<StatNumber fontSize="lg">
-						{numberFormat.format(
-							quote.volume,
-						)}
-					</StatNumber>
-				</Stat>
-
-				<Stat>
-					<StatLabel>
-						전일 종가
-					</StatLabel>
-					<StatNumber fontSize="lg">
-						{usd.format(
-							quote.previousClose,
-						)}
-					</StatNumber>
-				</Stat>
-			</SimpleGrid>
-
-			<Text
-				fontSize="xs"
-				color="gray.500"
-			>
-				※ PER·PBR·EPS·시가총액은 KIS 현재가상세 API가 제공한 경우에만 표시됩니다.
-			</Text>
-		</Stack>
-	);
-}
-
-function UsPriceHistoryTable({
-	data,
-}: {
-	data: UsChartPoint[];
-}) {
-	const recentData =
-		[...data]
-			.sort(
-				(a, b) =>
-					b.time -
-					a.time,
-			)
-			.slice(0, 8);
-
-	return (
-		<Box>
-			<Flex
-				align="center"
-				mb="3"
-			>
-				<Box>
-					<Heading size="sm">
-						가격 기록
-					</Heading>
-					<Text
-						fontSize="xs"
-						color="gray.500"
-					>
-						현재 차트 데이터 기준
-					</Text>
-				</Box>
-			</Flex>
-
-			<TableContainer>
-				<Table size="sm">
-					<Thead>
-						<Tr>
-							<Th>날짜</Th>
-							<Th isNumeric>
-								종가
-							</Th>
-							<Th isNumeric>
-								거래량
-							</Th>
-						</Tr>
-					</Thead>
-
-					<Tbody>
-						{recentData.map(
-							(point) => (
-								<Tr
-									key={
-										point.time
-									}
-								>
-									<Td>
-										{new Date(
-											point.time *
-												1000,
-										).toLocaleDateString(
-											"ko-KR",
-										)}
-									</Td>
-									<Td isNumeric>
-										{usd.format(
-											point.close,
-										)}
-									</Td>
-									<Td isNumeric>
-										{numberFormat.format(
-											point.volume,
-										)}
-									</Td>
-								</Tr>
-							),
-						)}
-
-						{recentData.length ===
-							0 && (
-							<Tr>
-								<Td
-									colSpan={3}
-									textAlign="center"
-									py="8"
-									color="gray.500"
-								>
-									가격 기록이 없습니다.
-								</Td>
-							</Tr>
-						)}
-					</Tbody>
-				</Table>
-			</TableContainer>
-		</Box>
-	);
-}
-
-function UsDetailSelectorCard({
-	title,
-	description,
-	selected,
-	onClick,
-	children,
-}: {
-	title: string;
-	description: string;
-	selected: boolean;
-	onClick: () => void;
-	children: React.ReactNode;
-}) {
-	return (
-		<Card
-			as="button"
-			type="button"
-			w="100%"
-			minH="210px"
-			textAlign="left"
-			borderWidth="1px"
-			borderColor={
-				selected
-					? "brand.500"
-					: "app.borderSoft"
-			}
-			bg="white"
-			boxShadow={
-				selected
-					? "0 10px 28px rgba(242, 100, 56, 0.10)"
-					: "0 8px 24px rgba(73, 52, 30, 0.04)"
-			}
-			cursor="pointer"
-			transition="border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease"
-			_hover={{
-				borderColor: "brand.400",
-				transform: "translateY(-1px)",
-			}}
-			onClick={onClick}
-		>
-			<CardHeader pb="2">
-				<Flex align="center">
-					<Box>
-						<Heading
-							size="sm"
-							color={
-								selected
-									? "brand.600"
-									: "app.text"
-							}
-						>
-							{title}
-						</Heading>
-						<Text
-							mt="1"
-							fontSize="10px"
-							color="app.subtleText"
-						>
-							{description}
-						</Text>
-					</Box>
-					<Spacer />
-					{selected && (
-						<Badge
-							bg="orange.50"
-							color="brand.600"
-							borderRadius="full"
-						>
-							선택됨
-						</Badge>
-					)}
-				</Flex>
-			</CardHeader>
-			<CardBody pt="2">
-				{children}
-			</CardBody>
-		</Card>
-	);
-}
-
 interface UsMarketPanelProps {
 	onStockChange?: (
 		stock: {
@@ -909,31 +207,15 @@ export default function UsMarketPanel({
 }: UsMarketPanelProps) {
 	const toast =
 		useToast();
+	const [searchParams, setSearchParams] = useSearchParams();
+	const requestedSymbol = searchParams.get("symbol")?.trim().toUpperCase() || "NVDA";
+	const selectedSymbol = /^[A-Z][A-Z0-9.-]{0,11}$/.test(requestedSymbol) ? requestedSymbol : "NVDA";
+	const requestedExchange = searchParams.get("exchange")?.toUpperCase();
+	const selectedExchange: UsExchangeCode = requestedExchange === "NYS" || requestedExchange === "AMS" ? requestedExchange : "NAS";
 
-	const [
-		selectedSymbol,
-		setSelectedSymbol,
-	] = useState("NVDA");
-
-	const [
-		selectedExchange,
-		setSelectedExchange,
-	] =
-		useState<UsExchangeCode>(
-			"NAS",
-		);
-
-	const [
-		searchQuery,
-		setSearchQuery,
-	] = useState("");
-
-	const [
-		searchResults,
-		setSearchResults,
-	] = useState<
-		UsSearchResult[]
-	>([]);
+    const [isMarketSimulatorOpen, setIsMarketSimulatorOpen] = useState(false);
+    const [chartError, setChartError] = useState<string | null>(null);
+    const chartRequest = useRef<AbortController | null>(null);
 
 	const [
 		quote,
@@ -1038,7 +320,7 @@ export default function UsMarketPanel({
 		setDetailSection,
 	] =
 		useState<UsDetailSection>(
-			"information",
+			null,
 		);
 
 	const [
@@ -1069,11 +351,6 @@ export default function UsMarketPanel({
 	const [
 		isToppingUp,
 		setIsToppingUp,
-	] = useState(false);
-
-	const [
-		isSearching,
-		setIsSearching,
 	] = useState(false);
 
 	const [
@@ -1137,6 +414,7 @@ export default function UsMarketPanel({
 				selectedSymbol,
 			exchange =
 				selectedExchange,
+			signal?: AbortSignal,
 		) => {
 			try {
 				setIsLoadingQuote(
@@ -1146,6 +424,7 @@ export default function UsMarketPanel({
 				const response =
 					await api.get(
 						`/us-stocks/${exchange}/${symbol}/info`,
+						{ signal, timeout: 20000 },
 					);
 
 				const data =
@@ -1153,10 +432,8 @@ export default function UsMarketPanel({
 						response.data,
 					);
 
+				if (signal?.aborted) return null;
 				setQuote(data);
-				setSelectedExchange(
-					data.exchange,
-				);
 
 				setLimitPrice(
 					Number(
@@ -1168,6 +445,7 @@ export default function UsMarketPanel({
 
 				return data;
 			} catch (error: any) {
+				if (signal?.aborted) return null;
 				console.error(
 					"미국 종목 시세 조회 실패:",
 					error,
@@ -1188,51 +466,48 @@ export default function UsMarketPanel({
 
 				return null;
 			} finally {
-				setIsLoadingQuote(
+				if (!signal?.aborted) setIsLoadingQuote(
 					false,
 				);
 			}
 		};
 
-	const loadChart =
-		async (
-			symbol =
-				selectedSymbol,
-			exchange =
-				selectedExchange,
-			period =
-				chartPeriod,
-		) => {
-			try {
-				setIsLoadingChart(
-					true,
-				);
+    useEffect(() => {
+        const controller = new AbortController();
+        setQuote(null);
+        setLimitPrice(0);
+        void loadQuote(selectedSymbol, selectedExchange, controller.signal);
+        return () => controller.abort();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedSymbol, selectedExchange]);
 
-				const response =
-					await api.get(
-						`/us-stocks/${exchange}/${symbol}/historical?period=${period}`,
-					);
+    const loadChart = async (symbol = selectedSymbol, exchange = selectedExchange, period = chartPeriod, refresh = false) => {
+        chartRequest.current?.abort();
+        const controller = new AbortController();
+        chartRequest.current = controller;
+        if (!refresh) { setIsLoadingChart(true); setChartData([]); }
+        setChartError(null);
+        try {
+            const response = await api.get(`/us-stocks/${exchange}/${symbol}/historical`, {
+                params: { period }, signal: controller.signal, timeout: 20000,
+            });
+            if (!controller.signal.aborted) setChartData(unwrapApiData<UsChartPoint[]>(response.data));
+        } catch (error: any) {
+            if (!controller.signal.aborted) setChartError(error?.response?.data?.message || '차트를 불러오지 못했습니다. 다시 시도해 주세요.');
+        } finally {
+            if (!controller.signal.aborted) setIsLoadingChart(false);
+              if (chartRequest.current === controller) chartRequest.current = null;
+        }
+    };
 
-				setChartData(
-					unwrapApiData<
-						UsChartPoint[]
-					>(
-						response.data,
-					),
-				);
-			} catch (error) {
-				console.error(
-					"미국 종목 차트 조회 실패:",
-					error,
-				);
-
-				setChartData([]);
-			} finally {
-				setIsLoadingChart(
-					false,
-				);
-			}
-		};
+    useEffect(() => {
+        void loadChart(selectedSymbol, selectedExchange, chartPeriod);
+        const timer = window.setInterval(() => {
+            if (!document.hidden && !chartRequest.current && isIntradayPeriod(chartPeriod)) void loadChart(selectedSymbol, selectedExchange, chartPeriod, true);
+        }, 10000);
+        return () => { window.clearInterval(timer); chartRequest.current?.abort(); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedSymbol, selectedExchange, chartPeriod]);
 
 	const loadTradingData =
 		async (
@@ -1303,100 +578,10 @@ export default function UsMarketPanel({
 			}
 		};
 
-	const searchStocks =
-		async () => {
-			const query =
-				searchQuery.trim();
-
-			if (!query) {
-				return;
-			}
-
-			try {
-				setIsSearching(
-					true,
-				);
-
-				const response =
-					await api.get(
-						`/us-stocks/search/${encodeURIComponent(
-							query,
-						)}`,
-					);
-
-				const results =
-					unwrapApiData<
-						UsSearchResult[]
-					>(
-						response.data,
-					);
-
-				setSearchResults(
-					results,
-				);
-
-				if (
-					results.length === 0
-				) {
-					toast({
-						title:
-							"검색 결과가 없습니다.",
-						description:
-							"영문 티커를 정확히 입력해 보세요.",
-						status: "info",
-						duration:
-							2200,
-						isClosable:
-							true,
-					});
-				}
-			} catch (error: any) {
-				toast({
-					title:
-						"미국 종목 검색에 실패했습니다.",
-					description:
-						error?.response
-							?.data
-							?.message ??
-						"검색 API를 확인하세요.",
-					status: "error",
-					duration: 3000,
-					isClosable: true,
-				});
-			} finally {
-				setIsSearching(
-					false,
-				);
-			}
-		};
-
-	const selectStock =
-		async (
-			item: UsSearchResult,
-		) => {
-			setSelectedSymbol(
-				item.symbol,
-			);
-
-			setSelectedExchange(
-				item.exchange,
-			);
-
-			setSearchResults([]);
-
-			const loadedQuote =
-				await loadQuote(
-					item.symbol,
-					item.exchange,
-				);
-
-			await loadChart(
-				item.symbol,
-				loadedQuote?.exchange ??
-					item.exchange,
-				chartPeriod,
-			);
-		};
+	const selectStock = (item: UsSearchResult) => {
+        setSearchParams({ market: "US", symbol: item.symbol, name: item.name,
+            stockMarket: item.market, exchange: item.exchange });
+    };
 
 	const submitOrder =
 		async (
@@ -1482,7 +667,7 @@ export default function UsMarketPanel({
 					description:
 						order.status ===
 						"PENDING"
-							? "다음 미국 정규장 중 지정 가격 조건을 충족하면 자동 체결됩니다."
+							? "정규장·프리마켓·애프터마켓에서 최신 시세가 지정가 조건을 충족하면 자동 체결됩니다. 시세 미확인 시 대기합니다."
 							: `${order.name} ${order.quantity}주 주문이 체결되었습니다.`,
 					status:
 						"success",
@@ -1576,11 +761,11 @@ export default function UsMarketPanel({
 					title:
 						result.marketOpen
 							? "미체결 주문 확인 완료"
-							: "현재 미국 정규장이 닫혀 있습니다.",
+							: "현재 미국 거래시간이 아닙니다.",
 					description:
 						result.marketOpen
 							? `${result.filledCount}건 체결, ${result.pendingCount}건 대기 중`
-							: "예약 지정가 주문은 다음 정규장에 다시 확인됩니다.",
+							: "예약 지정가는 다음 거래시간에 자동 확인됩니다.",
 					status:
 						result.marketOpen
 							? "success"
@@ -1706,10 +891,14 @@ export default function UsMarketPanel({
 			}
 		};
 
+    useEffect(() => {
+        const refresh = () => { void loadTradingData(true); };
+        window.addEventListener('antitude:fx-converted', refresh);
+        return () => window.removeEventListener('antitude:fx-converted', refresh);
+    }, []);
+
 	useEffect(() => {
 		void Promise.all([
-			loadQuote(),
-			loadChart(),
 			loadTradingData(
 				true,
 			),
@@ -1920,6 +1109,9 @@ export default function UsMarketPanel({
 				>
 					미국 주식 · USD 모의투자
 				</Badge>
+                <Button size="sm" h="36px" px="16px" variant="outline" borderColor="brand.500" color="brand.600" bg="white" fontWeight="900"
+                    _hover={{ bg: 'orange.50' }} isDisabled={!quote || quote.symbol !== selectedSymbol}
+                    onClick={() => setIsMarketSimulatorOpen(true)}>시장 반응 시뮬레이터 ›</Button>
 			</Flex>
 
 			<RelatedFinancialTerms
@@ -2023,6 +1215,7 @@ export default function UsMarketPanel({
 											quote.price,
 										)}
 									</Heading>
+<KrwEquivalent usd={quote.price} />
 
 									<Text
 										color={
@@ -2064,7 +1257,7 @@ export default function UsMarketPanel({
 									base:
 										"repeat(2, minmax(0, 1fr))",
 									md:
-										"repeat(4, 110px)",
+										"repeat(4, 104px)",
 								}}
 								gap={{
 									base: 4,
@@ -2075,36 +1268,36 @@ export default function UsMarketPanel({
 								ml={{
 									base: "0",
 									lg: "50px",
-									xl: "180px",
+									xl: "300px",
 								}}
 							>
 								{[
 									{
 										label:
-											"전일 종가",
+											"시가",
 										value:
 											formatUsdOrDash(
-												quote.previousClose,
+												quote.open,
 											),
 										color:
 											"app.text",
 									},
 									{
 										label:
-											"52주 최고",
+											"고가",
 										value:
 											formatUsdOrDash(
-												quote.fiftyTwoWeekHigh,
+												quote.high,
 											),
 										color:
 											"#F05B45",
 									},
 									{
 										label:
-											"52주 최저",
+											"저가",
 										value:
 											formatUsdOrDash(
-												quote.fiftyTwoWeekLow,
+												quote.low,
 											),
 										color:
 											"#2F67D8",
@@ -2178,140 +1371,31 @@ export default function UsMarketPanel({
 						boxShadow="0 8px 24px rgba(73, 52, 30, 0.05)"
 						overflow="hidden"
 					>
-						<CardHeader pb="0">
-							<Flex
-								align={{
-									base:
-										"stretch",
-									lg:
-										"center",
-								}}
-								direction={{
-									base:
-										"column",
-									lg:
-										"row",
-								}}
-								gap="4"
-							>
-								<Box>
-									<Heading size="md">
-										차트
-									</Heading>
-									<Text
-										mt="1"
-										fontSize="11px"
-										color="app.subtleText"
-									>
-										현재 선택:{" "}
-										{chartPeriod ===
-										"1m"
-											? "1개월"
-											: chartPeriod ===
-												  "6m"
-												? "6개월"
-												: "1년"}
-									</Text>
-								</Box>
-
-								<Spacer />
-
-								<HStack
-									spacing="2"
-									wrap="wrap"
-								>
-									{(
-										[
-											[
-												"1개월",
-												"1m",
-											],
-											[
-												"6개월",
-												"6m",
-											],
-											[
-												"1년",
-												"1y",
-											],
-										] as const
-									).map(
-										([
-											label,
-											period,
-										]) => {
-											const active =
-												chartPeriod ===
-												period;
-
-											return (
-												<Button
-													key={
-														period
-													}
-													size="sm"
-													h="32px"
-													px="4"
-													fontSize="11px"
-													fontWeight="800"
-													variant="outline"
-													borderColor={
-														active
-															? "brand.500"
-															: "app.borderSoft"
-													}
-													bg={
-														active
-															? "orange.50"
-															: "white"
-													}
-													color={
-														active
-															? "brand.600"
-															: "app.subtleText"
-													}
-													onClick={() => {
-														setChartPeriod(
-															period,
-														);
-
-														void loadChart(
-															selectedSymbol,
-															selectedExchange,
-															period,
-														);
-													}}
-												>
-													{label}
-												</Button>
-											);
-										},
-									)}
-								</HStack>
-							</Flex>
-						</CardHeader>
-
-						<CardBody pt="4">
-							{isLoadingChart ? (
-								<Flex
-									h={{
-										base:
-											"420px",
-										xl:
-											"540px",
-									}}
-									align="center"
-									justify="center"
-								>
-									<Spinner color="brand.500" />
-								</Flex>
-							) : (
-								<UsCandlestickChart
-									data={chartData}
-									height={540}
-								/>
-							)}
-						</CardBody>
+                        <CardHeader pb="0">
+                            <Flex align={{ base: 'stretch', lg: 'center' }} direction={{ base: 'column', lg: 'row' }} gap="4">
+                                <Box>
+                                    <HStack><Heading size="md">차트</Heading><Badge colorScheme={chartError ? 'orange' : 'gray'}>{isIntradayPeriod(chartPeriod) ? '분봉 · 10초 갱신' : chartPeriod === '1y' ? '주봉' : '일봉'}</Badge></HStack>
+                                    <Text mt="1" fontSize="11px" color="app.subtleText">현재 선택: {chartOptions.find(([, period]) => period === chartPeriod)?.[0]}</Text>
+                                </Box>
+                                <Spacer />
+                                <HStack spacing="2" wrap="wrap">
+                                    {chartOptions.map(([label, period]) => <Button key={period} size="sm" h="32px" px="3" fontSize="11px" fontWeight="800" variant="outline"
+                                        aria-pressed={chartPeriod === period} isDisabled={isLoadingChart}
+                                        borderColor={chartPeriod === period ? 'brand.500' : 'app.borderSoft'} bg={chartPeriod === period ? 'orange.50' : 'white'} color={chartPeriod === period ? 'brand.600' : 'app.subtleText'}
+                                        onClick={() => setChartPeriod(period)}>{label}</Button>)}
+                                </HStack>
+                            </Flex>
+                        </CardHeader>
+                        <CardBody pt="4">
+                            {isLoadingChart ? <Flex h="540px" align="center" justify="center"><Spinner color="brand.500" /></Flex> :
+                                <UsStockChart data={chartData} intraday={isIntradayPeriod(chartPeriod)} resetKey={`${selectedExchange}:${selectedSymbol}:${chartPeriod}`} />}
+                            <HStack mt="2" justify="space-between" minH="24px">
+                                <Text fontSize="xs" color={chartError ? 'orange.600' : 'app.subtleText'}>
+                                    {chartError || (isIntradayPeriod(chartPeriod) ? '미국 동부시간 · 최근 최대 120개 봉 · 10초 간격 갱신' : chartPeriod === '1y' ? '최근 1년 주봉 · 가격 단위 USD' : '일봉 · 가격 단위 USD')}
+                                </Text>
+                                <Button size="xs" variant="ghost" isLoading={isLoadingChart} onClick={() => void loadChart()}>새로고침</Button>
+                            </HStack>
+                        </CardBody>
 					</Card>
 				</GridItem>
 
@@ -2370,9 +1454,7 @@ export default function UsMarketPanel({
 									}
 									borderRadius="full"
 								>
-									{marketStatus?.isOpen
-										? "장 운영 중"
-										: "장 마감"}
+									{marketStatus?.sessionLabel?.replace(' · 지정가', '') ?? '장 마감'}
 								</Badge>
 							</Flex>
 						</CardHeader>
@@ -2669,6 +1751,7 @@ export default function UsMarketPanel({
 														0,
 												)}
 											</Text>
+<KrwEquivalent usd={account?.availableCash} />
 										</Box>
 
 										<Box
@@ -3117,6 +2200,7 @@ export default function UsMarketPanel({
 											)}
 										</Text>
 									</Flex>
+<Box textAlign="right"><KrwEquivalent usd={currentOrderPrice * quantity} /></Box>
 
 									<Button
 										mt="5"
@@ -3154,8 +2238,8 @@ export default function UsMarketPanel({
 									>
 										{orderType ===
 											"LIMIT" &&
-										isMarketClosed
-											? "예약 "
+									!marketStatus?.limitOrderAllowed && !marketStatus?.orderAllowedByOverride
+										? "예약 "
 											: ""}
 										{orderPanelMode ===
 										"BUY"
@@ -3210,258 +2294,32 @@ export default function UsMarketPanel({
 				</GridItem>
 			</Grid>
 
-			<Grid
-				mt="5"
-				templateColumns={{
-					base: "1fr",
-					md:
-						"repeat(3, minmax(0, 1fr))",
-				}}
-				gap="5"
-			>
-				<UsDetailSelectorCard
-					title="정보"
-					description="기업·ETF 핵심 정보"
-					selected={
-						detailSection ===
-						"information"
-					}
-					onClick={() =>
-						setDetailSection(
-							"information",
-						)
-					}
-				>
-					<Stack spacing="7px">
-						{[
-							[
-								"시가총액",
-								Number(
-									quote?.marketCap ??
-										0,
-								) > 0
-									? compactUsd.format(
-											Number(
-												quote?.marketCap,
-											),
-										)
-									: "-",
-							],
-							[
-								"PER",
-								formatRatio(
-									quote?.per,
-								),
-							],
-							[
-								"PBR",
-								formatRatio(
-									quote?.pbr,
-								),
-							],
-							[
-								"EPS",
-								formatUsdOrDash(
-									quote?.eps,
-								),
-							],
-						].map(
-							([
-								label,
-								value,
-							]) => (
-								<Flex
-									key={
-										label
-									}
-									align="center"
-								>
-									<Text
-										fontSize="10px"
-										color="app.subtleText"
-									>
-										{label}
-									</Text>
-									<Spacer />
-									<Text
-										fontSize="10px"
-										fontWeight="800"
-									>
-										{value}
-									</Text>
-								</Flex>
-							),
-						)}
-					</Stack>
-				</UsDetailSelectorCard>
+            <UsMarketDetails
+                key={`${selectedExchange}:${selectedSymbol}`}
+                symbol={selectedSymbol}
+                exchange={selectedExchange}
+                quote={quote?.symbol === selectedSymbol && quote.exchange === selectedExchange ? quote : null}
+                history={chartData}
+                intraday={isIntradayPeriod(chartPeriod)}
+                chartLabel={chartOptions.find(([, period]) => period === chartPeriod)?.[0]}
+            />
 
-				<UsDetailSelectorCard
-					title="보유 종목"
-					description="미국 모의계좌 보유 현황"
-					selected={
-						detailSection ===
-						"holdings"
-					}
-					onClick={() =>
-						setDetailSection(
-							"holdings",
-						)
-					}
-				>
-					<Stack spacing="8px">
-						{(
-							portfolio?.holdings ??
-							[]
-						)
-							.slice(0, 4)
-							.map(
-								(
-									holding,
-								) => (
-									<Flex
-										key={`${holding.exchange}-${holding.symbol}`}
-										align="center"
-									>
-										<Box minW="0">
-											<Text
-												fontSize="10px"
-												fontWeight="800"
-												noOfLines={
-													1
-												}
-											>
-												{
-													holding.name
-												}
-											</Text>
-											<Text
-												fontSize="9px"
-												color="app.subtleText"
-											>
-												{
-													holding.symbol
-												}{" "}
-												·{" "}
-												{numberFormat.format(
-													holding.quantity,
-												)}
-												주
-											</Text>
-										</Box>
-										<Spacer />
-										<Text
-											fontSize="10px"
-											fontWeight="900"
-											color={
-												holding.profitLoss >=
-												0
-													? "#F05B45"
-													: "#2F67D8"
-											}
-										>
-											{holding.profitLossRate.toFixed(
-												2,
-											)}
-											%
-										</Text>
-									</Flex>
-								),
-							)}
-
-						{(
-							portfolio?.holdings
-								?.length ??
-							0
-						) === 0 && (
-							<Text
-								fontSize="10px"
-								color="app.subtleText"
-							>
-								보유 종목이 없습니다.
-							</Text>
-						)}
-					</Stack>
-				</UsDetailSelectorCard>
-
-				<UsDetailSelectorCard
-					title="주문 내역"
-					description="미체결·체결 주문 현황"
-					selected={
-						detailSection ===
-						"orders"
-					}
-					onClick={() =>
-						setDetailSection(
-							"orders",
-						)
-					}
-				>
-					<Stack spacing="7px">
-						{orders
-							.slice(0, 4)
-							.map(
-								(
-									order,
-								) => (
-									<Flex
-										key={
-											order._id
-										}
-										align="center"
-									>
-										<Badge
-											colorScheme={
-												order.side ===
-												"BUY"
-													? "red"
-													: "blue"
-											}
-											fontSize="8px"
-										>
-											{
-												sideLabel[
-													order
-														.side
-												]
-											}
-										</Badge>
-										<Text
-											ml="7px"
-											fontSize="9px"
-											fontWeight="700"
-										>
-											{
-												order.symbol
-											}
-										</Text>
-										<Spacer />
-										<Text
-											fontSize="9px"
-											color="app.subtleText"
-										>
-											{
-												statusLabel[
-													order
-														.status
-												]
-											}
-										</Text>
-									</Flex>
-								),
-							)}
-
-						{orders.length ===
-							0 && (
-							<Text
-								fontSize="10px"
-								color="app.subtleText"
-							>
-								주문 내역이 없습니다.
-							</Text>
-						)}
-					</Stack>
-				</UsDetailSelectorCard>
-			</Grid>
+            <Flex mt="5" align="center" gap="3" wrap="wrap">
+                <Heading size="sm">미국 모의계좌</Heading>
+                <Spacer />
+                <HStack spacing="2">
+                    {([['holdings', '보유 종목'], ['orders', '주문 내역']] as const).map(([value, label]) => (
+                        <Button key={value} size="sm" variant="outline" aria-pressed={detailSection === value}
+                            bg={detailSection === value ? 'orange.50' : 'white'}
+                            borderColor={detailSection === value ? 'brand.500' : 'app.borderSoft'}
+                            color={detailSection === value ? 'brand.600' : 'app.text'}
+                            onClick={() => setDetailSection(current => current === value ? null : value)}>
+                            {label}
+                        </Button>
+                    ))}
+                </HStack>
+            </Flex>
+            {detailSection && (
 
 			<Card
 				mt="5"
@@ -3472,26 +2330,14 @@ export default function UsMarketPanel({
 					<Flex align="center">
 						<Box>
 							<Heading size="sm">
-								{detailSection ===
-								"information"
-									? "미국 종목 상세 정보"
-									: detailSection ===
-										  "holdings"
-										? "보유 종목"
-										: "주문 / 체결 내역"}
+								{detailSection === "holdings" ? "보유 종목" : "주문 / 체결 내역"}
 							</Heading>
 							<Text
 								mt="1"
 								fontSize="11px"
 								color="app.subtleText"
 							>
-								{detailSection ===
-								"information"
-									? "KIS 미국 종목 API에서 제공되는 기업·ETF 정보를 표시합니다."
-									: detailSection ===
-										  "holdings"
-										? "미국 모의계좌의 평가 현황을 확인합니다."
-										: "미국 주식 주문 상태와 체결 결과를 확인합니다."}
+								{detailSection === "holdings" ? "미국 모의계좌의 평가 현황을 확인합니다." : "미국 주식 주문 상태와 체결 결과를 확인합니다."}
 							</Text>
 						</Box>
 
@@ -3519,48 +2365,6 @@ export default function UsMarketPanel({
 
 				<CardBody pt="0">
 					{detailSection ===
-						"information" && (
-						<Grid
-							templateColumns={{
-								base:
-									"1fr",
-								xl:
-									"minmax(0, 1.2fr) minmax(320px, 0.8fr)",
-							}}
-							gap="5"
-						>
-							<Box
-								p="4"
-								borderWidth="1px"
-								borderColor="app.borderSoft"
-								borderRadius="10px"
-							>
-								<UsStockDetailPanel
-									quote={
-										quote
-									}
-									isLoading={
-										isLoadingQuote
-									}
-								/>
-							</Box>
-
-							<Box
-								p="4"
-								borderWidth="1px"
-								borderColor="app.borderSoft"
-								borderRadius="10px"
-							>
-								<UsPriceHistoryTable
-									data={
-										chartData
-									}
-								/>
-							</Box>
-						</Grid>
-					)}
-
-					{detailSection ===
 						"holdings" && (
 						<Stack spacing="3">
 							{(
@@ -3571,7 +2375,8 @@ export default function UsMarketPanel({
 									holding,
 								) => (
 									<Box
-										key={`${holding.exchange}-${holding.symbol}`}
+										as="button" type="button" w="100%" textAlign="left"
+                                        key={`${holding.exchange}-${holding.symbol}`}
 										p="4"
 										borderWidth="1px"
 										borderColor="app.borderSoft"
@@ -3647,6 +2452,7 @@ export default function UsMarketPanel({
 														holding.profitLoss,
 													)}
 												</Text>
+<KrwEquivalent usd={holding.profitLoss} signed />
 												<Text
 													fontSize="11px"
 													color={
@@ -3870,137 +2676,11 @@ export default function UsMarketPanel({
 				</CardBody>
 			</Card>
 
-			<Card
-				mt="5"
-				borderColor="app.borderSoft"
-				boxShadow="0 8px 24px rgba(73, 52, 30, 0.04)"
-			>
-				<CardHeader pb="3">
-					<Heading size="sm">
-						미국 종목 검색
-					</Heading>
-				</CardHeader>
+            )}
 
-				<CardBody pt="0">
-					<HStack>
-						<Input
-							value={
-								searchQuery
-							}
-							onChange={(
-								event,
-							) =>
-								setSearchQuery(
-									event.target
-										.value,
-								)
-							}
-							onKeyDown={(
-								event,
-							) => {
-								if (
-									event.key ===
-									"Enter"
-								) {
-									void searchStocks();
-								}
-							}}
-							placeholder="기업명·ETF 또는 티커"
-							bg="white"
-						/>
+            <MarketSimulatorPanel key={`${selectedExchange}:${selectedSymbol}`} stock={quote?.symbol === selectedSymbol ? quote : null}
+                marketType="US" isOpen={isMarketSimulatorOpen} onClose={() => setIsMarketSimulatorOpen(false)} showTrigger={false} />
 
-						<Button
-							bg="#F26438"
-							color="white"
-							_hover={{
-								bg:
-									"#DF552C",
-							}}
-							onClick={() =>
-								void searchStocks()
-							}
-							isLoading={
-								isSearching
-							}
-						>
-							검색
-						</Button>
-					</HStack>
-
-					<SimpleGrid
-						mt="3"
-						columns={{
-							base: 1,
-							md: 2,
-							xl: 3,
-						}}
-						spacing="3"
-					>
-						{searchResults.map(
-							(
-								item,
-							) => (
-								<Box
-									key={`${item.exchange}-${item.symbol}`}
-									p="3"
-									borderWidth="1px"
-									borderColor="app.borderSoft"
-									borderRadius="9px"
-									cursor="pointer"
-									bg="white"
-									_hover={{
-										bg:
-											"#FFFAF5",
-									}}
-									onClick={() =>
-										void selectStock(
-											item,
-										)
-									}
-								>
-									<Flex align="center">
-										<Box minW="0">
-											<Text
-												fontWeight="800"
-												noOfLines={
-													1
-												}
-											>
-												{
-													item.name
-												}
-											</Text>
-											<Text
-												fontSize="11px"
-												color="app.subtleText"
-											>
-												{
-													item.symbol
-												}{" "}
-												·{" "}
-												{
-													item.market
-												}
-											</Text>
-										</Box>
-										<Spacer />
-										<Badge
-											variant="outline"
-											borderColor="#E4CDB8"
-											color="#695B4F"
-										>
-											{item.assetType ===
-											"ETF"
-												? "ETF"
-												: "주식"}
-										</Badge>
-									</Flex>
-								</Box>
-							),
-						)}
-					</SimpleGrid>
-				</CardBody>
-			</Card>
 		</Box>
 	);
 }

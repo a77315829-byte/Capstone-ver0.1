@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import axios from "axios";
+import { timeoutMs, aiMode, withDeadline } from "../utils/runtime";
 import { getStockDetailWithCache } from "../services/stockDetail.service";
 
 type ChartPoint = {
@@ -26,7 +27,7 @@ type AssistantRequestBody = {
 
 const LLM_BASE_URL = process.env.STOTRA_LLM_BASE_URL || "http://127.0.0.1:11434";
 const LLM_MODEL = process.env.STOTRA_LLM_MODEL || "llama3.1:8b";
-const USE_LLM = process.env.STOTRA_AI_USE_LLM !== "false";
+const USE_LLM = process.env.STOTRA_AI_USE_LLM !== "false" && aiMode() !== "rules";
 
 const safeNumber = (value: any, fallback = 0): number => {
 	const parsed = Number(value);
@@ -202,7 +203,7 @@ const callOllama = async (prompt: string) => {
 			},
 		},
 		{
-			timeout: 120000,
+			timeout: timeoutMs("AI_SERVICE_TIMEOUT_MS", 20000),
 		},
 	);
 
@@ -319,7 +320,7 @@ const stockAssistant = async (req: Request, res: Response) => {
 
 		const chartSummary = analyzeChart(chartPoints);
 
-		const detailResult = await getStockDetailWithCache(symbol).catch((error) => {
+		const detailResult = await withDeadline(getStockDetailWithCache(symbol), 3000).catch((error) => {
 			console.error("AI detail fetch failed:", error.message || error);
 			return null;
 		});

@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from typing import Optional, Type
 
 import httpx
@@ -42,12 +43,35 @@ def _extract_json(text: str) -> dict:
     return json.loads(text[start : end + 1])
 
 
+def bounded_schema(schema: dict) -> dict:
+    """Limit free text/arrays without changing enum values or required fields."""
+    result = deepcopy(schema)
+    def visit(node):
+        if not isinstance(node, dict):
+            return
+        if node.get("type") == "string" and "enum" not in node:
+            node.setdefault("maxLength", 70)
+        if node.get("type") == "array":
+            node.setdefault("maxItems", max(2, node.get("minItems", 0)))
+        if node.get("type") == "object":
+            node.setdefault("additionalProperties", False)
+        for value in node.values():
+            if isinstance(value, dict):
+                visit(value)
+            elif isinstance(value, list):
+                for item in value:
+                    visit(item)
+    visit(result)
+    return result
+
+
 async def chat_json(
     system: str,
     user: str,
     schema: Optional[dict] = None,
     response_model: Optional[Type[BaseModel]] = None,
     temperature: Optional[float] = None,
+    num_predict: Optional[int] = None,
 ) -> dict:
     """Ollama /api/chat 을 호출해 JSON dict 를 반환한다.
 
@@ -62,14 +86,14 @@ async def chat_json(
     payload: dict = {
         "model": settings.ollama_model,
         "messages": [
-            {"role": "system", "content": system},
+            {"role": "system", "content": system + "\nKeep free text concise: one short Korean sentence per field, at most two items per list."},
             {"role": "user", "content": user},
         ],
-        "options": {"temperature": temp},
+        "options": {"temperature": temp, "num_predict": num_predict or settings.ollama_num_predict},
         "stream": False,
     }
     if schema is not None:
-        payload["format"] = schema
+        payload["format"] = bounded_schema(schema)
 
     url = f"{settings.ollama_host}/api/chat"
     timeout = httpx.Timeout(settings.ollama_timeout_seconds)

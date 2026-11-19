@@ -188,6 +188,7 @@ export default function TopHeader({
 	return (
 		<Flex
 			as="header"
+			flexWrap={{ base: "wrap", md: "nowrap" }}
 			position="sticky"
 			top="0"
 			zIndex={1200}
@@ -227,10 +228,11 @@ export default function TopHeader({
 			{isExchangePage && (
 				<Box
 					flex={{
-						base: "1",
+						base: "1 0 100%",
 						md: "0 0 520px",
 						xl: "0 0 590px",
 					}}
+					order={{ base: 1, md: 0 }}
 					minW="0"
 					maxW="100%"
 				>

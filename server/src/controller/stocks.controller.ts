@@ -156,7 +156,7 @@ const getCandles = async (req: Request, res: Response) => {
 	const interval = String(req.query.interval || "1d") as CandleInterval;
 	const limit = Number(req.query.limit || 100);
 	const before = req.query.before === undefined ? undefined : Number(req.query.before);
-	if (!/^\d{6}$/.test(symbol) || !candleIntervals.includes(interval) ||
+	if (!/^\d[A-Z0-9]{5}$/.test(symbol) || !candleIntervals.includes(interval) ||
 		!Number.isInteger(limit) || limit < 1 || limit > 500 ||
 		(before !== undefined && (!Number.isSafeInteger(before) || before < 315500000 || before > Date.now() / 1000 + 86400))) {
 		return res.status(400).json({ success: false, message: "종목·봉 단위·조회 개수·이전 시각을 확인해주세요." });

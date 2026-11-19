@@ -1,5 +1,7 @@
+import { assetAdviceSchema } from "../utils/aiSchemas";
 import { Request, Response } from "express";
 import dotenv from "dotenv";
+import { timeoutMs, aiMode } from "../utils/runtime";
 
 dotenv.config();
 
@@ -357,10 +359,12 @@ async function generateAdvice(
 	let rawAdvice: RawAdvice = fallbackAdvice;
 
 	try {
+		if (aiMode() === "rules") throw new Error("RULES_MODE");
 		const ollamaResponse = await fetch(
 			`${OLLAMA_BASE_URL}/api/generate`,
 			{
 				method: "POST",
+                signal: AbortSignal.timeout(timeoutMs("AI_SERVICE_TIMEOUT_MS", 20000)),
 				headers: {
 					"Content-Type": "application/json",
 				},
@@ -368,9 +372,10 @@ async function generateAdvice(
 					model: OLLAMA_MODEL,
 					prompt,
 					stream: false,
-					format: "json",
+					format: assetAdviceSchema,
 					options: {
-						temperature: 0.2,
+						temperature: 0.1,
+                        num_predict: 600,
 					},
 				}),
 			},

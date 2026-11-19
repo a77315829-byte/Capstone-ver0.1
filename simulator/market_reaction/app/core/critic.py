@@ -40,8 +40,8 @@ _SCHEMA = {
     "type": "object",
     "properties": {
         "consistency_score": {"type": "number", "minimum": 0.0, "maximum": 1.0},
-        "conflicts": {"type": "array", "items": {"type": "string"}},
-        "uncertainty_factors": {"type": "array", "items": {"type": "string"}},
+        "conflicts": {"type": "array", "maxItems": 1, "items": {"type": "string", "maxLength": 50}},
+        "uncertainty_factors": {"type": "array", "maxItems": 1, "items": {"type": "string", "maxLength": 50}},
     },
     "required": ["consistency_score", "conflicts", "uncertainty_factors"],
 }

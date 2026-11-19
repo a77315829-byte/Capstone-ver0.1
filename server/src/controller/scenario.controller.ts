@@ -27,7 +27,7 @@ const sendError = (res: Response, error: any, fallbackMessage: string) => {
 
 const getChapters = async (req: Request, res: Response) => {
 	try {
-		const userId = req.query.userId?.toString();
+		const userId = (req as any).userId;
 
 		const chapters = await getScenarioChapters(userId);
 
@@ -57,7 +57,7 @@ const getRecommended = async (_req: Request, res: Response) => {
 
 const getChapterScenarios = async (req: Request, res: Response) => {
 	try {
-		const userId = req.query.userId?.toString();
+		const userId = (req as any).userId;
 		const chapterIdOrSlug = req.params.chapterId;
 
 		const scenarios = await getScenariosByChapter(chapterIdOrSlug, userId);
@@ -74,7 +74,7 @@ const getChapterScenarios = async (req: Request, res: Response) => {
 
 const getScenario = async (req: Request, res: Response) => {
 	try {
-		const userId = req.query.userId?.toString();
+		const userId = (req as any).userId;
 		const scenarioIdOrSlug = req.params.scenarioId;
 
 		const detail = await getScenarioDetail(scenarioIdOrSlug, userId);
@@ -92,7 +92,7 @@ const getScenario = async (req: Request, res: Response) => {
 const postDecision = async (req: Request, res: Response) => {
 	try {
 		const result = await submitScenarioDecision({
-			userId: req.body.userId || req.query.userId?.toString(),
+			userId: (req as any).userId,
 			scenarioIdOrSlug: req.params.scenarioId,
 			stepNumber: Number(req.body.stepNumber),
 			action: req.body.action,

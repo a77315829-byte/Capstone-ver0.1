@@ -33,6 +33,9 @@ async def run_judgment_pipeline(symbol: str, market_data: dict) -> dict:
         "reason": summary,
         "factors": weighted,
         "changed": changed,
+        "market_data": market_data,
+        "source": "rule-based" if summary.startswith("규칙 기반 해설:") else "ai-judgment",
+        "fallback_used": summary.startswith("규칙 기반 해설:"),
     }
     await save_judgment(doc)
     return doc

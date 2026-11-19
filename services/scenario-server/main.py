@@ -14,7 +14,15 @@ from data.store import get_store
 
 
 logger = logging.getLogger(__name__)
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from service_security import install_service_security
 app = FastAPI(title="Anttitude Scenario Server")
+from data.app_repository import AppRepository
+install_service_security(app, scenario_repository=AppRepository)
+
 
 
 def error_response(message: str, status_code: int) -> JSONResponse:

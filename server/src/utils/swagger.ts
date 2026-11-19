@@ -3,7 +3,7 @@ import path from "path";
 import { Express } from "express";
 import swaggerUi from "swagger-ui-express";
 import swaggerAutogen from "swagger-autogen";
-import { version } from "../../package.json";
+const { version } = require("../../package.json");
 import dotenv from "dotenv";
 
 dotenv.config();

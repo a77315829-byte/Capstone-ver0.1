@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import axios from "axios";
-import { fetchStockData } from "../utils/requests";
+import { aiMode, serviceHeaders, timeoutMs } from "../utils/runtime";
+import { marketFallback } from "../services/exhibitionFallback.service";
+import { fetchStockData, fetchUsStockData } from "../utils/requests";
+import { normalizeSimulationStock, SimulationStock } from "../utils/marketSimulation";
 
 // Python market-reaction FastAPI 서비스 주소. 기본값은 로컬 8002 포트.
 const MARKET_REACTION_URL =
@@ -34,10 +37,17 @@ const volumeTrendFromRate = (rate: number | null | undefined): string | null => 
 	return "stable";
 };
 
-const fetchRealtimeStockData = async (code: string | undefined) => {
-	if (!code) return null;
+const fetchRealtimeStockData = async (stock: SimulationStock) => {
+ const code = stock.code;
 
 	try {
+		if (stock.market === "US") {
+			const quote = await withTimeout(fetchUsStockData(code, stock.exchange || "NAS"), STOCK_DATA_TIMEOUT_MS);
+			if (!quote || !Number.isFinite(quote.price) || quote.price <= 0) return null;
+			return { current_price: quote.price, daily_change_rate: quote.changeRate,
+				market_cap_trillion: null, market_cap_usd: quote.marketCap || null,
+				volume_trend: null, observed_at: quote.fetchedAt };
+		}
 		const quote = await withTimeout(fetchStockData(code), STOCK_DATA_TIMEOUT_MS);
 		// KIS 는 존재하지 않는 종목코드에도 price=0 인 응답을 줄 수 있으므로 양수인 경우만 신뢰한다.
 		if (!quote || typeof quote.price !== "number" || quote.price <= 0) return null;
@@ -54,61 +64,40 @@ const fetchRealtimeStockData = async (code: string | undefined) => {
 			observed_at: quote.fetchedAt,
 		};
 	} catch (error: any) {
-		console.error("marketReaction.simulate: KIS quote fetch failed, using stub", {
+		console.error("marketReaction.simulate: KIS quote unavailable", {
 			code,
-			message: error.message,
+			error: error.name,
 		});
 		return null;
 	}
 };
 
+let retryAfter = 0;
 const simulate = async (req: Request, res: Response) => {
-	const { user_id, selected_stock, input_text, input_type_hint } = req.body;
-
-	if (!input_text || !String(input_text).trim()) {
-		return res.status(400).json({
-			status: "error",
-			message: "input_text가 필요합니다.",
-		});
-	}
-
-	try {
-		const stock_data = await fetchRealtimeStockData(selected_stock?.code);
-
-		// Python 응답을 그대로 전달하기 위해 모든 상태코드를 허용한다.
-		// (422 rejected, fallback 200 등 Python 이 정한 상태코드를 보존)
-		const pythonRes = await axios.post(
-			`${MARKET_REACTION_URL}/simulate`,
-			{
-				user_id: user_id || "test_user_001",
-				selected_stock,
-				input_text,
-				input_type_hint: input_type_hint ?? null,
-				stock_data,
-			},
-			{
-				timeout: 120000,
-				validateStatus: () => true,
-			},
-		);
-
-		return res.status(pythonRes.status).json(pythonRes.data);
-	} catch (error: any) {
-		// validateStatus 로 HTTP 에러는 위에서 통과되므로, 여기 도달하면 연결/타임아웃 등 네트워크 오류.
-		console.error("marketReaction.simulate error:", {
-			message: error.message,
-			code: error.code,
-		});
-
-		return res.status(503).json({
-			status: "error",
-			message:
-				"시장 반응 분석 서비스(Python)에 연결하지 못했습니다. 서비스 실행 상태를 확인하세요.",
-			error: error.message,
-		});
-	}
+ const { input_text, input_type_hint } = req.body;
+ const selected_stock = normalizeSimulationStock(req.body.selected_stock);
+ const hints = ["real_news", "company_information", "industry_information", "hypothetical_scenario", "economic_market_event", "unknown"];
+ if (typeof input_text !== "string" || !input_text.trim() || input_text.length > 10000 ||
+  !selected_stock ||
+  (input_type_hint != null && !hints.includes(input_type_hint))) {
+  return res.status(400).json({ status: "error", message: "종목과 분석 내용을 확인해주세요. 입력은 10,000자 이하여야 합니다." });
+ }
+ const stock_data = await fetchRealtimeStockData(selected_stock);
+ const fallback = () => res.json(marketFallback(selected_stock, input_text.trim(), input_type_hint ?? null,
+  stock_data ? { price: stock_data.current_price, changeRate: stock_data.daily_change_rate, fetchedAt: stock_data.observed_at } : null));
+ if (aiMode() === "rules" || Date.now() < retryAfter) return fallback();
+ try {
+  const response = await axios.post(MARKET_REACTION_URL + "/simulate",
+   { user_id: "anonymous", selected_stock, input_text, input_type_hint: input_type_hint ?? null, stock_data },
+   { timeout: timeoutMs("MARKET_SERVICE_TIMEOUT_MS", 120000), headers: serviceHeaders() });
+  if (response.data?.status !== "ok" || !Array.isArray(response.data?.agent_reactions)) return fallback();
+  return res.status(response.status).json(response.data);
+ } catch (error: any) {
+  if (error.response?.status >= 400 && error.response?.status < 500) {
+   return res.status(error.response.status).json(error.response.data);
+  }
+  retryAfter = Date.now() + 15000;
+  return fallback();
+ }
 };
-
-export default {
-	simulate,
-};
+export default { simulate };

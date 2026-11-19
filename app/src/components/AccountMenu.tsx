@@ -1,4 +1,4 @@
-import React, {
+import {
 	useEffect,
 	useState,
 } from "react";
@@ -13,6 +13,7 @@ import {
 	MenuButton,
 	MenuItem,
 	MenuList,
+	Text,
 } from "@chakra-ui/react";
 import {
 	Link as RouterLink,
@@ -116,7 +117,7 @@ export default function AccountMenu() {
 					bg: "#FFF4EA",
 				}}
 			>
-				{username}
+				<Text as="span" maxW={{ base: "min(155px, calc(100vw - 215px))", md: "none" }} isTruncated>{username}</Text>
 			</MenuButton>
 
 			<MenuList

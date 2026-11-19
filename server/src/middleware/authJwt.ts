@@ -55,9 +55,10 @@ export function verifyToken(
 		const decoded = jwt.verify(
 			token,
 			jwtSecret,
+			{ algorithms: ["HS256"] },
 		) as JwtPayload;
 
-		if (!decoded.id) {
+		if (typeof decoded.id !== "string" || !/^[a-f0-9]{24}$/i.test(decoded.id)) {
 			return res.status(401).json({
 				message: "토큰에 사용자 ID가 없습니다.",
 			});

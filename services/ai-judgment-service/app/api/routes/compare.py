@@ -23,4 +23,5 @@ async def compare_judgment(payload: CompareRequest):
         ai_probabilities=doc.get("probabilities") or {"매수": 0.0, "매도": 0.0, "관망": 0.0},
         explanation=explanation,
         highlighted_factors=highlighted,
+        computed_at=doc["time"],
     )

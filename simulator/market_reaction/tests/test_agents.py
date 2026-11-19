@@ -65,3 +65,21 @@ async def test_no_direct_advice_in_comments(offline):
         text = o.comment + " ".join(o.key_reasons) + " ".join(o.risk_factors)
         for phrase in _FORBIDDEN:
             assert phrase not in text
+
+
+@pytest.mark.asyncio
+async def test_batched_inference_preserves_five_perspectives_and_partial_fallback(monkeypatch):
+    from app.core import agents
+    calls = []
+    async def response(**kwargs):
+        calls.append(kwargs)
+        return {agent.value: {"reaction_direction": "buy", "reaction_strength": "low",
+            "input_relevance": "normal", "reason": f"{agent.value} 수요 기대", "risk": "실적 확인 필요"}
+            for agent in AGENT_ORDER[:-1]}
+    monkeypatch.setattr(agents, "chat_json", response)
+    outputs, modules = await run_all_agents(_standard_input())
+    assert len(calls) == 1
+    assert [o.agent_type for o in outputs] == AGENT_ORDER
+    assert modules == [f"agent:{AGENT_ORDER[-1].value}"]
+    assert outputs[0].key_reasons == [f"{AGENT_ORDER[0].value} 수요 기대"]
+    assert sum(o.base_weight for o in outputs) == pytest.approx(1.0)

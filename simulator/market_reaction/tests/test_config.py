@@ -17,11 +17,16 @@ def test_mongo_settings_defaults():
     assert s.stotra_mongodb_password == ""
     assert s.stotra_mongodb_cluster == ""
     assert s.mongo_db_name == ""
-    assert s.rag_max_cached_stocks is None
+    assert s.rag_max_cached_stocks == 16
 
 
-def test_rag_max_cached_stocks_empty_string_env_becomes_none(monkeypatch):
-    """빈 문자열 env var가 field_validator를 통해 None으로 변환되는지 확인."""
+def test_rag_max_cached_stocks_empty_string_uses_bounded_default(monkeypatch):
     monkeypatch.setenv("RAG_MAX_CACHED_STOCKS", "")
     s = Settings(_env_file=None)
-    assert s.rag_max_cached_stocks is None
+    assert s.rag_max_cached_stocks == 16
+
+
+def test_rag_cache_limit_accepts_zero_and_rejects_negative():
+    assert Settings(_env_file=None, rag_max_cached_stocks=0).rag_max_cached_stocks == 0
+    with pytest.raises(ValueError):
+        Settings(_env_file=None, rag_max_cached_stocks=-1)

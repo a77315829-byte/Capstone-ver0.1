@@ -32,6 +32,7 @@ type StockLike = {
   price: number;
   changeRate: number;
   volume?: number;
+  exchange?: "NAS" | "NYS" | "AMS";
 };
 
 type InputTypeHint =
@@ -116,6 +117,7 @@ type Props = {
   isOpen?: boolean;
   onClose?: () => void;
   showTrigger?: boolean;
+  marketType?: "KR" | "US";
 };
 
 const ORANGE = "#F36F2A";
@@ -190,7 +192,7 @@ function SectionCard({
   return (
     <Box bg="white" borderWidth="1px" borderColor={BORDER} borderRadius="12px" p={{ base: "16px", md: "18px" }}>
       <Text fontSize="13px" fontWeight="900" color={TEXT}>{title}</Text>
-      {subtitle && <Text mt="2px" fontSize="10px" color={MUTED}>{subtitle}</Text>}
+      {subtitle && <Text mt="2px" fontSize={{ base: "12px", md: "10px" }} color={MUTED}>{subtitle}</Text>}
       <Box mt="14px">{children}</Box>
     </Box>
   );
@@ -200,10 +202,11 @@ function PressureBar({ label, value, color }: { label: string; value: number; co
   return (
     <Box>
       <Flex mb="5px" justify="space-between">
-        <Text fontSize="10px" color={MUTED}>{label}</Text>
-        <Text fontSize="10px" fontWeight="900" color={color}>{Math.round(value)}%</Text>
+        <Text fontSize={{ base: "12px", md: "10px" }} color={MUTED}>{label}</Text>
+        <Text fontSize={{ base: "12px", md: "10px" }} fontWeight="900" color={color}>{Math.round(value)}%</Text>
       </Flex>
       <Progress
+        aria-label={label}
         value={clampPercent(value)}
         h="5px"
         bg="#F0EBE6"
@@ -243,8 +246,8 @@ function ResultView({
     <Stack spacing="14px">
       <Flex align={{ base: "stretch", md: "center" }} direction={{ base: "column", md: "row" }} gap="10px">
         <Box>
-          <Badge bg={ORANGE_SOFT} color={ORANGE_DARK} borderRadius="full" px="9px" py="4px" fontSize="9px">
-            AI 시장 반응 분석 완료
+          <Badge bg={ORANGE_SOFT} color={ORANGE_DARK} borderRadius="full" px="9px" py="4px" fontSize={{ base: "12px", md: "9px" }}>
+            {result.meta?.fallback_used ? "규칙 기반 대체 분석" : "AI 시장 반응 분석 완료"}
           </Badge>
           <Heading mt="8px" size="sm" color={TEXT}>
             {result.selected_stock?.name ?? result.current_stock_context?.name ?? "선택 종목"} 시장 반응 분석
@@ -279,7 +282,7 @@ function ResultView({
             },
           ].map((item) => (
             <Box key={item.label} p="12px" bg="#FFFCF8" borderRadius="9px" borderWidth="1px" borderColor="#F0E7DE">
-              <Text fontSize="9px" color={MUTED}>{item.label}</Text>
+              <Text fontSize={{ base: "12px", md: "9px" }} color={MUTED}>{item.label}</Text>
               <Text mt="6px" fontSize="12px" fontWeight="900" color={item.color ?? TEXT}>{item.value}</Text>
             </Box>
           ))}
@@ -288,8 +291,8 @@ function ResultView({
         {impact?.key_keywords?.length ? (
           <Wrap mt="12px">
             {impact.key_keywords.map((keyword) => (
-              <WrapItem key={keyword}>
-                <Badge bg="#F6EFE8" color="#75685C" borderRadius="full" px="8px" py="3px" fontSize="9px">
+              <WrapItem key={keyword} maxW={{ base: "100%", md: "none" }}>
+                <Badge whiteSpace={{ base: "normal", md: "nowrap" }} overflowWrap="anywhere" bg="#F6EFE8" color="#75685C" borderRadius="full" px="8px" py="3px" fontSize={{ base: "12px", md: "9px" }}>
                   #{keyword}
                 </Badge>
               </WrapItem>
@@ -305,7 +308,7 @@ function ResultView({
             <PressureBar label="매도 압력" value={sell} color="#3C70D8" />
             <PressureBar label="관망 가능성" value={hold} color="#9B948C" />
           </Stack>
-          {pressure?.headline && <Text mt="13px" fontSize="10px" lineHeight="1.65" color="#675D54">{pressure.headline}</Text>}
+          {pressure?.headline && <Text mt="13px" fontSize={{ base: "12px", md: "10px" }} lineHeight="1.65" color="#675D54">{pressure.headline}</Text>}
         </SectionCard>
 
         <SectionCard title="시장 분위기" subtitle="시장 반응의 전반적인 성향">
@@ -314,31 +317,32 @@ function ResultView({
           </Badge>
           <Box mt="14px" h="7px" borderRadius="full" bgGradient="linear(to-r, #7FA3EA, #DDD8D2, #F08A7A)" />
           <Flex mt="7px" justify="space-between">
-            <Text fontSize="9px" color="#5278C8">부정적</Text>
-            <Text fontSize="9px" color={MUTED}>중립</Text>
-            <Text fontSize="9px" color="#D85D4E">긍정적</Text>
+            <Text fontSize={{ base: "12px", md: "9px" }} color="#5278C8">부정적</Text>
+            <Text fontSize={{ base: "12px", md: "9px" }} color={MUTED}>중립</Text>
+            <Text fontSize={{ base: "12px", md: "9px" }} color="#D85D4E">긍정적</Text>
           </Flex>
-          <Text mt="13px" fontSize="10px" lineHeight="1.65" color="#675D54">
+          <Text mt="13px" fontSize={{ base: "12px", md: "10px" }} lineHeight="1.65" color="#675D54">
             {sentiment?.one_liner ?? "시장 분위기 설명이 제공되지 않았습니다."}
           </Text>
         </SectionCard>
 
         <SectionCard title="시장 신뢰도">
           <Flex align="center" justify="space-between">
-            <Text fontSize="11px" fontWeight="900" color={TEXT}>
+            <Text fontSize={{ base: "12px", md: "11px" }} fontWeight="900" color={TEXT}>
               {confidence?.grade_ko ?? confidence?.grade ?? "분석 신뢰도"}
             </Text>
             <Text fontSize="17px" fontWeight="900" color={ORANGE}>{Math.round(confidenceScore)}%</Text>
           </Flex>
           <Progress
             mt="9px"
+            aria-label="분석 신뢰도"
             value={confidenceScore}
             h="6px"
             borderRadius="full"
             bg="#F0EBE5"
             sx={{ "& > div": { background: ORANGE, borderRadius: "999px" } }}
           />
-          <Text mt="12px" fontSize="10px" lineHeight="1.65" color="#675D54">
+          <Text mt="12px" fontSize={{ base: "12px", md: "10px" }} lineHeight="1.65" color="#675D54">
             {confidence?.explanation ?? "현재 입력 정보와 시장 데이터를 기준으로 산출한 분석 신뢰도입니다."}
           </Text>
         </SectionCard>
@@ -349,11 +353,11 @@ function ResultView({
               result.uncertainty_factors?.map((item, index) => (
                 <Flex key={`${item}-${index}`} gap="8px" align="flex-start">
                   <Box mt="5px" w="5px" h="5px" borderRadius="full" bg={ORANGE} flexShrink={0} />
-                  <Text fontSize="10px" lineHeight="1.65" color="#675D54">{item}</Text>
+                  <Text fontSize={{ base: "12px", md: "10px" }} lineHeight="1.65" color="#675D54">{item}</Text>
                 </Flex>
               ))
             ) : (
-              <Text fontSize="10px" color={MUTED}>뚜렷한 불확실성 요소가 감지되지 않았습니다.</Text>
+              <Text fontSize={{ base: "12px", md: "10px" }} color={MUTED}>뚜렷한 불확실성 요소가 감지되지 않았습니다.</Text>
             )}
           </Stack>
         </SectionCard>
@@ -365,7 +369,7 @@ function ResultView({
             {agents.map((agent, index) => (
               <Box key={agent.agent_type ?? String(index)} p="12px" bg="#FFFCF8" borderWidth="1px" borderColor="#F0E7DE" borderRadius="10px">
                 <Flex align="center">
-                  <Text fontSize="11px" fontWeight="900" color={TEXT}>
+                  <Text fontSize={{ base: "12px", md: "11px" }} fontWeight="900" color={TEXT}>
                     {agent.agent_name_ko ?? agent.agent_type ?? "시장 참여자"}
                   </Text>
                   <Box flex="1" />
@@ -373,19 +377,19 @@ function ResultView({
                     {agent.reaction_direction_ko ?? directionKoMap[agent.reaction_direction ?? ""] ?? "중립"}
                   </Badge>
                 </Flex>
-                <Text mt="9px" fontSize="10px" lineHeight="1.6" color="#675D54">
+                <Text mt="9px" fontSize={{ base: "12px", md: "10px" }} lineHeight="1.6" color="#675D54">
                   {agent.comment ?? agent.key_reasons?.[0] ?? "세부 반응 설명이 없습니다."}
                 </Text>
               </Box>
             ))}
           </SimpleGrid>
         ) : (
-          <Text fontSize="10px" color={MUTED}>시장 참여자 반응 데이터가 없습니다.</Text>
+          <Text fontSize={{ base: "12px", md: "10px" }} color={MUTED}>시장 참여자 반응 데이터가 없습니다.</Text>
         )}
       </SectionCard>
 
       <SectionCard title="종합 해설">
-        <Text fontSize="11px" lineHeight="1.8" color="#5D544C" whiteSpace="pre-wrap">
+        <Text fontSize={{ base: "12px", md: "11px" }} lineHeight="1.8" color="#5D544C" whiteSpace="pre-wrap">
           {result.overall_explanation ?? "종합 해설이 제공되지 않았습니다."}
         </Text>
       </SectionCard>
@@ -399,6 +403,7 @@ export default function MarketSimulatorPanel({
   isOpen: controlledIsOpen,
   onClose: controlledOnClose,
   showTrigger = true,
+  marketType = "KR",
 }: Props) {
   const disclosure = useDisclosure();
   const toast = useToast();
@@ -412,9 +417,16 @@ export default function MarketSimulatorPanel({
   const [error, setError] = useState<string | null>(null);
 
   const effectiveStock = {
-    code: stock?.symbol || "005930",
-    name: stock?.name || "삼성전자",
+    code: stock?.symbol || (marketType === "KR" ? "005930" : ""),
+    name: stock?.name || (marketType === "KR" ? "삼성전자" : "종목 로딩 중"),
+    market: marketType,
+    ...(marketType === "US" ? { exchange: stock?.exchange } : {}),
   };
+  const examples = marketType === "US" ? [
+    `${effectiveStock.name}의 실적 발표에서 매출 증가와 공급 확대 계획이 제시되었다.`,
+    "미국 연방준비제도가 기준금리 인하 가능성을 언급했다.",
+    `${effectiveStock.name}의 주요 사업에 대한 규제 강화 가능성이 제기되었다.`,
+  ] : sampleInputs;
 
   const resetAnalysis = () => {
     setResult(null);
@@ -422,6 +434,7 @@ export default function MarketSimulatorPanel({
   };
 
   const runSimulation = async () => {
+    if (!effectiveStock.code) return;
     if (!inputText.trim()) {
       toast({ title: "분석할 내용을 입력하세요.", status: "warning", duration: 2200, isClosable: true });
       return;
@@ -433,11 +446,10 @@ export default function MarketSimulatorPanel({
       setResult(null);
 
       const response = await api.post("/market-reaction/simulate", {
-        user_id: "test_user_001",
         selected_stock: effectiveStock,
         input_text: inputText.trim(),
         input_type_hint: inputTypeHint,
-      });
+      }, { timeout: 130000 });
 
       const data = response.data as SimulationResult;
 
@@ -467,13 +479,14 @@ export default function MarketSimulatorPanel({
     <Stack spacing="18px">
       <Box>
         <Text fontSize="12px" fontWeight="900" color={TEXT}>뉴스 / 이벤트 내용</Text>
-        <Text mt="4px" fontSize="10px" color={MUTED}>
+        <Text mt="4px" fontSize={{ base: "12px", md: "10px" }} color={MUTED}>
           현재 선택 종목: <strong>{effectiveStock.name} ({effectiveStock.code})</strong>
+          {marketType === "US" && " · 미국 주식 · USD"}
         </Text>
       </Box>
 
       <Box position="relative">
-        <Textarea
+        <Textarea aria-label="분석할 뉴스 또는 이벤트"
           value={inputText}
           onChange={(event) => setInputText(event.target.value.slice(0, 500))}
           maxLength={500}
@@ -484,14 +497,14 @@ export default function MarketSimulatorPanel({
           bg="white"
           fontSize="12px"
           lineHeight="1.7"
-          placeholder="예: AI 반도체 수요 증가로 삼성전자의 HBM 관련 실적 개선 가능성이 높아질 것으로 예상된다."
+          placeholder={marketType === "US" ? `예: ${effectiveStock.name}의 실적 발표가 투자자 반응에 어떤 영향을 미칠지 분석해 주세요.` : "예: AI 반도체 수요 증가로 삼성전자의 HBM 관련 실적 개선 가능성이 높아질 것으로 예상된다."}
           _focusVisible={{ borderColor: ORANGE, boxShadow: "0 0 0 1px #F36F2A" }}
         />
-        <Text position="absolute" right="11px" bottom="9px" fontSize="9px" color={MUTED}>{inputText.length}/500</Text>
+        <Text position="absolute" right="11px" bottom="9px" fontSize={{ base: "12px", md: "9px" }} color={MUTED}>{inputText.length}/500</Text>
       </Box>
 
       <Box>
-        <Text mb="9px" fontSize="10px" fontWeight="900" color={TEXT}>입력 유형</Text>
+        <Text mb="9px" fontSize={{ base: "12px", md: "10px" }} fontWeight="900" color={TEXT}>입력 유형</Text>
         <Wrap spacing="7px">
           {inputTypeOptions.map((option) => {
             const selected = inputTypeHint === option.value;
@@ -506,7 +519,7 @@ export default function MarketSimulatorPanel({
                   borderColor={selected ? ORANGE : BORDER}
                   bg={selected ? ORANGE_SOFT : "white"}
                   color={selected ? ORANGE_DARK : "#6F655C"}
-                  fontSize="10px"
+                  fontSize={{ base: "12px", md: "10px" }}
                   fontWeight="800"
                   onClick={() => setInputTypeHint(option.value)}
                 >
@@ -519,9 +532,9 @@ export default function MarketSimulatorPanel({
       </Box>
 
       <Box p="13px" borderRadius="10px" bg="#FBF7F2" borderWidth="1px" borderColor="#EFE4D8">
-        <Text fontSize="10px" fontWeight="900" color={TEXT}>예시 입력</Text>
+        <Text fontSize={{ base: "12px", md: "10px" }} fontWeight="900" color={TEXT}>예시 입력</Text>
         <Stack mt="8px" spacing="5px">
-          {sampleInputs.map((sample) => (
+          {examples.map((sample) => (
             <Button
               key={sample}
               h="auto"
@@ -531,7 +544,7 @@ export default function MarketSimulatorPanel({
               justifyContent="flex-start"
               whiteSpace="normal"
               textAlign="left"
-              fontSize="10px"
+              fontSize={{ base: "12px", md: "10px" }}
               fontWeight="600"
               color="#746A61"
               _hover={{ color: ORANGE_DARK, bg: "transparent" }}
@@ -544,14 +557,14 @@ export default function MarketSimulatorPanel({
       </Box>
 
       <Box p="11px 12px" bg="#FFF7ED" borderRadius="9px" borderWidth="1px" borderColor="#F1DDC6">
-        <Text fontSize="9px" lineHeight="1.6" color="#7B6757">
+        <Text fontSize={{ base: "12px", md: "9px" }} lineHeight="1.6" color="#7B6757">
           이 기능은 입력한 사건에 대한 시장 반응 성향을 학습 목적으로 분석하며, 특정 종목의 매수·매도를 권유하지 않습니다.
         </Text>
       </Box>
 
       {error && (
         <Box p="12px" bg="#FFF1EF" borderWidth="1px" borderColor="#F2CEC9" borderRadius="9px">
-          <Text fontSize="10px" color="#C94D40" lineHeight="1.6">{error}</Text>
+          <Text fontSize={{ base: "12px", md: "10px" }} color="#C94D40" lineHeight="1.6">{error}</Text>
         </Box>
       )}
 
@@ -565,6 +578,7 @@ export default function MarketSimulatorPanel({
           _hover={{ bg: ORANGE_DARK }}
           onClick={runSimulation}
           isLoading={isLoading}
+          isDisabled={!effectiveStock.code}
           loadingText="분석 중"
         >
           AI 분석 시작
@@ -578,7 +592,7 @@ export default function MarketSimulatorPanel({
       <Stack align="center" spacing="12px">
         <Spinner size="lg" color={ORANGE} thickness="3px" />
         <Text fontSize="12px" fontWeight="800" color={TEXT}>시장 반응을 분석하고 있습니다.</Text>
-        <Text fontSize="10px" color={MUTED}>입력 내용과 현재 종목 데이터를 함께 분석합니다.</Text>
+        <Text fontSize={{ base: "12px", md: "10px" }} color={MUTED}>입력 내용과 현재 종목 데이터를 함께 분석합니다.</Text>
       </Stack>
     </Flex>
   ) : result ? (
@@ -633,7 +647,7 @@ export default function MarketSimulatorPanel({
           <Flex px={{ base: "18px", md: "24px" }} py="17px" align="center" bg="white" borderBottomWidth="1px" borderColor={BORDER}>
             <Box>
               <Heading size="md" letterSpacing="-0.04em" color={TEXT}>시장 반응 시뮬레이터</Heading>
-              <Text mt="4px" fontSize="10px" color={MUTED}>입력한 뉴스/이벤트에 대한 시장 반응 성향을 분석합니다.</Text>
+              <Text mt="4px" fontSize={{ base: "12px", md: "10px" }} color={MUTED}>입력한 뉴스/이벤트에 대한 시장 반응 성향을 분석합니다.</Text>
             </Box>
             <Box flex="1" />
             <CloseButton size="sm" onClick={closeModal} />

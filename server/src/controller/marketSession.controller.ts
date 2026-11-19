@@ -76,7 +76,7 @@ export const validateKrxOrderSession = (
 
 	if (orderType === "LIMIT") {
 		req.body.deferExecution =
-			!status.isOpen &&
+			!status.limitOrderAllowed &&
 			!status
 				.orderAllowedByOverride;
 
