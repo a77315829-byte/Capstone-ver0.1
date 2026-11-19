@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Box,
@@ -25,6 +25,15 @@ import {
   WrapItem,
 } from "@chakra-ui/react";
 import api from "../services/api.service";
+import tokens from "../services/tokens.service";
+import { streamMarketSimulation } from "../services/marketSimulationStream";
+import type {
+  SimulationAggregate,
+  SimulationAgent,
+  SimulationContext,
+  SimulationProgress,
+  SimulationResult,
+} from "../services/marketSimulationStream";
 
 type StockLike = {
   symbol: string;
@@ -39,76 +48,6 @@ type InputTypeHint =
   | "company_information"
   | "industry_information"
   | "hypothetical_scenario";
-
-type AgentReaction = {
-  agent_type?: string;
-  agent_name_ko?: string;
-  reaction_direction?: string;
-  reaction_direction_ko?: string;
-  reaction_strength?: string;
-  reaction_strength_ko?: string;
-  key_reasons?: string[];
-  comment?: string;
-  risk_factors?: string[];
-};
-
-type SimulationResult = {
-  status?: string;
-  simulation_id?: string;
-  selected_stock?: { code?: string; name?: string };
-  input_text?: string;
-  input_type?: string;
-  impact_analysis?: {
-    impact_direction?: string;
-    impact_direction_ko?: string;
-    impact_strength?: string;
-    impact_strength_ko?: string;
-    related_industries?: string[];
-    time_horizon?: string;
-    time_horizon_ko?: string;
-    key_keywords?: string[];
-  };
-  current_stock_context?: {
-    code?: string;
-    name?: string;
-    industry?: string;
-    current_price?: number | null;
-    daily_change_rate?: number | null;
-    volume_trend?: string;
-    data_source?: string;
-    is_realtime?: boolean;
-  };
-  market_pressure?: {
-    buy?: number;
-    sell?: number;
-    hold?: number;
-    dominant?: string;
-    headline?: string;
-  };
-  market_sentiment?: {
-    code?: string;
-    label_ko?: string;
-    one_liner?: string;
-  };
-  analysis_confidence?: {
-    score?: number;
-    grade?: string;
-    grade_ko?: string;
-    explanation?: string;
-  };
-  uncertainty_factors?: string[];
-  agent_reactions?: AgentReaction[];
-  overall_explanation?: string;
-  meta?: {
-    llm_model?: string;
-    llm_status?: string;
-    fallback_used?: boolean;
-    fallback_modules?: string[];
-    stock_data_source?: string;
-    db_save_status?: string;
-  };
-  created_at?: string;
-};
 
 type Props = {
   stock: StockLike | null;
@@ -211,6 +150,127 @@ function PressureBar({ label, value, color }: { label: string; value: number; co
         sx={{ "& > div": { background: color, borderRadius: "999px" } }}
       />
     </Box>
+  );
+}
+
+type IntermediateAnalysis = {
+  progress: SimulationProgress | null;
+  context: SimulationContext | null;
+  agents: SimulationAgent[];
+  aggregate: SimulationAggregate | null;
+};
+
+const emptyIntermediate: IntermediateAnalysis = { progress: null, context: null, agents: [], aggregate: null };
+const stageLabels: Record<SimulationProgress["stage"], string> = {
+  quote: "현재 종목 정보를 확인하고 있습니다.",
+  validating: "입력 내용을 확인하고 있습니다.",
+  context: "입력 영향과 종목 정보를 분석하고 있습니다.",
+  agents: "시장 참여자별 반응을 분석하고 있습니다.",
+  review: "참여자 반응을 교차 검토하고 있습니다.",
+  summary: "종합 해설을 작성하고 있습니다.",
+};
+
+function IntermediateView({
+  analysis,
+  elapsedSeconds,
+  onCancel,
+}: {
+  analysis: IntermediateAnalysis;
+  elapsedSeconds: number;
+  onCancel: () => void;
+}) {
+  const impact = analysis.context?.impact_analysis;
+  const context = analysis.context?.current_stock_context;
+  const pressure = analysis.aggregate?.market_pressure;
+  const sentiment = analysis.aggregate?.market_sentiment;
+  const lastAgent = analysis.agents[analysis.agents.length - 1];
+
+  return (
+    <Stack spacing="14px" aria-busy="true">
+      <Box p="16px" bg="white" borderWidth="1px" borderColor={BORDER} borderRadius="12px">
+        <Flex align="center" gap="12px" role="status" aria-live="polite">
+          <Spinner size="md" color={ORANGE} thickness="3px" flexShrink={0} />
+          <Box flex="1">
+            <Text fontSize="12px" fontWeight="800" color={TEXT}>
+              {analysis.progress?.message || (analysis.progress ? stageLabels[analysis.progress.stage] : "분석 서버에 연결하고 있습니다.")}
+            </Text>
+            <Text mt="4px" fontSize="10px" color={MUTED}>{elapsedSeconds}초 경과</Text>
+          </Box>
+          <Button size="sm" variant="outline" borderColor={BORDER} onClick={onCancel}>분석 취소</Button>
+        </Flex>
+        <Text mt="12px" fontSize="11px" fontWeight="800" color={ORANGE_DARK}>
+          분석 중 · 최종 결과가 달라질 수 있음
+        </Text>
+        <Text mt="4px" fontSize="10px" color={MUTED}>완료된 분석부터 표시합니다. 최종 신뢰도와 종합 해설은 분석 완료 후 제공됩니다.</Text>
+      </Box>
+
+      {analysis.context && (
+        <SectionCard title="입력 영향 분석 · 중간 결과">
+          {analysis.context.fallback_used && <Badge mb="10px" bg="#F6EFE8" color="#75685C">기본 규칙</Badge>}
+          <SimpleGrid columns={{ base: 2, md: 4 }} spacing="10px">
+            {[
+              { label: "영향 방향", value: impact?.impact_direction_ko ?? directionKoMap[impact?.impact_direction ?? ""] },
+              { label: "영향 강도", value: impact?.impact_strength_ko ?? strengthKoMap[impact?.impact_strength ?? ""] },
+              { label: "예상 기간", value: impact?.time_horizon_ko ?? timeHorizonKoMap[impact?.time_horizon ?? ""] },
+              { label: "관련 산업", value: impact?.related_industries?.join(", ") },
+            ].map((item) => (
+              <Box key={item.label} p="10px" bg="#FFFCF8" borderRadius="9px">
+                <Text fontSize="9px" color={MUTED}>{item.label}</Text>
+                <Text mt="5px" fontSize="11px" fontWeight="800" color={TEXT}>{item.value || "정보 없음"}</Text>
+              </Box>
+            ))}
+          </SimpleGrid>
+          {context && (
+            <Text mt="12px" fontSize="10px" color={MUTED}>
+              {context.name || "선택 종목"}{context.industry ? ` · ${context.industry}` : ""}
+              {typeof context.current_price === "number" ? ` · 기준 가격 ${context.current_price.toLocaleString("ko-KR")}원` : ""}
+            </Text>
+          )}
+        </SectionCard>
+      )}
+
+      {lastAgent && (
+        <SectionCard title={`시장 참여자별 중간 반응 · ${analysis.agents.length}/${lastAgent.total_agents}명 완료`} subtitle="응답이 도착한 순서로 표시합니다.">
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing="10px">
+            {analysis.agents.map(({ agent, fallback_used }, index) => (
+              <Box key={agent.agent_type ?? String(index)} p="12px" bg="#FFFCF8" borderWidth="1px" borderColor="#F0E7DE" borderRadius="10px">
+                <Flex align="center" gap="6px" wrap="wrap">
+                  <Text fontSize="11px" fontWeight="900" color={TEXT}>{agent.agent_name_ko ?? agent.agent_type ?? "시장 참여자"}</Text>
+                  {fallback_used && <Badge bg="#F6EFE8" color="#75685C" fontSize="8px">기본 규칙</Badge>}
+                  <Box flex="1" />
+                  <Badge bg="#F6EFE8" color={toneColor(agent.reaction_direction)} fontSize="8px">
+                    {agent.reaction_direction_ko ?? directionKoMap[agent.reaction_direction ?? ""] ?? "정보 없음"}
+                  </Badge>
+                </Flex>
+                <Text mt="9px" fontSize="10px" lineHeight="1.6" color="#675D54">
+                  {agent.comment ?? agent.key_reasons?.[0] ?? "세부 반응 설명이 없습니다."}
+                </Text>
+              </Box>
+            ))}
+          </SimpleGrid>
+        </SectionCard>
+      )}
+
+      {analysis.aggregate && (
+        <SectionCard title="검토 후 시장 반응 · 중간 결과">
+          <Stack spacing="12px">
+            {[
+              { label: "매수 압력", value: pressure?.buy, color: "#E85B47" },
+              { label: "매도 압력", value: pressure?.sell, color: "#3C70D8" },
+              { label: "관망 가능성", value: pressure?.hold, color: "#9B948C" },
+            ].map(({ label, value, color }) => typeof value === "number" && Number.isFinite(value) ? (
+              <PressureBar key={label} label={label} value={value} color={color} />
+            ) : null)}
+            {pressure?.headline && <Text fontSize="10px" lineHeight="1.65" color="#675D54">{pressure.headline}</Text>}
+            {sentiment?.label_ko && <Text fontSize="11px" fontWeight="800" color={toneColor(sentiment.code)}>{sentiment.label_ko}</Text>}
+            {sentiment?.one_liner && <Text fontSize="10px" lineHeight="1.65" color="#675D54">{sentiment.one_liner}</Text>}
+            {analysis.aggregate.uncertainty_factors?.map((item, index) => (
+              <Text key={`${item}-${index}`} fontSize="10px" color={MUTED}>• {item}</Text>
+            ))}
+          </Stack>
+        </SectionCard>
+      )}
+    </Stack>
   );
 }
 
@@ -410,16 +470,53 @@ export default function MarketSimulatorPanel({
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [intermediate, setIntermediate] = useState<IntermediateAnalysis>(emptyIntermediate);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const activeRequest = useRef<AbortController | null>(null);
 
   const effectiveStock = {
     code: stock?.symbol || "005930",
     name: stock?.name || "삼성전자",
   };
 
-  const resetAnalysis = () => {
+  const abortRequest = useCallback(() => {
+    activeRequest.current?.abort();
+    activeRequest.current = null;
+  }, []);
+
+  const resetAnalysis = useCallback(() => {
+    abortRequest();
+    setIsLoading(false);
     setResult(null);
     setError(null);
+    setIntermediate(emptyIntermediate);
+    setElapsedSeconds(0);
+  }, [abortRequest]);
+
+  const handleClose = () => {
+    abortRequest();
+    setIsLoading(false);
+    closeModal();
   };
+
+  useEffect(() => {
+    resetAnalysis();
+    return abortRequest;
+  }, [effectiveStock.code, resetAnalysis, abortRequest]);
+
+  useEffect(() => {
+    if (displayMode === "floating" && !isOpen) {
+      abortRequest();
+      setIsLoading(false);
+    }
+  }, [displayMode, isOpen, abortRequest]);
+
+  useEffect(() => {
+    if (!isLoading) return;
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, [isLoading]);
 
   const runSimulation = async () => {
     if (!inputText.trim()) {
@@ -427,39 +524,63 @@ export default function MarketSimulatorPanel({
       return;
     }
 
+    abortRequest();
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    setIsLoading(true);
+    setError(null);
+    setResult(null);
+    setIntermediate(emptyIntermediate);
+    setElapsedSeconds(0);
+
     try {
-      setIsLoading(true);
-      setError(null);
-      setResult(null);
-
-      const response = await api.post("/market-reaction/simulate", {
-        user_id: "test_user_001",
-        selected_stock: effectiveStock,
-        input_text: inputText.trim(),
-        input_type_hint: inputTypeHint,
+      await streamMarketSimulation({
+        url: api.getUri({ url: "/market-reaction/simulate/stream" }),
+        request: {
+          user_id: "test_user_001",
+          selected_stock: effectiveStock,
+          input_text: inputText.trim(),
+          input_type_hint: inputTypeHint,
+        },
+        token: tokens.getToken(),
+        withCredentials: api.defaults.withCredentials,
+        signal: controller.signal,
+        onEvent: (event) => {
+          if (activeRequest.current !== controller || controller.signal.aborted) return;
+          switch (event.event) {
+            case "progress":
+              setIntermediate((previous) => ({ ...previous, progress: event.data }));
+              break;
+            case "context":
+              setIntermediate((previous) => ({ ...previous, context: event.data }));
+              break;
+            case "agent":
+              setIntermediate((previous) => ({
+                ...previous,
+                agents: [...previous.agents.filter((item) => item.agent.agent_type !== event.data.agent.agent_type), event.data],
+              }));
+              break;
+            case "aggregate":
+              setIntermediate((previous) => ({ ...previous, aggregate: event.data }));
+              break;
+            case "result":
+              setResult(event.data);
+              break;
+            case "error":
+              setError(event.data.message || "시뮬레이션 실행 중 오류가 발생했습니다.");
+              break;
+          }
+        },
       });
-
-      const data = response.data as SimulationResult;
-
-      if (data?.status === "rejected") {
-        setError(
-          (data as any)?.message ||
-            "직접적인 투자 추천 요청은 처리할 수 없습니다. 뉴스·이벤트 또는 시장 상황 설명 형태로 입력해주세요.",
-        );
-        return;
+    } catch (requestError: unknown) {
+      if (activeRequest.current === controller && !controller.signal.aborted) {
+        setError(requestError instanceof Error ? requestError.message : "시뮬레이션 실행 중 오류가 발생했습니다.");
       }
-
-      setResult(data);
-    } catch (requestError: any) {
-      const status = requestError?.response?.status;
-      const serverMessage =
-        requestError?.response?.data?.message || requestError?.response?.data?.error;
-
-      if (status === 422) setError(serverMessage || "직접적인 투자 추천 요청은 처리할 수 없습니다.");
-      else if (status === 502 || status === 503) setError(serverMessage || "시장 반응 분석 서비스에 연결하지 못했습니다.");
-      else setError(serverMessage || "시뮬레이션 실행 중 오류가 발생했습니다.");
     } finally {
-      setIsLoading(false);
+      if (activeRequest.current === controller) {
+        activeRequest.current = null;
+        setIsLoading(false);
+      }
     }
   };
 
@@ -556,7 +677,7 @@ export default function MarketSimulatorPanel({
       )}
 
       <Flex justify="flex-end" gap="8px">
-        <Button size="sm" minW="92px" variant="outline" borderColor={BORDER} color="#71665C" onClick={closeModal}>취소</Button>
+        <Button size="sm" minW="92px" variant="outline" borderColor={BORDER} color="#71665C" onClick={handleClose}>취소</Button>
         <Button
           size="sm"
           minW="132px"
@@ -574,15 +695,9 @@ export default function MarketSimulatorPanel({
   );
 
   const content = isLoading ? (
-    <Flex minH="360px" align="center" justify="center">
-      <Stack align="center" spacing="12px">
-        <Spinner size="lg" color={ORANGE} thickness="3px" />
-        <Text fontSize="12px" fontWeight="800" color={TEXT}>시장 반응을 분석하고 있습니다.</Text>
-        <Text fontSize="10px" color={MUTED}>입력 내용과 현재 종목 데이터를 함께 분석합니다.</Text>
-      </Stack>
-    </Flex>
+    <IntermediateView analysis={intermediate} elapsedSeconds={elapsedSeconds} onCancel={resetAnalysis} />
   ) : result ? (
-    <ResultView result={result} onReset={resetAnalysis} onClose={closeModal} />
+    <ResultView result={result} onReset={resetAnalysis} onClose={handleClose} />
   ) : (
     inputView
   );
@@ -614,7 +729,7 @@ export default function MarketSimulatorPanel({
 
       <Modal
         isOpen={isOpen}
-        onClose={closeModal}
+        onClose={handleClose}
         size={result ? "6xl" : "2xl"}
         isCentered
         scrollBehavior="inside"
@@ -636,7 +751,7 @@ export default function MarketSimulatorPanel({
               <Text mt="4px" fontSize="10px" color={MUTED}>입력한 뉴스/이벤트에 대한 시장 반응 성향을 분석합니다.</Text>
             </Box>
             <Box flex="1" />
-            <CloseButton size="sm" onClick={closeModal} />
+            <CloseButton size="sm" onClick={handleClose} />
           </Flex>
 
           <ModalBody p={{ base: "18px", md: result ? "20px" : "24px" }} bg={BACKGROUND}>

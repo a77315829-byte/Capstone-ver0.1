@@ -12,7 +12,7 @@ fallback.py:EVENT_BASE_WEIGHTS 에 중앙화, LLM 은 이 표의 선택에 관�
 from __future__ import annotations
 
 import asyncio
-from typing import List, Tuple
+from typing import Awaitable, Callable, List, Optional, Tuple
 
 from ..schemas.agent import AgentOutput
 from ..schemas.analysis import (
@@ -170,11 +170,24 @@ async def run_agent(
 
 async def run_all_agents(
     standard_input: StandardInput,
+    on_complete: Optional[Callable[[AgentOutput, List[str]], Awaitable[None]]] = None,
 ) -> Tuple[List[AgentOutput], List[str]]:
     """5개 에이전트를 병렬 실행. 항상 5개 AgentOutput 을 고정 순서로 반환."""
-    results = await asyncio.gather(
-        *(run_agent(agent_type, standard_input) for agent_type in AGENT_ORDER)
-    )
+    async def run_and_publish(agent_type: AgentType):
+        output, modules = await run_agent(agent_type, standard_input)
+        if on_complete is not None:
+            await on_complete(output, modules)
+        return output, modules
+
+    tasks = [asyncio.create_task(run_and_publish(agent_type)) for agent_type in AGENT_ORDER]
+    try:
+        results = await asyncio.gather(*tasks)
+    finally:
+        # 클라이언트 취소나 콜백 실패 시에도 나머지 LLM 작업을 남겨두지 않는다.
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
     outputs: List[AgentOutput] = []
     fallback_modules: List[str] = []
     for output, modules in results:

@@ -123,6 +123,7 @@ router.post(
 );
 
 router.post("/api/market-reaction/simulate", marketReactionController.simulate);
+router.post("/api/market-reaction/simulate/stream", marketReactionController.simulateStream);
 
 router.get("/api/us-stocks/search/:query", usStocksController.search);
 router.get(

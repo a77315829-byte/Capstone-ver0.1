@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { fetchStockData } from "../utils/requests";
 import { downstreamServices } from "../config/downstream";
+import { streamMarketReaction } from "../services/marketReactionStream.service";
 import {
 	createDownstreamClient,
 	forwardDownstream,
@@ -95,4 +96,9 @@ const simulate = async (req: Request, res: Response) => {
 
 export default {
 	simulate,
+	simulateStream: (req: Request, res: Response) => streamMarketReaction(req, res, {
+		url: `${marketReactionService.baseUrl}/simulate/stream`,
+		loadStockData: fetchRealtimeStockData,
+		deadlineMs: marketReactionService.timeoutMs,
+	}),
 };

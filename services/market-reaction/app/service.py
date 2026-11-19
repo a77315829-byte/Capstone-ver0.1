@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from typing import List
+from typing import Awaitable, Callable, List, Optional
 
 from .config import settings
 from .core.agents import run_all_agents
@@ -38,6 +38,7 @@ from .schemas.analysis import (
     TimeHorizon,
 )
 from .schemas.request import SimulationRequest
+from .schemas.agent import AgentOutput
 from .schemas.response import ImpactAnalysis, SimulationResponse
 from .services.stock_data import get_stock_context
 
@@ -113,8 +114,14 @@ def _build_impact_analysis(standard_input: StandardInput, external: ExternalCont
 
 async def run_market_reaction_simulation(
     request: SimulationRequest,
+    on_event: Optional[Callable[[str, dict], Awaitable[None]]] = None,
 ) -> SimulationResponse:
+    async def emit(name: str, data: dict):
+        if on_event is not None:
+            await on_event(name, data)
+
     # 1) 입력 검증
+    await emit("progress", {"stage": "validating"})
     classification, fb_validator = await validate_simulation_input(request)
     if not is_valid(classification):
         raise SimulationRejectedError(
@@ -125,6 +132,7 @@ async def run_market_reaction_simulation(
     fallback_modules: List[str] = list(fb_validator)
 
     # 2) 외부 시장 맥락 분석(+ 지원 종목이면 IR/실적발표 자료 검색, RAG MVP)
+    await emit("progress", {"stage": "context"})
     external_context, fb_external, rag_sources = await analyze_external_context(request)
     fallback_modules.extend(fb_external)
 
@@ -135,13 +143,35 @@ async def run_market_reaction_simulation(
     # 4) 분석 결과 통합(불확실성 병합)
     standard_input = build_standard_input(request, external_context, realtime_context)
     uncertainty_factors = standard_input.uncertainty_factors
+    impact_analysis = _build_impact_analysis(standard_input, external_context)
+    await emit("context", {
+        "impact_analysis": impact_analysis,
+        "current_stock_context": current_stock,
+        "fallback_used": bool(fallback_modules),
+    })
 
     # 5) 5개 에이전트 실행(기존과 동일하게 병렬)
-    agent_outputs, fb_agents = await run_all_agents(standard_input)
+    await emit("progress", {"stage": "agents"})
+    completed_agents = 0
+
+    async def agent_completed(output: AgentOutput, modules: List[str]):
+        nonlocal completed_agents
+        completed_agents += 1
+        await emit("agent", {
+            "agent": output,
+            "fallback_used": bool(modules),
+            "completed_agents": completed_agents,
+            "total_agents": 5,
+        })
+
+    agent_outputs, fb_agents = await run_all_agents(
+        standard_input, on_complete=agent_completed if on_event is not None else None,
+    )
     fallback_modules.extend(fb_agents)
 
     # 5b) 정합성 critic — 5개 결과가 모두 나온 뒤 1회 호출.
     # 실패 시 fallback(_fallback_consistency, 기존 규칙과 동일)로 대체.
+    await emit("progress", {"stage": "review"})
     consistency_review, fb_critic = await review_agent_consistency(standard_input, agent_outputs)
     fallback_modules.extend(fb_critic)
     if consistency_review.conflicts or consistency_review.uncertainty_factors:
@@ -156,8 +186,14 @@ async def run_market_reaction_simulation(
     # 6) 시장 압력 / 분위기
     market_pressure = calculate_market_pressure(agent_outputs)
     market_sentiment = determine_market_sentiment(market_pressure)
+    await emit("aggregate", {
+        "market_pressure": market_pressure,
+        "market_sentiment": market_sentiment,
+        "uncertainty_factors": uncertainty_factors,
+    })
 
     # 7) 종합 해설
+    await emit("progress", {"stage": "summary"})
     overall_explanation, fb_summary = await generate_summary(
         request.selected_stock.name, standard_input, market_pressure,
         market_sentiment, agent_outputs, uncertainty_factors,
@@ -193,7 +229,7 @@ async def run_market_reaction_simulation(
         selected_stock=request.selected_stock,
         input_text=request.input_text,
         input_type=classification.input_type,
-        impact_analysis=_build_impact_analysis(standard_input, external_context),
+        impact_analysis=impact_analysis,
         current_stock_context=current_stock,
         market_pressure=market_pressure,
         market_sentiment=market_sentiment,
